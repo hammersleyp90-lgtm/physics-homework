@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physics Homework (mock-up)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=STIX+Two+Text:ital,wght@0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a dark instrument bar over a lab-bench background; every question sits on a white exam-paper sheet with graph-paper working space. */
+:root{
+  --bg:#edf0f6; --paper:#ffffff; --ink:#111a2e; --muted:#55617a; --rule:#d5dbe7;
+  --accent:#1f3fbf; --accent-ink:#ffffff; --tint:#e9eefc;
+  --bar:#111a2e; --bar-ink:#f3f6fc; --trace:#6fe3c1;
+  --green:#0b7a35; --green-tint:#e7f4eb; --warn:#9a5700; --warn-tint:#fdf1dc; --bad:#b3261e;
+  --h1:#cf4a43; --h2:#dc9a2e; --h3:#86b955; --h4:#2e8b57; --c1:#f6d2cf; --c2:#fbe6c2; --c3:#dcefc9; --c4:#bfe3cb;
+  --display:"STIX Two Text","Times New Roman",Times,serif; --body:"IBM Plex Sans","Segoe UI",Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bg:#0d1220; --paper:#171d2c; --ink:#e8ecf5; --muted:#9aa6bd; --rule:#2c3549; --accent:#93a9ff; --accent-ink:#0b1026; --tint:#1c2540;
+    --bar:#080c17; --bar-ink:#e8ecf5; --green:#5fd38a; --green-tint:#14281c; --warn:#f0b65a; --warn-tint:#2e2414; --bad:#f0928a; --c1:#4a2321; --c2:#4a3818; --c3:#2f3d22; --c4:#1d3d2b; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bg:#0d1220; --paper:#171d2c; --ink:#e8ecf5; --muted:#9aa6bd; --rule:#2c3549; --accent:#93a9ff; --accent-ink:#0b1026; --tint:#1c2540;
+  --bar:#080c17; --bar-ink:#e8ecf5; --green:#5fd38a; --green-tint:#14281c; --warn:#f0b65a; --warn-tint:#2e2414; --bad:#f0928a; --c1:#4a2321; --c2:#4a3818; --c3:#2f3d22; --c4:#1d3d2b; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16.5px;line-height:1.5;-webkit-text-size-adjust:100%}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.5}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2{font-family:var(--display);font-weight:600;line-height:1.2;margin:0;text-wrap:balance;letter-spacing:-.005em}
+h1{font-size:1.75rem} h2{font-size:1.22rem}
+.stem i,.part-q i,.ms i,.dgrid i,.why i,.typed i{font-family:var(--display);font-size:1.07em}     /* physical quantities are set in an italic serif, as in print */
+.muted{color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---- instrument bar ---- */
+.appbar{background:var(--bar);color:var(--bar-ink)}
+.appbar-in{max-width:1012px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:1.12rem;white-space:nowrap}
+.brand svg{display:block}
+.bar-ctx{margin-left:auto;font-weight:500;font-size:.95rem;opacity:.92;text-align:right}
+.bar-ctx + .bar-btn{margin-left:0}
+.bar-btn{margin-left:auto;background:transparent;color:var(--bar-ink);border:1.5px solid rgba(255,255,255,.35);border-radius:6px;padding:4px 12px;font-weight:600;font-size:.9rem}
+.bar-btn:hover{border-color:var(--bar-ink)}
+.appbar :focus-visible{outline-color:var(--trace)}
+
+.wrap{max-width:1012px;margin:0 auto;padding:18px 16px 64px;display:flex;flex-direction:column;gap:18px}
+.crumb{display:flex}
+.back{background:none;border:0;padding:2px 0;color:var(--accent);font-weight:600}
+.back:hover{text-decoration:underline}
+.mock{font-size:.86rem;color:var(--muted);border:1px dashed var(--rule);border-radius:6px;padding:6px 10px;margin:0}
+
+/* ---- controls ---- */
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:9px 18px;font-weight:600}
+.ghost{background:var(--paper);border:1.5px solid var(--rule);border-radius:6px;padding:7.5px 14px;font-weight:600;font-size:.95rem}
+.ghost:hover:not(:disabled){border-color:var(--muted)}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:2px;text-align:left}
+.linkbtn.del{color:var(--bad)}
+.inp{width:100%;background:var(--paper);border:1.5px solid var(--rule);border-radius:6px;padding:8px 10px}
+.inp:hover{border-color:var(--muted)}
+.lab{font-weight:600;display:block;margin-bottom:4px;font-size:.92rem}
+textarea.names{min-height:9em;resize:vertical;line-height:1.5}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.95em}
+.err{color:var(--bad);min-height:1.3em;margin:0;font-weight:600}
+.err:empty{min-height:0}
+.ok{color:var(--green);font-weight:600;margin:0}
+.ok:empty{display:none}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:20px clamp(16px,3vw,28px)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.hw-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.io-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.pick{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+.switch{display:flex;align-items:center;gap:8px}
+.pill{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:2px 8px;border:1.5px solid var(--rule);color:var(--muted);white-space:nowrap}
+.pill.done{border-color:var(--green);color:var(--green);background:var(--green-tint)}
+.pill.prog{border-color:var(--accent);color:var(--accent);background:var(--tint)}
+.pill.redo{border-color:var(--warn);color:var(--warn);background:var(--warn-tint)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.92rem;align-items:center}
+.swatch{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-.05em;margin-right:5px}
+.swatch.sq{border-radius:2px;width:1em;height:1em;vertical-align:-.15em}
+.swatch.g{background:var(--green)}
+
+/* ---- login ---- */
+.login-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);gap:22px;align-items:stretch;margin-top:12px}
+.hero{background:var(--bar);color:var(--bar-ink);border-radius:8px;padding:26px clamp(18px,3vw,30px);display:flex;flex-direction:column;gap:18px;justify-content:space-between;overflow:hidden}
+.hero h1{font-size:2rem}
+.hero p{margin:0;opacity:.88;max-width:44ch}
+.hero canvas{display:block;width:100%;flex:1 1 150px;min-height:150px;border-radius:6px}
+.login{display:flex;flex-direction:column;gap:14px}
+.login label{font-weight:600;display:block;margin-bottom:4px;font-size:.92rem}
+.login input{width:100%;background:var(--paper);border:1.5px solid var(--rule);border-radius:6px;padding:9px 10px}
+.login input.pin{letter-spacing:.4em;font-family:var(--mono);max-width:9em}
+
+/* ---- progress and question navigation ---- */
+.progress{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;font-variant-numeric:tabular-nums;font-size:.95rem}
+.bar{flex:1 1 160px;height:6px;border-radius:99px;background:var(--rule);overflow:hidden;min-width:120px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.qnav{display:flex;flex-wrap:wrap;gap:6px}
+.qchip{min-width:2.7em;border:1.5px solid var(--rule);background:var(--paper);border-radius:6px;padding:5px 9px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+.qchip.prog{border-color:var(--accent);color:var(--accent)}
+.qchip.done{border-color:var(--green);color:var(--green)}
+.qchip.redo{border-color:var(--warn);color:var(--warn)}
+.qchip[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+
+/* ---- exam-paper sheet ---- */
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:24px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{display:flex;align-items:center;gap:8px}
+.qbox{display:inline-flex;gap:3px}
+.qbox b{display:inline-grid;place-items:center;width:1.45em;height:1.45em;border:1.5px solid var(--ink);font-family:var(--body);font-weight:600;font-size:.92em;font-variant-numeric:tabular-nums}
+.tag{font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:4px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+.figs.mini .fig svg{max-height:240px;width:auto}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:30px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.part-body{margin:10px 0 0 calc(2.2em + 8px);display:flex;flex-direction:column;gap:10px}
+.eq{white-space:nowrap}
+.ov{text-decoration:overline}
+.warn{color:var(--warn)}
+.mixg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px 22px}
+.mixg fieldset{border:1px solid var(--rule);border-radius:8px;padding:10px 12px;margin:0;min-width:0}
+.mixg legend{font-weight:600;padding:0 6px}
+.mixg label{display:flex;gap:8px;align-items:flex-start;padding:5px 0;cursor:pointer;line-height:1.3}
+.mixg input{margin-top:3px;flex:none;width:17px;height:17px}
+.mixsum{margin:0;padding-left:1.2em}
+.mixsum li{margin:2px 0}
+ul.opts{margin:6px 0 0;padding-left:1.2em}
+.why{border:1.5px dashed var(--accent);border-radius:6px;padding:8px 12px;font-size:.95rem}
+.why b{color:var(--accent)}
+.why-s{color:var(--accent);font-size:.88rem}
+
+/* ---- answer space ---- */
+.ans{border:1.5px solid var(--muted);border-radius:6px;overflow:hidden;background:var(--paper)}
+.ans-label{display:flex;justify-content:space-between;gap:8px;font-size:.78rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--rule)}
+textarea.type{display:block;width:100%;min-height:6.5em;border:0;border-bottom:1px solid var(--rule);background:var(--paper);padding:10px 12px;resize:vertical;line-height:1.5}
+textarea.type:focus{outline:none;box-shadow:inset 3px 0 0 var(--accent)}
+.typed{padding:10px 12px;border-bottom:1px solid var(--rule);white-space:pre-wrap;min-height:2.5em}
+.typed.empty{color:var(--muted);font-style:italic}
+textarea.green{display:block;width:100%;min-height:4.5em;border:0;border-bottom:1px solid var(--rule);background:var(--green-tint);color:var(--green);padding:10px 12px;resize:vertical;font-weight:500}
+textarea.green::placeholder{color:var(--green);opacity:.7;font-weight:400}
+textarea.green:focus{outline:none;box-shadow:inset 3px 0 0 var(--green)}
+.typed.green-text{color:var(--green);font-weight:500;background:var(--green-tint)}
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--rule)}
+.tool{background:transparent;border:1.5px solid var(--rule);border-radius:5px;padding:3px 10px;font-weight:600;font-size:.88rem}
+.tool[aria-pressed="true"]{border-color:var(--ink);background:var(--tint)}
+.tools.g .tool[aria-pressed="true"]{border-color:var(--green);color:var(--green);background:var(--green-tint)}
+.tools .sp{flex:1}
+.pad{position:relative;background:#fff;touch-action:none}
+.pad canvas{display:block;width:100%;aspect-ratio:800/380;cursor:crosshair}
+.pad.ro canvas{cursor:default}
+.pad.scroll{touch-action:auto}
+.pad .tap{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.55);border:0;color:#111a2e;font-weight:600}
+.tap[hidden],.tool[hidden]{display:none}
+.pad .tap span{background:#fff;border:1.5px solid #55617a;border-radius:6px;padding:8px 16px}
+
+/* ---- locking, mark scheme, self-marking ---- */
+.lockbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.lock{background:var(--ink);color:var(--paper);border:0;border-radius:6px;padding:8px 18px;font-weight:600}
+.lock.g{background:var(--green)}
+.confirm{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--tint);border-radius:6px;padding:8px 12px}
+.locked-note{font-size:.9rem;font-weight:600;color:var(--muted);margin:0}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.74rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.ms-note{margin-top:8px;padding-top:6px;border-top:1px dashed var(--rule);font-size:.95rem;color:var(--muted)}
+.ms-note ul{margin:2px 0 0;padding-left:1.2em}
+.selfmark{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:var(--green);font-weight:600}
+.mk{min-width:2.4em;border:1.5px solid var(--green);background:transparent;color:var(--green);border-radius:5px;padding:3px 8px;font-weight:700;font-variant-numeric:tabular-nums}
+.mk[aria-pressed="true"]{background:var(--green);color:var(--paper)}
+.mk:disabled{cursor:default;opacity:1}
+.mk:disabled[aria-pressed="false"]{opacity:.35}
+.check{border-left:4px solid var(--muted);background:var(--bg);border-radius:0 6px 6px 0;padding:10px 14px}
+.check .ms-tag{color:var(--muted)}
+.check.flag{border-left-color:var(--warn);background:var(--warn-tint)}
+.check.flag .ms-tag{color:var(--warn)}
+.flagtxt{color:var(--warn);font-weight:700}
+.submit-box{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.result{border-left:4px solid var(--green);background:var(--green-tint);border-radius:0 6px 6px 0;padding:12px 16px}
+.result b{color:var(--green)}
+details.sheetdata{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:10px 16px}
+details.sheetdata summary{cursor:pointer;font-weight:600}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:4px 28px;margin-top:8px;font-size:.95rem}
+.dgrid h3{font-size:.76rem;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin:10px 0 2px;grid-column:1/-1;font-family:var(--body)}
+.dgrid div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dotted var(--rule);padding:2px 0}
+.dgrid div span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
+
+/* ---- tables ---- */
+table.res{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+table.res th,table.res td{border-bottom:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+table.res thead th{font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink)}
+table.res td.num,table.res th.num{text-align:right}
+table.res tbody tr:last-child td{border-bottom:0}
+.setrow{border-top:1px solid var(--rule);padding-top:12px}
+textarea.io{width:100%;min-height:8em;font-family:var(--mono);font-size:.82rem;background:var(--paper);border:1.5px solid var(--rule);border-radius:6px;padding:8px}
+
+/* ---- analysis ---- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.tile{background:var(--paper);border:1px solid var(--rule);border-top:3px solid var(--ink);border-radius:8px;padding:12px 16px}
+.tile-v{font-family:var(--display);font-size:1.8rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.15}
+.tile-l{font-weight:600;margin-top:2px}
+.tile-s{color:var(--muted);font-size:.88rem}
+.mrow{display:grid;grid-template-columns:minmax(9em,15em) 1fr 3.2em 4.6em;gap:10px;align-items:center}
+.mlabel{text-align:left}
+.mval{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.mn{font-size:.85rem;font-variant-numeric:tabular-nums;text-align:right}
+.meter{position:relative;height:10px;background:var(--rule);border-radius:2px}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
+.meter b{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:1px}
+i.h1,.swatch.h1{background:var(--h1)} i.h2,.swatch.h2{background:var(--h2)} i.h3,.swatch.h3{background:var(--h3)} i.h4,.swatch.h4{background:var(--h4)}
+td.h1{background:var(--c1)} td.h2{background:var(--c2)} td.h3{background:var(--c3)} td.h4{background:var(--c4)}
+table.heat{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100%}
+table.heat th,table.heat td{border:1px solid var(--rule);padding:6px 8px}
+table.heat thead th{font-size:.76rem;font-weight:600;vertical-align:bottom;max-width:7.5em;line-height:1.2;color:var(--muted)}
+table.heat tbody th{text-align:left;white-space:nowrap;font-weight:400}
+td.hc{text-align:center;font-weight:600;min-width:3em}
+tr.classrow th,tr.classrow td{border-top:2px solid var(--ink);font-weight:700}
+.hardq{border-top:1px solid var(--rule);padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60ch;font-size:.9rem}
+.trunc2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+details.mist{border-top:1px solid var(--rule);padding-top:8px}
+details.mist summary{cursor:pointer}
+details.mist ul{margin:6px 0 0;padding-left:1.2em;font-size:.95rem}
+
+/* ---- builder ---- */
+ol.trayl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ol.trayl li{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid var(--rule);padding-top:8px}
+ol.trayl li > div:first-child{min-width:0}
+.tray{border-top:3px solid var(--accent)}
+.sheet.bq{gap:12px;padding:18px clamp(14px,3vw,28px)}
+.bq details summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.toast{position:fixed;left:16px;right:16px;bottom:16px;max-width:560px;margin:0 auto;background:var(--bad);color:#fff;border-radius:6px;padding:10px 14px;font-weight:600;z-index:20}
+
+@media (max-width:760px){ .login-wrap{grid-template-columns:1fr} .hero canvas{height:110px} }
+@media (max-width:640px){
+  .pick{grid-template-columns:1fr} .pick > div{grid-column:auto !important}
+  .mrow{grid-template-columns:1fr 3.2em} .mrow .meter{grid-column:1 / -1;grid-row:2} .mn{display:none}
+  ol.trayl li{flex-direction:column;align-items:flex-start}
+}
+@media (max-width:520px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .part-body{margin-left:0} .eq{white-space:normal} .bar-ctx{margin-left:0;flex-basis:100%;text-align:left;order:3} .bar-btn{margin-left:auto} h1{font-size:1.5rem} }
+@media (prefers-reduced-motion: reduce){ .bar i{transition:none} }
+</style>
+</head>
+<body>
+<header class="appbar"><div class="appbar-in" id="bar"></div></header>
+<main class="wrap" id="app"></main>
+<script src="bank-mf.js"></script>
+<script src="bank-el.js"></script>
+<script src="bank-pqw.js"></script>
+<script src="bank-nuc.js"></script>
+<script src="bank-mech.js"></script>
+<script src="bank-mat.js"></script>
+<script src="bank-mea.js"></script>
+<script src="bank-efd.js"></script>
+<script src="bank-grv.js"></script>
+<script src="bank-thm.js"></script>
+<script src="bank-fmx.js"></script>
+<script src="bank-ast.js"></script>
+<script>
+'use strict';
+
+/* ================= homework content ================= */
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const eq = s => `<span class="eq">${s}</span>`;
+
+/* ================= question bank: packs built from the question generators ================= */
+const BANK = {
+  MF: { name: 'Magnetic fields', year: 'Year 13', engine: window.BANK_MF, order: ['FW', 'MC', 'FL', 'EI', 'AC', 'TR'] },
+  EL: { name: 'Electricity', year: 'Year 12', engine: window.BANK_EL, order: ['BA', 'IV', 'RS', 'SP', 'EP', 'PD', 'EMF'] },
+  PT: { name: 'Particles', year: 'Year 12', engine: window.BANK_PQW, order: ['PA', 'PN', 'PP', 'PI', 'PC'] },
+  QU: { name: 'Quantum phenomena', year: 'Year 12', engine: window.BANK_PQW, order: ['QP', 'QE', 'QW'] },
+  WA: { name: 'Waves', year: 'Year 12', engine: window.BANK_PQW, order: ['WP', 'WL', 'WS', 'WI', 'WD', 'WR'] },
+  MK: { name: 'Mechanics', year: 'Year 12', engine: window.BANK_MECH, order: ['VS', 'MO', 'SL', 'PJ', 'NL', 'MT', 'WE', 'CE'] },
+  MAT: { name: 'Materials', year: 'Year 12', engine: window.BANK_MAT, order: ['HK', 'SN', 'YM'] },
+  MEA: { name: 'Measurements and their errors', year: 'Year 12', engine: window.BANK_MEA, order: ['UN', 'UE', 'UC'] },
+  NU: { name: 'Nuclear physics', year: 'Year 13', engine: window.BANK_NUC, order: ['NR', 'NA', 'ND', 'NI', 'NS', 'NE', 'NF'] },
+  FMX: { name: 'Further mechanics', year: 'Year 13', engine: window.BANK_FMX, order: ['CM', 'SH', 'SS', 'FV'] },
+  THM: { name: 'Thermal physics', year: 'Year 13', engine: window.BANK_THM, order: ['TE', 'TG', 'TK'] },
+  GRV: { name: 'Gravitational fields', year: 'Year 13', engine: window.BANK_GRV, order: ['GN', 'GP', 'GO'] },
+  EFD: { name: 'Electric fields and capacitors', year: 'Year 13', engine: window.BANK_EFD, order: ['CL', 'EF', 'EV', 'CP', 'CD'] },
+  AST: { name: 'Astrophysics', year: 'Year 13', engine: window.BANK_AST, order: ['AT', 'AM', 'AB', 'AH', 'AZ'] }
+};
+const SUB_OF = {}; Object.keys(BANK).forEach(k => BANK[k].order.forEach(t => { SUB_OF[t] = k; }));
+const tplTopic = tpl => tpl.replace(/\d+/, '');
+// question types that draw on a second sub-topic as well as their own: used to pick questions that link sub-topics together
+const LINKS = {
+  FL1: ['EI'], FL2: ['EI'], FL3: ['EI'], FL4: ['EI'], FL6: ['EI'], FL7: ['EI'],
+  EI2: ['FL', 'AC'], EI3: ['FW'], EI7: ['FL'], EI8: ['FL'], EI11: ['FL', 'AC'], EI12: ['FL', 'AC'],
+  TR1: ['EI', 'AC'], TR4: ['AC'], TR5: ['AC'], TR8: ['EI'], TR10: ['EI'], AC5: ['EP'], AC6: ['EP'], TR3: ['EP'], TR9: ['EP'],
+  MC4: ['PA'], MC6: ['PA'], MC5: ['QE', 'BA'], MC10: ['QE'],
+  IV1: ['SP'], IV2: ['EP'], IV4: ['SP'], IV5: ['SP'], IV6: ['BA', 'EP'], IV8: ['SP', 'EP'], IV9: ['SP'], IV10: ['SP'], IV12: ['EP'], IV13: ['SP', 'EP'],
+  PD2: ['IV'], PD3: ['EP'], PD6: ['IV'], PD8: ['IV'], PD9: ['SP', 'EP'], PD10: ['SP'], PD11: ['EP'], PD12: ['IV'],
+  SP1: ['EP'], SP2: ['EP'], SP5: ['EP'], SP6: ['BA', 'EP'], SP8: ['EP'], SP11: ['EP'], SP12: ['EP'],
+  EMF1: ['EP'], EMF5: ['EP'], EMF6: ['SP'], EMF7: ['SP', 'EP'], EMF8: ['EP'], EMF9: ['EP'], EMF12: ['EP'], EMF13: ['SP'],
+  BA1: ['EP'], BA4: ['EP', 'QE'], EP2: ['RS'], EP4: ['SP'], RS4: ['EP'], RS5: ['BA'],
+  PA4: ['PN'], PN2: ['PA'], PN3: ['PC', 'PA'], PN4: ['PA'], PN5: ['PI'], PI2: ['PN', 'PC'], PI4: ['PN', 'PC'], PI5: ['PN'], PC3: ['PN', 'PI'], PC5: ['PI', 'PP'], PC2: ['PP'],
+  PP1: ['QP', 'WP'], PP5: ['WP'], PP2: ['QE'],
+  QP1: ['PP'], QP2: ['PP'], QP3: ['QE'], QP6: ['PP'], QE1: ['PP'], QE2: ['PP'], QE4: ['PP'], QE5: ['PP', 'WD'], QE6: ['QW'],
+  QW2: ['QE', 'WD'], QW3: ['QP', 'WD'], QW4: ['WD'], QW5: ['QE'],
+  WL1: ['WP'], WL3: ['WP'], WL4: ['WP'], WL5: ['WP'], WS1: ['WP'], WS2: ['WP'], WS3: ['WP', 'WI'], WS5: ['WP'],
+  WI3: ['WP'], WI5: ['WD'], WD4: ['WI'], WD5: ['QE'], WD6: ['WP'], WR1: ['WP'], WP4: ['WR'], WP5: ['WR'],
+  NR3: ['NS'], NR5: ['NS'], NS3: ['NR', 'QW'], NS5: ['NR'], NA4: ['ND'], ND7: ['NA', 'NI'], NI1: ['PN'], NI2: ['PN', 'NA'], NI3: ['PP', 'QE'], NI4: ['PN', 'PI'], NI5: ['NA', 'PP'], NI6: ['PN', 'PA'],
+  NE1: ['PA'], NE2: ['NF'], NE3: ['NF'], NE5: ['NI', 'NA'], NF4: ['NA', 'NI'], NF5: ['NE'], NF1: ['NE'], ND3: ['NA'], ND4: ['NI'],
+  VS1: ['WE'], VS4: ['NL'], MO5: ['VS'], SL6: ['WE'], PJ1: ['SL', 'VS'], PJ2: ['VS', 'SL'], PJ4: ['SL'], PJ5: ['VS'], NL1: ['SL'], NL3: ['VS', 'SL'], NL5: ['MT'], NL7: ['SL'],
+  MT1: ['WE'], MT2: ['WE'], MT3: ['NL'], MT5: ['CE'], MT6: ['NL'], MT7: ['NL'], WE1: ['VS'], WE2: ['NL', 'VS'], WE4: ['CE'], WE6: ['SL', 'CE'], CE1: ['WE'], CE3: ['WE', 'SL'], CE4: ['SL'], SL3: ['CE'], FW6: ['NL', 'SL'], FW3: ['VS'],
+  HK2: ['SN'], HK4: ['SN'], HK6: ['UE'], SN3: ['CE', 'HK'], SN4: ['CE'], SN1: ['HK'], YM2: ['SN'], YM4: ['UC', 'HK'], YM6: ['SN'], UC1: ['HK'], UC2: ['BA'], UC3: ['SS'], UC5: ['YM'], UE4: ['RS'], UE5: ['SS'], UE3: ['SL'],
+  CL2: ['GN', 'CM'], CL3: ['VS'], CL5: ['GN'], EF3: ['PJ'], EF6: ['EV'], EV3: ['EF'], EV5: ['EF'], EV6: ['QE'], EV4: ['EF'], EF1: ['NL'], MC3: ['EF'], MC5: ['QE', 'BA', 'EV'], NR3: ['NS', 'EV'], NR5: ['NS', 'EV'],
+  GN1: ['GO'], GP4: ['GN'], GP6: ['GO'], GP3: ['CE'], GO1: ['CM'], GO2: ['CM'], GO4: ['CM'], GO6: ['GN'], GP5: ['GN'],
+  TG1: ['TK'], TG5: ['TK'], TG6: ['TK'], TG4: ['WE'], TK1: ['TG'], TK6: ['TG'], TE6: ['EP'], TE1: ['EP'],
+  CM2: ['NL'], CM3: ['CE'], CM4: ['VS'], CM6: ['NL'], SH5: ['SS'], SS1: ['HK'], SS2: ['UE'], SS4: ['UC'], SS3: ['SH'], FV2: ['SS'], FV4: ['SS'], FV5: ['SS'],
+  AT4: ['WD'], AB4: ['QE'], AB3: ['AH'], AH3: ['GP'], AH4: ['AB', 'AM'], AH5: ['NS'], AM6: ['AZ'], AZ3: ['CM'], AZ4: ['AB'], AB5: ['NA'],
+  CP2: ['EF'], CP4: ['EP'], CP6: ['EP'], CP5: ['EF'], CD1: ['CP'], CD2: ['CP', 'ND'], CD3: ['CP'], CD4: ['CP'], CD6: ['CP']
+};
+// a homework made from several sub-topics: questions that link the chosen sub-topics first, then about the same number from each
+function generateMix(topics, marks, useLinks, seedStr){
+  const rnd = seeded(seedStr), S = new Set(topics), items = [], count = {}, used = new Set(); let total = 0;
+  topics.forEach(t => { count[t] = 0; });
+  const tplsOf = t => BANK[SUB_OF[t]].engine.TEMPLATES.filter(x => tplTopic(x) === t);
+  const add = (tpl, why, slack = 3) => {
+    const sub = SUB_OF[tplTopic(tpl)], code = tpl + '-' + (10000 + Math.floor(rnd() * 90000)); let q;
+    try { q = makeQ(sub, code); } catch (e) { return false; }
+    if ((q.errors && q.errors.length) || total + q.marks > marks + slack) return false;
+    items.push(Object.assign({ sub, code, marks: q.marks, topic: q.topic }, why ? { why, link: true } : {})); used.add(tpl); total += q.marks; count[q.topic]++; return true;
+  };
+  if (useLinks && topics.length > 1){
+    const cands = rnd.shuffle(topics.flatMap(tplsOf).filter(x => (LINKS[x] || []).some(o => S.has(o))));
+    const maxLinks = Math.max(1, Math.round(marks / 8 * 0.35)), pairs = new Set();
+    for (const tpl of cands){
+      if (items.length >= maxLinks) break;
+      const home = tplTopic(tpl), others = LINKS[tpl].filter(o => S.has(o)), key = [home, ...others].sort().join('+');
+      if (pairs.has(key) || count[home] >= 1) continue;
+      const low = t => { const n = topicName(t); return /^[A-Z][a-z]/.test(n) ? n[0].toLowerCase() + n.slice(1) : n; };
+      if (add(tpl, `This question links ${low(home)} with ${others.map(low).join(' and ')}.`)) pairs.add(key);
+    }
+  }
+  const queue = {}; topics.forEach(t => { queue[t] = rnd.shuffle(tplsOf(t).filter(x => !used.has(x))); });
+  const blocked = new Set();
+  while (total < marks - 2 && blocked.size < topics.length){
+    const t = topics.filter(x => !blocked.has(x)).sort((a, b) => count[a] - count[b] || topics.indexOf(a) - topics.indexOf(b))[0];
+    if (!queue[t].length) queue[t] = rnd.shuffle(tplsOf(t));
+    const i = queue[t].findIndex(tpl => add(tpl));          // the first unused type that fits in the marks that are left
+    if (i < 0) blocked.add(t); else queue[t].splice(i, 1);
+  }
+  if (total < marks - 4){                                     // nothing else fits exactly: allow one question that runs a little over
+    const t = topics.slice().sort((a, b) => count[a] - count[b])[0]; rnd.shuffle(tplsOf(t).filter(x => !used.has(x))).some(tpl => add(tpl, null, 6));
+  }
+  const pos = t => Object.keys(BANK).indexOf(SUB_OF[t]) * 100 + BANK[SUB_OF[t]].order.indexOf(t);
+  items.sort((a, b) => (a.link ? 1 : 0) - (b.link ? 1 : 0) || pos(a.topic) - pos(b.topic));
+  return { items, total, count, links: items.filter(x => x.link).length, missing: topics.filter(t => !count[t]) };
+}
+// pack lengths: about 1.5 minutes per mark, which includes self-marking and corrections
+const SIZES = [{ min: 30, marks: 20, label: 'About 30 minutes', short: '30 minutes' }, { min: 60, marks: 40, label: 'About 1 hour', short: '1 hour' },
+  { min: 90, marks: 60, label: 'About 1.5 hours', short: '1.5 hours' }, { min: 120, marks: 80, label: 'About 2 hours', short: '2 hours' }];
+const PACK_LETTERS = 'ABCDE';
+function parsePack(id){
+  const [sub, topic, mins, letter] = String(id).split('.'), B = BANK[sub], size = SIZES.find(x => x.min === +mins);
+  if (!B || !B.engine || !size || !(topic === 'ALL' || B.order.includes(topic)) || !letter || letter.length !== 1 || !PACK_LETTERS.includes(letter)) return null;
+  return { sub, topic, B, size, letter, topicName: topic === 'ALL' ? 'whole topic' : B.engine.TOPICS[topic] };
+}
+function packTitle(id){ const p = parsePack(id); return p ? `${p.B.name}: ${p.topicName} · ${p.size.short} · Pack ${p.letter}` : null; }
+function seeded(str){                       // small repeatable random-number generator, so a pack is always the same
+  let a = 2166136261; for (const ch of str){ a ^= ch.charCodeAt(0); a = Math.imul(a, 16777619); }
+  const r = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.shuffle = arr => { const b = arr.slice(); for (let i = b.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+  return r;
+}
+function chooseQuestions(p, id){            // picks question types in turn from each sub-topic until the marks reach the target
+  const E = p.B.engine, rnd = seeded(id), topics = p.topic === 'ALL' ? rnd.shuffle(p.B.order) : [p.topic];
+  const queue = {}; topics.forEach(t => { queue[t] = []; });
+  const next = t => { if (!queue[t].length) queue[t] = rnd.shuffle(E.TEMPLATES.filter(x => x.replace(/\d+/, '') === t)); return queue[t].shift(); };   // every type is used before any repeats
+  const qs = []; let total = 0, turn = 0, misses = 0;
+  while (total < p.size.marks - 2 && misses < 40){
+    const tpl = next(topics[turn % topics.length]); let q;
+    try { q = normQ(E.makeQuestion(tpl, 10000 + Math.floor(rnd() * 90000))); } catch (e) { misses++; continue; }
+    if ((q.errors && q.errors.length) || total + q.marks > p.size.marks + 3){ misses++; continue; }
+    qs.push(q); total += q.marks; turn++;
+  }
+  return qs.sort((a, b) => p.B.order.indexOf(a.topic) - p.B.order.indexOf(b.topic));
+}
+const MIN_PER_MARK = 1.5;
+const fmtMins = m => { m = Math.max(5, Math.round(m / 5) * 5); return m < 60 ? `${m} minutes` : `${Math.floor(m / 60)} hour${m >= 120 ? 's' : ''}${m % 60 ? ' ' + (m % 60) + ' minutes' : ''}`; };
+const INTRO = len => `This homework should take about ${len}. Answer every part in the space below it: type, draw on the graph paper, or both. When you are happy with an answer, lock it in to see the mark scheme, then mark your own work in green. Mark schemes carry unrounded values through each calculation, so count your answer as correct if it only differs in the last figure because you rounded earlier.`;
+// figures are numbered in the order the question mentions them
+function normQ(q){
+  if (q._n) return q; q._n = true;
+  const figs = q.figures || [q.circuitSvg, q.graph].filter(Boolean), a = q.stem.indexOf('Figure 1'), b = q.stem.indexOf('Figure 2');
+  if (figs.length === 2 && a >= 0 && b >= 0 && b < a){
+    const sw = t => t.replace(/Figure ([12])/g, (m, d) => 'Figure ' + (3 - d));
+    q.figures = [figs[1], figs[0]]; q.stem = sw(q.stem);
+    q.parts.forEach(P => { P.q = sw(P.q); P.ms = sw(P.ms); if (P.guide) P.guide = P.guide.map(sw); });
+  }
+  return q;
+}
+function makeQ(sub, code){ const i = code.lastIndexOf('-'), E = BANK[sub].engine, q = normQ(E.makeQuestion(code.slice(0, i), +code.slice(i + 1))); q.sub = sub; q.E = E; return q; }
+function buildHW(id, title, intro, qs){
+  const part = (P, E) => {
+    const ansShow = P.ans !== undefined && !P.options ? (P.sfMark ? P.sfMark.shown : (P.show || E.disp(P.ans))) : null;
+    const out = { q: P.q, marks: P.marks, ms: P.ms, first: P.ms.split('<br>')[0], sf: !!P.sfMark, unit: !!P.unitMark,
+      raw: { ans: P.ans, unit: P.unit, options: P.options, correct: P.correct, show: ansShow, ms: P.ms },
+      kind: /^(Sketch|Draw)|\b(sketch|draw)\b/i.test(P.q) ? 'graph' : P.ans !== undefined && !P.options ? (/read(ing)? from/i.test((P.guide || []).join(' ')) || /gradient of the graph|Use Figure \d to determine/i.test(P.q) ? 'graph' : 'calc') : 'written' };
+    if (P.options && /listed|^Which|^Identify/.test(P.q)) out.q += '<ul class="opts">' + P.options.map(o => `<li>${o}</li>`).join('') + '</ul>';
+    if (P.ans !== undefined && !P.options) out.ms += `<div class="ms-ans">Answer: <b>${P.sfMark ? P.sfMark.shown : (P.show || E.disp(P.ans))}${P.unit === '°' ? '' : ' '}${P.unit}</b>` +
+      (P.sfMark ? ` <span class="ms-sf">(to ${P.sfMark.accept.join(' or ')} significant figures)</span>` : P.abs === undefined && !P.tol && !P.show ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : '') + '</div>';
+    if (P.guide && P.guide.length) out.note = '<span class="ms-tag">Additional guidance</span><ul>' + P.guide.map(g => `<li>${g}</li>`).join('') + '</ul>';
+    return out;
+  };
+  const hw = { id, title, intro, codes: qs.map(q => q.code),
+    questions: qs.map(q => ({ tag: q.topicName, code: q.code, sub: q.sub, topic: q.topic, tpl: q.id, stem: q.stem, figs: q.figures || [q.circuitSvg, q.graph].filter(Boolean), parts: q.parts.map(P => part(P, q.E)) })) };
+  hw.questions.forEach((Q, qi) => Q.parts.forEach((P, pi) => { P.id = (qi + 1) + String.fromCharCode(97 + pi); P.letter = '(' + String.fromCharCode(97 + pi) + ')'; }));
+  hw.allParts = hw.questions.flatMap(Q => Q.parts);
+  hw.total = hw.allParts.reduce((a, x) => a + x.marks, 0);
+  return hw;
+}
+function withWhy(hw, items){ hw.questions.forEach((Q, i) => { if (items[i] && items[i].why) Q.why = items[i].why; }); return hw; }
+function toHomework(p, id, qs){ qs.forEach(q => { q.sub = p.sub; q.E = p.B.engine; }); return buildHW(id, packTitle(id), INTRO(p.size.short), qs); }
+const PACKS = {};
+function getHW(id){                          // a pack that has been set keeps its saved list of question codes
+  if (PACKS[id] !== undefined) return PACKS[id];
+  if (String(id).startsWith('CU.')){
+    const c = DB.custom[id]; if (!c) return (PACKS[id] = null);
+    const qs = []; c.items.forEach(it => { try { qs.push(makeQ(it.sub, it.code)); } catch (e) {} });
+    return (PACKS[id] = withWhy(buildHW(id, c.title, INTRO(fmtMins(qs.reduce((a, q) => a + q.marks, 0) * MIN_PER_MARK)), qs), c.items));
+  }
+  const p = parsePack(id); if (!p) return (PACKS[id] = null);
+  const saved = DB.packs && DB.packs[id]; let qs;
+  try { qs = saved ? saved.map(c => { const [tpl, seed] = c.split('-'); return normQ(p.B.engine.makeQuestion(tpl, +seed)); }) : chooseQuestions(p, id); } catch (e) { qs = chooseQuestions(p, id); }
+  return (PACKS[id] = toHomework(p, id, qs));
+}
+let HW = null, ALL_PARTS = [], TOTAL = 0;       // the homework currently on screen
+function setHW(hw){ HW = hw; ALL_PARTS = hw.allParts; TOTAL = hw.total; }
+let CURQ = 0;                                   // the question currently on screen
+
+/* ================= storage (this browser only, for the mock-up) ================= */
+const KEY = 'hw-mockup-v2';
+let DB = { students: {}, classes: {}, packs: {}, staff: {} };
+try { const s = localStorage.getItem(KEY); if (s) DB = JSON.parse(s) || DB; } catch (e) {}
+let saveTimer = null;
+let toastEl = null;
+function saveFailed(failed){
+  if (failed && !toastEl){ toastEl = h('div', { class: 'toast', role: 'alert' }, 'Your latest work could not be saved in this browser. Its storage may be full or blocked.'); document.body.append(toastEl); }
+  else if (!failed && toastEl){ toastEl.remove(); toastEl = null; }
+}
+function save(now){ clearTimeout(saveTimer); const go = () => { try { localStorage.setItem(KEY, JSON.stringify(DB)); saveFailed(false); } catch (e) { saveFailed(true); } }; if (now) go(); else saveTimer = setTimeout(go, 300); }
+window.addEventListener('pagehide', () => save(true));          // never lose the last few keystrokes
+const nameKey = n => n.trim().toLowerCase().replace(/\s+/g, ' ');
+function workFor(stu){
+  stu.work = stu.work || {};
+  const w = stu.work[HW.id] = stu.work[HW.id] || { parts: {}, submitted: null };
+  ALL_PARTS.forEach(p => { w.parts[p.id] = w.parts[p.id] || { text: '', strokes: [], locked: null, green: '', mark: null }; });
+  return w;
+}
+function stats(w){
+  let locked = 0, marked = 0, score = 0;
+  ALL_PARTS.forEach(p => { const s = w.parts[p.id]; if (s.locked) locked++; if (s.markLocked){ marked++; score += s.mark; } });
+  return { locked, marked, score, n: ALL_PARTS.length };
+}
+
+/* ================= tiny DOM helper ================= */
+function h(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  for (const k in attrs || {}){
+    const v = attrs[k];
+    if (k === 'class') e.className = v; else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v === true) e.setAttribute(k, ''); else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  kids.flat(Infinity).forEach(c => { if (c == null || c === false) return; e.append(c.nodeType ? c : document.createTextNode(c)); });
+  return e;
+}
+const app = document.getElementById('app');
+let ME = null;   // logged-in student record
+let STAFF = null;   // signed-in teacher or admin (kept in memory only: a refresh signs them out)
+
+/* ================= drawing pad ================= */
+const LW = 800, LH = 380, INK = '#111', GREEN = '#0b8a3a';
+function makePad(st, opts){
+  // opts: { readOnly, onChange }
+  const phase = () => st.locked ? 'g' : 'k';
+  let tool = 'pen', cur = null, clearArmed = false;
+  const cv = h('canvas', { 'aria-label': 'Drawing space' });
+  const pad = h('div', { class: 'pad' + (opts.readOnly ? ' ro' : '') }, cv);
+  const ctx = cv.getContext('2d');
+  // on a touch screen a finger on the paper would stop the page scrolling, so drawing has to be switched on first
+  const coarse = !opts.readOnly && window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  let drawOn = !coarse, doneBtn = null;
+  const tap = coarse ? h('button', { type: 'button', class: 'tap', onclick: () => setDraw(true) }, h('span', {}, 'Tap to draw')) : null;
+  function setDraw(on){ drawOn = on; pad.classList.toggle('scroll', !on); if (tap) tap.hidden = on; if (doneBtn) doneBtn.hidden = !on; }
+  if (tap){ pad.append(tap); pad.classList.add('scroll'); }
+
+  function stroke(s){
+    ctx.strokeStyle = s.c === 'g' ? GREEN : INK; ctx.lineWidth = s.c === 'g' ? 3 : 2.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (s.t === 'tick'){ ctx.lineWidth = 4; ctx.moveTo(s.x - 14, s.y); ctx.lineTo(s.x - 4, s.y + 12); ctx.lineTo(s.x + 18, s.y - 16); }
+    else if (s.t === 'cross'){ ctx.lineWidth = 4; ctx.moveTo(s.x - 12, s.y - 12); ctx.lineTo(s.x + 12, s.y + 12); ctx.moveTo(s.x - 12, s.y + 12); ctx.lineTo(s.x + 12, s.y - 12); }
+    else { const p = s.p; ctx.moveTo(p[0], p[1]); if (p.length === 2) ctx.lineTo(p[0] + .1, p[1] + .1); for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]); }
+    ctx.stroke();
+  }
+  function redraw(){
+    const r = cv.getBoundingClientRect(); if (!r.width) return;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.width * LH / LW * dpr);
+    const k = cv.width / LW; ctx.setTransform(k, 0, 0, k, 0, 0);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, LW, LH);
+    ctx.lineWidth = 1;                                         // graph paper: 20-unit squares, heavier every fifth line
+    for (let x = 0; x <= LW; x += 20){ ctx.strokeStyle = x % 100 ? '#e6ecf5' : '#c5d1e4'; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, LH); ctx.stroke(); }
+    for (let y = 0; y <= LH; y += 20){ ctx.strokeStyle = y % 100 ? '#e6ecf5' : '#c5d1e4'; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(LW, y); ctx.stroke(); }
+    st.strokes.forEach(stroke);
+  }
+  const pos = e => { const r = cv.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / r.width * LW * 10) / 10, Math.round((e.clientY - r.top) / r.width * LW * 10) / 10]; };
+  function eraseAt(x, y){
+    const before = st.strokes.length;
+    st.strokes = st.strokes.filter(s => {
+      if (s.c !== phase()) return true;               // never touch work from the other phase
+      if (s.t) return Math.hypot(s.x - x, s.y - y) > 20;
+      for (let i = 0; i < s.p.length; i += 2) if (Math.hypot(s.p[i] - x, s.p[i + 1] - y) < 12) return false;
+      return true; });
+    if (st.strokes.length !== before){ redraw(); opts.onChange(); }
+  }
+  if (!opts.readOnly){
+    cv.addEventListener('pointerdown', e => {
+      if (!drawOn) return;
+      e.preventDefault(); cv.setPointerCapture(e.pointerId); const [x, y] = pos(e);
+      if (tool === 'pen'){ cur = { c: phase(), p: [x, y] }; st.strokes.push(cur); stroke(cur); }
+      else if (tool === 'eraser'){ cur = 'erase'; eraseAt(x, y); }
+      else { st.strokes.push({ c: 'g', t: tool, x, y }); redraw(); opts.onChange(); }
+    });
+    cv.addEventListener('pointermove', e => {
+      if (!cur) return; const [x, y] = pos(e);
+      if (cur === 'erase') return eraseAt(x, y);
+      const p = cur.p, lx = p[p.length - 2], ly = p[p.length - 1]; if (Math.hypot(x - lx, y - ly) < 1.5) return;
+      p.push(x, y);
+      ctx.strokeStyle = cur.c === 'g' ? GREEN : INK; ctx.lineWidth = cur.c === 'g' ? 3 : 2.6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(x, y); ctx.stroke();
+    });
+    const end = () => { if (cur && cur !== 'erase') opts.onChange(); cur = null; };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  }
+  new ResizeObserver(redraw).observe(cv);
+
+  // toolbar
+  function toolbar(){
+    if (opts.readOnly) return null;
+    const g = !!st.locked, bar = h('div', { class: 'tools' + (g ? ' g' : '') });
+    const tbtn = (id, label) => h('button', { type: 'button', class: 'tool', 'aria-pressed': String(tool === id), onclick: () => { tool = id; bar.querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.t === id))); } , 'data-t': id, html: label });
+    bar.append(tbtn('pen', `<span class="swatch" style="background:${g ? GREEN : INK}"></span>${g ? 'Green pen' : 'Pen'}`), tbtn('eraser', 'Eraser'));
+    if (g) bar.append(tbtn('tick', '✓ Tick'), tbtn('cross', '✗ Cross'));
+    bar.append(h('span', { class: 'sp' }));
+    if (coarse){ doneBtn = h('button', { type: 'button', class: 'tool', hidden: true, onclick: () => setDraw(false) }, 'Done drawing'); bar.append(doneBtn); }
+    bar.append(h('button', { type: 'button', class: 'tool', onclick: () => {
+      for (let i = st.strokes.length - 1; i >= 0; i--) if (st.strokes[i].c === phase()){ st.strokes.splice(i, 1); break; }
+      redraw(); opts.onChange(); } }, 'Undo'));
+    const clr = h('button', { type: 'button', class: 'tool', onclick: () => {
+      if (!clearArmed){ clearArmed = true; clr.textContent = 'Click again to clear'; setTimeout(() => { clearArmed = false; clr.textContent = g ? 'Clear green' : 'Clear drawing'; }, 2500); return; }
+      st.strokes = st.strokes.filter(s => s.c !== phase()); clearArmed = false; clr.textContent = g ? 'Clear green' : 'Clear drawing'; redraw(); opts.onChange(); } }, g ? 'Clear green' : 'Clear drawing');
+    bar.append(clr);
+    return bar;
+  }
+  return { pad, toolbar: toolbar() };
+}
+
+/* ================= correction rules (run instantly, no AI) ================= */
+// common words that almost any genuine correction contains; keyboard mashing almost never does
+const COMMON = new Set(('a an the i it is was be been should would not no to of in on at for from by with and or but so as because than then ' +
+  'this that these those my me forgot forget missed wrong right correct mistake used use instead need needed needs have had has did do ' +
+  'answer method unit units convert converted conversion power ten sign direction force field current wire charge equal equals into out ' +
+  'when same more less larger smaller up down left right zero why how what which per').split(' '));
+function textLooksReal(t){
+  const words = t.match(/[A-Za-z]+|\d+(?:\.\d+)?/g) || [];
+  if (words.length < 4) return false;
+  const real = words.filter(w => /^\d/.test(w) || w.length <= 2 ||                       // numbers and unit symbols (m, cm, N, V, Wb)
+    (w.length <= 20 && /[aeiouy]/i.test(w) && !/(.)\1\1/i.test(w) && !/[bcdfghjklmnpqrstvwxz]{5,}/i.test(w)));
+  const lower = words.map(w => w.toLowerCase());
+  const common = lower.filter(w => COMMON.has(w)).length;
+  return real.length / words.length >= 0.75 && new Set(lower).size >= 3 && common >= 2;
+}
+function greenInk(st){
+  return st.strokes.filter(s => s.c === 'g' && !s.t).reduce((a, s) => { let L = 0; for (let i = 2; i < s.p.length; i += 2) L += Math.hypot(s.p[i] - s.p[i - 2], s.p[i + 1] - s.p[i - 1]); return a + L; }, 0);
+}
+const greenSig = st => st.green.trim() + '|' + st.strokes.filter(k => k.c === 'g' && !k.t).length + '|' + Math.round(greenInk(st));
+function correctionProblem(st){
+  const t = st.green.trim(), ink = greenInk(st);
+  if (t && !textLooksReal(t)) return 'Your typed correction doesn’t read as a real explanation. Write at least a sentence saying what you got wrong and what the right answer or method is.';
+  if (!t && ink === 0) return 'Add your corrections in green (type or draw) before you lock in your mark. Ticks and crosses on their own don’t count.';
+  if (!t && ink < 150) return 'Your green drawing is too small to be a correction. Redraw the correct answer, or type what you got wrong.';
+  return null;
+}
+
+/* ================= Claude's checks (results pasted in by the teacher) ================= */
+DB.checks = DB.checks || {}; DB.classes = DB.classes || {}; DB.students = DB.students || {}; DB.packs = DB.packs || {}; DB.custom = DB.custom || {};
+function checkFor(stu, partId){ const c = (DB.checks[HW.id] || {})[stu.key]; return c ? c[partId] : null; }
+function partIssue(c, s){                      // what Claude's check found for one part, or '' if it agrees
+  if (!c || !s || !s.locked) return '';
+  if (c.correction === 'weak') return 'correction';
+  return s.markLocked && c.suggested !== s.mark ? 'mark' : '';
+}
+function checkFlags(stu){
+  const c = (DB.checks[HW.id] || {})[stu.key] || {}, w = workFor(stu); let n = 0, out = 0;
+  for (const id in c){ const s = w.parts[id]; if (!s) continue; if (s.redo) out++; else if (partIssue(c[id], s)) n++; }
+  return { n, out, checked: Object.keys(c).length > 0 };
+}
+// parts that can be sent back: flagged by the check, locked in, not already with the student, and not redone since this check was loaded
+function sendable(stu){
+  const c = (DB.checks[HW.id] || {})[stu.key] || {}, w = workFor(stu);
+  return ALL_PARTS.filter(P => { const s = w.parts[P.id], k = c[P.id]; return k && !s.redo && partIssue(k, s) && !(s.redone && k.at && s.redone > k.at); });
+}
+function partLabel(P){ const qi = HW.questions.findIndex(Q => Q.parts.includes(P)); return `Q${qi + 1}` + (HW.questions[qi].parts.length > 1 ? ` ${P.letter}` : ''); }
+function sendBack(stu, parts){                  // reopen only these parts; everything else stays locked as it was
+  const c = (DB.checks[HW.id] || {})[stu.key] || {}, w = workFor(stu), now = new Date().toISOString();
+  parts.forEach(P => { const s = w.parts[P.id];
+    s.redoPrev = { mark: s.mark, markLocked: s.markLocked, redone: s.redone || null };
+    s.redo = greenSig(s); s.redoWhy = partIssue(c[P.id], s) || 'mark'; s.redoAt = now; delete s.markLocked; delete s.redone; });
+  if (parts.length){ if (w.submitted) w.submittedPrev = w.submitted; w.submitted = null; w.reopened = now; }
+}
+function withdraw(stu){                         // undo a send-back for any part the student hasn't touched again yet
+  const w = workFor(stu); let n = 0;
+  ALL_PARTS.forEach(P => { const s = w.parts[P.id]; if (!s.redo || !s.redoPrev) return;
+    if (s.mark !== s.redoPrev.mark || greenSig(s) !== s.redo) return;
+    s.markLocked = s.redoPrev.markLocked; if (s.redoPrev.redone) s.redone = s.redoPrev.redone;
+    delete s.redo; delete s.redoWhy; delete s.redoAt; delete s.redoPrev; n++; });
+  if (n && !ALL_PARTS.some(P => w.parts[P.id].redo) && stats(w).marked === stats(w).n){ w.submitted = w.submittedPrev || w.reopened; delete w.reopened; delete w.submittedPrev; }
+  return n;
+}
+const fmtWhen = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+function checkBox(stu, P, st){
+  const c = checkFor(stu, P.id); if (!c) return null;
+  const disagree = st.markLocked && c.suggested !== st.mark, weak = c.correction === 'weak';
+  const box = h('div', { class: 'check' + (disagree || weak || st.redo ? ' flag' : '') },
+    h('span', { class: 'ms-tag' }, disagree || weak ? '⚑ Claude’s check' : 'Claude’s check'),
+    h('div', {}, `Suggested mark: ${c.suggested}/${P.marks}` + (st.markLocked ? ` (self-marked ${st.mark}/${P.marks})` : '')));
+  if (weak) box.append(h('div', {}, h('b', {}, 'Correction looks inadequate.')));
+  if (st.redo) box.append(h('div', {}, h('b', {}, `Sent back to the student ${fmtWhen(st.redoAt || new Date().toISOString())}`), st.redoWhy === 'correction' ? ' to improve the green correction.' : ' to look at the self-mark again.'));
+  else if (st.redone && c.at && st.redone > c.at) box.append(h('div', {}, h('b', {}, `The student redid this part ${fmtWhen(st.redone)}`), `, after this check. Copy the class work for Claude again to re-check it.`));
+  if (c.note) box.append(h('div', { class: 'ms-note' }, c.note));
+  return box;
+}
+
+/* ================= one part ================= */
+function renderPart(P, st, mode, w, refresh, stu){
+  // mode: 'edit' (student, before submitting) or 'view' (submitted, or teacher)
+  const li = h('li', { class: 'part' });
+  const edit = mode === 'edit';
+  const canGreen = edit && !!st.locked && !st.markLocked;   // green work allowed until the self-mark is locked
+  li.append(h('div', { class: 'part-head' },
+    h('span', { class: 'letter' }, P.letter), h('div', { class: 'part-q', html: P.q }), h('span', { class: 'marks' }, `[${P.marks} mark${P.marks > 1 ? 's' : ''}]`)));
+  const body = h('div', { class: 'part-body' }); li.append(body);
+  const changed = () => { save(); };
+
+  const ans = h('div', { class: 'ans' });
+  if (edit && !st.locked){
+    ans.append(h('div', { class: 'ans-label' }, h('span', {}, 'Your answer'), h('span', {}, 'type, draw or both')));
+    const ta = h('textarea', { class: 'type', placeholder: 'Type your answer here…', 'aria-label': `Typed answer for ${P.id}` });
+    ta.value = st.text; ta.addEventListener('input', () => { st.text = ta.value; changed(); });
+    ans.append(ta);
+  } else {
+    ans.append(h('div', { class: 'ans-label' }, h('span', {}, 'Your answer'), st.locked ? h('span', {}, 'Locked') : null));
+    ans.append(h('div', { class: 'typed' + (st.text.trim() ? '' : ' empty') }, st.text.trim() ? st.text : 'No typed answer'));
+    if (st.locked){
+      if (canGreen){
+        const gt = h('textarea', { class: 'green', placeholder: 'Corrections and notes after seeing the mark scheme (green pen)…', 'aria-label': `Green corrections for ${P.id}` });
+        gt.value = st.green; gt.addEventListener('input', () => { st.green = gt.value; changed(); });
+        ans.append(gt);
+      } else if (st.green.trim()) ans.append(h('div', { class: 'typed green-text' }, st.green));
+    }
+  }
+  const padObj = makePad(st, { readOnly: !edit || !!st.markLocked, onChange: changed });
+  if (padObj.toolbar) ans.append(padObj.toolbar);
+  ans.append(padObj.pad);
+  body.append(ans);
+
+  if (!st.locked){
+    if (edit){
+      const bar = h('div', { class: 'lockbar' });
+      const lockBtn = h('button', { type: 'button', class: 'lock', onclick: () => {
+        bar.replaceChildren(h('div', { class: 'confirm' },
+          h('span', {}, (st.text.trim() || st.strokes.length) ? 'Lock in this answer? You won’t be able to change it afterwards.' : 'You haven’t written anything yet. Lock in a blank answer?'),
+          h('button', { type: 'button', class: 'primary', onclick: () => { st.locked = new Date().toISOString(); save(true); refresh(); } }, 'Yes, lock it in'),
+          h('button', { type: 'button', class: 'ghost', onclick: () => bar.replaceChildren(lockBtn, hint) }, 'Cancel')));
+      } }, 'Lock in answer');
+      const hint = h('span', { class: 'locked-note' }, 'The mark scheme appears once you lock in.');
+      bar.append(lockBtn, hint); body.append(bar);
+    } else body.append(h('p', { class: 'locked-note' }, 'Not answered.'));
+  } else {
+    const ms = h('div', { class: 'ms' }, h('span', { class: 'ms-tag' }, 'Mark scheme'), h('div', { html: P.ms }));
+    if (P.note) ms.append(h('div', { class: 'ms-note', html: P.note }));
+    body.append(ms);
+    if (st.redo && edit) body.append(h('div', { class: 'check flag', role: 'status' }, h('span', { class: 'ms-tag' }, '⚑ Sent back by your teacher'),
+      h('div', {}, st.redoWhy === 'correction' ? 'Your correction for this part wasn’t good enough. Use the mark scheme to improve your green correction, then lock in your mark again.'
+        : 'Look at your mark for this part again. Go through the mark scheme point by point against your black answer, change your mark if it was wrong, add green corrections for anything you missed, then lock in your mark again.')));
+    const sm = h('div', { class: 'selfmark' }, h('span', {}, canGreen ? 'Marks you award yourself:' : st.markLocked ? 'Self-marked:' : 'Not self-marked yet:'));
+    for (let m = 0; m <= P.marks; m++){
+      sm.append(h('button', { type: 'button', class: 'mk', 'aria-pressed': String(st.mark === m), disabled: !canGreen, onclick: () => { st.mark = m; save(true); refresh(); } }, String(m)));
+    }
+    sm.append(h('span', {}, `out of ${P.marks}`));
+    body.append(sm);
+    if (canGreen && st.mark !== null && st.mark !== undefined){
+      const msg = h('p', { class: 'err', role: 'alert', style: 'margin:0' });
+      const full = st.mark === P.marks;
+      body.append(h('div', { class: 'lockbar' },
+        h('button', { type: 'button', class: 'lock g', onclick: () => {
+          if (st.redo && st.redoWhy !== 'mark'){
+            if (greenSig(st) === st.redo){ msg.textContent = 'Change your green correction before you lock in again.'; return; }
+            const problem = correctionProblem(st);
+            if (problem){ msg.textContent = problem; return; }
+          } else if (st.mark < P.marks){
+            const problem = correctionProblem(st);
+            if (problem){ msg.textContent = `You gave yourself ${st.mark} out of ${P.marks}. ${problem}`; return; }
+          }
+          if (st.redo){ delete st.redo; delete st.redoWhy; delete st.redoPrev; st.redone = new Date().toISOString(); }
+          st.markLocked = new Date().toISOString(); save(true); refresh();
+        } }, 'Lock in mark'),
+        h('span', { class: 'locked-note' }, st.redo && st.redoWhy !== 'mark' ? 'Improve your green correction first.' : full ? 'Full marks: you can lock in straight away.' : 'Less than full marks: green corrections are needed first.')), msg);
+    } else if (st.markLocked && edit) body.append(h('p', { class: 'locked-note' }, 'Mark locked in'));
+    if (stu){ const cb = checkBox(stu, P, st); if (cb) body.append(cb); }
+  }
+  return li;
+}
+
+/* ================= one question sheet ================= */
+const qTitle = n => h('h2', { 'aria-label': 'Question ' + n }, 'Question', h('span', { class: 'qbox', 'aria-hidden': 'true' }, [...String(n).padStart(2, '0')].map(d => h('b', {}, d))));
+const whyBox = why => h('div', { class: 'why' }, h('b', {}, 'Why this question: '), why);
+const figsFor = Q => h('div', { class: 'figs' }, Q.figs.map((f, j) => h('figure', {}, h('figcaption', {}, `Figure ${j + 1}`), h('div', { class: 'fig', html: f }))));
+// one question on screen at a time: numbered buttons plus previous / next
+function qState(Q, w){ const ps = Q.parts.map(P => w.parts[P.id]); return ps.some(x => x.redo) ? 'redo' : ps.every(x => x.markLocked) ? 'done' : ps.some(x => x.locked || x.text.trim() || x.strokes.length) ? 'prog' : ''; }
+function pager(go, stateOf){
+  return h('nav', { class: 'qnav', 'aria-label': 'Questions' }, HW.questions.map((Q, i) => { const st = stateOf(Q);
+    return h('button', { type: 'button', class: 'qchip ' + st, 'aria-current': i === CURQ ? 'true' : null, 'aria-label': `Question ${i + 1}` + (st === 'done' ? ', finished' : st === 'redo' ? ', needs attention' : ''), onclick: () => go(i) }, (st === 'done' ? '✓ ' : st === 'redo' ? '⚑ ' : '') + (i + 1)); }));
+}
+function prevNext(go){
+  const n = HW.questions.length;
+  return h('div', { class: 'hw-row' }, h('button', { type: 'button', class: 'ghost', disabled: CURQ === 0, onclick: () => go(CURQ - 1) }, '← Previous question'),
+    h('span', { class: 'muted' }, `Question ${CURQ + 1} of ${n}`), h('button', { type: 'button', class: 'primary', disabled: CURQ === n - 1, onclick: () => go(CURQ + 1) }, 'Next question →'));
+}
+
+function sheetFor(Q, qi, w, mode, refresh, stu){
+  const qm = Q.parts.reduce((a, p) => a + p.marks, 0);
+  const sheet = h('article', { class: 'sheet' },
+    h('div', { class: 'q-head' }, qTitle(qi + 1), h('span', { class: 'tag' }, Q.tag), h('span', { class: 'q-marks' }, `${qm} marks`)),
+    Q.why ? whyBox(Q.why) : null,
+    h('div', { class: 'stem', html: Q.stem }));
+  if (Q.figs && Q.figs.length) sheet.append(figsFor(Q));
+  const ol = h('ol', { class: 'parts' });
+  Q.parts.forEach(P => ol.append(renderPart(P, w.parts[P.id], mode, w, refresh, stu)));
+  sheet.append(ol);
+  return sheet;
+}
+
+/* ================= screens ================= */
+const barEl = document.getElementById('bar');
+const LOGO = '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1.5" y="1.5" width="25" height="25" rx="5" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.5"/><path d="M4 14 C7 2.5 11 2.5 14 14 S21 25.5 24 14" fill="none" stroke="var(--trace)" stroke-width="2.2" stroke-linecap="round"/></svg>';
+function setBar(ctx, logout){
+  barEl.replaceChildren(...[h('div', { class: 'brand', html: LOGO + '<span>Physics Homework</span>' }), ctx ? h('span', { class: 'bar-ctx' }, ctx) : null,
+    logout ? h('button', { type: 'button', class: 'bar-btn', onclick: () => { ME = null; screenLogin(); } }, 'Log out') : null].filter(Boolean));
+}
+const crumb = (back, label) => back ? h('div', { class: 'crumb' }, h('button', { type: 'button', class: 'back', onclick: back }, label || '← Back')) : document.createComment('');
+function topbar(title, back){ setBar(title, true); return crumb(back); }
+// an oscilloscope screen showing one sinusoidal trace, 2 divisions in amplitude and 4 divisions per cycle
+function drawScope(cv){
+  const r = cv.getBoundingClientRect(); if (!r.width) return;
+  const d = window.devicePixelRatio || 1; cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
+  const c = cv.getContext('2d'), W = r.width, H = r.height, div = H / 6; c.setTransform(d, 0, 0, d, 0, 0);
+  c.fillStyle = '#0a101d'; c.fillRect(0, 0, W, H);
+  c.lineWidth = 1;
+  for (let x = W / 2 % div; x < W; x += div){ c.strokeStyle = Math.abs(x - W / 2) < .5 ? 'rgba(255,255,255,.38)' : 'rgba(255,255,255,.11)'; c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+  for (let y = 0; y <= H + .5; y += div){ c.strokeStyle = Math.abs(y - H / 2) < .5 ? 'rgba(255,255,255,.38)' : 'rgba(255,255,255,.11)'; c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+  c.strokeStyle = '#6fe3c1'; c.lineWidth = 2.2; c.lineJoin = 'round'; c.beginPath();
+  for (let x = 0; x <= W; x += 2){ const y = H / 2 - 2 * div * Math.sin(2 * Math.PI * (x - W / 2) / (4 * div)); if (x) c.lineTo(x, y); else c.moveTo(x, y); }
+  c.stroke();
+}
+function screenLogin(){
+  app.replaceChildren(); setBar('', false);
+  const name = h('input', { id: 'nm', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'e.g. sam.patel' });
+  const pin = h('input', { id: 'pn', class: 'pin', inputmode: 'numeric', maxlength: '4', autocomplete: 'off', placeholder: '••••' });
+  const err = h('p', { class: 'err', role: 'alert' });
+  const form = h('form', { class: 'card login', onsubmit: e => {
+    e.preventDefault();
+    const n = name.value.trim().toLowerCase(), p = pin.value.trim();
+    if (!n) return err.textContent = 'Enter your login name.';
+    if (!/^\d{4}$/.test(p)) return err.textContent = 'Your PIN is 4 digits.';
+    const s = DB.students[n];
+    if (!s || s.pin !== p) return err.textContent = 'That login name and PIN don’t match.';
+    ME = s; screenList();
+  } },
+    h('h2', {}, 'Student login'),
+    h('div', {}, h('label', { for: 'nm' }, 'Login name'), name),
+    h('div', {}, h('label', { for: 'pn' }, 'PIN'), pin),
+    err,
+    h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Log in')),
+    h('p', { class: 'mock' }, 'Mock-up: your teacher creates your class to give you a login name and PIN. Everything is saved in this browser only.'),
+    h('button', { type: 'button', class: 'linkbtn', onclick: screenStaffLogin }, 'Teacher login →'));
+  const scope = h('canvas', { role: 'img', 'aria-label': 'Oscilloscope screen showing a sinusoidal trace' });
+  app.append(h('div', { class: 'login-wrap' },
+    h('section', { class: 'hero' }, h('div', { class: 'stack' }, h('h1', {}, 'Physics homework'),
+      h('p', {}, 'Answer each question on graph paper, lock it in, then mark your own work against the mark scheme in green.')), scope),
+    form));
+  new ResizeObserver(() => drawScope(scope)).observe(scope);
+  name.focus();
+}
+const fmtDue = d => d ? new Date(d + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+const whoAmI = () => { const c = classesOf(ME).map(x => x.name); return ME.name + (c.length ? ' · ' + c.join(', ') : ''); };
+
+function screenList(){
+  app.replaceChildren();
+  const mine = classesOf(ME);
+  const forMe = (c, id) => c.assigned[id] && (!c.assigned[id].only || c.assigned[id].only.includes(ME.key));
+  const set = [...new Set(mine.flatMap(c => Object.keys(c.assigned).filter(id => forMe(c, id))))].map(id => { const hw = getHW(id); if (!hw) return null; const a = mine.filter(c => forMe(c, id)).map(c => c.assigned[id].due); return { hw, due: a.filter(Boolean).sort()[0] || '' }; }).filter(Boolean);
+  app.append(topbar(whoAmI()), h('h1', {}, 'Your homework'));
+  if (!set.length) app.append(h('div', { class: 'card muted' }, 'No homework has been set for your class yet.'));
+  const rows = set.map(item => { setHW(item.hw); const w = workFor(ME); return Object.assign({ w, s: stats(w), total: TOTAL }, item); });
+  const rank = r => r.w.submitted ? 2 : r.w.reopened ? 0 : 1;
+  rows.sort((a, b) => rank(a) - rank(b) || (a.due || '9999').localeCompare(b.due || '9999'));
+  rows.forEach(({ hw, due, w, s, total }) => {
+    const late = due && !w.submitted && due < today();
+    const status = w.submitted ? h('span', { class: 'pill done' }, `Submitted · ${s.score}/${total}`) : w.reopened ? h('span', { class: 'pill redo' }, 'Corrections needed') : s.locked ? h('span', { class: 'pill prog' }, `In progress · ${s.locked}/${s.n} answered`) : h('span', { class: 'pill' }, 'Not started');
+    app.append(h('div', { class: 'card hw-row' },
+      h('div', {}, h('h2', {}, hw.title), h('div', { class: 'muted' }, due ? 'Due ' + fmtDue(due) + ' · ' : '', `${hw.questions.length} questions · ${total} marks`, late ? h('span', { class: 'flagtxt' }, ' · overdue') : null),
+        hw.questions.some(q => q.why) ? h('div', { class: 'why-s' }, 'Picked for you from your recent results. Each question says why.') : null),
+      h('div', { class: 'io-row' }, status,
+        h('button', { type: 'button', class: 'primary', onclick: () => { setHW(hw); const st = hw.questions.map(Q => qState(Q, w)); CURQ = Math.max(0, st.indexOf('redo') >= 0 ? st.indexOf('redo') : st.findIndex(x => x !== 'done')); window.scrollTo(0, 0); screenHomework(); } }, w.submitted ? 'View' : w.reopened ? 'Fix corrections' : s.locked ? 'Continue' : 'Start'))));
+  });
+}
+
+/* ---- the parts of the AQA data and formulae sheet that the homework's topics use ---- */
+const DATA = {
+  constants: [['magnitude of the charge of an electron, <i>e</i>', '1.60 × 10<sup>−19</sup> C'], ['electron rest mass, <i>m</i><sub>e</sub>', '9.11 × 10<sup>−31</sup> kg'],
+    ['proton rest mass, <i>m</i><sub>p</sub>', '1.67 × 10<sup>−27</sup> kg'], ['gravitational field strength, <i>g</i>', '9.81 N kg<sup>−1</sup>']],
+  more: [['speed of light in vacuo, <i>c</i>', '3.00 × 10<sup>8</sup> m s<sup>−1</sup>'], ['Planck constant, <i>h</i>', '6.63 × 10<sup>−34</sup> J s'], ['neutron rest mass, <i>m</i><sub>n</sub>', '1.67 × 10<sup>−27</sup> kg']],
+  PT: [['electron rest energy', '0.510999 MeV'], ['proton rest energy', '938.257 MeV'], ['neutron rest energy', '939.551 MeV'], ['muon rest energy', '105.659 MeV'], ['photon energy', '<i>E</i> = <i>hf</i> = <i>hc</i>/<i>λ</i>'], ['specific charge', 'charge / mass'],
+    ['quarks', 'u: charge +⅔<i>e</i> &nbsp; d: −⅓<i>e</i> &nbsp; s: −⅓<i>e</i>, strangeness −1 &nbsp; (baryon number +⅓ each)']],
+  NU: [['inverse-square law for γ radiation', '<i>I</i> = <i>k</i>/<i>x</i><sup>2</sup>'], ['radioactive decay', 'Δ<i>N</i>/Δ<i>t</i> = −<i>λN</i> &nbsp; <i>N</i> = <i>N</i><sub>0</sub>e<sup>−<i>λt</i></sup>'], ['activity', '<i>A</i> = <i>λN</i>'], ['half-life', '<i>T</i><sub>½</sub> = ln 2 / <i>λ</i>'],
+    ['nuclear radius', '<i>R</i> = <i>R</i><sub>0</sub><i>A</i><sup>1/3</sup>'], ['energy–mass equation', '<i>E</i> = <i>mc</i><sup>2</sup>'], ['electric potential energy of two charges', '<i>E</i><sub>p</sub> = <i>Qq</i> / 4π<i>ε</i><sub>0</sub><i>r</i>'],
+    ['atomic mass unit, u', '1 u = 1.661 × 10<sup>−27</sup> kg = 931.5 MeV'], ['permittivity of free space, <i>ε</i><sub>0</sub>', '8.85 × 10<sup>−12</sup> F m<sup>−1</sup>'], ['Avogadro constant, <i>N</i><sub>A</sub>', '6.02 × 10<sup>23</sup> mol<sup>−1</sup>'], ['alpha particle rest mass', '6.64 × 10<sup>−27</sup> kg']],
+  MK: [['moment', 'moment = <i>Fd</i>'], ['equations of motion', '<i>v</i> = <i>u</i> + <i>at</i> &nbsp; <i>s</i> = ½(<i>u</i> + <i>v</i>)<i>t</i> &nbsp; <i>s</i> = <i>ut</i> + ½<i>at</i><sup>2</sup> &nbsp; <i>v</i><sup>2</sup> = <i>u</i><sup>2</sup> + 2<i>as</i>'], ['force', '<i>F</i> = <i>ma</i> &nbsp; <i>F</i> = Δ(<i>mv</i>)/Δ<i>t</i>'], ['impulse', '<i>F</i>Δ<i>t</i> = Δ(<i>mv</i>)'],
+    ['work, energy and power', '<i>W</i> = <i>Fs</i> cos <i>θ</i> &nbsp; <i>E</i><sub>k</sub> = ½<i>mv</i><sup>2</sup> &nbsp; Δ<i>E</i><sub>p</sub> = <i>mg</i>Δ<i>h</i>'], ['power', '<i>P</i> = Δ<i>W</i>/Δ<i>t</i> = <i>Fv</i>'], ['efficiency', 'useful output power / input power']],
+  MAT: [['density', '<i>ρ</i> = <i>m</i>/<i>V</i>'], ['Hooke’s law', '<i>F</i> = <i>k</i>Δ<i>L</i>'], ['tensile stress and strain', 'stress = <i>F</i>/<i>A</i> &nbsp; strain = Δ<i>L</i>/<i>L</i>'], ['Young modulus', 'tensile stress / tensile strain'], ['energy stored', '<i>E</i> = ½<i>F</i>Δ<i>L</i>']],
+  MEA: [['percentage uncertainty', '(absolute uncertainty / value) × 100'], ['combining uncertainties', 'add absolute uncertainties for sums and differences; add percentage uncertainties for products and quotients; multiply the percentage uncertainty by the power']],
+  EFD: [['force between two point charges', '<i>F</i> = <i>Q</i><sub>1</sub><i>Q</i><sub>2</sub> / 4π<i>ε</i><sub>0</sub><i>r</i><sup>2</sup>'], ['force on a charge', '<i>F</i> = <i>EQ</i>'], ['field strength for a uniform field', '<i>E</i> = <i>V</i>/<i>d</i>'], ['field strength for a radial field', '<i>E</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>r</i><sup>2</sup>'],
+    ['electric potential', '<i>V</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>r</i> &nbsp; <i>E</i> = Δ<i>V</i>/Δ<i>r</i>'], ['work done', 'Δ<i>W</i> = <i>Q</i>Δ<i>V</i>'], ['capacitance', '<i>C</i> = <i>Q</i>/<i>V</i> &nbsp; <i>C</i> = <i>Aε</i><sub>0</sub><i>ε</i><sub>r</sub>/<i>d</i>'], ['capacitor energy stored', '<i>E</i> = ½<i>QV</i> = ½<i>CV</i><sup>2</sup> = ½<i>Q</i><sup>2</sup>/<i>C</i>'],
+    ['capacitor charging', '<i>Q</i> = <i>Q</i><sub>0</sub>(1 − e<sup>−<i>t</i>/<i>RC</i></sup>)'], ['capacitor discharge', '<i>Q</i> = <i>Q</i><sub>0</sub>e<sup>−<i>t</i>/<i>RC</i></sup>'], ['time constant', '<i>RC</i>'], ['permittivity of free space, <i>ε</i><sub>0</sub>', '8.85 × 10<sup>−12</sup> F m<sup>−1</sup>'], ['gravitational constant, <i>G</i>', '6.67 × 10<sup>−11</sup> N m<sup>2</sup> kg<sup>−2</sup>']],
+  GRV: [['force between two masses', '<i>F</i> = <i>Gm</i><sub>1</sub><i>m</i><sub>2</sub>/<i>r</i><sup>2</sup>'], ['gravitational field strength', '<i>g</i> = <i>F</i>/<i>m</i> &nbsp; <i>g</i> = <i>GM</i>/<i>r</i><sup>2</sup> &nbsp; <i>g</i> = −Δ<i>V</i>/Δ<i>r</i>'], ['gravitational potential', '<i>V</i> = −<i>GM</i>/<i>r</i> &nbsp; Δ<i>W</i> = <i>m</i>Δ<i>V</i>'],
+    ['gravitational constant, <i>G</i>', '6.67 × 10<sup>−11</sup> N m<sup>2</sup> kg<sup>−2</sup>'], ['mass of the Earth', '5.97 × 10<sup>24</sup> kg'], ['mean radius of the Earth', '6.37 × 10<sup>6</sup> m'], ['mass of the Sun', '1.99 × 10<sup>30</sup> kg']],
+  THM: [['energy to change temperature', '<i>Q</i> = <i>mc</i>Δ<i>θ</i>'], ['energy to change state', '<i>Q</i> = <i>ml</i>'], ['gas law', '<i>pV</i> = <i>nRT</i> &nbsp; <i>pV</i> = <i>NkT</i>'], ['work done', '<i>W</i> = <i>p</i>Δ<i>V</i>'], ['kinetic theory model', '<i>pV</i> = ⅓<i>Nm</i>(<i>c</i><sub>rms</sub>)<sup>2</sup>'],
+    ['kinetic energy of a gas molecule', '½<i>m</i>(<i>c</i><sub>rms</sub>)<sup>2</sup> = (3/2)<i>kT</i> = 3<i>RT</i>/2<i>N</i><sub>A</sub>'], ['molar gas constant, <i>R</i>', '8.31 J K<sup>−1</sup> mol<sup>−1</sup>'], ['Boltzmann constant, <i>k</i>', '1.38 × 10<sup>−23</sup> J K<sup>−1</sup>'], ['Avogadro constant, <i>N</i><sub>A</sub>', '6.02 × 10<sup>23</sup> mol<sup>−1</sup>']],
+  FMX: [['angular velocity', '<i>ω</i> = <i>v</i>/<i>r</i> = 2π<i>f</i>'], ['centripetal acceleration', '<i>a</i> = <i>v</i><sup>2</sup>/<i>r</i> = <i>ω</i><sup>2</sup><i>r</i>'], ['centripetal force', '<i>F</i> = <i>mv</i><sup>2</sup>/<i>r</i> = <i>mω</i><sup>2</sup><i>r</i>'], ['simple harmonic motion', '<i>a</i> = −<i>ω</i><sup>2</sup><i>x</i> &nbsp; <i>x</i> = <i>A</i> cos <i>ωt</i> &nbsp; <i>v</i> = ±<i>ω</i>√(<i>A</i><sup>2</sup> − <i>x</i><sup>2</sup>)'],
+    ['maximum speed and acceleration', '<i>v</i><sub>max</sub> = <i>ωA</i> &nbsp; <i>a</i><sub>max</sub> = <i>ω</i><sup>2</sup><i>A</i>'], ['mass–spring system', '<i>T</i> = 2π√(<i>m</i>/<i>k</i>)'], ['simple pendulum', '<i>T</i> = 2π√(<i>l</i>/<i>g</i>)']],
+  AST: [['astronomical telescope in normal adjustment', '<i>M</i> = <i>f</i><sub>o</sub>/<i>f</i><sub>e</sub>'], ['Rayleigh criterion', '<i>θ</i> ≈ <i>λ</i>/<i>D</i>'], ['magnitude equation', '<i>m</i> − <i>M</i> = 5 log(<i>d</i>/10)'], ['Wien’s law', '<i>λ</i><sub>max</sub><i>T</i> = 2.9 × 10<sup>−3</sup> m K'], ['Stefan’s law', '<i>P</i> = <i>σAT</i><sup>4</sup>'],
+    ['Doppler shift for <i>v</i> ≪ <i>c</i>', 'Δ<i>f</i>/<i>f</i> = −Δ<i>λ</i>/<i>λ</i> = <i>v</i>/<i>c</i> &nbsp; <i>z</i> = −<i>v</i>/<i>c</i>'], ['Hubble’s law', '<i>v</i> = <i>Hd</i>'], ['Schwarzschild radius', '<i>R</i><sub>s</sub> ≈ 2<i>GM</i>/<i>c</i><sup>2</sup>'],
+    ['Stefan constant, <i>σ</i>', '5.67 × 10<sup>−8</sup> W m<sup>−2</sup> K<sup>−4</sup>'], ['Hubble constant, <i>H</i>', '65 km s<sup>−1</sup> Mpc<sup>−1</sup>'], ['distances', '1 pc = 3.08 × 10<sup>16</sup> m = 3.26 ly &nbsp; 1 ly = 9.46 × 10<sup>15</sup> m &nbsp; 1 AU = 1.50 × 10<sup>11</sup> m'], ['gravitational constant, <i>G</i>', '6.67 × 10<sup>−11</sup> N m<sup>2</sup> kg<sup>−2</sup>'], ['mass of the Sun', '1.99 × 10<sup>30</sup> kg']],
+  QU: [['photon energy', '<i>E</i> = <i>hf</i> = <i>hc</i>/<i>λ</i>'], ['photoelectricity', '<i>hf</i> = <i>φ</i> + <i>E</i><sub>k(max)</sub>'], ['energy levels', '<i>hf</i> = <i>E</i><sub>1</sub> − <i>E</i><sub>2</sub>'], ['de Broglie wavelength', '<i>λ</i> = <i>h</i>/<i>p</i> = <i>h</i>/<i>mv</i>']],
+  WA: [['wave speed', '<i>c</i> = <i>fλ</i> &nbsp; period <i>f</i> = 1/<i>T</i>'], ['first harmonic', '<i>f</i> = (1/2<i>l</i>) √(<i>T</i>/<i>μ</i>)'], ['fringe spacing', '<i>w</i> = <i>λD</i>/<i>s</i>'], ['diffraction grating', '<i>d</i> sin <i>θ</i> = <i>nλ</i>'],
+    ['refractive index of a substance', '<i>n</i> = <i>c</i>/<i>c</i><sub>s</sub> &nbsp; (for air, <i>n</i> ≈ 1)'], ['law of refraction', '<i>n</i><sub>1</sub> sin <i>θ</i><sub>1</sub> = <i>n</i><sub>2</sub> sin <i>θ</i><sub>2</sub>'], ['critical angle', 'sin <i>θ</i><sub>c</sub> = <i>n</i><sub>2</sub>/<i>n</i><sub>1</sub> for <i>n</i><sub>1</sub> &gt; <i>n</i><sub>2</sub>']],
+  EL: [['current and pd', '<i>I</i> = Δ<i>Q</i>/Δ<i>t</i> &nbsp; <i>V</i> = <i>W</i>/<i>Q</i> &nbsp; <i>R</i> = <i>V</i>/<i>I</i>'], ['resistivity', '<i>ρ</i> = <i>RA</i>/<i>L</i>'],
+    ['resistors in series', '<i>R</i><sub>T</sub> = <i>R</i><sub>1</sub> + <i>R</i><sub>2</sub> + …'], ['resistors in parallel', '1/<i>R</i><sub>T</sub> = 1/<i>R</i><sub>1</sub> + 1/<i>R</i><sub>2</sub> + …'],
+    ['power', '<i>P</i> = <i>VI</i> = <i>I</i><sup>2</sup><i>R</i> = <i>V</i><sup>2</sup>/<i>R</i>'], ['emf', '<i>ε</i> = <i>E</i>/<i>Q</i> &nbsp; <i>ε</i> = <i>I</i>(<i>R</i> + <i>r</i>)']],
+  MF: [['force on a current', '<i>F</i> = <i>BIl</i>'], ['force on a moving charge', '<i>F</i> = <i>BQv</i>'], ['magnetic flux', '<i>Φ</i> = <i>BA</i>'], ['magnetic flux linkage', '<i>NΦ</i> = <i>BAN</i> cos <i>θ</i>'],
+    ['magnitude of induced emf', '<i>ε</i> = <i>N</i> Δ<i>Φ</i>/Δ<i>t</i>'], ['emf induced in a rotating coil', '<i>ε</i> = <i>BANω</i> sin <i>ωt</i>'],
+    ['alternating current', '<i>I</i><sub>rms</sub> = <i>I</i><sub>0</sub>/√2 &nbsp; <i>V</i><sub>rms</sub> = <i>V</i><sub>0</sub>/√2'], ['transformer equations', '<i>N</i><sub>s</sub>/<i>N</i><sub>p</sub> = <i>V</i><sub>s</sub>/<i>V</i><sub>p</sub>'],
+    ['transformer efficiency', '<i>I</i><sub>s</sub><i>V</i><sub>s</sub> / <i>I</i><sub>p</sub><i>V</i><sub>p</sub>']]
+};
+function dataSheet(hw){
+  const subs = Object.keys(BANK).filter(k => hw.questions.some(Q => Q.sub === k)), row = ([a, b]) => h('div', {}, h('span', { html: a }), h('span', { html: b }));
+  return h('details', { class: 'sheetdata' }, h('summary', {}, 'Data and formulae'),
+    h('div', { class: 'dgrid' }, h('h3', {}, 'Data'), DATA.constants.map(row), subs.some(k => ['PT', 'QU', 'WA', 'NU', 'AST'].includes(k)) ? DATA.more.map(row) : null, subs.map(k => [h('h3', {}, BANK[k].name), DATA[k].map(row)])));
+}
+
+function screenHomework(){
+  const w = workFor(ME), mode = w.submitted ? 'view' : 'edit';
+  const y = window.scrollY;
+  app.replaceChildren();
+  const refresh = () => screenHomework();
+  const s = stats(w);
+  app.append(topbar(whoAmI(), screenList));
+  app.append(h('header', {}, h('h1', {}, HW.title), h('p', { class: 'muted', style: 'margin:4px 0 0;max-width:65ch' }, HW.intro)));
+  app.append(h('div', { class: 'legend' },
+    h('span', {}, h('span', { class: 'swatch', style: 'background:var(--ink)' }), 'Before locking: your attempt'),
+    h('span', { style: 'color:var(--green);font-weight:600' }, h('span', { class: 'swatch g' }), 'After locking: corrections and marking')), dataSheet(HW));
+  const pct = Math.round(100 * (s.locked + s.marked) / (2 * s.n));
+  app.append(h('div', { class: 'progress', 'aria-live': 'polite' },
+    h('span', {}, `Answered ${s.locked}/${s.n}`), h('span', {}, `Marked ${s.marked}/${s.n}`),
+    h('span', { class: 'bar' }, h('i', { style: `width:${pct}%` })),
+    h('b', {}, `Score so far: ${s.score}/${TOTAL}`)));
+
+  const back = ALL_PARTS.filter(P => w.parts[P.id].redo);
+  if (back.length && !w.submitted) app.append(h('div', { class: 'check flag', role: 'status' }, h('span', { class: 'ms-tag' }, '⚑ Sent back by your teacher'),
+    h('div', {}, `${back.length === 1 ? 'One part needs' : back.length + ' parts need'} another look: `, h('b', {}, back.map(partLabel).join(', ')), '. Everything else stays as you left it. Submit again when you’ve finished.')));
+  CURQ = Math.min(CURQ, HW.questions.length - 1);
+  const go = i => { CURQ = i; window.scrollTo(0, 0); screenHomework(); };
+  app.append(pager(go, Q => qState(Q, w)));
+  app.append(sheetFor(HW.questions[CURQ], CURQ, w, mode, refresh));
+  app.append(prevNext(go));
+
+  // submit
+  const box = h('div', { class: 'card submit-box' });
+  if (w.submitted){
+    box.append(h('div', { class: 'result' }, 'Submitted ', new Date(w.submitted).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }), '. Your self-marked score: ', h('b', {}, `${s.score}/${TOTAL} (${Math.round(100 * s.score / TOTAL)}%)`), '. Your teacher will check your marking.'));
+  } else {
+    const ready = s.locked === s.n && s.marked === s.n;
+    box.append(h('h2', {}, 'Submit homework'),
+      h('p', { class: 'muted', style: 'margin:0' }, ready ? (w.reopened ? 'Corrections done. Submit again for your teacher.' : 'Every part is locked and self-marked.') : `Lock in your answer and your mark for every part to submit (${s.n - s.marked} still to do).`));
+    const sb = h('button', { type: 'button', class: 'primary', disabled: !ready, onclick: () => {
+      sb.replaceWith(h('div', { class: 'confirm' }, h('span', {}, 'Submit to your teacher? You won’t be able to add more green corrections.'),
+        h('button', { type: 'button', class: 'primary', onclick: () => { w.submitted = new Date().toISOString(); delete w.reopened; save(true); screenHomework(); window.scrollTo(0, document.body.scrollHeight); } }, 'Yes, submit'),
+        h('button', { type: 'button', class: 'ghost', onclick: screenHomework }, 'Cancel')));
+    } }, 'Submit');
+    box.append(sb);
+  }
+  app.append(box);
+  requestAnimationFrame(() => window.scrollTo(0, y));
+}
+
+/* ================= classes, login names and PINs ================= */
+const classStudents = cls => Object.values(DB.students).filter(s => (s.classIds || []).includes(cls.id));
+const classesOf = stu => (stu.classIds || []).map(id => DB.classes[id]).filter(Boolean);
+function parseNames(text){
+  return text.split(/\n/).map(l => l.trim()).filter(Boolean).map(l => {
+    if (l.includes(',')){ const [a, b] = l.split(',').map(x => x.trim()); if (b) l = b + ' ' + a; }      // "Jones, Alex" -> "Alex Jones"
+    return l.replace(/\s+/g, ' '); });
+}
+function makeLogin(name){
+  const parts = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).map(p => p.replace(/[^a-z]/g, '')).filter(Boolean);
+  const first = parts[0] || 'student', last = parts.length > 1 ? parts[parts.length - 1] : '';
+  const base = last ? first + '.' + last : first;                       // sam.patel
+  if (!DB.students[base]) return base;
+  for (let i = 2; ; i++) if (!DB.students[base + i]) return base + i;   // a second Sam Patel becomes sam.patel2
+}
+function makePin(){
+  const used = new Set(Object.values(DB.students).map(s => s.pin));
+  const weak = p => /^(\d)\1{3}$/.test(p) || '01234567890'.includes(p) || '09876543210'.includes(p) || /^(19|20)\d\d$/.test(p);   // no 1111, 1234, or years
+  let p; do { const a = new Uint32Array(1); crypto.getRandomValues(a); p = String(a[0] % 10000).padStart(4, '0'); } while (weak(p) || used.has(p));
+  return p;
+}
+function addStudents(cls, names){
+  names.forEach(n => { const login = makeLogin(n); DB.students[login] = { key: login, name: n, login, pin: makePin(), classIds: [cls.id] }; });
+}
+function tbar(title, back, backLabel){ setBar(title, false); return crumb(back, backLabel); }
+function twoClick(label, armedLabel, action, attrs){        // a button that needs a second click to confirm
+  let armed = false;
+  const b = h('button', Object.assign({ type: 'button', onclick: () => {
+    if (!armed){ armed = true; b.textContent = armedLabel; setTimeout(() => { armed = false; b.textContent = label; }, 2500); return; }
+    action(); } }, attrs), label);
+  return b;
+}
+
+/* ================= teacher and admin accounts ================= */
+const staffList = () => Object.values(DB.staff || (DB.staff = {})).sort((a, b) => (b.admin ? 1 : 0) - (a.admin ? 1 : 0) || a.name.localeCompare(b.name));
+const admins = () => staffList().filter(t => t.admin);
+async function hashPw(pw, salt){
+  if (!(window.crypto && crypto.subtle)) return 'plain:' + pw;                   // very old browsers only
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + pw));
+  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function randStr(n, chars){ const a = new Uint32Array(n); crypto.getRandomValues(a); return Array.from(a).map(x => chars[x % chars.length]).join(''); }
+const tempPassword = () => randStr(4, 'abcdefghjkmnpqrstuvwxyz') + '-' + randStr(4, '23456789') + '-' + randStr(4, 'abcdefghjkmnpqrstuvwxyz');     // no look-alike characters
+async function setPassword(t, pw, mustChange){ t.salt = randStr(12, 'abcdefghijklmnopqrstuvwxyz0123456789'); t.hash = await hashPw(pw, t.salt); t.mustChange = !!mustChange; }
+function makeStaffLogin(name){
+  const parts = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/\s+/).map(p => p.replace(/[^a-z]/g, '')).filter(Boolean);
+  const base = (parts.length > 1 ? parts[0][0] + '.' + parts[parts.length - 1] : parts[0]) || 'teacher';      // p.hammersley
+  if (!DB.staff[base]) return base;
+  for (let i = 2; ; i++) if (!DB.staff[base + i]) return base + i;
+}
+const pwProblem = (a, b) => a.length < 8 ? 'Use at least 8 characters for the password.' : a !== b ? 'The two passwords don’t match.' : '';
+function staffOut(){ STAFF = null; screenLogin(); }
+const ownerOf = cls => DB.staff[cls.owner];
+const myClasses = () => Object.values(DB.classes).filter(c => STAFF && (STAFF.admin || c.owner === STAFF.login));
+function adoptOrphans(){                       // classes made before accounts existed, or whose teacher was removed, go to an admin
+  const a = STAFF && STAFF.admin ? STAFF : admins()[0]; if (!a) return;
+  let ch = false; Object.values(DB.classes).forEach(c => { if (!ownerOf(c)){ c.owner = a.login; ch = true; } }); if (ch) save(true);
+}
+const pwInput = (id, ac) => h('input', { class: 'inp', id, type: 'password', autocomplete: ac || 'off' });
+const field = (id, label, input) => h('div', {}, h('label', { class: 'lab', for: id }, label), input);
+
+function screenStaffLogin(){
+  app.replaceChildren(); STAFF = null;
+  app.append(tbar('Teacher login', screenLogin, '← Student login'));
+  const err = h('p', { class: 'err', role: 'alert' });
+  if (!staffList().length){                    // first run: whoever sets the platform up becomes the admin
+    const nm = h('input', { class: 'inp', id: 'sn', autocomplete: 'off', placeholder: 'e.g. Phill Hammersley' }), p1 = pwInput('sp1', 'new-password'), p2 = pwInput('sp2', 'new-password');
+    app.append(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
+      e.preventDefault();
+      const name = nm.value.trim().replace(/\s+/g, ' '); if (!name) return err.textContent = 'Enter your name.';
+      const bad = pwProblem(p1.value, p2.value); if (bad) return err.textContent = bad;
+      const t = { login: makeStaffLogin(name), name, admin: true, created: Date.now() };
+      await setPassword(t, p1.value, false); DB.staff[t.login] = t; STAFF = t; adoptOrphans(); save(true); screenTeacher();
+    } },
+      h('h1', { style: 'margin:0' }, 'Set up the admin account'),
+      h('p', { class: 'muted', style: 'margin:0' }, 'No teacher accounts exist yet. The first account is the admin: it can do everything a teacher can, and it can add other teachers.'),
+      field('sn', 'Your name', nm), field('sp1', 'Password', p1), field('sp2', 'Password again', p2), err,
+      h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Create admin account')),
+      h('p', { class: 'mock', style: 'margin:0' }, 'Mock-up: accounts are saved in this browser only, and there is no password recovery for the admin. In the hosted version accounts live on the server.')));
+    return;
+  }
+  const lg = h('input', { class: 'inp', id: 'sl', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', placeholder: 'e.g. p.hammersley' }), pw = pwInput('sp', 'current-password');
+  app.append(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
+    e.preventDefault();
+    const t = DB.staff[lg.value.trim().toLowerCase()];
+    if (!t || (await hashPw(pw.value, t.salt)) !== t.hash) return err.textContent = 'That login name and password don’t match.';
+    STAFF = t; t.mustChange ? screenStaffPassword(true) : screenTeacher();
+  } },
+    h('h1', { style: 'margin:0' }, 'Teacher login'), field('sl', 'Login name', lg), field('sp', 'Password', pw), err,
+    h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Log in')),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Forgotten your password? Ask an admin to reset it.')));
+}
+
+function screenStaffPassword(forced){
+  if (!STAFF) return screenStaffLogin();
+  app.replaceChildren(); app.append(tbar('Teacher view', forced ? staffOut : screenTeacher, forced ? '← Log out' : '← Your classes'));
+  const cur = pwInput('pc', 'current-password'), p1 = pwInput('pn1', 'new-password'), p2 = pwInput('pn2', 'new-password'), err = h('p', { class: 'err', role: 'alert' });
+  app.append(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
+    e.preventDefault();
+    if (!forced && (await hashPw(cur.value, STAFF.salt)) !== STAFF.hash) return err.textContent = 'Your current password isn’t right.';
+    const bad = pwProblem(p1.value, p2.value); if (bad) return err.textContent = bad;
+    await setPassword(STAFF, p1.value, false); save(true); screenTeacher();
+  } }, ...[
+    h('h1', { style: 'margin:0' }, forced ? 'Choose your own password' : 'Change your password'),
+    forced ? h('p', { class: 'muted', style: 'margin:0' }, 'You logged in with a temporary password. Choose your own before you carry on.') : field('pc', 'Current password', cur),
+    field('pn1', 'New password', p1), field('pn2', 'New password again', p2), err,
+    h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Save password'))].filter(Boolean)));
+}
+
+let STAFFMSG = null;                            // a temporary password to show once, after adding a teacher or resetting a password
+function screenStaff(){
+  if (!STAFF || !STAFF.admin) return screenTeacher();
+  app.replaceChildren(); app.append(tbar('Teacher view', screenTeacher, '← Your classes'), h('h1', {}, 'Teacher accounts'));
+  if (STAFFMSG){
+    const m = STAFFMSG; STAFFMSG = null;
+    app.append(h('div', { class: 'card stack', role: 'status' }, h('b', {}, m.title),
+      h('div', {}, 'Login name: ', h('span', { class: 'mono' }, m.login), h('br'), 'Temporary password: ', h('span', { class: 'mono' }, m.pw)),
+      h('p', { class: 'muted', style: 'margin:0' }, 'Pass these on now. The password is not shown again, and they are asked to choose their own the first time they log in.')));
+  }
+  const rows = staffList().map(t => {
+    const n = Object.values(DB.classes).filter(c => c.owner === t.login).length, me = t === STAFF, lastAdmin = t.admin && admins().length === 1;
+    const acts = [h('button', { type: 'button', class: 'linkbtn', onclick: async () => { const pw = tempPassword(); await setPassword(t, pw, true); save(true); STAFFMSG = { title: `Password reset for ${t.name}`, login: t.login, pw }; screenStaff(); } }, 'Reset password')];
+    if (me) acts.length = 0;
+    if (!me) acts.push(h('button', { type: 'button', class: 'linkbtn', onclick: () => { t.admin = !t.admin; save(true); screenStaff(); } }, t.admin ? 'Remove admin rights' : 'Make admin'));
+    if (!me && !lastAdmin) acts.push(twoClick('Remove', 'Click again to remove', () => {
+      Object.values(DB.classes).forEach(c => { if (c.owner === t.login) c.owner = STAFF.login; }); delete DB.staff[t.login]; save(true); screenStaff(); }, { class: 'linkbtn del' }));
+    return h('div', { class: 'card stack acct', 'data-login': t.login },
+      h('div', {}, h('b', {}, t.name, me ? ' (you)' : ''), ' · ', t.admin ? 'Admin' : 'Teacher'),
+      h('div', { class: 'muted' }, h('span', { class: 'mono' }, t.login), ` · ${n} class${n === 1 ? '' : 'es'}`, t.mustChange ? ' · temporary password not yet changed' : ''),
+      acts.length ? h('div', { class: 'io-row', style: 'margin:0' }, ...acts) : null);
+  });
+  app.append(...rows.map(r => r), h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Teachers see only their own classes. Admins see every class and manage these accounts. When a teacher is removed, their classes pass to you.'));
+  const nm = h('input', { class: 'inp', id: 'tn', autocomplete: 'off', placeholder: 'e.g. Alex Jones' }), ad = h('input', { type: 'checkbox', id: 'ta' }), err = h('p', { class: 'err', role: 'alert' });
+  app.append(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
+    e.preventDefault();
+    const name = nm.value.trim().replace(/\s+/g, ' '); if (!name) return err.textContent = 'Enter the teacher’s name.';
+    if (staffList().some(t => t.name.toLowerCase() === name.toLowerCase())) return err.textContent = 'There is already an account with that name.';
+    const t = { login: makeStaffLogin(name), name, admin: ad.checked, created: Date.now() }, pw = tempPassword();
+    await setPassword(t, pw, true); DB.staff[t.login] = t; save(true); STAFFMSG = { title: `Account created for ${name}`, login: t.login, pw }; screenStaff();
+  } },
+    h('h2', {}, 'Add a teacher'), field('tn', 'Name', nm),
+    h('label', { for: 'ta', style: 'display:flex;gap:.5rem;align-items:center' }, ad, 'Also make this person an admin'), err,
+    h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Create account')),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'A login name and a temporary password are generated.')));
+}
+
+function screenTeacher(){
+  if (!STAFF) return screenStaffLogin();
+  app.replaceChildren(); adoptOrphans();
+  app.append(tbar('Teacher view', staffOut, '← Log out'));
+  app.append(h('div', { class: 'io-row', style: 'align-items:center' }, ...[h('span', {}, 'Signed in as ', h('b', {}, STAFF.name), STAFF.admin ? ' (admin)' : ''),
+    STAFF.admin ? h('button', { type: 'button', class: 'ghost', onclick: screenStaff }, 'Teacher accounts') : null,
+    h('button', { type: 'button', class: 'linkbtn', onclick: () => screenStaffPassword(false) }, 'Change password')].filter(Boolean)));
+  app.append(h('h1', {}, STAFF.admin && staffList().length > 1 ? 'All classes' : 'Your classes'), h('p', { class: 'mock', style: 'margin:0' }, 'Mock-up: accounts, classes, logins and work are saved in this browser only.'));
+  const classes = myClasses();
+  classes.forEach(cls => {
+    const n = classStudents(cls).length, set = Object.keys(cls.assigned).filter(id => getHW(id) && !cls.assigned[id].only);
+    app.append(h('div', { class: 'card hw-row' },
+      h('div', {}, h('h2', {}, cls.name), h('div', { class: 'muted' }, (cls.owner !== STAFF.login && ownerOf(cls) ? ownerOf(cls).name + ' · ' : '') + `${n} student${n === 1 ? '' : 's'} · ` + (set.length ? `${set.length} homework${set.length === 1 ? '' : 's'} set` : 'No homework set yet'))),
+      h('button', { type: 'button', class: 'primary', onclick: () => screenClass(cls) }, 'Open')));
+  });
+  if (!classes.some(c => c.demo)) app.append(h('div', { class: 'card hw-row' },
+    h('div', {}, h('b', {}, 'See the class analysis with sample data'), h('div', { class: 'muted' }, 'Creates a demo class of 12 made-up students with four marked magnetic fields homeworks. Mock-up only.')),
+    h('button', { type: 'button', class: 'ghost', onclick: () => { const c = createDemoClass(); c.owner = STAFF.login; save(true); screenAnalysis(c); } }, 'Create demo class')));
+  const nm = h('input', { class: 'inp', id: 'cn', placeholder: 'e.g. 13A Physics', autocomplete: 'off' });
+  const list = h('textarea', { class: 'inp names', id: 'cl', placeholder: 'One student per line, e.g.\nSam Patel\nJones, Alex' });
+  const err = h('p', { class: 'err', role: 'alert' });
+  app.append(h('form', { class: 'card stack', onsubmit: e => {
+    e.preventDefault();
+    const name = nm.value.trim(), names = parseNames(list.value);
+    if (!name) return err.textContent = 'Give the class a name.';
+    if (classes.some(c => c.name.toLowerCase() === name.toLowerCase())) return err.textContent = 'You already have a class with that name.';
+    if (!names.length) return err.textContent = 'Paste your class list, one student per line.';
+    const cls = { id: 'c' + Date.now().toString(36), name, assigned: {}, owner: STAFF.login };
+    DB.classes[cls.id] = cls; addStudents(cls, names); save(true); screenClass(cls);
+  } },
+    h('h2', {}, classes.length ? 'Add another class' : 'Create your first class'),
+    h('div', {}, h('label', { class: 'lab', for: 'cn' }, 'Class name'), nm),
+    h('div', {}, h('label', { class: 'lab', for: 'cl' }, 'Class list'), list),
+    h('p', { class: 'muted', style: 'margin:0' }, 'A login name and a 4-digit PIN are generated for every student.'),
+    err, h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Create class and generate logins'))));
+}
+
+function screenClass(cls){
+  app.replaceChildren();
+  const studs = classStudents(cls);
+  app.append(tbar('Teacher view', screenTeacher, '← All classes'), h('h1', {}, cls.name),
+    h('div', { class: 'io-row' }, h('button', { type: 'button', class: 'primary', onclick: () => screenAnalysis(cls) }, 'Class analysis'),
+      h('button', { type: 'button', class: 'ghost', onclick: () => screenMix(cls) }, 'Mix sub-topics into a homework'),
+      h('button', { type: 'button', class: 'ghost', onclick: () => screenBuilder(cls) }, 'Build a custom homework')));
+
+  // homework set for this class
+  const hwCard = h('div', { class: 'card stack' }, h('h2', {}, 'Homework set for this class'));
+  const allIds = Object.keys(cls.assigned).filter(getHW), ids = allIds.filter(id => !cls.assigned[id].only), indiv = allIds.filter(id => cls.assigned[id].only);
+  if (!ids.length) hwCard.append(h('p', { class: 'muted', style: 'margin:0' }, 'Nothing set yet. Choose a pack from the question bank below.'));
+  ids.forEach(id => {
+    const hw = getHW(id), a = cls.assigned[id];
+    const due = h('input', { class: 'inp', type: 'date', style: 'width:auto', 'aria-label': 'Due date for ' + hw.title }); due.value = a.due || '';
+    due.addEventListener('change', () => { a.due = due.value; save(true); });
+    const hs = hwStudents(cls, id), done = hs.filter(x => x.work && x.work[id] && x.work[id].submitted).length;
+    hwCard.append(h('div', { class: 'hw-row setrow' },
+      h('div', {}, h('b', {}, hw.title), h('div', { class: 'muted' }, `${hw.questions.length} questions · ${hw.total} marks · ${done}/${hs.length} submitted`)),
+      h('div', { class: 'io-row' }, h('span', { class: 'muted' }, 'Due'), due,
+        h('button', { type: 'button', class: 'primary', onclick: () => screenResults(cls, hw) }, 'Results'),
+        h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, hw) }, 'Preview'),
+        twoClick('Unset', 'Click again to unset', () => { delete cls.assigned[id]; save(true); screenClass(cls); }, { class: 'linkbtn del' }))));
+  });
+  if (ids.length) hwCard.append(h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Unsetting a homework hides it from students but keeps their work.'));
+  app.append(hwCard);
+  if (indiv.length){
+    const tb = h('tbody');
+    indiv.sort((a, b) => (DB.students[cls.assigned[a].only[0]] || {}).name > (DB.students[cls.assigned[b].only[0]] || {}).name ? 1 : -1).forEach(id => {
+      const hw = getHW(id), st = DB.students[cls.assigned[id].only[0]]; if (!st) return;
+      const w = st.work && st.work[id];
+      tb.append(h('tr', {}, h('td', {}, st.name), h('td', {}, hw.title.replace(/^Improvement homework: /, '')), h('td', { class: 'num' }, `${hw.total} marks`),
+        h('td', {}, w && w.submitted ? 'Submitted' : w && Object.values(w.parts).some(p => p.locked) ? 'In progress' : 'Not started'),
+        h('td', {}, cls.assigned[id].due ? fmtDue(cls.assigned[id].due) : ''),
+        h('td', {}, h('div', { class: 'io-row' }, h('button', { type: 'button', class: 'linkbtn', onclick: () => screenResults(cls, hw) }, 'Results'), h('button', { type: 'button', class: 'linkbtn', onclick: () => screenPreview(cls, hw) }, 'Preview'),
+          twoClick('Unset', 'Click again', () => { delete cls.assigned[id]; save(true); screenClass(cls); }, { class: 'linkbtn del' })))));
+    });
+    app.append(h('div', { class: 'card stack' }, h('h2', {}, `Individual homework (${indiv.length})`),
+      h('div', { style: 'overflow-x:auto' }, h('table', { class: 'res' }, h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Focus'), h('th', { class: 'num' }, 'Size'), h('th', {}, 'Status'), h('th', {}, 'Due'), h('th'))), tb))));
+  }
+  app.append(bankPicker(cls));
+
+  // class list with logins
+  const others = Object.values(DB.classes).filter(c => c.id !== cls.id);
+  const removeFrom = (st, c) => {          // leaving their last class deletes the student
+    st.classIds = st.classIds.filter(id => id !== c.id);
+    if (!st.classIds.length){ delete DB.students[st.key]; Object.values(DB.checks).forEach(x => delete x[st.key]); }
+  };
+  const tb = h('tbody');
+  studs.forEach(st => {
+    const elsewhere = classesOf(st).filter(c => c.id !== cls.id), free = others.filter(c => !st.classIds.includes(c.id));
+    const sel = h('select', { class: 'inp', style: 'width:auto;padding:4px 6px', 'aria-label': `Move or add ${st.name}` }, h('option', { value: '' }, 'Move or add to…'),
+      free.map(c => h('option', { value: 'a:' + c.id }, `Also add to ${c.name}`)), free.map(c => h('option', { value: 'm:' + c.id }, `Move to ${c.name}`)));
+    sel.addEventListener('change', () => { const [op, id] = sel.value.split(':'); if (!id) return;
+      st.classIds.push(id); if (op === 'm') st.classIds = st.classIds.filter(x => x !== cls.id);
+      save(true); screenClass(cls); });
+    const last = st.classIds.length === 1;
+    tb.append(h('tr', {},
+      h('td', {}, st.name, elsewhere.length ? h('div', { class: 'muted', style: 'font-size:.85rem' }, 'Also in ' + elsewhere.map(c => c.name).join(', ')) : null),
+      h('td', { class: 'mono' }, st.login), h('td', { class: 'mono' }, st.pin),
+      h('td', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => { st.pin = makePin(); save(true); screenClass(cls); } }, 'New PIN')),
+      h('td', {}, free.length ? sel : null),
+      h('td', {}, twoClick(last ? 'Delete' : 'Remove', last ? 'Click again to delete this student and their work' : 'Click again to remove from this class',
+        () => { removeFrom(st, cls); save(true); screenClass(cls); }, { class: 'linkbtn del' }))));
+  });
+  const outside = Object.values(DB.students).filter(x => !x.classIds.includes(cls.id));
+  const addSel = h('select', { class: 'inp', style: 'width:auto', 'aria-label': 'Add an existing student' }, h('option', { value: '' }, 'Add a student from another class…'),
+    outside.map(x => h('option', { value: x.key }, `${x.name} (${x.login}, ${classesOf(x).map(c => c.name).join(', ')})`)));
+  addSel.addEventListener('change', () => { const x = DB.students[addSel.value]; if (!x) return; x.classIds.push(cls.id); save(true); screenClass(cls); });
+  const status = h('p', { class: 'ok', role: 'status' });
+  const outBox = h('textarea', { class: 'io', readonly: true, hidden: true, 'aria-label': 'Login list' });
+  const copyBtn = h('button', { type: 'button', class: 'ghost', onclick: async () => {
+    const txt = 'Name\tLogin name\tPIN\n' + studs.map(s => `${s.name}\t${s.login}\t${s.pin}`).join('\n'); outBox.value = txt;
+    try { await navigator.clipboard.writeText(txt); status.textContent = 'Copied. Paste it into Excel or Word to print login slips.'; outBox.hidden = true; }
+    catch (e) { outBox.hidden = false; outBox.select(); status.textContent = 'Copying was blocked, so select the text below and copy it yourself.'; }
+  } }, 'Copy login list');
+  const more = h('textarea', { class: 'inp names', style: 'min-height:4.5em', placeholder: 'Add new students, one per line', 'aria-label': 'Students to add' });
+  app.append(h('div', { class: 'card stack' },
+    h('div', { class: 'hw-row' }, h('h2', {}, `Class list and logins (${studs.length})`), studs.length ? copyBtn : null), status, outBox,
+    studs.length ? h('div', { style: 'overflow-x:auto' }, h('table', { class: 'res' }, h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Login name'), h('th', {}, 'PIN'), h('th'), h('th'), h('th'))), tb))
+      : h('p', { class: 'muted', style: 'margin:0' }, 'No students in this class yet.'),
+    more, h('div', { class: 'io-row' }, h('button', { type: 'button', class: 'ghost', onclick: () => { const names = parseNames(more.value); if (!names.length) return; addStudents(cls, names); save(true); screenClass(cls); } }, 'Add new students'), outside.length ? addSel : null),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'A student in two classes keeps one login and PIN and sees the homework from both.')));
+
+  app.append(h('div', {}, twoClick('Delete this class', 'Click again to delete. Students who are only in this class are deleted with their work', () => {
+    classStudents(cls).forEach(st => removeFrom(st, cls));
+    delete DB.classes[cls.id]; save(true); screenTeacher(); }, { class: 'linkbtn del' })));
+}
+
+/* ---- choosing a pack from the question bank ---- */
+const PICK = { topic: 'MF.ALL', min: 60, letter: 'A' };
+function bankPicker(cls){
+  const topicSel = h('select', { class: 'inp', id: 'bk-topic' }, Object.keys(BANK).filter(k => BANK[k].engine).map(k => { const B = BANK[k];
+    return h('optgroup', { label: `${B.name} (${B.year})` }, h('option', { value: k + '.ALL' }, `${B.name}: whole topic`), B.order.map(t => h('option', { value: k + '.' + t }, B.engine.TOPICS[t]))); }));
+  const sizeSel = h('select', { class: 'inp', id: 'bk-size' }, SIZES.map(x => h('option', { value: x.min }, x.label)));
+  const packSel = h('select', { class: 'inp', id: 'bk-pack' }, [...PACK_LETTERS].map(l => h('option', { value: l }, 'Pack ' + l)));
+  topicSel.value = PICK.topic; sizeSel.value = PICK.min; packSel.value = PICK.letter;
+  const info = h('p', { class: 'muted', style: 'margin:0', 'aria-live': 'polite' });
+  const cur = () => getHW(`${topicSel.value}.${sizeSel.value}.${packSel.value}`);
+  const setBtn = h('button', { type: 'button', class: 'primary', onclick: () => { const hw = cur(); cls.assigned[hw.id] = { due: '' }; DB.packs[hw.id] = hw.codes; save(true); screenClass(cls); } }, 'Set for this class');
+  const prevBtn = h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, cur()) }, 'Preview questions and mark schemes');
+  const update = () => {
+    PICK.topic = topicSel.value; PICK.min = +sizeSel.value; PICK.letter = packSel.value;
+    const hw = cur(), counts = {}; hw.questions.forEach(Q => { counts[Q.tag] = (counts[Q.tag] || 0) + 1; });
+    info.textContent = `This pack: ${hw.questions.length} questions · ${hw.total} marks` + (Object.keys(counts).length > 1 ? ' · ' + Object.entries(counts).map(([k, v]) => `${k} ×${v}`).join(', ') : '');
+    const has = !!cls.assigned[hw.id]; setBtn.disabled = has; setBtn.textContent = has ? 'Already set for this class' : 'Set for this class';
+  };
+  [topicSel, sizeSel, packSel].forEach(x => x.addEventListener('change', update)); update();
+  return h('div', { class: 'card stack' }, h('h2', {}, 'Set homework from the question bank'),
+    h('div', { class: 'pick' }, h('div', {}, h('label', { class: 'lab', for: 'bk-topic' }, 'Topic'), topicSel), h('div', {}, h('label', { class: 'lab', for: 'bk-size' }, 'Length'), sizeSel), h('div', {}, h('label', { class: 'lab', for: 'bk-pack' }, 'Pack'), packSel)),
+    info, h('div', { class: 'io-row' }, setBtn, prevBtn),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Lengths allow about 1.5 minutes per mark, which includes the time students spend marking and correcting. Packs A to E are different sets of questions for the same topic and length.'));
+}
+
+function screenPreview(cls, hw, back){
+  setHW(hw);
+  app.replaceChildren();
+  app.append(tbar('Preview', back || (() => screenClass(cls)), back ? '← Back' : '← ' + cls.name), h('h1', {}, HW.title),
+    h('p', { class: 'muted', style: 'margin:0' }, `${HW.questions.length} questions · ${TOTAL} marks. Students see one question at a time, and each mark scheme only after they lock in that answer.`));
+  HW.questions.forEach((Q, qi) => {
+    const sheet = h('article', { class: 'sheet' },
+      h('div', { class: 'q-head' }, qTitle(qi + 1), h('span', { class: 'tag' }, Q.tag), h('span', { class: 'q-marks' }, `${Q.parts.reduce((a, P) => a + P.marks, 0)} marks`)),
+      Q.why ? whyBox(Q.why) : null, h('div', { class: 'stem', html: Q.stem }), Q.figs.length ? figsFor(Q) : null,
+      h('ol', { class: 'parts' }, Q.parts.map(P => h('li', {},
+        h('div', { class: 'part-head' }, h('span', { class: 'letter' }, P.letter), h('div', { class: 'part-q', html: P.q }), h('span', { class: 'marks' }, `[${P.marks} mark${P.marks > 1 ? 's' : ''}]`)),
+        h('div', { class: 'part-body' }, h('div', { class: 'ms' }, h('span', { class: 'ms-tag' }, 'Mark scheme'), h('div', { html: P.ms }), P.note ? h('div', { class: 'ms-note', html: P.note }) : null))))),
+      h('div', { class: 'muted', style: 'font-size:.9rem' }, 'Question code ' + Q.code));
+    app.append(sheet);
+  });
+  window.scrollTo(0, 0);
+}
+
+function screenResults(cls, hw){
+  setHW(hw);
+  app.replaceChildren();
+  app.append(tbar(cls.name, () => screenClass(cls), '← ' + cls.name));
+  const due = fmtDue((cls.assigned[hw.id] || {}).due);
+  app.append(h('h1', {}, HW.title), h('p', { class: 'muted', style: 'margin:0' }, cls.name + (due ? ' · due ' + due : '')));
+  const studs = hwStudents(cls, hw.id);
+  const tb = h('tbody');
+  studs.forEach(st => {
+    const w = workFor(st), s = stats(w);
+    tb.append(h('tr', {},
+      h('td', {}, st.name),
+      h('td', {}, w.submitted ? 'Submitted' : w.reopened ? 'Reopened for corrections' : s.locked ? 'In progress' : 'Not started'),
+      h('td', { class: 'num' }, `${s.locked}/${s.n}`),
+      h('td', { class: 'num' }, s.marked ? `${s.score}/${TOTAL}` : '–'),
+      h('td', {}, (() => { const f = checkFlags(st), sb = sendable(st);
+        if (!f.checked) return h('span', { class: 'muted' }, 'Not checked');
+        return h('div', { class: 'stack', style: 'gap:2px' }, ...[f.n ? h('span', { class: 'flagtxt' }, `⚑ ${f.n} to review`) : null,
+          f.out ? h('span', { class: 'muted' }, `${f.out} sent back`) : null, !f.n && !f.out ? h('span', { class: 'ok' }, '✓ Agrees') : null,
+          sb.length ? h('button', { type: 'button', class: 'linkbtn', style: 'text-align:left', onclick: () => { sendBack(st, sb); save(true); LOADMSG = `Sent ${sb.length} part${sb.length === 1 ? '' : 's'} back to ${st.name}: ${sb.map(partLabel).join(', ')}.`; screenResults(cls, HW); } }, `Send back ${sb.length} part${sb.length === 1 ? '' : 's'}`) : null].filter(Boolean)); })()),
+      h('td', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => { CURQ = 0; screenTeacherStudent(st, cls); } }, 'View work'))));
+  });
+  const toSend = studs.map(x => [x, sendable(x)]).filter(([, a]) => a.length);
+  app.append(h('div', { class: 'card', style: 'overflow-x:auto' }, studs.length ? h('table', { class: 'res' },
+    h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Status'), h('th', { class: 'num' }, 'Answered'), h('th', { class: 'num' }, 'Self-mark'), h('th', {}, 'Claude check'), h('th'))), tb)
+    : h('p', { class: 'muted', style: 'margin:0' }, 'No students in this class yet.')));
+  if (LOADMSG && !studs.length) LOADMSG = '';
+  if (toSend.length){
+    const total = toSend.reduce((a, [, x]) => a + x.length, 0);
+    app.append(h('div', { class: 'card hw-row' },
+      h('div', {}, h('b', {}, `Claude flagged ${total} part${total === 1 ? '' : 's'} across ${toSend.length} student${toSend.length === 1 ? '' : 's'}`),
+        h('div', { class: 'muted' }, 'Sending back reopens only the flagged parts. Students re-mark those, or redo the green correction, and submit again. Check individual students first with View work if you want to leave some out.')),
+      twoClick(`Send back all ${total}`, 'Click again to send', () => {
+        toSend.forEach(([x, a]) => sendBack(x, a)); save(true);
+        LOADMSG = `Sent flagged parts back to ${toSend.length} student${toSend.length === 1 ? '' : 's'}.`; screenResults(cls, HW); }, { class: 'primary' })));
+  }
+  if (studs.length){
+    const st = h('span', { class: 'ok', role: 'status' }), box = h('textarea', { class: 'io', readonly: true, hidden: true, 'aria-label': 'Results table' });
+    app.append(h('div', { class: 'io-row' }, h('button', { type: 'button', class: 'ghost', onclick: async () => {
+      const rows = [['Student', 'Login name', 'Status', 'Answered', 'Self-mark', 'Claude mark', 'Out of', 'To review']].concat(studs.map(x => { const w = workFor(x), s = stats(w), c = (DB.checks[HW.id] || {})[x.key], f = checkFlags(x);
+        return [x.name, x.login, w.submitted ? 'Submitted' : w.reopened ? 'Reopened for corrections' : s.locked ? 'In progress' : 'Not started', `${s.locked} of ${s.n}`, s.marked ? s.score : '', c ? ALL_PARTS.reduce((a, P) => a + (c[P.id] ? Math.min(c[P.id].suggested, P.marks) : 0), 0) : '', TOTAL, f.checked ? f.n : '']; }));
+      const txt = rows.map(r => r.join('\t')).join('\n'); box.value = txt;
+      try { await navigator.clipboard.writeText(txt); st.textContent = 'Copied. Paste it into Excel.'; box.hidden = true; } catch (e) { box.hidden = false; box.select(); st.textContent = 'Copying was blocked, so select the text below and copy it yourself.'; }
+    } }, 'Copy results table'), st), box);
+    app.append(checkPanel(cls));
+  }
+  window.scrollTo(0, 0);
+}
+
+/* ---- sending work to Claude and loading the results back ---- */
+const plainText = html => { const d = document.createElement('div'); d.innerHTML = html.replace(/<span class="ov">(.*?)<\/span>/g, 'anti-$1').replace(/<br\s*\/?>/g, '\n').replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<sub>(.*?)<\/sub>/g, '_$1'); return d.textContent; };
+function exportJSON(cls){
+  const out = { instructions: 'Check each student\'s self-marking for this AQA A-level physics homework. For every locked part, mark the black (pre-mark-scheme) answer against the mark scheme and give your suggested mark. ' +
+      'Where the student self-marked below full marks, also judge whether their green correction (green_typed and green strokes) genuinely corrects the mistake: "ok", or "weak" if it is nonsense, a scribble, filler or does not address the error. ' +
+      'Strokes are point lists [x1,y1,x2,y2,…] in a drawing space of the given width and height, y downwards; render them to read drawings. ' +
+      'Reply with JSON only, in this form: {"homework":"' + HW.id + '","checks":[{"student":"<the student\'s login value>","part":"<id>","suggested":<int>,"correction":"ok"|"weak","note":"<short reason, empty if agreeing>"}]}',
+    class: cls.name,
+    homework: { id: HW.id, title: HW.title, drawing_space: [LW, LH],
+      parts: ALL_PARTS.map(P => { const Q = HW.questions.find(q => q.parts.includes(P)); return { id: P.id, stem: plainText(Q.stem), question: plainText(P.q), marks: P.marks, mark_scheme: plainText(P.ms) + (P.note ? '\n' + plainText(P.note) : '') }; }) },
+    students: hwStudents(cls, HW.id).map(stu => { const w = workFor(stu); const parts = {};
+      ALL_PARTS.forEach(P => { const s = w.parts[P.id]; if (!s.locked) return;
+        parts[P.id] = { typed: s.text, green_typed: s.green, self_mark: s.markLocked ? s.mark : null,
+          strokes: s.strokes.map(k => k.t ? { colour: 'green', stamp: k.t, x: Math.round(k.x), y: Math.round(k.y) } : { colour: k.c === 'g' ? 'green' : 'black', points: k.p.map(Math.round) }) }; });
+      return { login: stu.login, name: stu.name, submitted: w.submitted, parts }; }) };
+  return JSON.stringify(out);
+}
+let LOADMSG = '';
+function checkPanel(cls){
+  const status = h('p', { class: 'ok', role: 'status' }, LOADMSG); LOADMSG = '';
+  const outBox = h('textarea', { class: 'io', readonly: true, hidden: true, 'aria-label': 'Exported work' });
+  const copyBtn = h('button', { type: 'button', class: 'primary', onclick: async () => {
+    const txt = exportJSON(cls); outBox.value = txt;
+    try { await navigator.clipboard.writeText(txt); status.textContent = 'Copied. Paste it into a chat with Claude and ask it to check the marking.'; outBox.hidden = true; }
+    catch (e) { outBox.hidden = false; outBox.select(); status.textContent = 'Copying was blocked, so select all the text below and copy it yourself.'; }
+  } }, 'Copy class work for Claude');
+  const inBox = h('textarea', { class: 'io', placeholder: 'Paste Claude’s results here…', 'aria-label': 'Claude’s results' });
+  const inMsg = h('p', { class: 'err', role: 'alert' });
+  const apply = h('button', { type: 'button', class: 'ghost', onclick: () => {
+    inMsg.textContent = '';
+    let r; try { r = JSON.parse(inBox.value); } catch (e) { inMsg.textContent = 'That isn’t valid results text. Paste exactly what Claude gave you.'; return; }
+    if (!r || r.homework !== HW.id || !Array.isArray(r.checks)) { inMsg.textContent = 'These results are for a different homework, or are incomplete.'; return; }
+    const store = DB.checks[HW.id] = DB.checks[HW.id] || {}; let n = 0, missing = new Set();
+    r.checks.forEach(c => { const k = String(c.student || '').trim().toLowerCase(), stu = DB.students[k]; if (!stu || !(stu.classIds || []).includes(cls.id)) { missing.add(c.student); return; }
+      if (!ALL_PARTS.some(P => P.id === c.part)) return;
+      const prev = (store[k] || {})[c.part], P0 = ALL_PARTS.find(P => P.id === c.part), rec = { suggested: Math.max(0, Math.min(P0.marks, Math.round(Number(c.suggested)) || 0)), correction: c.correction === 'weak' ? 'weak' : 'ok', note: String(c.note || ''), at: new Date().toISOString() };
+      (store[k] = store[k] || {})[c.part] = rec; n++; });
+    save(true);
+    if (!n) { inMsg.textContent = 'None of these results match students in this class.'; return; }
+    LOADMSG = `Loaded ${n} checked part${n === 1 ? '' : 's'}.` + (missing.size ? ` Not matched to a student in this class: ${[...missing].join(', ')}.` : '');
+    screenResults(cls, HW);
+  } }, 'Load results');
+  return h('div', { class: 'card stack' },
+    h('h2', {}, 'Check marking with Claude'),
+    h('p', { class: 'muted', style: 'margin:0' }, 'Copy the class’s work, paste it into a chat with Claude and ask it to check the self-marking and corrections. Paste Claude’s results back here and any disagreements are flagged for you. Nothing goes back to a student until you choose to send back their flagged parts. Once the platform is hosted, a scheduled task will do this automatically each evening.'),
+    h('div', { class: 'io-row' }, copyBtn), status, outBox,
+    inBox, h('div', { class: 'io-row' }, apply), inMsg);
+}
+
+function screenTeacherStudent(st, cls){
+  app.replaceChildren();
+  const w = workFor(st), s = stats(w);
+  app.append(tbar(`${st.name} · self-marked ${s.score}/${TOTAL}`, () => screenResults(cls, HW), '← Back to results'));
+  app.append(h('h1', {}, HW.title));
+  app.append(h('div', { class: 'legend' },
+    h('span', {}, h('span', { class: 'swatch', style: 'background:var(--ink)' }), 'Attempt (before mark scheme)'),
+    h('span', { style: 'color:var(--green);font-weight:600' }, h('span', { class: 'swatch g' }), 'Added after seeing the mark scheme')));
+  const go = i => { CURQ = i; screenTeacherStudent(st, cls); };
+  const flagged = Q => { const c = (DB.checks[HW.id] || {})[st.key] || {}; return Q.parts.some(P => w.parts[P.id].redo || partIssue(c[P.id], w.parts[P.id])) ? 'redo' : qState(Q, w) === 'done' ? 'done' : ''; };
+  const sb = sendable(st), out = ALL_PARTS.filter(P => w.parts[P.id].redo);
+  if (sb.length){
+    const c = (DB.checks[HW.id] || {})[st.key] || {}, err = h('p', { class: 'err', role: 'alert', style: 'margin:0' });
+    const boxes = sb.map(P => { const k = c[P.id], s = w.parts[P.id], cb = h('input', { type: 'checkbox', checked: true, id: 'sb-' + P.id });
+      return [P, cb, h('label', { for: 'sb-' + P.id, style: 'display:flex;gap:.5rem;align-items:baseline' }, cb, h('span', {}, h('b', {}, partLabel(P)), ' · ',
+        partIssue(k, s) === 'correction' ? 'correction looks inadequate' : `self-marked ${s.mark}, Claude suggests ${k.suggested} out of ${P.marks}`, k.note ? h('span', { class: 'muted' }, ` · ${k.note}`) : null))]; });
+    app.append(h('div', { class: 'card stack' }, h('h2', { style: 'margin:0' }, 'Send flagged parts back'),
+      ...boxes.map(b => b[2]), err,
+      h('div', { class: 'io-row', style: 'margin:0' }, h('button', { type: 'button', class: 'primary', onclick: () => {
+        const pick = boxes.filter(b => b[1].checked).map(b => b[0]); if (!pick.length) return err.textContent = 'Tick at least one part to send back.';
+        sendBack(st, pick); save(true); screenTeacherStudent(st, cls); } }, 'Send ticked parts back')),
+      h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Only the ticked parts reopen. The student doesn’t see Claude’s suggested mark or note.')));
+  }
+  if (out.length) app.append(h('div', { class: 'card hw-row' },
+    h('div', {}, h('b', {}, `Sent back: ${out.map(partLabel).join(', ')}`), h('div', { class: 'muted' }, 'Waiting for the student to look at these again and resubmit.')),
+    h('button', { type: 'button', class: 'ghost', onclick: () => { withdraw(st); save(true); screenTeacherStudent(st, cls); } }, 'Withdraw')));
+  app.append(pager(go, flagged), sheetFor(HW.questions[CURQ], CURQ, w, 'view', () => {}, st), prevNext(go));
+  window.scrollTo(0, 0);
+}
+
+/* ================= custom homeworks (built by the teacher, or suggested from the analysis) ================= */
+function createCustom(cls, title, items, only, kind){
+  const id = 'CU.' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+  DB.custom[id] = { title, items: items.map(x => Object.assign({ sub: x.sub, code: x.code }, x.why ? { why: x.why } : {})), kind: kind || 'custom', created: new Date().toISOString(), for: only ? only[0] : null };
+  cls.assigned[id] = Object.assign({ due: '' }, only ? { only } : {});
+  return id;
+}
+const QCACHE = {};
+function getQ(sub, code){ const k = sub + ':' + code; return QCACHE[k] || (QCACHE[k] = makeQ(sub, code)); }
+const figsOf = q => q.figures || [q.circuitSvg, q.graph].filter(Boolean);
+const topicNamesOf = items => [...new Set(items.map(it => topicName(it.code.replace(/\d+-\d+$/, ''))))];
+
+/* ---- a homework generated from several chosen sub-topics ---- */
+const MIX = { topics: [], min: 60, links: true, roll: 1 };
+function screenMix(cls){
+  app.replaceChildren(); window.scrollTo(0, 0);
+  app.append(tbar('Mixed homework', () => screenClass(cls), '← ' + cls.name), h('h1', {}, 'Mix sub-topics into a homework'),
+    h('p', { class: 'muted', style: 'margin:0;max-width:70ch' }, 'Tick the sub-topics you want, from one topic or several. The homework takes about the same number of questions from each, and starts from any questions in the bank that link your chosen sub-topics together.'));
+  const out = h('div', { class: 'card stack', 'aria-live': 'polite' });
+  const grid = h('div', { class: 'mixg' }, Object.keys(BANK).filter(k => BANK[k].engine).map(k => { const B = BANK[k];
+    const boxes = B.order.map(t => { const cb = h('input', { type: 'checkbox', value: t }); cb.checked = MIX.topics.includes(t);
+      cb.addEventListener('change', () => { MIX.topics = [...grid.querySelectorAll('input[value]:checked')].map(x => x.value); allCb.checked = B.order.every(x => MIX.topics.includes(x)); draw(); });
+      return h('label', {}, cb, h('span', {}, B.engine.TOPICS[t])); });
+    const allCb = h('input', { type: 'checkbox' }); allCb.checked = B.order.every(x => MIX.topics.includes(x));
+    allCb.addEventListener('change', () => { boxes.forEach(l => { l.querySelector('input').checked = allCb.checked; }); MIX.topics = [...grid.querySelectorAll('input[value]:checked')].map(x => x.value); draw(); });
+    return h('fieldset', {}, h('legend', {}, `${B.name} (${B.year})`), h('label', { class: 'muted' }, allCb, h('span', {}, 'All of this topic')), boxes); }));
+  const sizeSel = h('select', { class: 'inp', id: 'mx-size', style: 'width:auto' }, SIZES.map(x => h('option', { value: x.min }, x.label))); sizeSel.value = MIX.min;
+  sizeSel.addEventListener('change', () => { MIX.min = +sizeSel.value; draw(); });
+  const linkCb = h('input', { type: 'checkbox', id: 'mx-links' }); linkCb.checked = MIX.links; linkCb.addEventListener('change', () => { MIX.links = linkCb.checked; draw(); });
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, '1. Choose sub-topics'), grid),
+    h('div', { class: 'card stack' }, h('h2', {}, '2. Length'),
+      h('div', { class: 'io-row' }, h('div', {}, h('label', { class: 'lab', for: 'mx-size' }, 'Length'), sizeSel),
+        h('label', { style: 'display:flex;gap:8px;align-items:center;cursor:pointer' }, linkCb, h('span', {}, 'Include questions that link the chosen sub-topics')))), out);
+  function draw(){
+    const topics = MIX.topics.slice().sort((a, b) => Object.keys(SUB_OF).indexOf(a) - Object.keys(SUB_OF).indexOf(b));
+    if (!topics.length){ out.replaceChildren(h('h2', {}, '3. Your homework'), h('p', { class: 'muted', style: 'margin:0' }, 'Tick at least one sub-topic above.')); return; }
+    const size = SIZES.find(x => x.min === MIX.min), g = generateMix(topics, size.marks, MIX.links, topics.join('.') + MIX.min + MIX.links + MIX.roll);
+    const title = 'Mixed homework: ' + (topics.length <= 3 ? topics.map(topicName).join(', ') : [...new Set(topics.map(t => BANK[SUB_OF[t]].name))].join(', ') + ` (${topics.length} sub-topics)`);
+    const draft = () => ({ title, target: g.items.length, items: g.items.map(x => Object.assign({ sub: x.sub, code: x.code }, x.why ? { why: x.why } : {})), kind: 'mixed', back: () => screenMix(cls) });
+    const qs = g.items.map(it => getQ(it.sub, it.code));
+    out.replaceChildren(...[h('h2', {}, '3. Your homework'),
+      h('p', { style: 'margin:0' }, h('b', {}, `${g.items.length} questions · ${g.total} marks · about ${fmtMins(g.total * MIN_PER_MARK)}`),
+        topics.length > 1 ? h('span', { class: 'muted' }, MIX.links ? (g.links ? ` · ${g.links} linking question${g.links > 1 ? 's' : ''}` : ' · the bank has no questions that link these sub-topics') : '') : null),
+      h('ul', { class: 'mixsum' }, topics.map(t => h('li', {}, `${topicName(t)}: ${g.count[t]} question${g.count[t] === 1 ? '' : 's'}`))),
+      g.missing.length ? h('p', { class: 'warn', style: 'margin:0' }, `This length is too short to include every sub-topic. Choose a longer homework or fewer sub-topics to cover ${g.missing.map(topicName).join(', ')}.`) : null,
+      h('ol', { class: 'trayl' }, qs.map((q, i) => h('li', {}, h('div', {}, h('b', {}, `${i + 1}. ${q.topicName}`), h('span', { class: 'muted' }, ` · type ${q.id} · ${q.marks} marks`), h('div', { class: 'muted trunc' }, plainText(q.stem)), g.items[i].why ? h('div', { class: 'why-s' }, g.items[i].why) : null)))),
+      h('div', { class: 'io-row' },
+        h('button', { type: 'button', class: 'primary', onclick: () => { const d = draft(); createCustom(cls, d.title, d.items, null, 'mixed'); save_(); screenClass(cls); } }, 'Set for this class'),
+        h('button', { type: 'button', class: 'ghost', onclick: () => { const d = draft(); screenPreview(cls, withWhy(buildHW('tmp', d.title, INTRO(fmtMins(g.total * MIN_PER_MARK)), qs.map(q => q)), d.items), () => screenMix(cls)); } }, 'Preview questions and mark schemes'),
+        h('button', { type: 'button', class: 'ghost', onclick: () => screenBuilder(cls, draft()) }, 'Edit questions'),
+        h('button', { type: 'button', class: 'ghost', onclick: () => { MIX.roll++; draw(); } }, 'Different questions'))].filter(Boolean));
+  }
+  draw();
+}
+
+const BLD = { sub: 'MF', topic: 'FW' };
+function screenBuilder(cls, draft){
+  draft = draft || { title: '', target: 6, items: [] };
+  draft.seeds = draft.seeds || {};
+  app.replaceChildren(); window.scrollTo(0, 0);
+  const forStu = draft.forStudent ? DB.students[draft.forStudent] : null;
+  app.append(tbar('Custom homework', draft.back || (() => screenClass(cls)), draft.back ? '← Back' : '← ' + cls.name),
+    h('h1', {}, forStu ? `Custom homework for ${forStu.name}` : 'Build a custom homework'));
+
+  // 1. title and number of questions
+  const title = h('input', { class: 'inp', id: 'b-title', placeholder: 'e.g. Moving charges: catch-up', autocomplete: 'off' }); title.value = draft.title;
+  title.addEventListener('input', () => { draft.title = title.value; });
+  const count = h('select', { class: 'inp', id: 'b-count', style: 'width:auto' }, Array.from({ length: 15 }, (_, i) => h('option', { value: i + 1 }, String(i + 1))));
+  count.value = draft.target;
+  count.addEventListener('change', () => { draft.target = +count.value; refresh(); });
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, '1. Title and number of questions'),
+    h('div', { class: 'pick' }, h('div', {}, h('label', { class: 'lab', for: 'b-title' }, 'Title (students see this)'), title),
+      h('div', {}, h('label', { class: 'lab', for: 'b-count' }, 'Number of questions'), count))));
+
+  // your homework so far
+  const tray = h('div', { class: 'card stack tray' });
+  app.append(tray);
+
+  // 2. topic and sub-topic
+  const subSel = h('select', { class: 'inp', id: 'b-sub' }, Object.keys(BANK).filter(k => BANK[k].engine).map(k => h('option', { value: k }, `${BANK[k].name} (${BANK[k].year})`)));
+  const topSel = h('select', { class: 'inp', id: 'b-topic' });
+  const fillTopics = () => { topSel.replaceChildren(...BANK[BLD.sub].order.map(t => h('option', { value: t }, BANK[BLD.sub].engine.TOPICS[t]))); if (!BANK[BLD.sub].order.includes(BLD.topic)) BLD.topic = BANK[BLD.sub].order[0]; topSel.value = BLD.topic; };
+  subSel.value = BLD.sub; fillTopics();
+  subSel.addEventListener('change', () => { BLD.sub = subSel.value; fillTopics(); drawList(); });
+  topSel.addEventListener('change', () => { BLD.topic = topSel.value; drawList(); });
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, '2. Choose a topic and sub-topic'),
+    h('div', { class: 'pick' }, h('div', {}, h('label', { class: 'lab', for: 'b-sub' }, 'Topic'), subSel), h('div', { style: 'grid-column:span 2' }, h('label', { class: 'lab', for: 'b-topic' }, 'Sub-topic'), topSel))));
+
+  // 3. the questions available in that sub-topic
+  const listHead = h('h2', {}), list = h('div', { class: 'stack' });
+  app.append(h('div', { class: 'stack' }, listHead, list));
+
+  const full = () => draft.items.length >= draft.target;
+  function card(sub, tpl){
+    const seed = draft.seeds[tpl] || 10001, code = tpl + '-' + seed;
+    let q; try { q = getQ(sub, code); } catch (e) { return null; }
+    const added = draft.items.some(it => it.code === code), typeCount = draft.items.filter(it => it.code.startsWith(tpl + '-')).length;
+    const addBtn = h('button', { type: 'button', class: 'primary', disabled: added || full(), onclick: () => { draft.items.push({ sub, code }); refresh(); } },
+      added ? '✓ Added' : full() ? 'Homework full' : 'Add to homework');
+    const another = h('button', { type: 'button', class: 'ghost', onclick: () => { draft.seeds[tpl] = 10000 + Math.floor(Math.random() * 90000); const n = card(sub, tpl); el.replaceWith(n); } }, 'Different numbers');
+    const el = h('article', { class: 'sheet bq' },
+      h('div', { class: 'q-head' }, h('h2', {}, `Question type ${tpl}`), h('span', { class: 'tag' }, q.topicName), h('span', { class: 'q-marks' }, `${q.marks} marks`)),
+      typeCount && !added ? h('p', { class: 'ok', style: 'margin:0' }, `This type is already in the homework${typeCount > 1 ? ` ${typeCount} times` : ''} with different numbers.`) : null,
+      h('div', { class: 'stem', html: q.stem }),
+      figsOf(q).length ? h('div', { class: 'figs mini' }, figsOf(q).map((f, j) => h('figure', {}, h('figcaption', {}, `Figure ${j + 1}`), h('div', { class: 'fig', html: f })))) : null,
+      h('ol', { class: 'parts' }, q.parts.map((P, i) => h('li', {}, h('div', { class: 'part-head' }, h('span', { class: 'letter' }, `(${String.fromCharCode(97 + i)})`), h('div', { class: 'part-q', html: P.q }), h('span', { class: 'marks' }, `[${P.marks}]`))))),
+      h('details', {}, h('summary', {}, 'Mark scheme'), h('ol', { class: 'parts', style: 'margin-top:8px' }, q.parts.map((P, i) => h('li', {}, h('div', { class: 'part-head' }, h('span', { class: 'letter' }, `(${String.fromCharCode(97 + i)})`), h('div', { class: 'ms', html: P.ms }), h('span')))))),
+      h('div', { class: 'io-row' }, addBtn, another));
+    return el;
+  }
+  function drawList(){
+    const E = BANK[BLD.sub].engine, tpls = E.TEMPLATES.filter(t => t.replace(/\d+/, '') === BLD.topic).sort((a, b) => parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')));
+    listHead.textContent = `3. Add questions: ${E.TOPICS[BLD.topic]} (${tpls.length} question types)`;
+    list.replaceChildren(...tpls.map(t => card(BLD.sub, t)).filter(Boolean));
+  }
+  function drawTray(){
+    const qs = draft.items.map(it => getQ(it.sub, it.code)), marks = qs.reduce((a, q) => a + q.marks, 0);
+    const move = (i, d) => { const it = draft.items.splice(i, 1)[0]; draft.items.splice(i + d, 0, it); refresh(); };
+    const due = h('input', { class: 'inp', type: 'date', style: 'width:auto', 'aria-label': 'Due date' });
+    const setBtn = h('button', { type: 'button', class: 'primary', disabled: !draft.items.length, onclick: () => {
+      const t = draft.title.trim() || (forStu ? 'Improvement homework: ' : 'Custom homework: ') + topicNamesOf(draft.items).join(', ');
+      const id = createCustom(cls, t, draft.items, forStu ? [forStu.key] : null, draft.kind || (forStu ? 'improve' : 'custom'));
+      cls.assigned[id].due = due.value; save_(); screenClass(cls);
+    } }, forStu ? `Set for ${forStu.name}` : 'Set for this class');
+    tray.replaceChildren(h('div', { class: 'hw-row' }, h('h2', {}, 'Your homework'),
+      h('span', { class: 'muted' }, `${draft.items.length} of ${draft.target} questions · ${marks} marks · about ${fmtMins(marks * MIN_PER_MARK)}`)));
+    if (!draft.items.length) tray.append(h('p', { class: 'muted', style: 'margin:0' }, 'No questions yet. Choose a sub-topic below and add questions.'));
+    else tray.append(h('ol', { class: 'trayl' }, qs.map((q, i) => h('li', {},
+      h('div', {}, h('b', {}, `${i + 1}. ${q.topicName}`), h('span', { class: 'muted' }, ` · type ${q.id} · ${q.marks} marks`), h('div', { class: 'muted trunc' }, plainText(q.stem)), draft.items[i].why ? h('div', { class: 'why-s' }, 'Why: ' + draft.items[i].why) : null),
+      h('div', { class: 'io-row' }, h('button', { type: 'button', class: 'tool', disabled: i === 0, 'aria-label': 'Move up', onclick: () => move(i, -1) }, '↑'),
+        h('button', { type: 'button', class: 'tool', disabled: i === qs.length - 1, 'aria-label': 'Move down', onclick: () => move(i, 1) }, '↓'),
+        h('button', { type: 'button', class: 'tool', onclick: () => { draft.items.splice(i, 1); refresh(); } }, 'Remove'))))));
+    if (draft.items.length > draft.target) tray.append(h('p', { class: 'err', style: 'margin:0' }, `There are more questions than the number you chose. Remove ${draft.items.length - draft.target} or increase the number.`));
+    else if (full()) tray.append(h('p', { class: 'ok', style: 'margin:0' }, 'Your homework is full. Increase the number of questions to add more.'));
+    if (draft.items.length) tray.append(h('div', { class: 'io-row' },
+      h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, withWhy(buildHW('tmp', draft.title || 'Custom homework', INTRO(fmtMins(marks * MIN_PER_MARK)), qs), draft.items), () => screenBuilder(cls, draft)) }, 'Preview with mark schemes'),
+      h('span', { class: 'muted' }, 'Due'), due, setBtn));
+  }
+  function refresh(){ drawTray(); drawList(); }
+  refresh();
+}
+const save_ = () => save(true);
+
+/* ================= analysis ================= */
+const KINDS = { calc: 'Calculations', graph: 'Graphs, readings and sketches', written: 'Explanations and descriptions' };
+const MISTAKES = [
+  ['Power-of-ten and unit-conversion errors', /power.of.ten|convert|conversion/i],
+  ['Significant figures', /significant/i],
+  ['Arithmetic slips', /arithmetic|calculator/i],
+  ['Missing or wrong units', /\bunits?\b/i],
+  ['Directions and hand rules', /direction|left.hand|right.hand|fleming|lenz/i],
+  ['Wrong equation or rearrangement', /equation|formula|rearrang/i],
+  ['Incomplete explanations', /incomplete|does not (mention|say|explain)|no mention|never says|marking point|missing/i],
+  ['Graphs, sketches and readings', /graph|gradient|sketch|parabola|\barc\b|drawn|read/i]
+];
+const categorise = note => { for (const [name, re] of MISTAKES) if (re.test(note)) return name; return 'Other'; };
+const pc = (g, m) => m ? Math.round(100 * g / m) : null;
+const heat = p => p == null ? '' : p >= 85 ? 'h4' : p >= 70 ? 'h3' : p >= 50 ? 'h2' : 'h1';
+const topicOrder = t => { let n = 0; for (const k of Object.keys(BANK)){ const i = BANK[k].order.indexOf(t); if (i >= 0) return n + i; n += 100; } return 999; };
+const subOfTopic = t => Object.keys(BANK).find(k => BANK[k].order.includes(t));
+const topicName = t => { const s = subOfTopic(t); return s ? BANK[s].engine.TOPICS[t] : t; };
+const today = () => new Date().toISOString().slice(0, 10);
+function group(recs, key){ const o = {}; recs.forEach(r => { const k = key(r); if (k == null) return; const v = o[k] = o[k] || { got: 0, marks: 0, n: 0, recs: [] }; v.got += r.got; v.marks += r.marks; v.n++; v.recs.push(r); }); return o; }
+function hwStudents(cls, id){ const a = cls.assigned[id]; return classStudents(cls).filter(s => !a || !a.only || a.only.includes(s.key)); }
+// every marked part: Claude's mark when it has been checked, otherwise the student's locked self-mark
+function records(cls){
+  const out = [];
+  Object.keys(cls.assigned).forEach(id => { const hw = getHW(id); if (!hw) return;
+    hwStudents(cls, id).forEach(stu => { const w = stu.work && stu.work[id]; if (!w) return;
+      hw.questions.forEach(Q => Q.parts.forEach(P => { const ps = w.parts[P.id]; if (!ps) return;
+        const c = ((DB.checks[id] || {})[stu.key] || {})[P.id];
+        const got = c ? c.suggested : ps.markLocked ? ps.mark : null; if (got == null) return;
+        out.push({ stu: stu.key, hw: id, sub: Q.sub, topic: Q.topic, tag: Q.tag, tpl: Q.tpl, pi: P.letter, P, kind: P.kind, sf: P.sf, unit: P.unit,
+          marks: P.marks, got: Math.max(0, Math.min(got, P.marks)), self: ps.markLocked ? ps.mark : null, ai: c || null }); })); }); });
+  return out;
+}
+function tile(label, value, sub){ return h('div', { class: 'tile' }, h('div', { class: 'tile-v' }, value), h('div', { class: 'tile-l' }, label), sub ? h('div', { class: 'tile-s' }, sub) : null); }
+function meterRow(label, g, cmp, onclick){
+  const p = pc(g.got, g.marks);
+  return h('div', { class: 'mrow' }, onclick ? h('button', { type: 'button', class: 'linkbtn mlabel', onclick }, label) : h('span', { class: 'mlabel' }, label),
+    h('div', { class: 'meter', role: 'img', 'aria-label': `${label}: ${p}%` + (cmp != null ? `, class average ${cmp}%` : '') }, h('i', { class: heat(p), style: `width:${p}%` }), cmp != null ? h('b', { class: 'cmp', style: `left:${cmp}%` }) : null),
+    h('span', { class: 'mval' }, `${p}%`), h('span', { class: 'muted mn' }, `${g.got}/${g.marks}`));
+}
+function weakTopics(recs, max = 3){
+  const g = group(recs, r => r.topic);
+  const all = Object.entries(g).filter(([, v]) => v.marks >= 4).map(([t, v]) => ({ t, sub: subOfTopic(t), p: pc(v.got, v.marks) })).sort((a, b) => a.p - b.p);
+  const weak = all.filter(x => x.p < 75).slice(0, max);
+  return weak.length ? weak : all.slice(0, 1);
+}
+// builds a homework aimed at the weakest sub-topics: question types they lost marks on (with new numbers) first, then types not yet tried
+function planImprovement(recs, targetMarks, seedKey, forClass){
+  const weak = weakTopics(recs); if (!weak.length) return null;
+  const rnd = seeded(seedKey), byT = group(recs, r => r.tpl);
+  const queues = weak.map(w => { const E = BANK[w.sub].engine, tpls = E.TEMPLATES.filter(t => t.replace(/\d+/, '') === w.t);
+    const sc = tpls.map(t => ({ t, p: byT[t] ? byT[t].got / byT[t].marks : null }));
+    sc.forEach(x => { x.why = x.p !== null && x.p < 1
+        ? (forClass ? `The class scored ${Math.round(x.p * 100)}% on this type of question. Same type, new numbers.` : `You scored ${Math.round(x.p * 100)}% on this type of question before. Same type, new numbers, so you can show you can do it now.`)
+        : x.p === null ? (forClass ? `A type the class has not tried yet, in one of its weaker sub-topics: ${topicName(w.t)} (${w.p}%).` : `A new type of question in one of your weaker sub-topics: ${topicName(w.t)} (you scored ${w.p}%).`)
+        : (forClass ? `More practice on ${topicName(w.t)} (class score ${w.p}%).` : `More practice on ${topicName(w.t)} (you scored ${w.p}%).`); });
+    const why = {}; sc.forEach(x => { why[x.t] = x.why; });
+    return { w, why, list: sc.filter(x => x.p !== null && x.p < 1).sort((a, b) => a.p - b.p).map(x => x.t).concat(rnd.shuffle(sc.filter(x => x.p === null).map(x => x.t)), rnd.shuffle(sc.filter(x => x.p === 1).map(x => x.t))) }; });
+  const pattern = queues.length === 1 ? [0] : queues.length === 2 ? [0, 1, 0] : [0, 1, 0, 2];
+  const items = [], qs = []; let total = 0, turn = 0, guard = 0;
+  while (total < targetMarks - 2 && guard++ < 60 && queues.some(x => x.list.length)){
+    const qd = queues[pattern[turn++ % pattern.length]]; if (!qd.list.length) continue;
+    const tpl = qd.list.shift(), code = tpl + '-' + (10000 + Math.floor(rnd() * 90000));
+    let q; try { q = getQ(qd.w.sub, code); } catch (e) { continue; }
+    if ((q.errors && q.errors.length) || (total > 0 && total + q.marks > targetMarks + 4)) continue;
+    items.push({ sub: qd.w.sub, code, why: qd.why[tpl] }); qs.push(q); total += q.marks;
+  }
+  return items.length ? { weak, items, qs, total } : null;
+}
+const SUG = { min: 30 };
+function lengthSel(onchange){
+  const s = h('select', { class: 'inp', style: 'width:auto', 'aria-label': 'Length' }, SIZES.map(x => h('option', { value: x.min }, x.label)));
+  s.value = SUG.min; s.addEventListener('change', () => { SUG.min = +s.value; onchange(); }); return s;
+}
+const weakText = weak => (weak.length === 1 && weak[0].p >= 75 ? 'No weak areas. Extra practice on their lowest: ' : '') + weak.map(w => `${topicName(w.t)} (${w.p}%)`).join(', ');
+
+function screenAnalysis(cls){
+  app.replaceChildren(); window.scrollTo(0, 0);
+  app.append(tbar('Class analysis', () => screenClass(cls), '← ' + cls.name), h('h1', {}, `${cls.name}: class analysis`));
+  const recs = records(cls), studs = classStudents(cls), ids = Object.keys(cls.assigned).filter(getHW), wide = ids.filter(id => !cls.assigned[id].only);
+  if (!recs.length){ app.append(h('div', { class: 'card muted' }, 'No marked work yet. The analysis fills in once students have locked in and self-marked answers. To see what it looks like, create the demo class from the teacher home page.')); return; }
+  app.append(h('p', { class: 'muted', style: 'margin:0' }, 'Marks use Claude’s check where a part has been checked, and the student’s own mark otherwise.'));
+
+  // headline figures
+  let due = 0, sub = 0, prog = 0;
+  wide.forEach(id => hwStudents(cls, id).forEach(s => { const w = s.work && s.work[id]; due++; if (w && w.submitted) sub++; else if (w && Object.values(w.parts).some(p => p.locked)) prog++; }));
+  const checked = recs.filter(r => r.ai && r.self != null), over = checked.filter(r => r.self > r.got).length, under = checked.filter(r => r.self < r.got).length;
+  const weakN = recs.filter(r => r.ai && r.ai.correction === 'weak').length, all = group(recs, () => 1)[1];
+  app.append(h('div', { class: 'tiles' },
+    tile('Class average', pc(all.got, all.marks) + '%', `${all.got} of ${all.marks} marks`),
+    tile('Homework submitted', due ? pc(sub, due) + '%' : '–', `${sub} of ${due}` + (prog ? ` · ${prog} in progress` : '')),
+    tile('Self-marks agree with Claude', checked.length ? pc(checked.length - over - under, checked.length) + '%' : 'Not checked', checked.length ? `${over} parts over-marked · ${under} under-marked` : 'Run a Claude check to see this'),
+    tile('Weak corrections', String(weakN), 'flagged by Claude')));
+
+  // homework by homework
+  const tb = h('tbody');
+  wide.forEach(id => { const hw = getHW(id), rs = recs.filter(r => r.hw === id), g = group(rs, () => 1)[1], st = hwStudents(cls, id);
+    const subm = st.filter(s => s.work && s.work[id] && s.work[id].submitted).length, cr = rs.filter(r => r.ai && r.self != null), nS = new Set(cr.map(r => r.stu)).size;
+    const diff = nS ? cr.reduce((a, r) => a + r.self - r.got, 0) / nS : null;
+    tb.append(h('tr', {}, h('td', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => screenResults(cls, hw) }, hw.title)), h('td', {}, cls.assigned[id].due ? fmtDue(cls.assigned[id].due) : '–'),
+      h('td', { class: 'num' }, `${subm}/${st.length}`), h('td', { class: 'num' }, g ? `${pc(g.got, g.marks)}%` : '–'),
+      h('td', { class: 'num' }, diff == null ? '–' : (diff > 0.05 ? '+' : diff < -0.05 ? '−' : '') + Math.abs(diff).toFixed(1))));
+  });
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Homework'), h('div', { style: 'overflow-x:auto' }, h('table', { class: 'res' },
+    h('thead', {}, h('tr', {}, h('th', {}, 'Homework'), h('th', {}, 'Due'), h('th', { class: 'num' }, 'Submitted'), h('th', { class: 'num' }, 'Average'), h('th', { class: 'num' }, 'Self-marking (marks per student)'))), tb)),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Self-marking shows how many marks a student gave themselves above (+) or below (−) Claude’s check, on average.')));
+
+  // topics
+  const tg = group(recs, r => r.topic), topics = Object.keys(tg).sort((a, b) => topicOrder(a) - topicOrder(b));
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Sub-topics'), topics.slice().sort((a, b) => pc(tg[a].got, tg[a].marks) - pc(tg[b].got, tg[b].marks)).map(t => meterRow(topicName(t), tg[t]))));
+
+  // heatmap
+  const hm = h('tbody');
+  studs.forEach(st => { const rs = recs.filter(r => r.stu === st.key), g = group(rs, r => r.topic), a = group(rs, () => 1)[1];
+    hm.append(h('tr', {}, h('th', { scope: 'row' }, h('button', { type: 'button', class: 'linkbtn', onclick: () => screenStudentAnalysis(cls, st) }, st.name)),
+      topics.map(t => { const p = g[t] ? pc(g[t].got, g[t].marks) : null; return h('td', { class: 'hc ' + heat(p) }, p == null ? '–' : p); }),
+      h('td', { class: 'hc ' + heat(a ? pc(a.got, a.marks) : null) }, a ? pc(a.got, a.marks) : '–'))); });
+  hm.append(h('tr', { class: 'classrow' }, h('th', { scope: 'row' }, 'Class'), topics.map(t => { const p = pc(tg[t].got, tg[t].marks); return h('td', { class: 'hc ' + heat(p) }, p); }), h('td', { class: 'hc ' + heat(pc(all.got, all.marks)) }, pc(all.got, all.marks))));
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Students by sub-topic (%)'),
+    h('div', { style: 'overflow-x:auto' }, h('table', { class: 'heat' }, h('thead', {}, h('tr', {}, h('th', {}, 'Student'), topics.map(t => h('th', {}, topicName(t))), h('th', {}, 'Overall'))), hm)),
+    h('div', { class: 'legend' }, ['h1', 'h2', 'h3', 'h4'].map((c, i) => h('span', {}, h('span', { class: 'swatch sq ' + c }), ['below 50%', '50–69%', '70–84%', '85% and above'][i]))),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Select a student for their own analysis and improvement homework.')));
+
+  // skills
+  const kg = group(recs, r => r.kind), sk = [];
+  Object.keys(KINDS).forEach(k => { if (kg[k]) sk.push(meterRow(KINDS[k], kg[k])); });
+  const sfg = group(recs.filter(r => r.sf), () => 1)[1], ug = group(recs.filter(r => r.unit), () => 1)[1];
+  if (sfg) sk.push(meterRow('Questions with a significant-figures mark', sfg)); if (ug) sk.push(meterRow('Questions with an SI-unit mark', ug));
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Types of question'), sk));
+
+  // hardest questions
+  const pg = group(recs, r => r.tpl + '|' + r.pi);
+  const hard = Object.values(pg).filter(v => new Set(v.recs.map(r => r.stu)).size >= 3).map(v => ({ v, p: pc(v.got, v.marks) })).filter(x => x.p < 80).sort((a, b) => a.p - b.p).slice(0, 6);
+  if (hard.length) app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Questions the class found hardest'),
+    hard.map(({ v, p }) => { const r = v.recs[0]; return h('div', { class: 'hardq' },
+      h('div', { class: 'hw-row' }, h('b', {}, `${r.tag} · type ${r.tpl} part ${r.pi}`), h('span', { class: 'pill' + (p < 50 ? ' redo' : '') }, `${p}% · ${new Set(v.recs.map(x => x.stu)).size} students`)),
+      h('div', { class: 'trunc2' }, plainText(r.P.q)), h('div', { class: 'muted', style: 'font-size:.92rem' }, 'First marking point: ' + plainText(r.P.first))); })));
+
+  // common mistakes
+  const mrecs = recs.filter(r => r.ai && r.ai.note && r.got < r.marks), mg = group(mrecs, r => categorise(r.ai.note));
+  const mcard = h('div', { class: 'card stack' }, h('h2', {}, 'Common mistakes'));
+  if (!mrecs.length) mcard.append(h('p', { class: 'muted', style: 'margin:0' }, 'This uses the reasons Claude gives when it checks the marking. Run a Claude check on a homework to fill it in.'));
+  Object.entries(mg).sort((a, b) => b[1].n - a[1].n).forEach(([name, v]) => {
+    const who = new Set(v.recs.map(r => r.stu)), tps = group(v.recs, r => r.topic);
+    mcard.append(h('details', { class: 'mist' }, h('summary', {}, h('b', {}, name), h('span', { class: 'muted' }, ` · ${v.n} parts · ${who.size} student${who.size === 1 ? '' : 's'} · mostly in ${Object.entries(tps).sort((a, b) => b[1].n - a[1].n).slice(0, 2).map(([t]) => topicName(t)).join(' and ')}`)),
+      h('ul', {}, v.recs.slice(0, 6).map(r => h('li', {}, h('b', {}, DB.students[r.stu] ? DB.students[r.stu].name : r.stu), ` (${r.tag}, ${r.tpl} ${r.pi}): ${r.ai.note}`)))));
+  });
+  app.append(mcard);
+
+  // suggested homework for the whole class
+  const sCard = h('div', { class: 'card stack' });
+  const drawClassPlan = () => {
+    const size = SIZES.find(s => s.min === SUG.min), plan = planImprovement(recs, size.marks, 'class.' + cls.id + today() + SUG.min, true);
+    sCard.replaceChildren(h('div', { class: 'hw-row' }, h('h2', {}, 'Suggested revision homework for the class'), lengthSel(drawClassPlan)));
+    if (!plan) return sCard.append(h('p', { class: 'muted' }, 'Not enough marked work yet.'));
+    const title = 'Revision: ' + plan.weak.map(w => topicName(w.t)).join(', ');
+    sCard.append(h('p', { style: 'margin:0' }, `Aimed at the class’s weakest sub-topics: ${weakText(plan.weak)}. It starts with the question types the class lost most marks on, with new numbers.`),
+      h('p', { class: 'muted', style: 'margin:0' }, `${plan.items.length} questions · ${plan.total} marks`),
+      h('div', { class: 'io-row' },
+        h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, withWhy(buildHW('tmp', title, INTRO(size.short), plan.qs), plan.items), () => screenAnalysis(cls)) }, 'Preview'),
+        h('button', { type: 'button', class: 'ghost', onclick: () => screenBuilder(cls, { title, target: plan.items.length, items: plan.items.slice(), kind: 'suggested', back: () => screenAnalysis(cls) }) }, 'Edit in builder'),
+        h('button', { type: 'button', class: 'primary', onclick: () => { createCustom(cls, title, plan.items, null, 'suggested'); save_(); screenClass(cls); } }, 'Set for this class')));
+  };
+  drawClassPlan(); app.append(sCard);
+
+  // individual improvement homeworks
+  const iCard = h('div', { class: 'card stack' });
+  const drawIndividual = () => {
+    const size = SIZES.find(s => s.min === SUG.min);
+    iCard.replaceChildren(h('div', { class: 'hw-row' }, h('h2', {}, 'Improvement homework for each student'), lengthSel(drawIndividual)),
+      h('p', { class: 'muted', style: 'margin:0' }, 'Each student gets different questions, chosen from their own weakest sub-topics and the question types they dropped marks on.'));
+    const hasOpen = st => Object.keys(cls.assigned).some(id => { const a = cls.assigned[id], c = DB.custom[id]; return a.only && a.only.includes(st.key) && c && c.kind === 'improve' && !(st.work && st.work[id] && st.work[id].submitted); });
+    const plans = studs.map(st => ({ st, open: hasOpen(st), plan: planImprovement(recs.filter(r => r.stu === st.key), size.marks, 'imp.' + st.key + today() + SUG.min) }));
+    const tb = h('tbody');
+    plans.forEach(({ st, plan, open }) => {
+      const title = plan ? 'Improvement homework: ' + plan.weak.map(w => topicName(w.t)).join(', ') : '';
+      tb.append(h('tr', {}, h('td', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => screenStudentAnalysis(cls, st) }, st.name)),
+        h('td', {}, plan ? weakText(plan.weak) : h('span', { class: 'muted' }, 'No marked work yet')),
+        h('td', { class: 'num' }, plan ? `${plan.items.length} questions · ${plan.total} marks` : ''),
+        h('td', {}, open ? h('span', { class: 'muted' }, 'Has one to finish') : plan ? h('div', { class: 'io-row' },
+          h('button', { type: 'button', class: 'linkbtn', onclick: () => screenPreview(cls, withWhy(buildHW('tmp', title, INTRO(size.short), plan.qs), plan.items), () => screenAnalysis(cls)) }, 'Preview'),
+          h('button', { type: 'button', class: 'linkbtn', onclick: () => screenBuilder(cls, { title, target: plan.items.length, items: plan.items.slice(), forStudent: st.key, kind: 'improve', back: () => screenAnalysis(cls) }) }, 'Edit')) : null)));
+    });
+    const ready = plans.filter(x => x.plan && !x.open), skipped = plans.filter(x => x.plan && x.open).length, due = h('input', { class: 'inp', type: 'date', style: 'width:auto', 'aria-label': 'Due date' });
+    iCard.append(...[h('div', { style: 'overflow-x:auto' }, h('table', { class: 'res' }, h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Focus (their score)'), h('th', { class: 'num' }, 'Size'), h('th'))), tb)),
+      ready.length ? h('div', { class: 'io-row' }, h('span', { class: 'muted' }, 'Due'), due,
+        h('button', { type: 'button', class: 'primary', onclick: () => {
+          ready.forEach(({ st, plan }) => { const id = createCustom(cls, 'Improvement homework: ' + plan.weak.map(w => topicName(w.t)).join(', '), plan.items, [st.key], 'improve'); cls.assigned[id].due = due.value; });
+          save_(); screenClass(cls); } }, `Set improvement homework for ${ready.length} student${ready.length === 1 ? '' : 's'}`)) : null,
+      skipped ? h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, `${skipped} student${skipped === 1 ? ' already has' : 's already have'} an improvement homework to finish, so ${skipped === 1 ? 'is' : 'are'} left out.`) : null].filter(Boolean));
+  };
+  drawIndividual(); app.append(iCard);
+}
+
+function screenStudentAnalysis(cls, st){
+  app.replaceChildren(); window.scrollTo(0, 0);
+  app.append(tbar(cls.name, () => screenAnalysis(cls), '← Class analysis'), h('h1', {}, st.name));
+  const all = records(cls), recs = all.filter(r => r.stu === st.key);
+  if (!recs.length){ app.append(h('div', { class: 'card muted' }, `${st.name} has no marked work yet.`)); return; }
+  const a = group(recs, () => 1)[1], ca = group(all, () => 1)[1];
+  const ids = Object.keys(cls.assigned).filter(id => getHW(id) && hwStudents(cls, id).includes(st));
+  const subm = ids.filter(id => st.work && st.work[id] && st.work[id].submitted).length;
+  const checked = recs.filter(r => r.ai && r.self != null), over = checked.filter(r => r.self > r.got), weakN = recs.filter(r => r.ai && r.ai.correction === 'weak').length;
+  app.append(h('div', { class: 'tiles' },
+    tile('Average', pc(a.got, a.marks) + '%', `class average ${pc(ca.got, ca.marks)}%`),
+    tile('Homework submitted', `${subm}/${ids.length}`),
+    tile('Self-marking', checked.length ? (over.length ? `+${over.reduce((s, r) => s + r.self - r.got, 0)} marks` : 'Accurate') : 'Not checked', checked.length ? `over-marked ${over.length} of ${checked.length} checked parts` : ''),
+    tile('Weak corrections', String(weakN))));
+
+  const tg = group(recs, r => r.topic), ctg = group(all, r => r.topic);
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Sub-topics'), h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'The dark mark on each bar is the class average.'),
+    Object.keys(tg).sort((x, y) => pc(tg[x].got, tg[x].marks) - pc(tg[y].got, tg[y].marks)).map(t => meterRow(topicName(t), tg[t], pc(ctg[t].got, ctg[t].marks)))));
+  const kg = group(recs, r => r.kind), ckg = group(all, r => r.kind);
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Types of question'), Object.keys(KINDS).filter(k => kg[k]).map(k => meterRow(KINDS[k], kg[k], pc(ckg[k].got, ckg[k].marks)))));
+
+  const hist = h('tbody');
+  ids.forEach(id => { const hw = getHW(id), w = st.work && st.work[id], rs = recs.filter(r => r.hw === id), g = group(rs, () => 1)[1];
+    hist.append(h('tr', {}, h('td', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => { setHW(hw); CURQ = 0; screenTeacherStudent(st, cls); } }, hw.title)),
+      h('td', {}, w && w.submitted ? 'Submitted' : w && Object.values(w.parts).some(p => p.locked) ? 'In progress' : 'Not started'),
+      h('td', { class: 'num' }, g ? `${pc(g.got, g.marks)}%` : '–'))); });
+  app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Homework'), h('table', { class: 'res' }, h('thead', {}, h('tr', {}, h('th', {}, 'Homework'), h('th', {}, 'Status'), h('th', { class: 'num' }, 'Score'))), hist)));
+
+  const notes = recs.filter(r => r.ai && r.ai.note && r.got < r.marks);
+  if (notes.length){ const mg = group(notes, r => categorise(r.ai.note));
+    app.append(h('div', { class: 'card stack' }, h('h2', {}, 'Mistakes from Claude’s checks'),
+      Object.entries(mg).sort((x, y) => y[1].n - x[1].n).map(([name, v]) => h('details', { class: 'mist' }, h('summary', {}, h('b', {}, name), h('span', { class: 'muted' }, ` · ${v.n}`)),
+        h('ul', {}, v.recs.map(r => h('li', {}, `${r.tag}, ${r.tpl} ${r.pi}: ${r.ai.note}`)))))));
+  }
+
+  const card = h('div', { class: 'card stack' });
+  const draw = () => {
+    const size = SIZES.find(s => s.min === SUG.min), plan = planImprovement(recs, size.marks, 'imp.' + st.key + today() + SUG.min);
+    card.replaceChildren(h('div', { class: 'hw-row' }, h('h2', {}, 'Suggested improvement homework'), lengthSel(draw)));
+    if (!plan) return card.append(h('p', { class: 'muted' }, 'Not enough marked work yet.'));
+    const title = 'Improvement homework: ' + plan.weak.map(w => topicName(w.t)).join(', ');
+    const lost = [...new Set(plan.items.map(it => it.code.split('-')[0]).filter(t => recs.some(r => r.tpl === t && r.got < r.marks)))];
+    card.append(h('p', { style: 'margin:0' }, `Focus: ${weakText(plan.weak)}.` + (lost.length ? ` Includes ${lost.length} question type${lost.length > 1 ? 's' : ''} ${st.name.split(' ')[0]} dropped marks on, with new numbers.` : '')),
+      h('ol', { class: 'trayl' }, plan.qs.map((q, i) => h('li', {}, h('div', {}, h('b', {}, `${i + 1}. ${q.topicName}`), h('span', { class: 'muted' }, ` · type ${q.id} · ${q.marks} marks`), h('div', { class: 'why-s' }, plan.items[i].why))))),
+      h('div', { class: 'io-row' },
+        h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, withWhy(buildHW('tmp', title, INTRO(size.short), plan.qs), plan.items), () => screenStudentAnalysis(cls, st)) }, 'Preview'),
+        h('button', { type: 'button', class: 'ghost', onclick: () => screenBuilder(cls, { title, target: plan.items.length, items: plan.items.slice(), forStudent: st.key, kind: 'improve', back: () => screenStudentAnalysis(cls, st) }) }, 'Edit in builder'),
+        h('button', { type: 'button', class: 'primary', onclick: () => { createCustom(cls, title, plan.items, [st.key], 'improve'); save_(); screenClass(cls); } }, `Set for ${st.name}`)));
+  };
+  draw(); app.append(card);
+}
+
+/* ================= demo class with sample results (mock-up only) ================= */
+// a sample answer that earns exactly `got` marks, with a matching correction and check note
+function sci3(x){ if (!isFinite(x)) return '?'; const a = Math.abs(x); if (a !== 0 && (a >= 1e4 || a < 1e-2)){ let e = Math.floor(Math.log10(a)), m = x / Math.pow(10, e); m = Number(m.toPrecision(3)); if (Math.abs(m) >= 10){ m /= 10; e++; } return `${m} × 10^${e}`.replace(/-/g, '−'); } return String(Number(x.toPrecision(3))).replace('-', '−'); }
+function demoAnswer(P, got, rnd, pick, weakCorr){
+  const R = P.raw, unit = plainText(R.unit || ''), show = R.show ? plainText(R.show) : '';
+  const lines = R.ms.split('<br>').map(plainText).map(l => l.replace(/\s*✓/g, '').trim()).filter(l => l && !/^(Answer given to|Unit:)/.test(l));
+  const lower = t => t.charAt(0).toLowerCase() + t.slice(1), sentence = arr => arr.map((t, i) => i ? lower(t) : t).join(', ').replace(/\.?$/, '.');
+  const weakText = pick(['I got this one wrong, sorry.', 'Will revise this one before the test.', 'I understand it now.']);
+  const arc = (bad) => { const p = []; for (let i = 0; i <= 30; i++){ const t = i / 30; if (bad){ p.push(Math.round(120 + 420 * t), Math.round(70 + 260 * t * t)); } else { const a = -Math.PI / 2 + t * Math.PI * .75; p.push(Math.round(140 + 200 * Math.cos(a) + 0), Math.round(270 + 200 * Math.sin(a))); } } return p; };
+  const out = { text: '', strokes: [], note: '', green: '' };
+  if (R.ans !== undefined && !R.options && P.kind !== 'written'){
+    if (P.kind === 'graph'){                                  // a value read from a graph or a gradient
+      if (got === P.marks){ out.text = lines.join('\n') + (show ? '' : ''); return out; }
+      const v = R.ans * pick([1.2, .8, 1.25]);
+      out.text = `${lines[0] || 'From the graph'}\n= ${sci3(v)} ${unit}`; out.note = 'Reading from the graph outside the allowed range: the triangle used for the gradient was too small or a value was misread.';
+      out.green = weakCorr ? weakText : `Correct answer: ${show} ${unit}. I should use a bigger triangle and read the scale more carefully.`; return out;
+    }
+    const working = lines.slice(0, -1), last = lines[lines.length - 1] || '';
+    const sym = (last.match(/^([^=]{1,12})=/) || [, ''])[1].trim(), lhs = sym ? sym + ' = ' : '= ';
+    if (got === P.marks){ out.text = lines.join('\n') + (P.sf && !last.includes(show) ? `\n${lhs}${show} ${unit}` : ''); return out; }
+    const lost = P.marks - got, kinds = got === 0 ? ['zero'] : ['pow10', 'arith'].concat(P.sf && lost === 1 ? ['sf', 'sf'] : [], P.unit && lost === 1 ? ['unit', 'unit'] : []);
+    const k = pick(kinds);
+    if (k === 'zero'){ out.text = `${lhs}${sci3(R.ans * pick([2, .5, 4]))} ${unit}`; out.note = 'No valid working and the final answer is wrong: wrong equation or rearrangement used.'; out.green = weakCorr ? weakText : `I used the wrong equation. It should be: ${lines[0]}. Answer ${show} ${unit}.`; }
+    if (k === 'pow10'){ out.text = working.concat([`${lhs}${sci3(R.ans * pick([100, 1000, .001, .01]))} ${unit}`]).join('\n'); out.note = 'Power-of-ten error: a prefix (such as c, m, k or μ) was not converted to the base unit.'; out.green = weakCorr ? weakText : `Correct answer: ${show} ${unit}. I forgot to convert the prefix to the base unit before substituting.`; }
+    if (k === 'arith'){ out.text = working.concat([`${lhs}${sci3(R.ans * pick([1.5, .6, 1.1]))} ${unit}`]).join('\n'); out.note = 'Substitution correct, but an arithmetic slip in the final step gave the wrong answer.'; out.green = weakCorr ? weakText : `Correct answer: ${show} ${unit}. I typed it into my calculator wrong, so I should check the last step.`; }
+    if (k === 'sf'){ out.text = lines.join('\n') + `\n${lhs}${Number(R.ans.toPrecision(5))} ${unit}`; out.note = 'Final answer not given to an appropriate number of significant figures.'; out.green = weakCorr ? weakText : `Should be given as ${show} ${unit}, to the same number of significant figures as the data.`; }
+    if (k === 'unit'){ out.text = working.concat([`${lhs}${show}`]).join('\n'); out.note = 'Unit missing from the final answer.'; out.green = weakCorr ? weakText : `I left off the unit. It should be ${show} ${unit}.`; }
+    return out;
+  }
+  if (R.options && R.correct !== undefined){                   // a short answer such as a direction
+    const right = plainText(R.options[R.correct]), reason = lines.slice(1).join(' ');
+    if (got === P.marks){ out.text = right.charAt(0).toUpperCase() + right.slice(1) + (reason && rnd() < .5 ? '. ' + reason : ''); return out; }
+    const wrong = plainText(pick(R.options.filter((o, i) => i !== R.correct)));
+    out.text = wrong.charAt(0).toUpperCase() + wrong.slice(1);
+    out.note = /page|left|right|clockwise|towards|upwards|downwards|from /i.test(wrong) ? `Direction wrong: gave “${wrong}” instead of “${right}”; hand rule misapplied.` : `Wrong choice: gave “${wrong}” instead of “${right}”.`;
+    out.green = weakCorr ? weakText : `It is ${right}. ${reason}`.trim(); return out;
+  }
+  const pts = lines.length ? lines : ['(see mark scheme)'];
+  const sketch = /^(Sketch|Draw)|\b(sketch|draw)\b/i.test(P.q);
+  if (sketch) out.strokes = [{ c: 'k', p: arc(got < P.marks) }];
+  if (got === P.marks){ out.text = sentence(pts); return out; }
+  if (got === 0){ out.text = pick(['Because of the magnetic field.', 'It changes because the other quantity changes.', 'It depends on the current.']);
+    out.note = sketch ? `Sketch: ${pts[0]} not shown.` : 'Explanation incomplete: neither marking point given.'; }
+  else { out.text = sentence(pts.slice(0, got)); out.note = sketch ? `Sketch: ${pts[got] || pts[pts.length - 1]} not shown.` : `Explanation incomplete: missing “${pts[got] || pts[pts.length - 1]}”.`; }
+  out.green = weakCorr ? weakText : 'Missed: ' + pts.slice(got).join('; ') + '.';
+  if (sketch && !weakCorr) out.strokes.push({ c: 'g', p: arc(false).map((v, i) => i % 2 ? v + 6 : v + 6) });
+  return out;
+}
+function removeClass(cls){
+  classStudents(cls).forEach(st => { st.classIds = st.classIds.filter(id => id !== cls.id); if (!st.classIds.length){ delete DB.students[st.key]; Object.values(DB.checks).forEach(c => delete c[st.key]); } });
+  delete DB.classes[cls.id];
+}
+function createDemoClass(){
+  const names = ['Amara Okafor', 'Ben Hughes', 'Chloe Wright', 'Daniel Kim', 'Ella Thompson', 'Farhan Ali', 'Grace Murphy', 'Harry Evans', 'Isla Campbell', 'Jamal Hassan', 'Katie Lewis', 'Leo Martins'];
+  const cls = { id: 'c' + Date.now().toString(36), name: 'Demo 13X (sample results)', assigned: {}, demo: true, demoVersion: 3 };
+  DB.classes[cls.id] = cls; addStudents(cls, names);
+  const rnd = seeded('demo-class'), pick = a => a[Math.floor(rnd() * a.length)], day = 864e5, now = Date.now(), studs = classStudents(cls);
+  const prof = {}; studs.forEach(s => { const t = {}; BANK.MF.order.forEach(k => { t[k] = (rnd() - .5) * .4; });
+    prof[s.key] = { a: .5 + rnd() * .4, t, written: (rnd() - .65) * .3, calc: (rnd() - .4) * .2, over: rnd() < .3 ? .4 : .07, lazy: rnd() < .17 }; });
+  [['MF.FW.30.A', 21], ['MF.MC.60.B', 14], ['MF.EI.30.C', 7], ['MF.ALL.60.D', 2]].forEach(([id, ago]) => {
+    const hw = getHW(id); if (!hw) return; DB.packs[id] = hw.codes;
+    cls.assigned[id] = { due: new Date(now - ago * day).toISOString().slice(0, 10) }; setHW(hw);
+    const when = new Date(now - (ago + 1) * day).toISOString(), checks = DB.checks[id] = DB.checks[id] || {};
+    studs.forEach(s => { const pr = prof[s.key], r = rnd(), status = (pr.lazy && r < .6) || r < .06 ? 'none' : r < .14 ? 'partial' : 'done';
+      if (status === 'none') return;
+      const w = workFor(s);
+      ALL_PARTS.forEach((P, i) => { if (status === 'partial' && i > ALL_PARTS.length / 2) return;
+        const Q = hw.questions.find(q => q.parts.includes(P));
+        const p = Math.max(.05, Math.min(.97, pr.a + (pr.t[Q.topic] || 0) + (P.kind === 'written' ? pr.written : P.kind === 'calc' ? pr.calc : -.08)));
+        let got = 0; for (let k = 0; k < P.marks; k++) if (rnd() < p) got++;
+        const self = Math.min(P.marks, got + (rnd() < pr.over ? 1 : 0));
+        const weak = self < P.marks && rnd() < .06, A = demoAnswer(P, got, rnd, pick, weak);
+        Object.assign(w.parts[P.id], { text: A.text, strokes: A.strokes, locked: when, mark: self, markLocked: when, green: self < P.marks ? A.green : '' });
+        if (status === 'done') (checks[s.key] = checks[s.key] || {})[P.id] = { suggested: got, correction: weak ? 'weak' : 'ok', note: A.note };
+      });
+      if (status === 'done') w.submitted = when;
+    });
+  });
+  save_(); return cls;
+}
+
+Object.values(DB.classes).filter(c => c.demo && c.demoVersion !== 3).forEach(c => { removeClass(c); DB._rebuildDemo = true; });
+(function migrate(){
+  if (DB.v >= 4) return;
+  if (!(DB.v >= 3)){
+  const old = DB.students, map = {}; DB.students = {};
+  Object.values(old).forEach(st => { const login = makeLogin(st.name); map[st.key] = login; st.key = st.login = login;
+    st.classIds = st.classIds || (st.classId ? [st.classId] : []); delete st.classId; DB.students[login] = st; });
+  Object.values(DB.checks).forEach(c => { const copy = Object.assign({}, c); Object.keys(c).forEach(k => delete c[k]); Object.keys(copy).forEach(k => { c[map[k] || k] = copy[k]; }); });
+  }
+  Object.values(DB.classes).forEach(c => { Object.keys(c.assigned || {}).forEach(id => { if (!parsePack(id) && !String(id).startsWith('CU.')) delete c.assigned[id]; }); });
+  DB.v = 4; save(true);
+})();
+if (DB._rebuildDemo){ delete DB._rebuildDemo; createDemoClass(); }
+screenLogin();
+</script>
+</body>
+</html>
