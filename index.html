@@ -72,6 +72,20 @@ textarea.names{min-height:9em;resize:vertical;line-height:1.5}
 .hw-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
 .io-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .pick{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+.msel{position:relative}
+.msel>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none}
+.msel>summary::-webkit-details-marker{display:none}
+.msel>summary .msel-txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msel>summary::after{content:'▾';flex:none;color:var(--muted)}
+.msel[open]>summary::after{content:'▴'}
+.msel-pop{position:absolute;z-index:30;left:0;top:calc(100% + 4px);width:max(100%,340px);max-width:calc(100vw - 32px);max-height:min(60vh,520px);overflow:auto;background:var(--card,#fff);border:1px solid var(--rule);border-radius:8px;box-shadow:0 10px 30px rgba(15,23,42,.18);padding:6px 10px 10px}
+.msel-pop fieldset{border:0;border-top:1px solid var(--rule);margin:0;padding:6px 0 4px;min-width:0}
+.msel-pop fieldset:first-of-type{border-top:0}
+.msel-pop legend{font-weight:600;padding:6px 0 2px;font-size:.95rem}
+.msel-pop label{display:flex;gap:8px;align-items:flex-start;padding:4px 0 4px 2px;cursor:pointer;line-height:1.3}
+.msel-pop label.sub{padding-left:24px}
+.msel-pop input{margin-top:2px;flex:none;width:17px;height:17px}
+.msel-bar{position:sticky;top:-6px;background:var(--card,#fff);display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:.92rem}
 .switch{display:flex;align-items:center;gap:8px}
 .pill{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:2px 8px;border:1.5px solid var(--rule);color:var(--muted);white-space:nowrap}
 .pill.done{border-color:var(--green);color:var(--green);background:var(--green-tint)}
@@ -1333,28 +1347,80 @@ function screenClass(cls){
 }
 
 /* ---- choosing a pack from the question bank ---- */
-const PICK = { topic: 'MF.ALL', min: 60, letter: 'A' };
+const PICK = { topics: null, min: 60, letter: 'A' };     // topics: the ticked sub-topic codes (null until first use: whole of the first topic)
+document.addEventListener('click', e => { document.querySelectorAll('details.msel[open]').forEach(d => { if (!d.contains(e.target)) d.open = false; }); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('details.msel[open]').forEach(d => { d.open = false; d.querySelector('summary').focus(); }); });
 function bankPicker(cls){
-  const topicSel = h('select', { class: 'inp', id: 'bk-topic' }, Object.keys(BANK).filter(k => BANK[k].engine).map(k => { const B = BANK[k];
-    return h('optgroup', { label: `${B.name} (${B.year})` }, h('option', { value: k + '.ALL' }, `${B.name}: whole topic`), B.order.map(t => h('option', { value: k + '.' + t }, B.engine.TOPICS[t]))); }));
+  const keys = Object.keys(BANK).filter(k => BANK[k].engine);
+  if (!PICK.topics) PICK.topics = BANK[keys[0]].order.slice();
+  const order = keys.flatMap(k => BANK[k].order);
+  const chosen = () => order.filter(t => PICK.topics.includes(t));
+  // a tick-box drop-down: each topic has a "whole topic" box and a box per sub-topic
+  const txt = h('span', { class: 'msel-txt' });
+  const groups = keys.map(k => { const B = BANK[k];
+    const subs = B.order.map(t => { const cb = h('input', { type: 'checkbox', value: t });
+      cb.addEventListener('change', () => { PICK.topics = cb.checked ? [...PICK.topics, t] : PICK.topics.filter(x => x !== t); update(); });
+      return h('label', { class: 'sub' }, cb, h('span', {}, B.engine.TOPICS[t])); });
+    const all = h('input', { type: 'checkbox', 'data-all': k });
+    all.addEventListener('change', () => { PICK.topics = PICK.topics.filter(x => !B.order.includes(x)); if (all.checked) PICK.topics.push(...B.order); update(); });
+    return { k, all, fs: h('fieldset', {}, h('legend', {}, `${B.name} (${B.year})`), h('label', {}, all, h('span', {}, h('b', {}, 'Whole topic'))), ...subs) }; });
+  const clearBtn = h('button', { type: 'button', class: 'linkbtn', onclick: () => { PICK.topics = []; update(); } }, 'Clear all');
+  const count = h('span', { class: 'muted' });
+  const dd = h('details', { class: 'msel', id: 'bk-topic' }, h('summary', { class: 'inp', 'aria-labelledby': 'bk-topic-lab' }, txt),
+    h('div', { class: 'msel-pop' }, h('div', { class: 'msel-bar' }, count, h('span', { style: 'display:flex;gap:14px' }, clearBtn, h('button', { type: 'button', class: 'linkbtn', onclick: () => { dd.open = false; dd.querySelector('summary').focus(); } }, 'Done'))), ...groups.map(g => g.fs)));
   const sizeSel = h('select', { class: 'inp', id: 'bk-size' }, SIZES.map(x => h('option', { value: x.min }, x.label)));
   const packSel = h('select', { class: 'inp', id: 'bk-pack' }, [...PACK_LETTERS].map(l => h('option', { value: l }, 'Pack ' + l)));
-  topicSel.value = PICK.topic; sizeSel.value = PICK.min; packSel.value = PICK.letter;
-  const info = h('p', { class: 'muted', style: 'margin:0', 'aria-live': 'polite' });
-  const cur = () => getHW(`${topicSel.value}.${sizeSel.value}.${packSel.value}`);
-  const setBtn = h('button', { type: 'button', class: 'primary', onclick: () => { const hw = cur(); cls.assigned[hw.id] = { due: '' }; DB.packs[hw.id] = hw.codes; save(true); screenClass(cls); } }, 'Set for this class');
-  const prevBtn = h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, cur()) }, 'Preview questions and mark schemes');
-  const update = () => {
-    PICK.topic = topicSel.value; PICK.min = +sizeSel.value; PICK.letter = packSel.value;
-    const hw = cur(), counts = {}; hw.questions.forEach(Q => { counts[Q.tag] = (counts[Q.tag] || 0) + 1; });
-    info.textContent = `This pack: ${hw.questions.length} questions · ${hw.total} marks` + (Object.keys(counts).length > 1 ? ' · ' + Object.entries(counts).map(([k, v]) => `${k} ×${v}`).join(', ') : '');
-    const has = !!cls.assigned[hw.id]; setBtn.disabled = has; setBtn.textContent = has ? 'Already set for this class' : 'Set for this class';
+  sizeSel.value = PICK.min; packSel.value = PICK.letter;
+  const info = h('p', { class: 'muted', style: 'margin:0', 'aria-live': 'polite' }), warn = h('p', { class: 'warn', style: 'margin:0', hidden: true });
+  // what the ticks mean: one whole topic or one sub-topic is an ordinary pack; anything more is a mixed homework
+  const plan = () => {
+    const t = chosen(); if (!t.length) return null;
+    const banks = [...new Set(t.map(x => SUB_OF[x]))];
+    if (banks.length === 1 && BANK[banks[0]].order.every(x => t.includes(x))) return { pack: `${banks[0]}.ALL.${sizeSel.value}.${packSel.value}` };
+    if (t.length === 1) return { pack: `${SUB_OF[t[0]]}.${t[0]}.${sizeSel.value}.${packSel.value}` };
+    const size = SIZES.find(x => x.min === +sizeSel.value), g = generateMix(t, size.marks, true, t.join('.') + size.min + 'pack' + packSel.value);
+    const whole = banks.filter(b => BANK[b].order.every(x => t.includes(x))), parts = t.filter(x => !whole.includes(SUB_OF[x]));
+    const names = [...whole.map(b => BANK[b].name), ...parts.map(topicName)];
+    const title = `Mixed homework: ${names.length <= 3 ? names.join(', ') : names.slice(0, 2).join(', ') + ` and ${names.length - 2} more`} · ${fmtMins(g.total * MIN_PER_MARK)} · Pack ${packSel.value}`;
+    return { mix: g, topics: t, title, items: g.items.map(x => Object.assign({ sub: x.sub, code: x.code }, x.why ? { why: x.why } : {})) };
   };
-  [topicSel, sizeSel, packSel].forEach(x => x.addEventListener('change', update)); update();
+  const mixHW = p => withWhy(buildHW('tmp', p.title, INTRO(fmtMins(p.mix.total * MIN_PER_MARK)), p.mix.items.map(it => getQ(it.sub, it.code))), p.items);
+  const already = p => p.pack ? !!cls.assigned[getHW(p.pack).id]
+    : Object.keys(cls.assigned).some(id => DB.custom[id] && DB.custom[id].title === p.title && JSON.stringify(DB.custom[id].items.map(x => x.code)) === JSON.stringify(p.items.map(x => x.code)));
+  const setBtn = h('button', { type: 'button', class: 'primary', onclick: () => { const p = plan(); if (!p || already(p)) return;
+    if (p.pack){ const hw = getHW(p.pack); cls.assigned[hw.id] = { due: '' }; DB.packs[hw.id] = hw.codes; }
+    else createCustom(cls, p.title, p.items, null, 'mixed');
+    save(true); screenClass(cls); } }, 'Set for this class');
+  const prevBtn = h('button', { type: 'button', class: 'ghost', onclick: () => { const p = plan(); if (p) screenPreview(cls, p.pack ? getHW(p.pack) : mixHW(p)); } }, 'Preview questions and mark schemes');
+  function update(){
+    PICK.min = +sizeSel.value; PICK.letter = packSel.value;
+    const t = chosen();
+    groups.forEach(g => { const o = BANK[g.k].order, n = o.filter(x => t.includes(x)).length;
+      g.all.checked = n === o.length; g.all.indeterminate = n > 0 && n < o.length;
+      g.fs.querySelectorAll('input[value]').forEach(cb => { cb.checked = t.includes(cb.value); }); });
+    const banks = [...new Set(t.map(x => SUB_OF[x]))], whole = banks.filter(b => BANK[b].order.every(x => t.includes(x)));
+    const labels = [...whole.map(b => `${BANK[b].name}: whole topic`), ...t.filter(x => !whole.includes(SUB_OF[x])).map(topicName)];
+    txt.textContent = labels.length ? labels.join(', ') : 'Choose topics…';
+    dd.title = labels.join('\n');
+    count.textContent = t.length ? `${t.length} sub-topic${t.length === 1 ? '' : 's'} ticked` : 'Nothing ticked';
+    const p = plan(); warn.hidden = true;
+    if (!p){ info.textContent = 'Tick at least one topic or sub-topic.'; setBtn.disabled = prevBtn.disabled = true; setBtn.textContent = 'Set for this class'; return; }
+    prevBtn.disabled = false;
+    if (p.pack){
+      const hw = getHW(p.pack), counts = {}; hw.questions.forEach(Q => { counts[Q.tag] = (counts[Q.tag] || 0) + 1; });
+      info.textContent = `This pack: ${hw.questions.length} questions · ${hw.total} marks` + (Object.keys(counts).length > 1 ? ' · ' + Object.entries(counts).map(([k, v]) => `${k} ×${v}`).join(', ') : '');
+    } else {
+      const g = p.mix;
+      info.textContent = `Mixed homework: ${g.items.length} questions · ${g.total} marks from ${p.topics.length} sub-topics` + (g.links ? ` · ${g.links} linking question${g.links > 1 ? 's' : ''}` : '');
+      if (g.missing.length){ warn.hidden = false; warn.textContent = `This length is too short to include every ticked sub-topic. It leaves out ${g.missing.map(topicName).join(', ')}. Choose a longer homework or tick fewer.`; }
+    }
+    const has = already(p); setBtn.disabled = has; setBtn.textContent = has ? 'Already set for this class' : 'Set for this class';
+  }
+  [sizeSel, packSel].forEach(x => x.addEventListener('change', update)); update();
   return h('div', { class: 'card stack' }, h('h2', {}, 'Set homework from the question bank'),
-    h('div', { class: 'pick' }, h('div', {}, h('label', { class: 'lab', for: 'bk-topic' }, 'Topic'), topicSel), h('div', {}, h('label', { class: 'lab', for: 'bk-size' }, 'Length'), sizeSel), h('div', {}, h('label', { class: 'lab', for: 'bk-pack' }, 'Pack'), packSel)),
-    info, h('div', { class: 'io-row' }, setBtn, prevBtn),
-    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Lengths allow about 1.5 minutes per mark, which includes the time students spend marking and correcting. Packs A to E are different sets of questions for the same topic and length.'));
+    h('div', { class: 'pick' }, h('div', {}, h('span', { class: 'lab', id: 'bk-topic-lab' }, 'Topics'), dd), h('div', {}, h('label', { class: 'lab', for: 'bk-size' }, 'Length'), sizeSel), h('div', {}, h('label', { class: 'lab', for: 'bk-pack' }, 'Pack'), packSel)),
+    info, warn, h('div', { class: 'io-row' }, setBtn, prevBtn),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Tick one topic or sub-topic for a standard pack, or several to mix them: the homework takes about the same number of questions from each, plus any questions that link them. Lengths allow about 1.5 minutes per mark, which includes the time students spend marking and correcting. Packs A to E are different sets of questions for the same choice and length.'));
 }
 
 function screenPreview(cls, hw, back){
