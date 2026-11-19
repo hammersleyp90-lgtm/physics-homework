@@ -271,6 +271,8 @@ ol.trayl li > div:first-child{min-width:0}
 }
 @media (max-width:520px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .part-body{margin-left:0} .eq{white-space:normal} .bar-ctx{margin-left:0;flex-basis:100%;text-align:left;order:3} .bar-btn{margin-left:auto} h1{font-size:1.5rem} }
 @media (prefers-reduced-motion: reduce){ .bar i{transition:none} }
+.recaps summary{cursor:pointer;color:var(--muted);font-size:.95rem;margin:.1rem 0 .4rem}
+.recaps table{margin-top:.4rem}
 </style>
 </head>
 <body>
@@ -945,12 +947,14 @@ function screenList(){
   if (!set.length) app.append(h('div', { class: 'card muted' }, 'No homework has been set for your class yet.'));
   const rows = set.map(item => { setHW(item.hw); const w = workFor(ME); return Object.assign({ w, s: stats(w), total: TOTAL }, item); });
   const rank = r => r.w.submitted ? 2 : r.w.reopened ? 0 : 1;
-  rows.sort((a, b) => rank(a) - rank(b) || (a.due || '9999').localeCompare(b.due || '9999'));
+  const parentOf = hw => isRecap(hw.id) ? DB.custom[hw.id].parent : null, grp = r => parentOf(r.hw) || r.hw.id;
+  rows.sort((a, b) => rank(a) - rank(b) || (a.due || '9999').localeCompare(b.due || '9999') || grp(a).localeCompare(grp(b)) || (isRecap(a.hw.id) - isRecap(b.hw.id)));
   rows.forEach(({ hw, due, w, s, total }) => {
+    const par = parentOf(hw) && getHW(parentOf(hw));
     const late = due && !w.submitted && due < today();
     const status = w.submitted ? h('span', { class: 'pill done' }, `Submitted · ${s.score}/${total}`) : w.reopened ? h('span', { class: 'pill redo' }, 'Corrections needed') : s.locked ? h('span', { class: 'pill prog' }, `In progress · ${s.locked}/${s.n} answered`) : h('span', { class: 'pill' }, 'Not started');
     app.append(h('div', { class: 'card hw-row' },
-      h('div', {}, h('h2', {}, hw.title), h('div', { class: 'muted' }, due ? 'Due ' + fmtDue(due) + ' · ' : '', `${hw.questions.length} questions · ${total} marks`, late ? h('span', { class: 'flagtxt' }, ' · overdue') : null),
+      h('div', {}, h('h2', {}, hw.title), par ? h('div', { class: 'why-s' }, 'Quick recap of earlier topics, set with ' + par.title + '.') : null, h('div', { class: 'muted' }, due ? 'Due ' + fmtDue(due) + ' · ' : '', `${hw.questions.length} questions · ${total} marks`, late ? h('span', { class: 'flagtxt' }, ' · overdue') : null),
         hw.questions.some(q => q.why) ? h('div', { class: 'why-s' }, 'Picked for you from your recent results. Each question says why.') : null),
       h('div', { class: 'io-row' }, status,
         h('button', { type: 'button', class: 'primary', onclick: () => { setHW(hw); const st = hw.questions.map(Q => qState(Q, w)); CURQ = Math.max(0, st.indexOf('redo') >= 0 ? st.indexOf('redo') : st.findIndex(x => x !== 'done')); window.scrollTo(0, 0); screenHomework(); } }, w.submitted ? 'View' : w.reopened ? 'Fix corrections' : s.locked ? 'Continue' : 'Start'))));
@@ -1247,6 +1251,7 @@ function screenTeacher(){
       h('div', {}, h('h2', {}, cls.name), h('div', { class: 'muted' }, (cls.owner !== STAFF.login && ownerOf(cls) ? ownerOf(cls).name + ' · ' : '') + `${n} student${n === 1 ? '' : 's'} · ` + (set.length ? `${set.length} homework${set.length === 1 ? '' : 's'} set` : 'No homework set yet'))),
       h('button', { type: 'button', class: 'primary', onclick: () => screenClass(cls) }, 'Open')));
   });
+  const oc = overnightCard(classes); if (oc) app.append(oc);
   if (!classes.some(c => c.demo)) app.append(h('div', { class: 'card hw-row' },
     h('div', {}, h('b', {}, 'See the class analysis with sample data'), h('div', { class: 'muted' }, 'Creates a demo class of 12 made-up students with four marked magnetic fields homeworks. You can delete it afterwards.')),
     h('button', { type: 'button', class: 'ghost', onclick: () => { const c = createDemoClass(); c.owner = STAFF.login; save(true); screenAnalysis(c); } }, 'Create demo class')));
@@ -1280,20 +1285,37 @@ function screenClass(cls){
 
   // homework set for this class
   const hwCard = h('div', { class: 'card stack' }, h('h2', {}, 'Homework set for this class'));
-  const allIds = Object.keys(cls.assigned).filter(getHW), ids = allIds.filter(id => !cls.assigned[id].only), indiv = allIds.filter(id => cls.assigned[id].only);
+  const allIds = Object.keys(cls.assigned).filter(getHW), ids = allIds.filter(id => !cls.assigned[id].only), indiv = allIds.filter(id => cls.assigned[id].only && !isRecap(id));
+  if (RECAPMSG){ hwCard.append(h('p', { class: 'ok', role: 'status', style: 'margin:0' }, RECAPMSG)); RECAPMSG = ''; }
   if (!ids.length) hwCard.append(h('p', { class: 'muted', style: 'margin:0' }, 'Nothing set yet. Choose a pack from the question bank below.'));
   ids.forEach(id => {
     const hw = getHW(id), a = cls.assigned[id];
     const due = h('input', { class: 'inp', type: 'date', style: 'width:auto', 'aria-label': 'Due date for ' + hw.title }); due.value = a.due || '';
-    due.addEventListener('change', () => { a.due = due.value; save(true); });
+    due.addEventListener('change', () => { a.due = due.value; recapsOf(cls, id).forEach(r => { cls.assigned[r].due = due.value; }); save(true); });
     const hs = hwStudents(cls, id), done = hs.filter(x => x.work && x.work[id] && x.work[id].submitted).length;
     hwCard.append(h('div', { class: 'hw-row setrow' },
       h('div', {}, h('b', {}, hw.title), h('div', { class: 'muted' }, `${hw.questions.length} questions · ${hw.total} marks · ${done}/${hs.length} submitted`)),
       h('div', { class: 'io-row' }, h('span', { class: 'muted' }, 'Due'), due,
         h('button', { type: 'button', class: 'primary', onclick: () => screenResults(cls, hw) }, 'Results'),
         h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, hw) }, 'Preview'),
-        twoClick('Unset', 'Click again to unset', () => { delete cls.assigned[id]; save(true); screenClass(cls); }, { class: 'linkbtn del' }))));
+        twoClick('Unset', 'Click again to unset', () => { recapsOf(cls, id).forEach(r => delete cls.assigned[r]); delete cls.assigned[id]; save(true); screenClass(cls); }, { class: 'linkbtn del' }))));
+    const rc = recapsOf(cls, id);
+    if (rc.length){
+      const rtb = h('tbody');
+      rc.map(r => [r, DB.students[cls.assigned[r].only[0]]]).filter(x => x[1]).sort((x, y) => x[1].name > y[1].name ? 1 : -1).forEach(([r, st]) => {
+        const rh = getHW(r), w = st.work && st.work[r]; if (!rh) return;
+        rtb.append(h('tr', {}, h('td', {}, st.name), h('td', {}, rh.title.replace(/^Recap: /, '')), h('td', { class: 'num' }, `${rh.questions.length} q · ${rh.total} marks`),
+          h('td', {}, w && w.submitted ? 'Submitted' : w && Object.values(w.parts).some(x => x.locked) ? 'In progress' : 'Not started'),
+          h('td', {}, h('div', { class: 'io-row' }, h('button', { type: 'button', class: 'linkbtn', onclick: () => screenResults(cls, rh) }, 'Results'), h('button', { type: 'button', class: 'linkbtn', onclick: () => screenPreview(cls, rh) }, 'Preview')))));
+      });
+      const rdone = rc.filter(r => { const st = DB.students[cls.assigned[r].only[0]]; return st && st.work && st.work[r] && st.work[r].submitted; }).length;
+      hwCard.append(h('details', { class: 'recaps' }, h('summary', {}, `+ Recap questions for ${rc.length} student${rc.length === 1 ? '' : 's'} · ${rdone}/${rc.length} submitted`),
+        h('table', { class: 'res' }, h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Recap topics'), h('th', { class: 'num' }, 'Size'), h('th', {}, 'Status'), h('th'))), rtb)));
+    }
   });
+  const rcBox = h('input', { type: 'checkbox', id: 'rc-on', checked: cls.recap !== false, onchange: () => { cls.recap = rcBox.checked; save(true); } });
+  hwCard.append(h('label', { for: 'rc-on', class: 'muted', style: 'display:flex;gap:.5rem;align-items:baseline;font-size:.92rem' }, rcBox,
+    h('span', {}, 'When I set a class homework, add a recap for each student: 2–3 questions from earlier topics, chosen from their weakest. It has the same due date and shows next to the homework.')));
   if (ids.length) hwCard.append(h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Unsetting a homework hides it from students but keeps their work.'));
   app.append(hwCard);
   if (indiv.length){
@@ -1401,8 +1423,8 @@ function bankPicker(cls){
   const already = p => p.pack ? !!cls.assigned[getHW(p.pack).id]
     : Object.keys(cls.assigned).some(id => DB.custom[id] && DB.custom[id].title === p.title && JSON.stringify(DB.custom[id].items.map(x => x.code)) === JSON.stringify(p.items.map(x => x.code)));
   const setBtn = h('button', { type: 'button', class: 'primary', onclick: () => { const p = plan(); if (!p || already(p)) return;
-    if (p.pack){ const hw = getHW(p.pack); cls.assigned[hw.id] = { due: '' }; DB.packs[hw.id] = hw.codes; }
-    else createCustom(cls, p.title, p.items, null, 'mixed');
+    if (p.pack){ const hw = getHW(p.pack); cls.assigned[hw.id] = { due: '' }; DB.packs[hw.id] = hw.codes; afterClassSet(cls, hw.id); }
+    else afterClassSet(cls, createCustom(cls, p.title, p.items, null, 'mixed'));
     save(true); screenClass(cls); } }, 'Set for this class');
   const prevBtn = h('button', { type: 'button', class: 'ghost', onclick: () => { const p = plan(); if (p) screenPreview(cls, p.pack ? getHW(p.pack) : mixHW(p)); } }, 'Preview questions and mark schemes');
   function update(){
@@ -1553,6 +1575,27 @@ function checkPanel(cls){
     inBox, h('div', { class: 'io-row' }, apply), inMsg);
 }
 
+// what Claude's 11pm check found: flagged parts still waiting for the teacher, per class and homework
+function overnightCard(classes){
+  let last = '', rows = [], keep = HW;
+  classes.forEach(cls => Object.keys(cls.assigned).forEach(id => {
+    const hw = getHW(id); if (!hw) return;
+    Object.values(DB.checks[id] || {}).forEach(stu => Object.values(stu).forEach(c => { if (c.by === 'nightly' && c.at > last) last = c.at; }));
+    setHW(hw);
+    let n = 0, people = 0;
+    hwStudents(cls, id).forEach(st => { if (!(st.work && st.work[id]) || !(DB.checks[id] || {})[st.key]) return; const k = sendable(st).length; if (k){ n += k; people++; } });
+    if (n) rows.push({ cls, hw, n, people });
+  }));
+  if (keep) setHW(keep);
+  if (!last && !rows.length) return h('div', { class: 'card muted' }, 'Claude checks submitted homework every night at 11pm. Anything that needs your attention will be listed here.');
+  const when = last ? new Date(last).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'not yet';
+  return h('div', { class: 'card stack' },
+    h('div', { class: 'hw-row' }, h('h2', {}, 'Claude’s overnight check'), h('span', { class: 'muted' }, 'Last run: ' + when)),
+    rows.length ? h('div', { class: 'stack', style: 'gap:.4rem' }, ...rows.map(r => h('div', { class: 'hw-row' },
+        h('div', {}, h('b', {}, r.cls.name), ' · ', r.hw.title, h('div', { class: 'flagtxt' }, `⚑ ${r.n} part${r.n === 1 ? '' : 's'} to review for ${r.people} student${r.people === 1 ? '' : 's'}`)),
+        h('button', { type: 'button', class: 'ghost', onclick: () => screenResults(r.cls, r.hw) }, 'Review'))))
+      : h('p', { class: 'ok', style: 'margin:0' }, '✓ Nothing flagged. Students’ self-marking matched Claude’s.'));
+}
 function screenTeacherStudent(st, cls){
   app.replaceChildren();
   const w = workFor(st), s = stats(w);
@@ -1593,6 +1636,32 @@ function createCustom(cls, title, items, only, kind){
 const QCACHE = {};
 function getQ(sub, code){ const k = sub + ':' + code; return QCACHE[k] || (QCACHE[k] = makeQ(sub, code)); }
 const figsOf = q => q.figures || [q.circuitSvg, q.graph].filter(Boolean);
+/* ---- spaced retrieval: when a class homework is set, each student also gets a short recap on earlier topics ---- */
+const isRecap = id => !!(DB.custom[id] && DB.custom[id].kind === 'recap');
+const recapsOf = (cls, mainId) => Object.keys(cls.assigned).filter(id => cls.assigned[id].parent === mainId && isRecap(id));
+function addRecaps(cls, mainId){                 // 2-3 questions per student from topics done before, weakest first
+  if (cls.recap === false || !cls.assigned[mainId] || cls.assigned[mainId].only || recapsOf(cls, mainId).length) return 0;
+  const main = getHW(mainId); if (!main) return 0;
+  const now = new Set(main.questions.map(Q => Q.topic));
+  const recs = records(cls).filter(r => r.hw !== mainId && !now.has(r.topic));
+  if (!recs.length) return 0;
+  let n = 0;
+  hwStudents(cls, mainId).forEach(st => {
+    const mine = recs.filter(r => r.stu === st.key), seed = 'rc.' + st.key + '.' + mainId;
+    const plan = (mine.length && planImprovement(mine, 30, seed, false)) || planImprovement(recs, 30, seed, true);
+    if (!plan) return;
+    const items = []; let marks = 0;
+    for (let i = 0; i < plan.items.length && items.length < 3; i++){ items.push(plan.items[i]); marks += plan.qs[i].marks; if (items.length >= 2 && marks >= 8) break; }
+    const id = createCustom(cls, 'Recap: ' + topicNamesOf(items).join(', '), items, [st.key], 'recap');
+    DB.custom[id].parent = mainId; Object.assign(cls.assigned[id], { due: cls.assigned[mainId].due || '', parent: mainId }); n++;
+  });
+  return n;
+}
+function afterClassSet(cls, mainId){             // call once a class-wide homework has been set and its due date is known
+  const n = addRecaps(cls, mainId);
+  RECAPMSG = n ? `Added a recap to the homework for ${n} student${n === 1 ? '' : 's'}: 2–3 questions each from earlier topics, weakest first.` : cls.recap === false ? '' : 'No recap added: the class needs some marked homework on other topics first.';
+}
+let RECAPMSG = '';
 const topicNamesOf = items => [...new Set(items.map(it => topicName(it.code.replace(/\d+-\d+$/, ''))))];
 
 /* ---- a homework generated from several chosen sub-topics ---- */
@@ -1630,7 +1699,7 @@ function screenMix(cls){
       g.missing.length ? h('p', { class: 'warn', style: 'margin:0' }, `This length is too short to include every sub-topic. Choose a longer homework or fewer sub-topics to cover ${g.missing.map(topicName).join(', ')}.`) : null,
       h('ol', { class: 'trayl' }, qs.map((q, i) => h('li', {}, h('div', {}, h('b', {}, `${i + 1}. ${q.topicName}`), h('span', { class: 'muted' }, ` · type ${q.id} · ${q.marks} marks`), h('div', { class: 'muted trunc' }, plainText(q.stem)), g.items[i].why ? h('div', { class: 'why-s' }, g.items[i].why) : null)))),
       h('div', { class: 'io-row' },
-        h('button', { type: 'button', class: 'primary', onclick: () => { const d = draft(); createCustom(cls, d.title, d.items, null, 'mixed'); save_(); screenClass(cls); } }, 'Set for this class'),
+        h('button', { type: 'button', class: 'primary', onclick: () => { const d = draft(); afterClassSet(cls, createCustom(cls, d.title, d.items, null, 'mixed')); save_(); screenClass(cls); } }, 'Set for this class'),
         h('button', { type: 'button', class: 'ghost', onclick: () => { const d = draft(); screenPreview(cls, withWhy(buildHW('tmp', d.title, INTRO(fmtMins(g.total * MIN_PER_MARK)), qs.map(q => q)), d.items), () => screenMix(cls)); } }, 'Preview questions and mark schemes'),
         h('button', { type: 'button', class: 'ghost', onclick: () => screenBuilder(cls, draft()) }, 'Edit questions'),
         h('button', { type: 'button', class: 'ghost', onclick: () => { MIX.roll++; draw(); } }, 'Different questions'))].filter(Boolean));
@@ -1705,7 +1774,7 @@ function screenBuilder(cls, draft){
     const setBtn = h('button', { type: 'button', class: 'primary', disabled: !draft.items.length, onclick: () => {
       const t = draft.title.trim() || (forStu ? 'Improvement homework: ' : 'Custom homework: ') + topicNamesOf(draft.items).join(', ');
       const id = createCustom(cls, t, draft.items, forStu ? [forStu.key] : null, draft.kind || (forStu ? 'improve' : 'custom'));
-      cls.assigned[id].due = due.value; save_(); screenClass(cls);
+      cls.assigned[id].due = due.value; if (!forStu) afterClassSet(cls, id); save_(); screenClass(cls);
     } }, forStu ? `Set for ${forStu.name}` : 'Set for this class');
     tray.replaceChildren(h('div', { class: 'hw-row' }, h('h2', {}, 'Your homework'),
       h('span', { class: 'muted' }, `${draft.items.length} of ${draft.target} questions · ${marks} marks · about ${fmtMins(marks * MIN_PER_MARK)}`)));
@@ -1887,7 +1956,7 @@ function screenAnalysis(cls){
       h('div', { class: 'io-row' },
         h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, withWhy(buildHW('tmp', title, INTRO(size.short), plan.qs), plan.items), () => screenAnalysis(cls)) }, 'Preview'),
         h('button', { type: 'button', class: 'ghost', onclick: () => screenBuilder(cls, { title, target: plan.items.length, items: plan.items.slice(), kind: 'suggested', back: () => screenAnalysis(cls) }) }, 'Edit in builder'),
-        h('button', { type: 'button', class: 'primary', onclick: () => { createCustom(cls, title, plan.items, null, 'suggested'); save_(); screenClass(cls); } }, 'Set for this class')));
+        h('button', { type: 'button', class: 'primary', onclick: () => { afterClassSet(cls, createCustom(cls, title, plan.items, null, 'suggested')); save_(); screenClass(cls); } }, 'Set for this class')));
   };
   drawClassPlan(); app.append(sCard);
 

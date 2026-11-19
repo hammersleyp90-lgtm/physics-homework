@@ -61,7 +61,8 @@ declare l text;
 begin
   select s.login into l from hw.sessions s where s.token = p_token and s.kind = p_kind and s.expires > now();
   if l is null then raise exception 'session'; end if;
-  if p_kind = 'staff' and not exists (select 1 from hw.staff t where t.login = l) then raise exception 'session'; end if;
+  if p_kind = 'staff' and not exists (select 1 from hw.staff t where t.login = l)
+     and not (l = '_checker' and exists (select 1 from hw.settings where k = 'checker_key')) then raise exception 'session'; end if;
   return l;
 end $$;
 
@@ -237,6 +238,11 @@ create or replace function public.hw_staff_sync(p_token text, p_put jsonb, p_del
 language plpgsql security definer set search_path = '' as $$
 declare l text := hw.who(p_token, 'staff');
 begin
+  -- the overnight checker may only write check results
+  if l = '_checker' and (exists (select 1 from jsonb_array_elements(coalesce(p_put, '[]'::jsonb)) x where x ->> 'c' <> 'checks')
+                         or jsonb_array_length(coalesce(p_del, '[]'::jsonb)) > 0) then
+    raise exception 'not_allowed';
+  end if;
   insert into hw.rows (coll, key, data)
   select x ->> 'c', x ->> 'k', x -> 'd' from jsonb_array_elements(coalesce(p_put, '[]'::jsonb)) x
   on conflict (coll, key) do update set data = excluded.data, updated = now();
@@ -302,6 +308,21 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- overnight checker: Claude's scheduled check logs in with a long secret key (stored only in hw.settings
+-- and in the scheduled task). It can read everything a teacher can, and write only check results.
+create or replace function public.hw_checker_login(p_key text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare k text := (select v from hw.settings where k = 'checker_key');
+begin
+  if hw.is_locked('checker') then return jsonb_build_object('error', 'locked'); end if;
+  if k is null or length(k) < 24 or p_key is distinct from k then
+    perform hw.fail('checker');
+    return jsonb_build_object('error', 'bad_key');
+  end if;
+  delete from hw.fails where who = 'checker';
+  return jsonb_build_object('token', hw.new_session('staff', '_checker'));
+end $$;
+
 /* ---------------- permissions ---------------- */
 
 revoke all on all tables in schema hw from public;
@@ -315,7 +336,7 @@ begin
     'hw_setup_admin(text, text, text, text)', 'hw_staff_login(text, text)', 'hw_staff_load(text)',
     'hw_staff_sync(text, jsonb, jsonb)', 'hw_staff_password(text, text, text)',
     'hw_staff_create(text, text, text, text, boolean)', 'hw_staff_reset(text, text, text)',
-    'hw_staff_set_admin(text, text, boolean)', 'hw_staff_delete(text, text)'] loop
+    'hw_staff_set_admin(text, text, boolean)', 'hw_staff_delete(text, text)', 'hw_checker_login(text)'] loop
     execute format('revoke all on function public.%s from public', f);
     execute format('grant execute on function public.%s to anon, authenticated', f);
   end loop;
