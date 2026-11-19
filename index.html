@@ -1061,7 +1061,7 @@ const admins = () => staffList().filter(t => t.admin);
 function randStr(n, chars){ const a = new Uint32Array(n); crypto.getRandomValues(a); return Array.from(a).map(x => chars[x % chars.length]).join(''); }
 const tempPassword = () => randStr(4, 'abcdefghjkmnpqrstuvwxyz') + '-' + randStr(4, '23456789') + '-' + randStr(4, 'abcdefghjkmnpqrstuvwxyz');     // no look-alike characters
 function makeStaffLogin(name){
-  const parts = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/\s+/).map(p => p.replace(/[^a-z]/g, '')).filter(Boolean);
+  const parts = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[\s._-]+/).map(p => p.replace(/[^a-z]/g, '')).filter(Boolean);
   const base = (parts.length > 1 ? parts[0][0] + '.' + parts[parts.length - 1] : parts[0]) || 'teacher';      // p.hammersley
   if (!DB.staff[base]) return base;
   for (let i = 2; ; i++) if (!DB.staff[base + i]) return base + i;
@@ -1089,6 +1089,11 @@ async function startStaff(token){
   setSession({ kind: 'staff', token }); await reload();
   STAFF.mustChange ? screenStaffPassword(true) : screenTeacher();
 }
+function loginHint(input){                  // shows the login name a typed name will give, so nobody is surprised later
+  const out = h('p', { class: 'muted', style: 'margin:0' });
+  const upd = () => { const n = input.value.trim(); out.replaceChildren(...(n ? ['Login name will be: ', h('b', { class: 'mono' }, makeStaffLogin(n))] : [])); };
+  input.addEventListener('input', upd); return out;
+}
 const netErr = 'Couldn’t connect. Check your internet connection and try again.';
 function screenStaffLogin(){
   app.replaceChildren(); STAFF = null;
@@ -1114,7 +1119,7 @@ function screenStaffLogin(){
     } },
       h('h1', { style: 'margin:0' }, 'Set up the admin account'),
       h('p', { class: 'muted', style: 'margin:0' }, 'No teacher accounts exist yet. The first account is the admin: it can do everything a teacher can, and it can add other teachers. You need the one-time setup code.'),
-      field('sc', 'Setup code', code), field('sn', 'Your name', nm), field('sp1', 'Password', p1), field('sp2', 'Password again', p2), err,
+      field('sc', 'Setup code', code), field('sn', 'Your name', nm), loginHint(nm), field('sp1', 'Password', p1), field('sp2', 'Password again', p2), err,
       h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Create admin account'))));
   }
   function loginForm(){
@@ -1193,7 +1198,7 @@ function screenStaff(){
     const t = { login: makeStaffLogin(name), name, admin: ad.checked, created: Date.now(), mustChange: true }, pw = tempPassword();
     staffCall('hw_staff_create', { p_login: t.login, p_name: name, p_pw: pw, p_admin: t.admin }, () => { DB.staff[t.login] = t; STAFFMSG = { title: `Account created for ${name}`, login: t.login, pw }; }, err);
   } },
-    h('h2', {}, 'Add a teacher'), field('tn', 'Name', nm),
+    h('h2', {}, 'Add a teacher'), field('tn', 'Name', nm), loginHint(nm),
     h('label', { for: 'ta', style: 'display:flex;gap:.5rem;align-items:center' }, ad, 'Also make this person an admin'), err,
     h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Create account')),
     h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'A login name and a temporary password are generated.')));
@@ -1204,7 +1209,7 @@ function screenTeacher(){
   if (fresh('staff', screenTeacher)) return;
   app.replaceChildren(); adoptOrphans();
   app.append(tbar('Teacher view', staffOut, '← Log out'));
-  app.append(h('div', { class: 'io-row', style: 'align-items:center' }, ...[h('span', {}, 'Signed in as ', h('b', {}, STAFF.name), STAFF.admin ? ' (admin)' : ''),
+  app.append(h('div', { class: 'io-row', style: 'align-items:center' }, ...[h('span', {}, 'Signed in as ', h('b', {}, STAFF.name), ' · login ', h('span', { class: 'mono' }, STAFF.login), STAFF.admin ? ' (admin)' : ''),
     STAFF.admin ? h('button', { type: 'button', class: 'ghost', onclick: screenStaff }, 'Teacher accounts') : null,
     h('button', { type: 'button', class: 'linkbtn', onclick: () => screenStaffPassword(false) }, 'Change password')].filter(Boolean)));
   app.append(h('h1', {}, STAFF.admin && staffList().length > 1 ? 'All classes' : 'Your classes'), h('div', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => { LOADED_AT = 0; screenTeacher(); } }, 'Refresh to see the latest work')));
