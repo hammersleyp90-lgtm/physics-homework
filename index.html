@@ -72,20 +72,24 @@ textarea.names{min-height:9em;resize:vertical;line-height:1.5}
 .hw-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
 .io-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .pick{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
-.msel{position:relative}
+.msel{position:relative;min-width:0}
+.pick>div{min-width:0}
+.msel>summary{overflow:hidden;max-width:100%}
+.msel-pop label:hover{background:var(--bg)}
+.msel-pop label{border-radius:4px}
 .msel>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none}
 .msel>summary::-webkit-details-marker{display:none}
 .msel>summary .msel-txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .msel>summary::after{content:'▾';flex:none;color:var(--muted)}
 .msel[open]>summary::after{content:'▴'}
-.msel-pop{position:absolute;z-index:30;left:0;top:calc(100% + 4px);width:max(100%,340px);max-width:calc(100vw - 32px);max-height:min(60vh,520px);overflow:auto;background:var(--card,#fff);border:1px solid var(--rule);border-radius:8px;box-shadow:0 10px 30px rgba(15,23,42,.18);padding:6px 10px 10px}
+.msel-pop{position:absolute;z-index:30;left:0;top:calc(100% + 4px);width:max(100%,340px);max-width:calc(100vw - 32px);max-height:min(60vh,520px);overflow:auto;background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-radius:8px;box-shadow:0 10px 30px rgba(15,23,42,.18);padding:6px 10px 10px}
 .msel-pop fieldset{border:0;border-top:1px solid var(--rule);margin:0;padding:6px 0 4px;min-width:0}
 .msel-pop fieldset:first-of-type{border-top:0}
 .msel-pop legend{font-weight:600;padding:6px 0 2px;font-size:.95rem}
 .msel-pop label{display:flex;gap:8px;align-items:flex-start;padding:4px 0 4px 2px;cursor:pointer;line-height:1.3}
 .msel-pop label.sub{padding-left:24px}
 .msel-pop input{margin-top:2px;flex:none;width:17px;height:17px}
-.msel-bar{position:sticky;top:-6px;background:var(--card,#fff);display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:.92rem}
+.msel-bar{position:sticky;top:-6px;background:var(--paper);color:var(--ink);display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:.92rem}
 .switch{display:flex;align-items:center;gap:8px}
 .pill{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:2px 8px;border:1.5px solid var(--rule);color:var(--muted);white-space:nowrap}
 .pill.done{border-color:var(--green);color:var(--green);background:var(--green-tint)}
@@ -1412,7 +1416,7 @@ function bankPicker(cls){
     } else {
       const g = p.mix;
       info.textContent = `Mixed homework: ${g.items.length} questions · ${g.total} marks from ${p.topics.length} sub-topics` + (g.links ? ` · ${g.links} linking question${g.links > 1 ? 's' : ''}` : '');
-      if (g.missing.length){ warn.hidden = false; warn.textContent = `This length is too short to include every ticked sub-topic. It leaves out ${g.missing.map(topicName).join(', ')}. Choose a longer homework or tick fewer.`; }
+      if (g.missing.length){ warn.hidden = false; warn.textContent = `This length is too short to include every ticked sub-topic. It leaves out ${g.missing.length <= 4 ? g.missing.map(topicName).join(', ') : `${g.missing.length} of the ${p.topics.length}`}. Choose a longer homework or tick fewer.`; }
     }
     const has = already(p); setBtn.disabled = has; setBtn.textContent = has ? 'Already set for this class' : 'Set for this class';
   }
