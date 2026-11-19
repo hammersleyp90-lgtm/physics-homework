@@ -386,13 +386,13 @@ T.PD2 = R => {
   const sOpt = { R: rs1 * 1000, name: th ? 'T' : 'L' }, fOpt = { R: rf * 1000, text: val(rf, k) };
   c.add(top ? kind : 'resistor', top ? 'S' : 'F', [3, 0], [3, 2], top ? sOpt : fOpt).add(top ? 'resistor' : kind, top ? 'F' : 'S', [3, 2], [3, 4], Object.assign({ side: 'left' }, top ? fOpt : sOpt));
   c.add('voltmeter', 'V', [5, 2], [5, 4]);
-  const cond1 = th ? `At a temperature of 20 °C the resistance of the thermistor <b>T</b> is ${val(rs1, k)}.` : `In a darkened room the resistance of the LDR <b>L</b> is ${val(rs1, k)}.`;
+  const cond1 = th ? `At a temperature of 20 °C the resistance of the thermistor <b>T</b> is ${val(rs1, k)}.` : `At one light level the resistance of the LDR <b>L</b> is ${val(rs1, k)}.`;
   const change = th ? `The temperature of <b>T</b> is then ${fall ? 'increased' : 'decreased'}` : `The light intensity incident on <b>L</b> is then ${fall ? 'increased' : 'decreased'}`;
   const I2 = top ? v2 / rf : (E - v2) / rf;
   const up = top; // reading rises as sensor resistance falls when voltmeter is across the fixed resistor
   return { stem: `<b>Figure 1</b> shows ${th ? 'a thermistor' : 'a light-dependent resistor (LDR)'} connected in a potential divider circuit with ${art(rf)} ${val(rf, k)} resistor. The battery has an emf of ${val(E, 'V')} and negligible internal resistance. The voltmeter has a very large resistance.<br>${cond1}`, circuit: c,
     parts: [
-      { q: `Calculate the reading on the voltmeter ${th ? 'at 20 °C' : 'in the darkened room'}.`, marks: 2, ans: v1, unit: 'V', ms: `${eq(`<i>V</i> = ${sig(E)} × ${sig(top ? rf : rs1)} / (${sig(rf)} + ${sig(rs1)})`)} ✓<br>${eq(`<i>V</i> = ${ansStr(v1)} V`)} ✓` },
+      { q: `Calculate the reading on the voltmeter ${th ? 'at 20 °C' : 'at this light level'}.`, marks: 2, ans: v1, unit: 'V', ms: `${eq(`<i>V</i> = ${sig(E)} × ${sig(top ? rf : rs1)} / (${sig(rf)} + ${sig(rs1)})`)} ✓<br>${eq(`<i>V</i> = ${ansStr(v1)} V`)} ✓` },
       { q: `${change} and the voltmeter reading becomes ${val(v2, 'V', isNice(v2, 2) ? 2 : 3)}.<br>Calculate the new resistance of the ${nm}.`, marks: 3, ans: rs2, unit: k,
         ms: top ? `Current = ${ansStr(v2)} / ${sig(rf)} = ${ansStr(I2)} mA ✓<br>pd across ${nm} = ${sig(E)} − ${ansStr(v2)} = ${ansStr(E - v2)} V ✓<br>${eq(`<i>R</i> = ${ansStr(E - v2)} / ${ansStr(I2)} = ${ansStr(rs2)} ${k}`)} ✓`
           : `pd across ${val(rf, k)} resistor = ${sig(E)} − ${ansStr(v2)} = ${ansStr(E - v2)} V ✓<br>Current = ${ansStr(E - v2)} / ${sig(rf)} = ${ansStr(I2)} mA ✓<br>${eq(`<i>R</i> = ${ansStr(v2)} / ${ansStr(I2)} = ${ansStr(rs2)} ${k}`)} ✓` },
@@ -421,7 +421,7 @@ T.PD3 = R => {
       { q: `<b>R</b> is adjusted until the voltmeter reads ${val(vs, 'V', isNice(vs, 2) ? 2 : 3)}.<br>Calculate the resistance of <b>R</b>.`, marks: 3, ans: rset, unit: uR,
         ms: top ? `pd across <b>R</b> = ${sig(E)} − ${ansStr(vs)} = ${ansStr(E - vs)} V ✓<br>Current = ${ansStr(vs)} / ${sig(rf)} = ${ansStr(I)} ${sc === 1 ? 'A' : 'mA'} ✓<br>${eq(`<i>R</i> = ${ansStr(E - vs)} / ${ansStr(I)} = ${ansStr(rset)} ${uR}`)} ✓`
           : `pd across ${val(rf, uR)} resistor = ${sig(E)} − ${ansStr(vs)} = ${ansStr(E - vs)} V ✓<br>Current = ${ansStr(E - vs)} / ${sig(rf)} = ${ansStr(I)} ${sc === 1 ? 'A' : 'mA'} ✓<br>${eq(`<i>R</i> = ${ansStr(vs)} / ${ansStr(I)} = ${ansStr(rset)} ${uR}`)} ✓` },
-      { q: `Calculate the power dissipated in the ${val(rf, uR)} resistor at this setting.`, marks: 2, ans: P, unit: uP, ms: `${eq(`<i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> = ${ansStr(vf)}<sup>2</sup> / ${sig(rf)}`)} ✓<br>${eq(`<i>P</i> = ${ansStr(P)} ${uP}`)} ✓` }],
+      { q: `Calculate the power dissipated in the ${val(rf, uR)} resistor at this setting.`, marks: 2, ans: P, unit: uP, ms: `${eq(`<i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> = ${ansStr(vf)}<sup>2</sup> / ${sc === 1 ? sig(rf) : `(${sig(rf)} × 10<sup>3</sup>)`}`)} ✓<br>${eq(`<i>P</i> = ${sc === 1 ? `${ansStr(P)} W` : `${ansStr(P / 1000)} W = ${ansStr(P)} mW`}`)} ✓` }],
     checks: [['V', 'V', top ? E : 0, { VR: { R: 0 } }], ['V', 'V', ve], ['V', 'V', vs, { VR: { R: rset * sc } }], ['V', 'F', vf, { VR: { R: rset * sc } }]] };
 };
 
@@ -461,7 +461,7 @@ T.EMF2 = R => {
   const c = emfCircuit(E, r, false, c => c.add('switch', 'S', [0, 3.2], [2, 3.2], { state: 'open', name: 'S' }).add('resistor', 'R', [2, 3.2], [5, 3.2], { R: Rx, text: val(Rx, OHM) }));
   return { stem: `<b>Figure 1</b> shows a cell of emf <i>ε</i> and internal resistance <i>r</i> connected to ${art(Rx)} ${val(Rx, OHM)} resistor and a switch <b>S</b>. The voltmeter has a very large resistance.<br>When <b>S</b> is open the voltmeter reads ${val(E, 'V', 3)}. When <b>S</b> is closed the voltmeter reads ${val(V, 'V', 3)}.`, circuit: c,
     parts: [
-      { q: 'State the emf of the cell.', marks: 1, ans: E, unit: 'V', ms: `${val(E, 'V', 3)} ✓ (with <b>S</b> open there is no current in the cell, so no pd across the internal resistance)` },
+      { q: 'State the emf of the cell.', marks: 1, ans: E, unit: 'V', show: sig(E, 3), ms: `${val(E, 'V', 3)} ✓ (with <b>S</b> open there is no current in the cell, so no pd across the internal resistance)` },
       { q: `Calculate the current in the ${val(Rx, OHM)} resistor when <b>S</b> is closed.`, marks: 1, ans: I, unit: 'A', ms: `${eq(`<i>I</i> = <i>V</i>/<i>R</i> = ${ansStr(V)} / ${sig(Rx)} = ${ansStr(I)} A`)} ✓` },
       { q: 'Calculate the internal resistance <i>r</i> of the cell.', marks: 2, ans: r, unit: OHM, ms: `Lost volts = ${sig(E, 3)} − ${ansStr(V)} = ${ansStr(E - V)} V ✓<br>${eq(`<i>r</i> = ${ansStr(E - V)} / ${ansStr(I)} = ${ansStr(r)} ${OHM}`)} ✓` },
       { q: 'Explain why the voltmeter reading decreases when <b>S</b> is closed.', marks: 2, ms: `There is now a current in the cell, so there is a pd across the internal resistance (lost volts = <i>Ir</i>) ✓<br>Terminal pd = <i>ε</i> − <i>Ir</i>, which is less than the emf ✓` },
@@ -479,10 +479,10 @@ T.EMF3 = R => {
   return { stem: `<b>Figure 1</b> shows a circuit used to determine the emf <i>ε</i> and internal resistance <i>r</i> of a cell. The ammeter has negligible resistance and the voltmeter has a very large resistance.<br>Readings are taken for two settings of the variable resistor.` +
       `<table class="data"><thead><tr><th>Setting</th><th>Ammeter reading / A</th><th>Voltmeter reading / V</th></tr></thead><tbody><tr><td>1</td><td>${f3(I1)}</td><td>${f3(V1)}</td></tr><tr><td>2</td><td>${f3(I2)}</td><td>${f3(V2)}</td></tr></tbody></table>`, circuit: c,
     parts: [
-      { q: 'Calculate the internal resistance <i>r</i> of the cell.', marks: 3, ans: r, unit: OHM, ms: `Use of ${eq(`<i>ε</i> = <i>V</i> + <i>Ir</i>`)} for both settings: ${eq(`${f3(V1)} + ${f3(I1)}<i>r</i> = ${f3(V2)} + ${f3(I2)}<i>r</i>`)} ✓<br>${eq(`<i>r</i> = (${f3(V1)} − ${f3(V2)}) / (${f3(I2)} − ${f3(I1)})`)} ✓<br>${eq(`<i>r</i> = ${ansStr(r)} ${OHM}`)} ✓` },
-      { q: 'Calculate the emf <i>ε</i> of the cell.', marks: 2, ans: E, unit: 'V', ms: `${eq(`<i>ε</i> = ${f3(V1)} + ${f3(I1)} × ${ansStr(r)}`)} ✓<br>${eq(`<i>ε</i> = ${ansStr(E)} V`)} ✓` },
-      { q: 'Calculate the resistance of the variable resistor for setting 2.', marks: 1, ans: R2, unit: OHM, ms: `${eq(`<i>R</i> = <i>V</i>/<i>I</i> = ${f3(V2)} / ${f3(I2)} = ${ansStr(R2)} ${OHM}`)} ✓` },
-      { q: 'Calculate the maximum current the cell could deliver if its terminals were short-circuited.', marks: 1, ans: E / r, unit: 'A', ms: `${eq(`<i>I</i> = <i>ε</i>/<i>r</i> = ${ansStr(E)} / ${ansStr(r)} = ${ansStr(E / r)} A`)} ✓` }],
+      { q: 'Calculate the internal resistance <i>r</i> of the cell.', marks: 3, ans: r, unit: OHM, show: f3(r), ms: `Use of ${eq(`<i>ε</i> = <i>V</i> + <i>Ir</i>`)} for both settings: ${eq(`${f3(V1)} + ${f3(I1)}<i>r</i> = ${f3(V2)} + ${f3(I2)}<i>r</i>`)} ✓<br>${eq(`<i>r</i> = (${f3(V1)} − ${f3(V2)}) / (${f3(I2)} − ${f3(I1)})`)} ✓<br>${eq(`<i>r</i> = ${f3(r)} ${OHM}`)} ✓` },
+      { q: 'Calculate the emf <i>ε</i> of the cell.', marks: 2, ans: E, unit: 'V', show: f3(E), ms: `${eq(`<i>ε</i> = ${f3(V1)} + ${f3(I1)} × ${f3(r)}`)} ✓<br>${eq(`<i>ε</i> = ${f3(E)} V`)} ✓` },
+      { q: 'Calculate the resistance of the variable resistor for setting 2.', marks: 1, ans: R2, unit: OHM, show: f3(R2), ms: `${eq(`<i>R</i> = <i>V</i>/<i>I</i> = ${f3(V2)} / ${f3(I2)} = ${f3(R2)} ${OHM}`)} ✓` },
+      { q: 'Calculate the maximum current the cell could deliver if its terminals were short-circuited.', marks: 1, ans: E / r, unit: 'A', show: f3(E / r), ms: `${eq(`<i>I</i> = <i>ε</i>/<i>r</i> = ${f3(E)} / ${f3(r)} = ${f3(E / r)} A`)} ✓` }],
     checks: [['I', 'A', I1], ['V', 'V', V1], ['I', 'A', I2, { VR: { R: R2 } }], ['V', 'V', V2, { VR: { R: R2 } }]] };
 };
 
@@ -700,7 +700,7 @@ T.PD7 = R => {
   const { rl, RL, ru, E, rp, v1, v2 } = q, Rt = ru + rl, c = new Circuit();
   c.add('battery', 'B', [0, 0], [0, 4], { E, text: val(E, 'V'), side: 'left' }).wire([0, 0], [2, 0]).wire([0, 4], [6.6, 4]).wire([3, 2], [4.7, 2]);
   c.add('pot', 'P', [2, 0], [2, 4], { R: Rt * sc, frac: rl / Rt, w: [3, 2] }).add('voltmeter', 'V', [4.7, 2], [4.7, 4]).add('switch', 'S', [4.7, 2], [6.6, 2], { state: 'open', name: 'S' }).add('resistor', 'RL', [6.6, 2], [6.6, 4], { R: RL * sc, text: val(RL, uR) });
-  return { stem: `<b>Figure 1</b> shows a potentiometer of total resistance ${val(Rt, uR, isNice(Rt, 2) ? 2 : 3)} connected across a battery of emf ${val(E, 'V')} and negligible internal resistance. The sliding contact is set so that the resistance between the contact and the lower end of the potentiometer is ${val(rl, uR)}. The voltmeter has a very large resistance. <b>Figure 1</b> is not drawn to scale.`, circuit: c,
+  return { stem: `<b>Figure 1</b> shows a potentiometer of total resistance ${val(Rt, uR, isNice(Rt, 2) ? 2 : 3)} connected across a battery of emf ${val(E, 'V')} and negligible internal resistance. The sliding contact is set so that the resistance between the contact and the lower end of the potentiometer is ${val(rl, uR)}. Closing switch <b>S</b> connects ${art(RL)} ${val(RL, uR)} resistor across the lower section of the potentiometer. The voltmeter has a very large resistance. <b>Figure 1</b> is not drawn to scale.`, circuit: c,
     parts: [
       { q: 'Calculate the reading on the voltmeter when switch <b>S</b> is open.', marks: 2, ans: v1, unit: 'V', ms: `${eq(`<i>V</i> = ${sig(E)} × ${sig(rl)} / ${ansStr(Rt)}`)} ✓<br>${eq(`<i>V</i> = ${ansStr(v1)} V`)} ✓` },
       { q: 'Calculate the reading on the voltmeter when <b>S</b> is closed.', marks: 3, ans: v2, unit: 'V', ms: `Upper section = ${ansStr(Rt)} − ${sig(rl)} = ${ansStr(ru)} ${uR}; lower section in parallel with ${val(RL, uR)}: <i>R</i> = ${ansStr(rp)} ${uR} ✓<br>${eq(`<i>V</i> = ${sig(E)} × ${ansStr(rp)} / (${ansStr(ru)} + ${ansStr(rp)})`)} ✓<br>${eq(`<i>V</i> = ${ansStr(v2)} V`)} ✓` },
@@ -758,10 +758,10 @@ T.EMF8 = R => {
   const c = emfCircuit(E, r, false, c => c.add('ammeter', 'A', [0, 3.2], [2.5, 3.2]).add('resistor', 'R', [2.5, 3.2], [5, 3.2], { R: Rx, name: 'R' }));
   return { stem: `<b>Figure 1</b> shows a cell of emf ${val(E, 'V', 3)} and internal resistance <i>r</i> connected to a resistor <b>R</b>. The ammeter has negligible resistance and reads ${val(I, 'A', 3)}. The voltmeter has a very large resistance and reads ${val(V, 'V', 3)}.`, circuit: c,
     parts: [
-      { q: 'Calculate the resistance of <b>R</b>.', marks: 1, ans: Rx, unit: OHM, ms: `${eq(`<i>R</i> = <i>V</i>/<i>I</i> = ${sig(V, 3)} / ${sig(I, 3)} = ${ansStr(Rx)} ${OHM}`)} ✓` },
-      { q: 'Calculate the internal resistance <i>r</i> of the cell.', marks: 2, ans: r, unit: OHM, ms: `Lost volts = ${sig(E, 3)} − ${sig(V, 3)} = ${ansStr(E - V)} V ✓<br>${eq(`<i>r</i> = ${ansStr(E - V)} / ${sig(I, 3)} = ${ansStr(r)} ${OHM}`)} ✓` },
-      { q: 'Calculate the percentage of the electrical power produced by the cell that is dissipated in <b>R</b>.', marks: 2, ans: 100 * V / E, unit: '%', ms: `Fraction = <i>VI</i>/<i>εI</i> = ${sig(V, 3)} / ${sig(E, 3)} ✓<br>= ${ansStr(100 * V / E)} % ✓` },
-      { q: `Calculate the energy dissipated in the internal resistance in ${sig(t)} minutes.`, marks: 2, ans: I * I * r * t * 60, unit: 'J', ms: `${eq(`<i>E</i> = <i>I</i><sup>2</sup><i>rt</i> = ${sig(I, 3)}<sup>2</sup> × ${ansStr(r)} × ${t * 60}`)} ✓<br>${eq(`<i>E</i> = ${ansStr(I * I * r * t * 60)} J`)} ✓` }],
+      { q: 'Calculate the resistance of <b>R</b>.', marks: 1, ans: Rx, unit: OHM, show: sig(Rx, 3), ms: `${eq(`<i>R</i> = <i>V</i>/<i>I</i> = ${sig(V, 3)} / ${sig(I, 3)} = ${sig(Rx, 3)} ${OHM}`)} ✓` },
+      { q: 'Calculate the internal resistance <i>r</i> of the cell.', marks: 2, ans: r, unit: OHM, show: sig(r, 3), ms: `Lost volts = ${sig(E, 3)} − ${sig(V, 3)} = ${sig(E - V, 3)} V ✓<br>${eq(`<i>r</i> = ${sig(E - V, 3)} / ${sig(I, 3)} = ${sig(r, 3)} ${OHM}`)} ✓` },
+      { q: 'Calculate the percentage of the electrical power produced by the cell that is dissipated in <b>R</b>.', marks: 2, ans: 100 * V / E, unit: '%', ms: `Fraction = <i>VI</i>/<i>εI</i> = ${sig(V, 3)} / ${sig(E, 3)} ✓<br>= ${sig(100 * V / E, 3)} % ✓`, show: sig(100 * V / E, 3) },
+      { q: `Calculate the energy dissipated in the internal resistance in ${sig(t)} minutes.`, marks: 2, ans: I * I * r * t * 60, unit: 'J', ms: `${eq(`<i>E</i> = <i>I</i><sup>2</sup><i>rt</i> = ${sig(I, 3)}<sup>2</sup> × ${sig(r, 3)} × ${t * 60}`)} ✓<br>${eq(`<i>E</i> = ${I * I * r * t * 60 >= 1e4 ? stdForm(Number((I * I * r * t * 60).toPrecision(3))) : sig(I * I * r * t * 60, 3)} J`)} ✓`, show: I * I * r * t * 60 >= 1e4 ? stdForm(Number((I * I * r * t * 60).toPrecision(3))) : sig(I * I * r * t * 60, 3) }],
     checks: [['I', 'A', I], ['V', 'V', V]] };
 };
 
@@ -978,7 +978,7 @@ T.EMF9 = R => {
   return { stem: `<b>Figure 1</b> shows a cell of emf ${val(E, 'V')} and internal resistance ${val(r, OHM)} connected to a variable resistor <b>R</b>. The ammeter has negligible resistance and the voltmeter has a very large resistance.`, circuit: c,
     parts: [
       { q: `Calculate the power dissipated in <b>R</b> when its resistance is ${val(R1, OHM)}.`, marks: 3, ans: P(R1), unit: 'W', ms: `${eq(`<i>I</i> = ${sig(E)} / (${sig(R1)} + ${sig(r)}) = ${ansStr(E / (R1 + r))} A`)} ✓<br>${eq(`<i>P</i> = <i>I</i><sup>2</sup><i>R</i> = ${x4(E / (R1 + r))}<sup>2</sup> × ${sig(R1)}`)} ✓<br>${eq(`<i>P</i> = ${ansStr(P(R1))} W`)} ✓` },
-      { q: `Calculate the power dissipated in <b>R</b> when its resistance is ${val(r, OHM)}.`, marks: 2, ans: P(r), unit: 'W', ms: `${eq(`<i>I</i> = ${sig(E)} / (${sig(r)} + ${sig(r)}) = ${ansStr(E / (2 * r))} A`)} ✓<br>${eq(`<i>P</i> = ${x4(E / (2 * r))}<sup>2</sup> × ${sig(r)} = ${ansStr(P(r))} W`)} ✓ (this is the maximum power the cell can deliver)` },
+      { q: `Calculate the power dissipated in <b>R</b> when its resistance is ${val(r, OHM)}.`, marks: 2, ans: P(r), unit: 'W', ms: `${eq(`<i>I</i> = ${sig(E)} / (${sig(r)} + ${sig(r)}) = ${x4(E / (2 * r))} A`)} ✓<br>${eq(`<i>P</i> = ${x4(E / (2 * r))}<sup>2</sup> × ${sig(r)} = ${ansStr(P(r))} W`)} ✓ (this is the maximum power that can be delivered to <b>R</b>, which happens when the resistance of <b>R</b> equals the internal resistance)` },
       { q: `Calculate the percentage of the power produced by the cell that is dissipated in <b>R</b> when its resistance is ${val(r, OHM)}.`, marks: 1, ans: 50, unit: '%', ms: `50 % ✓ (the same current is in equal resistances, so half the power is dissipated in the internal resistance)` },
       { q: 'Explain why the power dissipated in <b>R</b> becomes very small when the resistance of <b>R</b> is made very large.', marks: 2, ms: `The current becomes very small because the total resistance is very large ✓<br>The pd across <b>R</b> cannot exceed the emf, so <i>P</i> = <i>VI</i> (≈ <i>ε</i><sup>2</sup>/<i>R</i>) tends to zero ✓` }],
     checks: [['I', 'A', E / (R1 + r)], ['V', 'V', E * R1 / (R1 + r)], ['I', 'A', E / (2 * r), { VR: { R: r } }]] };
@@ -1095,10 +1095,10 @@ T.IV11 = R => {
   return { stem: `A student uses the circuit in <b>Figure 1</b> to investigate component <b>X</b>. The ammeter has negligible resistance and the voltmeter has a very large resistance. The student adjusts the variable resistor and records the readings shown in <b>Table 1</b>.` +
       `<table class="data"><thead><tr><th>Voltmeter reading / V</th><th>Ammeter reading / A</th></tr></thead><tbody>${Vs.map((v, i) => `<tr><td>${sig(v, 3)}</td><td>${sig(Is[i], 3)}</td></tr>`).join('')}</tbody></table>`, circuit: c,
     parts: [
-      { q: `Calculate the resistance of <b>X</b> when the pd across it is ${val(Vs[0], 'V', 3)}.`, marks: 1, ans: r1, unit: OHM, ms: `${eq(`<i>R</i> = ${sig(Vs[0], 3)} / ${sig(Is[0], 3)} = ${ansStr(r1)} ${OHM}`)} ✓` },
-      { q: `Calculate the resistance of <b>X</b> when the pd across it is ${val(Vs[2], 'V', 3)}.`, marks: 1, ans: r3, unit: OHM, ms: `${eq(`<i>R</i> = ${sig(Vs[2], 3)} / ${sig(Is[2], 3)} = ${ansStr(r3)} ${OHM}`)} ✓` },
+      { q: `Calculate the resistance of <b>X</b> when the pd across it is ${val(Vs[0], 'V', 3)}.`, marks: 1, ans: r1, unit: OHM, show: sig(r1, 3), ms: `${eq(`<i>R</i> = ${sig(Vs[0], 3)} / ${sig(Is[0], 3)} = ${sig(r1, 3)} ${OHM}`)} ✓` },
+      { q: `Calculate the resistance of <b>X</b> when the pd across it is ${val(Vs[2], 'V', 3)}.`, marks: 1, ans: r3, unit: OHM, show: sig(r3, 3), ms: `${eq(`<i>R</i> = ${sig(Vs[2], 3)} / ${sig(Is[2], 3)} = ${sig(r3, 3)} ${OHM}`)} ✓` },
       { q: 'Which statement about <b>X</b> is supported by the data?', marks: 1, options: opts, correct: kind, ms: `${opts[kind]} ✓` },
-      { q: 'Explain how the data in <b>Table 1</b> support your answer.', marks: 2, ms: kind === 0 ? `The ratio <i>V</i>/<i>I</i> is the same (${ansStr(r1)} ${OHM}) for every pair of readings ✓<br>so the current is directly proportional to the pd (Ohm’s law is obeyed) ✓` : `The ratio <i>V</i>/<i>I</i> changes from ${ansStr(r1)} ${OHM} to ${ansStr(r3)} ${OHM} ✓<br>so the current is not directly proportional to the pd; the resistance ${kind === 1 ? 'increases' : 'decreases'} as the pd increases ✓` },
+      { q: 'Explain how the data in <b>Table 1</b> support your answer.', marks: 2, ms: kind === 0 ? `The ratio <i>V</i>/<i>I</i> is the same (${sig(r1, 3)} ${OHM}) for every pair of readings ✓<br>so the current is directly proportional to the pd (Ohm’s law is obeyed) ✓` : `The ratio <i>V</i>/<i>I</i> changes from ${sig(r1, 3)} ${OHM} to ${sig(r3, 3)} ${OHM} ✓<br>so the current is not directly proportional to the pd; the resistance ${kind === 1 ? 'increases' : 'decreases'} as the pd increases ✓` },
       { q: 'State one limitation of using a variable resistor in series to vary the pd across <b>X</b> in this circuit.', marks: 1, ms: `The pd across <b>X</b> cannot be reduced to zero (a potential divider arrangement would be needed) ✓` }],
     checks: [['I', 'A', Is[0], { VR: { R: (15 - Vs[0]) / Is[0] } }], ['V', 'V', Vs[0], { VR: { R: (15 - Vs[0]) / Is[0] } }]] };
 };
@@ -1113,7 +1113,7 @@ T.IV12 = R => {
       { q: 'Use <b>Figure 2</b> to determine the pd across the diode.', marks: 1, ans: V1, unit: 'V', abs: .035, ms: `${sig(V1, 2)} V ✓ (allow ± 1 small square)` },
       { q: 'Calculate the pd across <b>R</b>.', marks: 1, ans: E - V1, unit: 'V', tol: .04, ms: `${eq(`${sig(E)} − ${sig(V1, 2)} = ${ansStr(E - V1)} V`)} ✓` },
       { q: 'Calculate the resistance of <b>R</b>.', marks: 2, ans: Rx, unit: OHM, tol: .05, ms: `${eq(`<i>R</i> = ${ansStr(E - V1)} / (${sig(ImA)} × 10<sup>−3</sup>)`)} ✓<br>${eq(`<i>R</i> = ${ansStr(Rx)} ${OHM}`)} ✓` },
-      { q: 'Calculate the power dissipated in the diode.', marks: 1, ans: V1 * ImA, unit: 'mW', tol: .06, ms: `${eq(`<i>P</i> = <i>VI</i> = ${sig(V1, 2)} × ${sig(ImA)} = ${ansStr(V1 * ImA)} mW`)} ✓` },
+      { q: 'Calculate the power dissipated in the diode.', marks: 1, ans: V1 * ImA, unit: 'mW', tol: .06, ms: `${eq(`<i>P</i> = <i>VI</i> = ${sig(V1, 2)} × ${sig(ImA)} × 10<sup>−3</sup> = ${ansStr(V1 * ImA / 1000)} W = ${ansStr(V1 * ImA)} mW`)} ✓` },
       { q: 'The emf of the battery is doubled.<br>Explain why the pd across the diode increases only slightly.', marks: 2, ms: `Above the threshold pd the current in a diode rises very steeply for a very small increase in pd ✓<br>so almost all of the extra emf appears across <b>R</b> ✓` }],
     checks: [['I', 'A', ImA / 1000], ['V', 'R', E - V1]] };
 };
@@ -1413,7 +1413,11 @@ function addSkillMarks(q, rnd){
   const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
   if (!cands.length) return;
   // significant-figure mark: the least precise datum used in the working decides the sf
-  const sfCands = cands.map(x => { const toks = (x.p.ms.replace(/<sup>.*?<\/sup>/g, ' ').replace(/<[^>]+>/g, ' ').match(/\d+(?:\.\d+)?/g) || []).filter(t => givenTok.has(t));
+  const numsOf = h => h.replace(/<sup>.*?<\/sup>/g, ' ').replace(/<[^>]+>/g, ' ').match(/\d+(?:\.\d+)?/g) || [];
+  // data used in earlier parts count too when an earlier answer is carried into this part's working
+  const usedIn = (i, seen = new Set()) => { if (seen.has(i)) return []; seen.add(i); const p = q.parts[i], own = numsOf(p.ms);
+    return own.concat(...q.parts.slice(0, i).map((pj, j) => pj.ans !== undefined && !pj.options && pj.ans !== 0 && own.includes(numsOf(ansStr(pj.ans))[0]) ? usedIn(j, seen) : [])); };
+  const sfCands = cands.map(x => { const toks = usedIn(x.i).filter(t => givenTok.has(t));
     const sfs = toks.map(dataSf).filter(v => v); return Object.assign({ n: sfs.length ? Math.min(...sfs) : 0 }, x); }).filter(x => x.n >= 2 && x.n <= 3);
   let sfPart = null;
   if (sfCands.length && rnd() < 0.5){ sfPart = rnd.pick(sfCands); const p = sfPart.p, n = sfPart.n, accept = n === 2 ? [2] : [2, 3], shown = Math.abs(p.ans) >= 1e4 ? stdForm(Number(p.ans.toPrecision(n))).replace(/^[\d.]+/, m => Number(m).toFixed(n - 1)) : sig(p.ans, n);

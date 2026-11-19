@@ -399,14 +399,18 @@ function seeded(str){                       // small repeatable random-number ge
 }
 function chooseQuestions(p, id){            // picks question types in turn from each sub-topic until the marks reach the target
   const E = p.B.engine, rnd = seeded(id), topics = p.topic === 'ALL' ? rnd.shuffle(p.B.order) : [p.topic];
-  const queue = {}; topics.forEach(t => { queue[t] = []; });
-  const next = t => { if (!queue[t].length) queue[t] = rnd.shuffle(E.TEMPLATES.filter(x => x.replace(/\d+/, '') === t)); return queue[t].shift(); };   // every type is used before any repeats
-  const qs = []; let total = 0, turn = 0, misses = 0;
-  while (total < p.size.marks - 2 && misses < 40){
-    const tpl = next(topics[turn % topics.length]); let q;
-    try { q = normQ(E.makeQuestion(tpl, 10000 + Math.floor(rnd() * 90000))); } catch (e) { misses++; continue; }
-    if ((q.errors && q.errors.length) || total + q.marks > p.size.marks + 3){ misses++; continue; }
-    qs.push(q); total += q.marks; turn++;
+  const pool = {}; topics.forEach(t => { pool[t] = rnd.shuffle(E.TEMPLATES.filter(x => x.replace(/\d+/, '') === t)); });
+  const used = new Set(), qs = []; let total = 0, turn = 0, idle = 0;
+  // no question type appears twice in a pack: a sub-topic with few types gives a shorter pack instead
+  while (total < p.size.marks - 2 && idle < topics.length){
+    const t = topics[turn++ % topics.length]; let placed = false;
+    for (const tpl of pool[t].filter(x => !used.has(x))){
+      let q; try { q = normQ(E.makeQuestion(tpl, 10000 + Math.floor(rnd() * 90000))); } catch (e) { used.add(tpl); continue; }
+      if (q.errors && q.errors.length){ used.add(tpl); continue; }
+      if (total + q.marks > p.size.marks + 3) continue;          // too long for the space left: keep it for another pack
+      qs.push(q); total += q.marks; used.add(tpl); placed = true; break;
+    }
+    idle = placed ? 0 : idle + 1;
   }
   return qs.sort((a, b) => p.B.order.indexOf(a.topic) - p.B.order.indexOf(b.topic));
 }
@@ -433,7 +437,7 @@ function buildHW(id, title, intro, qs){
       kind: /^(Sketch|Draw)|\b(sketch|draw)\b/i.test(P.q) ? 'graph' : P.ans !== undefined && !P.options ? (/read(ing)? from/i.test((P.guide || []).join(' ')) || /gradient of the graph|Use Figure \d to determine/i.test(P.q) ? 'graph' : 'calc') : 'written' };
     if (P.options && /listed|^Which|^Identify/.test(P.q)) out.q += '<ul class="opts">' + P.options.map(o => `<li>${o}</li>`).join('') + '</ul>';
     if (P.ans !== undefined && !P.options) out.ms += `<div class="ms-ans">Answer: <b>${P.sfMark ? P.sfMark.shown : (P.show || E.disp(P.ans))}${P.unit === '°' ? '' : ' '}${P.unit}</b>` +
-      (P.sfMark ? ` <span class="ms-sf">(to ${P.sfMark.accept.join(' or ')} significant figures)</span>` : P.abs === undefined && !P.tol && !P.show ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : '') + '</div>';
+      (P.sfMark ? ` <span class="ms-sf">(to ${P.sfMark.accept.join(' or ')} significant figures)</span>` : P.abs === undefined && !P.tol && (!P.show || /^[\d.]+$/.test(P.show)) ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : '') + '</div>';
     if (P.guide && P.guide.length) out.note = '<span class="ms-tag">Additional guidance</span><ul>' + P.guide.map(g => `<li>${g}</li>`).join('') + '</ul>';
     return out;
   };
@@ -445,7 +449,12 @@ function buildHW(id, title, intro, qs){
   return hw;
 }
 function withWhy(hw, items){ hw.questions.forEach((Q, i) => { if (items[i] && items[i].why) Q.why = items[i].why; }); return hw; }
-function toHomework(p, id, qs){ qs.forEach(q => { q.sub = p.sub; q.E = p.B.engine; }); return buildHW(id, packTitle(id), INTRO(p.size.short), qs); }
+function toHomework(p, id, qs){
+  qs.forEach(q => { q.sub = p.sub; q.E = p.B.engine; });
+  const marks = qs.reduce((a, q) => a + q.marks, 0), len = marks < p.size.marks - 6 ? fmtMins(marks * MIN_PER_MARK) : p.size.short;   // a short pack says how long it really is
+  const hw = buildHW(id, packTitle(id).replace(' · ' + p.size.short + ' · ', ' · ' + len + ' · '), INTRO(len), qs);
+  hw.short = marks < p.size.marks - 6; return hw;
+}
 const PACKS = {};
 function getHW(id){                          // a pack that has been set keeps its saved list of question codes
   if (PACKS[id] !== undefined) return PACKS[id];
@@ -1413,6 +1422,7 @@ function bankPicker(cls){
     if (p.pack){
       const hw = getHW(p.pack), counts = {}; hw.questions.forEach(Q => { counts[Q.tag] = (counts[Q.tag] || 0) + 1; });
       info.textContent = `This pack: ${hw.questions.length} questions · ${hw.total} marks` + (Object.keys(counts).length > 1 ? ' · ' + Object.entries(counts).map(([k, v]) => `${k} ×${v}`).join(', ') : '');
+      if (hw.short){ warn.hidden = false; warn.textContent = `This sub-topic doesn’t have enough different questions for ${SIZES.find(x => x.min === +sizeSel.value).label.toLowerCase()}, so this pack uses each question once and takes about ${fmtMins(hw.total * MIN_PER_MARK)}. Tick another sub-topic to make it longer.`; }
     } else {
       const g = p.mix;
       info.textContent = `Mixed homework: ${g.items.length} questions · ${g.total} marks from ${p.topics.length} sub-topics` + (g.links ? ` · ${g.links} linking question${g.links > 1 ? 's' : ''}` : '');
