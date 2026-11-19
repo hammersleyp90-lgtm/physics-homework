@@ -1,5 +1,10 @@
-# Physics homework platform (mock-up)
+# Physics homework platform
 
-A static site: open `index.html` (served by GitHub Pages) and use **Teacher login** to set up the admin account.
+A static site on GitHub Pages (`index.html`, the `bank-*.js` question banks and `config.js`), with student work,
+classes and accounts stored in a Supabase database.
 
-Note: accounts, classes and student work are currently saved in the browser they were entered on, so this is a demo build. A shared database is needed before real student use.
+- **Students** log in with their student number and a 4-digit PIN. Work saves as they go and follows them to any device.
+- **Teachers** log in with a password. The first account (admin) needs the one-time setup code.
+- `supabase/schema.sql` sets up the database: private tables, login checks, lockout after 8 wrong attempts,
+  and functions the site calls. Only those functions are reachable with the public key in `config.js`.
+- No names are needed: use student numbers in class lists.

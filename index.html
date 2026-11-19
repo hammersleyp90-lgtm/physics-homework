@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Physics Homework (mock-up)</title>
+<title>Physics Homework</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=STIX+Two+Text:ital,wght@0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 <style>
@@ -270,6 +270,7 @@ ol.trayl li > div:first-child{min-width:0}
 <script src="bank-thm.js"></script>
 <script src="bank-fmx.js"></script>
 <script src="bank-ast.js"></script>
+<script src="config.js"></script>
 <script>
 'use strict';
 
@@ -444,18 +445,108 @@ let HW = null, ALL_PARTS = [], TOTAL = 0;       // the homework currently on scr
 function setHW(hw){ HW = hw; ALL_PARTS = hw.allParts; TOTAL = hw.total; }
 let CURQ = 0;                                   // the question currently on screen
 
-/* ================= storage (this browser only, for the mock-up) ================= */
-const KEY = 'hw-mockup-v2';
-let DB = { students: {}, classes: {}, packs: {}, staff: {} };
-try { const s = localStorage.getItem(KEY); if (s) DB = JSON.parse(s) || DB; } catch (e) {}
-let saveTimer = null;
+/* ================= storage: shared Supabase database (see supabase/schema.sql) ================= */
+// The page keeps everything it is allowed to see in DB, exactly as before. Saving works out which records changed
+// since the last successful save and sends only those. Students can only ever send their own work.
+const CFG = window.HW_CONFIG || {};
+let DB = { v: 4, students: {}, classes: {}, packs: {}, staff: {}, checks: {}, custom: {} };
+let SESSION = null;                       // { kind: 'student' | 'staff', token }
+try { SESSION = JSON.parse(sessionStorage.getItem('hw-session') || 'null'); } catch (e) {}
+function setSession(x){ SESSION = x; try { x ? sessionStorage.setItem('hw-session', JSON.stringify(x)) : sessionStorage.removeItem('hw-session'); } catch (e) {} }
+async function rpc(fn, args, keepalive){
+  let r;
+  try { r = await fetch(CFG.url + '/rest/v1/rpc/' + fn, { method: 'POST', keepalive: !!keepalive, headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) }); }
+  catch (e) { const x = new Error('offline'); x.offline = true; throw x; }
+  const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch (e) {}
+  if (!r.ok){ const x = new Error((j && j.message) || 'HTTP ' + r.status); if (x.message === 'session') x.session = true; throw x; }
+  return j;
+}
+const SEP = '\u0001';
+function rowsFromDB(){                    // every record as one row per (collection, key), stringified for comparison
+  const m = new Map(), put = (c, k, d) => m.set(c + SEP + k, JSON.stringify(d));
+  for (const id in DB.classes) put('classes', id, DB.classes[id]);
+  for (const lg in DB.students){ const st = DB.students[lg], rest = Object.assign({}, st); delete rest.work; put('students', lg, rest);
+    for (const id in (st.work || {})) put('work', lg + '|' + id, st.work[id]); }
+  for (const id in DB.checks) for (const lg in DB.checks[id]) put('checks', id + '|' + lg, DB.checks[id][lg]);
+  for (const id in DB.packs) put('packs', id, DB.packs[id]);
+  for (const id in DB.custom) put('custom', id, DB.custom[id]);
+  return m;
+}
+let BASE = new Map(), LOADED_AT = 0;
+function dbFromRows(rows, staff){
+  DB = { v: 4, students: {}, classes: {}, packs: {}, staff: {}, checks: {}, custom: {} };
+  const work = [];
+  (rows || []).forEach(r => { const d = r.d, k = r.k;
+    if (r.c === 'classes') DB.classes[k] = d;
+    else if (r.c === 'students') DB.students[k] = d;
+    else if (r.c === 'packs') DB.packs[k] = d;
+    else if (r.c === 'custom') DB.custom[k] = d;
+    else if (r.c === 'checks'){ const i = k.lastIndexOf('|'); (DB.checks[k.slice(0, i)] = DB.checks[k.slice(0, i)] || {})[k.slice(i + 1)] = d; }
+    else if (r.c === 'work') work.push(r); });
+  work.forEach(r => { const i = r.k.indexOf('|'), st = DB.students[r.k.slice(0, i)]; if (st) (st.work = st.work || {})[r.k.slice(i + 1)] = r.d; });
+  (staff || []).forEach(t => { DB.staff[t.login] = t; });
+  for (const k in PACKS) delete PACKS[k];
+  BASE = rowsFromDB(); LOADED_AT = Date.now();
+}
+let saveTimer = null, syncing = null, syncAgain = false, retryTimer = null, pending = false;
 let toastEl = null;
 function saveFailed(failed){
-  if (failed && !toastEl){ toastEl = h('div', { class: 'toast', role: 'alert' }, 'Your latest work could not be saved in this browser. Its storage may be full or blocked.'); document.body.append(toastEl); }
-  else if (!failed && toastEl){ toastEl.remove(); toastEl = null; }
+  clearTimeout(retryTimer);
+  if (failed){ retryTimer = setTimeout(() => sync(), 15000);
+    if (!toastEl){ toastEl = h('div', { class: 'toast', role: 'alert' }, 'Your latest changes haven’t saved yet. Check your internet connection. It will keep trying, so keep this page open.'); document.body.append(toastEl); } }
+  else if (toastEl){ toastEl.remove(); toastEl = null; }
 }
-function save(now){ clearTimeout(saveTimer); const go = () => { try { localStorage.setItem(KEY, JSON.stringify(DB)); saveFailed(false); } catch (e) { saveFailed(true); } }; if (now) go(); else saveTimer = setTimeout(go, 300); }
-window.addEventListener('pagehide', () => save(true));          // never lose the last few keystrokes
+function sessionLost(){
+  setSession(null); ME = null; STAFF = null; saveFailed(false); pending = false;
+  screenLogin(); const e = document.querySelector('.login .err'); if (e) e.textContent = 'You were logged out. Log in again to carry on.';
+}
+async function sync(keepalive){
+  if (!SESSION) return;
+  if (syncing){ syncAgain = true; return syncing; }
+  syncing = (async () => {
+    const cur = rowsFromDB(), put = [], del = [];
+    const mine = SESSION.kind === 'student' && ME ? 'work' + SEP + ME.login + '|' : null;
+    for (const [k, v] of cur) if (BASE.get(k) !== v && (!mine || k.startsWith(mine))) put.push(k);
+    if (SESSION.kind === 'staff') for (const k of BASE.keys()) if (!cur.has(k)) del.push(k);
+    if (!put.length && !del.length){ pending = false; saveFailed(false); return; }
+    try {
+      if (SESSION.kind === 'student'){
+        for (const k of put){ const key = k.slice(k.indexOf(SEP) + 1);
+          await rpc('hw_student_save', { p_token: SESSION.token, p_hw: key.slice(key.indexOf('|') + 1), p_data: JSON.parse(cur.get(k)) }, keepalive);
+          BASE.set(k, cur.get(k)); }
+      } else {
+        const row = k => { const i = k.indexOf(SEP); return { c: k.slice(0, i), k: k.slice(i + 1) }; };
+        await rpc('hw_staff_sync', { p_token: SESSION.token, p_put: put.map(k => Object.assign(row(k), { d: JSON.parse(cur.get(k)) })), p_del: del.map(row) }, keepalive);
+        put.forEach(k => BASE.set(k, cur.get(k))); del.forEach(k => BASE.delete(k));
+      }
+      pending = false; saveFailed(false);
+    } catch (e) { if (e.session) sessionLost(); else saveFailed(true); }
+  })();
+  try { await syncing; } finally { syncing = null; if (syncAgain){ syncAgain = false; sync(); } }
+}
+function save(now){ pending = true; clearTimeout(saveTimer); if (now) sync(); else saveTimer = setTimeout(() => sync(), 700); }
+window.addEventListener('pagehide', () => { if (pending) sync(true); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && pending) sync(true); });
+window.addEventListener('beforeunload', e => { if (pending || toastEl){ sync(true); e.preventDefault(); e.returnValue = ''; } });
+async function reload(){                  // fetch the latest from the server (after saving anything still waiting)
+  clearTimeout(saveTimer); await sync(); if (toastEl) return false;
+  if (SESSION.kind === 'student'){
+    const r = await rpc('hw_student_load', { p_token: SESSION.token }); const lg = r.login;
+    dbFromRows(r.rows); ME = DB.students[lg] || null; if (!ME) throw Object.assign(new Error('session'), { session: true });
+  } else {
+    const r = await rpc('hw_staff_load', { p_token: SESSION.token });
+    dbFromRows(r.rows, r.staff); STAFF = DB.staff[r.me.login] || null; if (!STAFF) throw Object.assign(new Error('session'), { session: true });
+  }
+  return true;
+}
+// Teacher and student home screens fetch the latest data first, so new submissions and newly set homework show up.
+function fresh(kind, then){
+  if (!SESSION || SESSION.kind !== kind || Date.now() - LOADED_AT < 20000) return false;
+  LOADED_AT = Date.now();
+  app.replaceChildren(h('p', { class: 'muted', role: 'status' }, 'Loading…'));
+  reload().then(then, e => { if (e.session) sessionLost(); else { saveFailed(true); then(); } });
+  return true;
+}
 const nameKey = n => n.trim().toLowerCase().replace(/\s+/g, ' ');
 function workFor(stu){
   stu.work = stu.work || {};
@@ -763,7 +854,7 @@ const barEl = document.getElementById('bar');
 const LOGO = '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1.5" y="1.5" width="25" height="25" rx="5" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.5"/><path d="M4 14 C7 2.5 11 2.5 14 14 S21 25.5 24 14" fill="none" stroke="var(--trace)" stroke-width="2.2" stroke-linecap="round"/></svg>';
 function setBar(ctx, logout){
   barEl.replaceChildren(...[h('div', { class: 'brand', html: LOGO + '<span>Physics Homework</span>' }), ctx ? h('span', { class: 'bar-ctx' }, ctx) : null,
-    logout ? h('button', { type: 'button', class: 'bar-btn', onclick: () => { ME = null; screenLogin(); } }, 'Log out') : null].filter(Boolean));
+    logout ? h('button', { type: 'button', class: 'bar-btn', onclick: () => logOut() }, 'Log out') : null].filter(Boolean));
 }
 const crumb = (back, label) => back ? h('div', { class: 'crumb' }, h('button', { type: 'button', class: 'back', onclick: back }, label || '← Back')) : document.createComment('');
 function topbar(title, back){ setBar(title, true); return crumb(back); }
@@ -782,24 +873,29 @@ function drawScope(cv){
 }
 function screenLogin(){
   app.replaceChildren(); setBar('', false);
-  const name = h('input', { id: 'nm', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'e.g. sam.patel' });
+  const name = h('input', { id: 'nm', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'e.g. 10234' });
   const pin = h('input', { id: 'pn', class: 'pin', inputmode: 'numeric', maxlength: '4', autocomplete: 'off', placeholder: '••••' });
   const err = h('p', { class: 'err', role: 'alert' });
-  const form = h('form', { class: 'card login', onsubmit: e => {
-    e.preventDefault();
+  let busy = false;
+  const form = h('form', { class: 'card login', onsubmit: async e => {
+    e.preventDefault(); if (busy) return;
     const n = name.value.trim().toLowerCase(), p = pin.value.trim();
-    if (!n) return err.textContent = 'Enter your login name.';
+    if (!n) return err.textContent = 'Enter your student number.';
     if (!/^\d{4}$/.test(p)) return err.textContent = 'Your PIN is 4 digits.';
-    const s = DB.students[n];
-    if (!s || s.pin !== p) return err.textContent = 'That login name and PIN don’t match.';
-    ME = s; screenList();
+    busy = true; err.textContent = '';
+    try {
+      const r = await rpc('hw_student_login', { p_login: n, p_pin: p });
+      if (r.error) return err.textContent = r.error === 'locked' ? 'Too many wrong tries. Wait 10 minutes, then try again.' : 'That student number and PIN don’t match.';
+      setSession({ kind: 'student', token: r.token }); dbFromRows(r.rows); ME = DB.students[r.login]; screenList();
+    } catch (x) { err.textContent = 'Couldn’t connect. Check your internet connection and try again.'; }
+    finally { busy = false; }
   } },
     h('h2', {}, 'Student login'),
-    h('div', {}, h('label', { for: 'nm' }, 'Login name'), name),
+    h('div', {}, h('label', { for: 'nm' }, 'Student number'), name),
     h('div', {}, h('label', { for: 'pn' }, 'PIN'), pin),
     err,
     h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Log in')),
-    h('p', { class: 'mock' }, 'Mock-up: your teacher creates your class to give you a login name and PIN. Everything is saved in this browser only.'),
+    h('p', { class: 'mock' }, 'Your teacher gives you your student number and PIN. Your work saves as you go, so you can carry on from any device.'),
     h('button', { type: 'button', class: 'linkbtn', onclick: screenStaffLogin }, 'Teacher login →'));
   const scope = h('canvas', { role: 'img', 'aria-label': 'Oscilloscope screen showing a sinusoidal trace' });
   app.append(h('div', { class: 'login-wrap' },
@@ -813,6 +909,7 @@ const fmtDue = d => d ? new Date(d + 'T12:00').toLocaleDateString('en-GB', { wee
 const whoAmI = () => { const c = classesOf(ME).map(x => x.name); return ME.name + (c.length ? ' · ' + c.join(', ') : ''); };
 
 function screenList(){
+  if (fresh('student', screenList)) return;
   app.replaceChildren();
   const mine = classesOf(ME);
   const forMe = (c, id) => c.assigned[id] && (!c.assigned[id].only || c.assigned[id].only.includes(ME.key));
@@ -929,7 +1026,9 @@ function parseNames(text){
     if (l.includes(',')){ const [a, b] = l.split(',').map(x => x.trim()); if (b) l = b + ' ' + a; }      // "Jones, Alex" -> "Alex Jones"
     return l.replace(/\s+/g, ' '); });
 }
+const isNumberLogin = x => /^[A-Za-z0-9]+$/.test(x);      // a student number (or other ID) is used as the login as-is
 function makeLogin(name){
+  if (isNumberLogin(name)) return name.toLowerCase();
   const parts = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).map(p => p.replace(/[^a-z]/g, '')).filter(Boolean);
   const first = parts[0] || 'student', last = parts.length > 1 ? parts[parts.length - 1] : '';
   const base = last ? first + '.' + last : first;                       // sam.patel
@@ -943,7 +1042,9 @@ function makePin(){
   return p;
 }
 function addStudents(cls, names){
-  names.forEach(n => { const login = makeLogin(n); DB.students[login] = { key: login, name: n, login, pin: makePin(), classIds: [cls.id] }; });
+  names.forEach(n => {
+    if (isNumberLogin(n) && DB.students[n.toLowerCase()]){ const st = DB.students[n.toLowerCase()]; if (!st.classIds.includes(cls.id)) st.classIds.push(cls.id); return; }   // already has a login: just join this class
+    const login = makeLogin(n); DB.students[login] = { key: login, name: n, login, pin: makePin(), classIds: [cls.id] }; });
 }
 function tbar(title, back, backLabel){ setBar(title, false); return crumb(back, backLabel); }
 function twoClick(label, armedLabel, action, attrs){        // a button that needs a second click to confirm
@@ -957,14 +1058,8 @@ function twoClick(label, armedLabel, action, attrs){        // a button that nee
 /* ================= teacher and admin accounts ================= */
 const staffList = () => Object.values(DB.staff || (DB.staff = {})).sort((a, b) => (b.admin ? 1 : 0) - (a.admin ? 1 : 0) || a.name.localeCompare(b.name));
 const admins = () => staffList().filter(t => t.admin);
-async function hashPw(pw, salt){
-  if (!(window.crypto && crypto.subtle)) return 'plain:' + pw;                   // very old browsers only
-  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + pw));
-  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('');
-}
 function randStr(n, chars){ const a = new Uint32Array(n); crypto.getRandomValues(a); return Array.from(a).map(x => chars[x % chars.length]).join(''); }
 const tempPassword = () => randStr(4, 'abcdefghjkmnpqrstuvwxyz') + '-' + randStr(4, '23456789') + '-' + randStr(4, 'abcdefghjkmnpqrstuvwxyz');     // no look-alike characters
-async function setPassword(t, pw, mustChange){ t.salt = randStr(12, 'abcdefghijklmnopqrstuvwxyz0123456789'); t.hash = await hashPw(pw, t.salt); t.mustChange = !!mustChange; }
 function makeStaffLogin(name){
   const parts = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/\s+/).map(p => p.replace(/[^a-z]/g, '')).filter(Boolean);
   const base = (parts.length > 1 ? parts[0][0] + '.' + parts[parts.length - 1] : parts[0]) || 'teacher';      // p.hammersley
@@ -972,7 +1067,15 @@ function makeStaffLogin(name){
   for (let i = 2; ; i++) if (!DB.staff[base + i]) return base + i;
 }
 const pwProblem = (a, b) => a.length < 8 ? 'Use at least 8 characters for the password.' : a !== b ? 'The two passwords don’t match.' : '';
-function staffOut(){ STAFF = null; screenLogin(); }
+async function logOut(){
+  clearTimeout(saveTimer); await sync();
+  if (toastEl && !confirmLeave()) return;
+  const t = SESSION && SESSION.token; setSession(null); ME = null; STAFF = null; saveFailed(false); pending = false;
+  dbFromRows([]); if (t) rpc('hw_logout', { p_token: t }).catch(() => {});
+  screenLogin();
+}
+function confirmLeave(){ const b = document.querySelector('.bar-btn, .crumb .back'); if (b && b.dataset.armed){ return true; } if (b){ b.dataset.armed = '1'; b.textContent = 'Not saved yet. Click again to log out anyway'; } return false; }
+function staffOut(){ logOut(); }
 const ownerOf = cls => DB.staff[cls.owner];
 const myClasses = () => Object.values(DB.classes).filter(c => STAFF && (STAFF.admin || c.owner === STAFF.login));
 function adoptOrphans(){                       // classes made before accounts existed, or whose teacher was removed, go to an admin
@@ -982,36 +1085,53 @@ function adoptOrphans(){                       // classes made before accounts e
 const pwInput = (id, ac) => h('input', { class: 'inp', id, type: 'password', autocomplete: ac || 'off' });
 const field = (id, label, input) => h('div', {}, h('label', { class: 'lab', for: id }, label), input);
 
+async function startStaff(token){
+  setSession({ kind: 'staff', token }); await reload();
+  STAFF.mustChange ? screenStaffPassword(true) : screenTeacher();
+}
+const netErr = 'Couldn’t connect. Check your internet connection and try again.';
 function screenStaffLogin(){
   app.replaceChildren(); STAFF = null;
   app.append(tbar('Teacher login', screenLogin, '← Student login'));
-  const err = h('p', { class: 'err', role: 'alert' });
-  if (!staffList().length){                    // first run: whoever sets the platform up becomes the admin
+  const err = h('p', { class: 'err', role: 'alert' }), holder = h('div', {}, h('p', { class: 'muted' }, 'Loading…'));
+  app.append(holder);
+  rpc('hw_status').then(st => {
+    if (!st.hasStaff) return setupForm();
+    loginForm();
+  }, () => { holder.replaceChildren(h('p', { class: 'err' }, netErr)); });
+  function setupForm(){                       // first run: the person with the setup code becomes the admin
+    const code = h('input', { class: 'inp', id: 'sc', autocomplete: 'off', spellcheck: 'false', placeholder: 'xxxx-xxxx-xxxx' });
     const nm = h('input', { class: 'inp', id: 'sn', autocomplete: 'off', placeholder: 'e.g. Phill Hammersley' }), p1 = pwInput('sp1', 'new-password'), p2 = pwInput('sp2', 'new-password');
-    app.append(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
+    holder.replaceChildren(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
       e.preventDefault();
       const name = nm.value.trim().replace(/\s+/g, ' '); if (!name) return err.textContent = 'Enter your name.';
       const bad = pwProblem(p1.value, p2.value); if (bad) return err.textContent = bad;
-      const t = { login: makeStaffLogin(name), name, admin: true, created: Date.now() };
-      await setPassword(t, p1.value, false); DB.staff[t.login] = t; STAFF = t; adoptOrphans(); save(true); screenTeacher();
+      try {
+        const r = await rpc('hw_setup_admin', { p_code: code.value.trim(), p_login: makeStaffLogin(name), p_name: name, p_pw: p1.value });
+        if (r.error) return err.textContent = { bad_code: 'That setup code isn’t right.', locked: 'Too many wrong tries. Wait 10 minutes.', exists: 'The admin account has already been set up. Reload the page to log in.' }[r.error] || 'That didn’t work. Check the details and try again.';
+        await startStaff(r.token);
+      } catch (x) { err.textContent = netErr; }
     } },
       h('h1', { style: 'margin:0' }, 'Set up the admin account'),
-      h('p', { class: 'muted', style: 'margin:0' }, 'No teacher accounts exist yet. The first account is the admin: it can do everything a teacher can, and it can add other teachers.'),
-      field('sn', 'Your name', nm), field('sp1', 'Password', p1), field('sp2', 'Password again', p2), err,
-      h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Create admin account')),
-      h('p', { class: 'mock', style: 'margin:0' }, 'Mock-up: accounts are saved in this browser only, and there is no password recovery for the admin. In the hosted version accounts live on the server.')));
-    return;
+      h('p', { class: 'muted', style: 'margin:0' }, 'No teacher accounts exist yet. The first account is the admin: it can do everything a teacher can, and it can add other teachers. You need the one-time setup code.'),
+      field('sc', 'Setup code', code), field('sn', 'Your name', nm), field('sp1', 'Password', p1), field('sp2', 'Password again', p2), err,
+      h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Create admin account'))));
   }
-  const lg = h('input', { class: 'inp', id: 'sl', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', placeholder: 'e.g. p.hammersley' }), pw = pwInput('sp', 'current-password');
-  app.append(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
-    e.preventDefault();
-    const t = DB.staff[lg.value.trim().toLowerCase()];
-    if (!t || (await hashPw(pw.value, t.salt)) !== t.hash) return err.textContent = 'That login name and password don’t match.';
-    STAFF = t; t.mustChange ? screenStaffPassword(true) : screenTeacher();
-  } },
-    h('h1', { style: 'margin:0' }, 'Teacher login'), field('sl', 'Login name', lg), field('sp', 'Password', pw), err,
-    h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Log in')),
-    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Forgotten your password? Ask an admin to reset it.')));
+  function loginForm(){
+    const lg = h('input', { class: 'inp', id: 'sl', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', placeholder: 'e.g. p.hammersley' }), pw = pwInput('sp', 'current-password');
+    holder.replaceChildren(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
+      e.preventDefault();
+      try {
+        const r = await rpc('hw_staff_login', { p_login: lg.value.trim().toLowerCase(), p_pw: pw.value });
+        if (r.error) return err.textContent = r.error === 'locked' ? 'Too many wrong tries. Wait 10 minutes, then try again.' : 'That login name and password don’t match.';
+        await startStaff(r.token);
+      } catch (x) { err.textContent = netErr; }
+    } },
+      h('h1', { style: 'margin:0' }, 'Teacher login'), field('sl', 'Login name', lg), field('sp', 'Password', pw), err,
+      h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Log in')),
+      h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Forgotten your password? Ask an admin to reset it.')));
+    lg.focus();
+  }
 }
 
 function screenStaffPassword(forced){
@@ -1020,9 +1140,12 @@ function screenStaffPassword(forced){
   const cur = pwInput('pc', 'current-password'), p1 = pwInput('pn1', 'new-password'), p2 = pwInput('pn2', 'new-password'), err = h('p', { class: 'err', role: 'alert' });
   app.append(h('form', { class: 'card stack', style: 'max-width:28rem', onsubmit: async e => {
     e.preventDefault();
-    if (!forced && (await hashPw(cur.value, STAFF.salt)) !== STAFF.hash) return err.textContent = 'Your current password isn’t right.';
     const bad = pwProblem(p1.value, p2.value); if (bad) return err.textContent = bad;
-    await setPassword(STAFF, p1.value, false); save(true); screenTeacher();
+    try {
+      const r = await rpc('hw_staff_password', { p_token: SESSION.token, p_old: forced ? null : cur.value, p_new: p1.value });
+      if (r.error) return err.textContent = r.error === 'bad_password' ? 'Your current password isn’t right.' : 'Use at least 8 characters for the password.';
+      STAFF.mustChange = false; screenTeacher();
+    } catch (x) { if (x.session) return sessionLost(); err.textContent = netErr; }
   } }, ...[
     h('h1', { style: 'margin:0' }, forced ? 'Choose your own password' : 'Change your password'),
     forced ? h('p', { class: 'muted', style: 'margin:0' }, 'You logged in with a temporary password. Choose your own before you carry on.') : field('pc', 'Current password', cur),
@@ -1030,23 +1153,32 @@ function screenStaffPassword(forced){
     h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Save password'))].filter(Boolean)));
 }
 
-let STAFFMSG = null;                            // a temporary password to show once, after adding a teacher or resetting a password
+let STAFFMSG = null, LASTPW = '';
+const tempPasswordFor = () => (LASTPW = tempPassword());
+async function staffCall(fn, args, done, errEl){        // an admin action that runs on the server, then updates this page
+  try {
+    const r = await rpc(fn, Object.assign({ p_token: SESSION.token }, args));
+    if (r && r.error){ const m = { last_admin: 'There must always be at least one admin.', self: 'You can’t do that to your own account.', exists: 'There is already an account with that login name.' }[r.error] || 'That didn’t work.';
+      if (errEl) errEl.textContent = m; else STAFFMSG = { title: m, login: '', pw: '' }; return screenStaff(); }
+    done(); screenStaff();
+  } catch (x) { if (x.session) return sessionLost(); if (errEl) errEl.textContent = netErr; else { STAFFMSG = { title: netErr, login: '', pw: '' }; screenStaff(); } }
+}                            // a temporary password to show once, after adding a teacher or resetting a password
 function screenStaff(){
   if (!STAFF || !STAFF.admin) return screenTeacher();
   app.replaceChildren(); app.append(tbar('Teacher view', screenTeacher, '← Your classes'), h('h1', {}, 'Teacher accounts'));
   if (STAFFMSG){
     const m = STAFFMSG; STAFFMSG = null;
     app.append(h('div', { class: 'card stack', role: 'status' }, h('b', {}, m.title),
-      h('div', {}, 'Login name: ', h('span', { class: 'mono' }, m.login), h('br'), 'Temporary password: ', h('span', { class: 'mono' }, m.pw)),
-      h('p', { class: 'muted', style: 'margin:0' }, 'Pass these on now. The password is not shown again, and they are asked to choose their own the first time they log in.')));
+      m.pw ? h('div', {}, 'Login name: ', h('span', { class: 'mono' }, m.login), h('br'), 'Temporary password: ', h('span', { class: 'mono' }, m.pw)) : null,
+      m.pw ? h('p', { class: 'muted', style: 'margin:0' }, 'Pass these on now. The password is not shown again, and they are asked to choose their own the first time they log in.') : null));
   }
   const rows = staffList().map(t => {
     const n = Object.values(DB.classes).filter(c => c.owner === t.login).length, me = t === STAFF, lastAdmin = t.admin && admins().length === 1;
-    const acts = [h('button', { type: 'button', class: 'linkbtn', onclick: async () => { const pw = tempPassword(); await setPassword(t, pw, true); save(true); STAFFMSG = { title: `Password reset for ${t.name}`, login: t.login, pw }; screenStaff(); } }, 'Reset password')];
+    const acts = [h('button', { type: 'button', class: 'linkbtn', onclick: () => staffCall('hw_staff_reset', { p_login: t.login, p_pw: tempPasswordFor(t) }, () => { t.mustChange = true; STAFFMSG = { title: `Password reset for ${t.name}`, login: t.login, pw: LASTPW }; }) }, 'Reset password')];
     if (me) acts.length = 0;
-    if (!me) acts.push(h('button', { type: 'button', class: 'linkbtn', onclick: () => { t.admin = !t.admin; save(true); screenStaff(); } }, t.admin ? 'Remove admin rights' : 'Make admin'));
+    if (!me) acts.push(h('button', { type: 'button', class: 'linkbtn', onclick: () => staffCall('hw_staff_set_admin', { p_login: t.login, p_admin: !t.admin }, () => { t.admin = !t.admin; }) }, t.admin ? 'Remove admin rights' : 'Make admin'));
     if (!me && !lastAdmin) acts.push(twoClick('Remove', 'Click again to remove', () => {
-      Object.values(DB.classes).forEach(c => { if (c.owner === t.login) c.owner = STAFF.login; }); delete DB.staff[t.login]; save(true); screenStaff(); }, { class: 'linkbtn del' }));
+      staffCall('hw_staff_delete', { p_login: t.login }, () => { Object.values(DB.classes).forEach(c => { if (c.owner === t.login) c.owner = STAFF.login; }); delete DB.staff[t.login]; save(true); }); }, { class: 'linkbtn del' }));
     return h('div', { class: 'card stack acct', 'data-login': t.login },
       h('div', {}, h('b', {}, t.name, me ? ' (you)' : ''), ' · ', t.admin ? 'Admin' : 'Teacher'),
       h('div', { class: 'muted' }, h('span', { class: 'mono' }, t.login), ` · ${n} class${n === 1 ? '' : 'es'}`, t.mustChange ? ' · temporary password not yet changed' : ''),
@@ -1058,8 +1190,8 @@ function screenStaff(){
     e.preventDefault();
     const name = nm.value.trim().replace(/\s+/g, ' '); if (!name) return err.textContent = 'Enter the teacher’s name.';
     if (staffList().some(t => t.name.toLowerCase() === name.toLowerCase())) return err.textContent = 'There is already an account with that name.';
-    const t = { login: makeStaffLogin(name), name, admin: ad.checked, created: Date.now() }, pw = tempPassword();
-    await setPassword(t, pw, true); DB.staff[t.login] = t; save(true); STAFFMSG = { title: `Account created for ${name}`, login: t.login, pw }; screenStaff();
+    const t = { login: makeStaffLogin(name), name, admin: ad.checked, created: Date.now(), mustChange: true }, pw = tempPassword();
+    staffCall('hw_staff_create', { p_login: t.login, p_name: name, p_pw: pw, p_admin: t.admin }, () => { DB.staff[t.login] = t; STAFFMSG = { title: `Account created for ${name}`, login: t.login, pw }; }, err);
   } },
     h('h2', {}, 'Add a teacher'), field('tn', 'Name', nm),
     h('label', { for: 'ta', style: 'display:flex;gap:.5rem;align-items:center' }, ad, 'Also make this person an admin'), err,
@@ -1069,12 +1201,13 @@ function screenStaff(){
 
 function screenTeacher(){
   if (!STAFF) return screenStaffLogin();
+  if (fresh('staff', screenTeacher)) return;
   app.replaceChildren(); adoptOrphans();
   app.append(tbar('Teacher view', staffOut, '← Log out'));
   app.append(h('div', { class: 'io-row', style: 'align-items:center' }, ...[h('span', {}, 'Signed in as ', h('b', {}, STAFF.name), STAFF.admin ? ' (admin)' : ''),
     STAFF.admin ? h('button', { type: 'button', class: 'ghost', onclick: screenStaff }, 'Teacher accounts') : null,
     h('button', { type: 'button', class: 'linkbtn', onclick: () => screenStaffPassword(false) }, 'Change password')].filter(Boolean)));
-  app.append(h('h1', {}, STAFF.admin && staffList().length > 1 ? 'All classes' : 'Your classes'), h('p', { class: 'mock', style: 'margin:0' }, 'Mock-up: accounts, classes, logins and work are saved in this browser only.'));
+  app.append(h('h1', {}, STAFF.admin && staffList().length > 1 ? 'All classes' : 'Your classes'), h('div', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => { LOADED_AT = 0; screenTeacher(); } }, 'Refresh to see the latest work')));
   const classes = myClasses();
   classes.forEach(cls => {
     const n = classStudents(cls).length, set = Object.keys(cls.assigned).filter(id => getHW(id) && !cls.assigned[id].only);
@@ -1083,28 +1216,29 @@ function screenTeacher(){
       h('button', { type: 'button', class: 'primary', onclick: () => screenClass(cls) }, 'Open')));
   });
   if (!classes.some(c => c.demo)) app.append(h('div', { class: 'card hw-row' },
-    h('div', {}, h('b', {}, 'See the class analysis with sample data'), h('div', { class: 'muted' }, 'Creates a demo class of 12 made-up students with four marked magnetic fields homeworks. Mock-up only.')),
+    h('div', {}, h('b', {}, 'See the class analysis with sample data'), h('div', { class: 'muted' }, 'Creates a demo class of 12 made-up students with four marked magnetic fields homeworks. You can delete it afterwards.')),
     h('button', { type: 'button', class: 'ghost', onclick: () => { const c = createDemoClass(); c.owner = STAFF.login; save(true); screenAnalysis(c); } }, 'Create demo class')));
   const nm = h('input', { class: 'inp', id: 'cn', placeholder: 'e.g. 13A Physics', autocomplete: 'off' });
-  const list = h('textarea', { class: 'inp names', id: 'cl', placeholder: 'One student per line, e.g.\nSam Patel\nJones, Alex' });
+  const list = h('textarea', { class: 'inp names', id: 'cl', placeholder: 'One student number per line, e.g.\n10234\n10235' });
   const err = h('p', { class: 'err', role: 'alert' });
   app.append(h('form', { class: 'card stack', onsubmit: e => {
     e.preventDefault();
     const name = nm.value.trim(), names = parseNames(list.value);
     if (!name) return err.textContent = 'Give the class a name.';
     if (classes.some(c => c.name.toLowerCase() === name.toLowerCase())) return err.textContent = 'You already have a class with that name.';
-    if (!names.length) return err.textContent = 'Paste your class list, one student per line.';
+    if (!names.length) return err.textContent = 'Paste your student numbers, one per line.';
     const cls = { id: 'c' + Date.now().toString(36), name, assigned: {}, owner: STAFF.login };
     DB.classes[cls.id] = cls; addStudents(cls, names); save(true); screenClass(cls);
   } },
     h('h2', {}, classes.length ? 'Add another class' : 'Create your first class'),
     h('div', {}, h('label', { class: 'lab', for: 'cn' }, 'Class name'), nm),
-    h('div', {}, h('label', { class: 'lab', for: 'cl' }, 'Class list'), list),
-    h('p', { class: 'muted', style: 'margin:0' }, 'A login name and a 4-digit PIN are generated for every student.'),
+    h('div', {}, h('label', { class: 'lab', for: 'cl' }, 'Student numbers'), list),
+    h('p', { class: 'muted', style: 'margin:0' }, 'Each student logs in with their number and a 4-digit PIN that is generated for them. Use numbers rather than names, so no names are stored.'),
     err, h('div', {}, h('button', { class: 'primary', type: 'submit' }, 'Create class and generate logins'))));
 }
 
 function screenClass(cls){
+  if (fresh('staff', () => DB.classes[cls.id] ? screenClass(DB.classes[cls.id]) : screenTeacher())) return;
   app.replaceChildren();
   const studs = classStudents(cls);
   app.append(tbar('Teacher view', screenTeacher, '← All classes'), h('h1', {}, cls.name),
@@ -1180,7 +1314,7 @@ function screenClass(cls){
     try { await navigator.clipboard.writeText(txt); status.textContent = 'Copied. Paste it into Excel or Word to print login slips.'; outBox.hidden = true; }
     catch (e) { outBox.hidden = false; outBox.select(); status.textContent = 'Copying was blocked, so select the text below and copy it yourself.'; }
   } }, 'Copy login list');
-  const more = h('textarea', { class: 'inp names', style: 'min-height:4.5em', placeholder: 'Add new students, one per line', 'aria-label': 'Students to add' });
+  const more = h('textarea', { class: 'inp names', style: 'min-height:4.5em', placeholder: 'Add student numbers, one per line', 'aria-label': 'Students to add' });
   app.append(h('div', { class: 'card stack' },
     h('div', { class: 'hw-row' }, h('h2', {}, `Class list and logins (${studs.length})`), studs.length ? copyBtn : null), status, outBox,
     studs.length ? h('div', { style: 'overflow-x:auto' }, h('table', { class: 'res' }, h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Login name'), h('th', {}, 'PIN'), h('th'), h('th'), h('th'))), tb))
@@ -1834,20 +1968,13 @@ function createDemoClass(){
   save_(); return cls;
 }
 
-Object.values(DB.classes).filter(c => c.demo && c.demoVersion !== 3).forEach(c => { removeClass(c); DB._rebuildDemo = true; });
-(function migrate(){
-  if (DB.v >= 4) return;
-  if (!(DB.v >= 3)){
-  const old = DB.students, map = {}; DB.students = {};
-  Object.values(old).forEach(st => { const login = makeLogin(st.name); map[st.key] = login; st.key = st.login = login;
-    st.classIds = st.classIds || (st.classId ? [st.classId] : []); delete st.classId; DB.students[login] = st; });
-  Object.values(DB.checks).forEach(c => { const copy = Object.assign({}, c); Object.keys(c).forEach(k => delete c[k]); Object.keys(copy).forEach(k => { c[map[k] || k] = copy[k]; }); });
-  }
-  Object.values(DB.classes).forEach(c => { Object.keys(c.assigned || {}).forEach(id => { if (!parsePack(id) && !String(id).startsWith('CU.')) delete c.assigned[id]; }); });
-  DB.v = 4; save(true);
+(function boot(){
+  if (!CFG.url){ app.append(h('p', { class: 'err' }, 'The site isn’t connected to its database yet (config.js is missing).')); return; }
+  if (!SESSION) return screenLogin();
+  LOADED_AT = 0; app.replaceChildren(h('p', { class: 'muted', role: 'status' }, 'Loading…'));
+  reload().then(() => SESSION.kind === 'student' ? screenList() : STAFF.mustChange ? screenStaffPassword(true) : screenTeacher(),
+    () => { setSession(null); screenLogin(); });
 })();
-if (DB._rebuildDemo){ delete DB._rebuildDemo; createDemoClass(); }
-screenLogin();
 </script>
 </body>
 </html>
