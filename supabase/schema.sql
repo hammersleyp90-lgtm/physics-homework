@@ -125,7 +125,7 @@ begin
     from hw.rows r, jsonb_each(coalesce(r.data -> 'assigned', '{}'::jsonb)) e
    where r.coll = 'classes' and r.key = any (cls)
      and (e.value -> 'only' is null or jsonb_typeof(e.value -> 'only') <> 'array' or e.value -> 'only' ? l);
-  return jsonb_build_object('login', l, 'rows', coalesce((
+  return jsonb_build_object('login', l, 'now', now(), 'rows', coalesce((
     select jsonb_agg(jsonb_build_object('c', r.coll, 'k', r.key, 'd', case when r.coll = 'students' then r.data - 'pin' else r.data end))
       from hw.rows r
      where (r.coll = 'students' and r.key = l)
@@ -133,6 +133,33 @@ begin
         or (r.coll = 'work' and left(r.key, length(l) + 1) = l || '|')
         or (r.coll in ('packs', 'custom') and r.key = any (hws))), '[]'::jsonb));
 end $$;
+
+-- exam settings for one homework from the student's class (null if it isn't a timed exam)
+create or replace function hw.exam_for(l text, p_hw text) returns jsonb
+language sql security definer set search_path = '' as $$
+  select c.data -> 'assigned' -> p_hw -> 'exam'
+    from hw.rows s, hw.rows c
+   where s.coll = 'students' and s.key = l and c.coll = 'classes'
+     and c.key in (select jsonb_array_elements_text(coalesce(s.data -> 'classIds', '[]'::jsonb)))
+     and jsonb_typeof(c.data -> 'assigned' -> p_hw -> 'exam') = 'object'
+   limit 1;
+$$;
+
+-- a part's black (pre-mark-scheme) strokes; green strokes and stamps are left out
+create or replace function hw.black(p jsonb) returns jsonb
+language sql immutable set search_path = '' as $$
+  select coalesce(jsonb_agg(e order by i), '[]'::jsonb)
+    from jsonb_array_elements(case when jsonb_typeof(p -> 'strokes') = 'array' then p -> 'strokes' else '[]'::jsonb end) with ordinality t(e, i)
+   where e ->> 't' is null and coalesce(e ->> 'c', '') <> 'g';
+$$;
+
+-- true if any typed answer or black drawing differs between two copies of a student's work
+create or replace function hw.answers_changed(o jsonb, n jsonb) returns boolean
+language sql immutable set search_path = '' as $$
+  select exists (select 1 from jsonb_each(case when jsonb_typeof(n -> 'parts') = 'object' then n -> 'parts' else '{}'::jsonb end) e
+     where coalesce(e.value ->> 'text', '') <> coalesce(o -> 'parts' -> e.key ->> 'text', '')
+        or hw.black(e.value) <> hw.black(o -> 'parts' -> e.key));
+$$;
 
 /* ---------------- functions the site calls ---------------- */
 
@@ -171,7 +198,7 @@ end $$;
 
 create or replace function public.hw_student_save(p_token text, p_hw text, p_data jsonb) returns jsonb
 language plpgsql security definer set search_path = '' as $$
-declare l text := hw.who(p_token, 'student');
+declare l text := hw.who(p_token, 'student'); ex jsonb; old jsonb; st timestamptz; en timestamptz;
 begin
   if p_data is null or jsonb_typeof(p_data) <> 'object' then raise exception 'bad_data'; end if;
   if octet_length(p_data::text) > 4000000 then raise exception 'too_big'; end if;
@@ -185,9 +212,55 @@ begin
             or c.data -> 'assigned' -> p_hw -> 'only' ? l)) then
     raise exception 'not_assigned';
   end if;
+  -- timed exams: the clock is the server's, and answers can't change once time is up
+  ex := hw.exam_for(l, p_hw);
+  if ex is not null then
+    select r.data into old from hw.rows r where r.coll = 'work' and r.key = l || '|' || p_hw;
+    old := coalesce(old, '{}'::jsonb);
+    st := (old -> 'exam' ->> 'started')::timestamptz;
+    en := (old -> 'exam' ->> 'ends')::timestamptz;
+    if st is null then
+      p_data := p_data - 'exam';
+    else   -- keep the server's start and end; the page may only add page-leave records and when it finished
+      p_data := jsonb_set(p_data, '{exam}', (old -> 'exam')
+        || jsonb_build_object('leaves', coalesce(p_data -> 'exam' -> 'leaves', old -> 'exam' -> 'leaves', '[]'::jsonb))
+        || case when p_data -> 'exam' ? 'finished' then jsonb_build_object('finished', p_data -> 'exam' -> 'finished') else '{}'::jsonb end);
+    end if;
+    if (st is null or now() > en + interval '90 seconds') and hw.answers_changed(old, p_data) then
+      raise exception 'time_up';
+    end if;
+    if now() < (ex ->> 'closes')::timestamptz and exists (
+         select 1 from jsonb_each(case when jsonb_typeof(p_data -> 'parts') = 'object' then p_data -> 'parts' else '{}'::jsonb end) e
+          where jsonb_typeof(e.value -> 'mark') = 'number' and (e.value -> 'mark') is distinct from (old -> 'parts' -> e.key -> 'mark')) then
+      raise exception 'marks_closed';
+    end if;
+  end if;
   insert into hw.rows (coll, key, data) values ('work', l || '|' || p_hw, p_data)
   on conflict (coll, key) do update set data = excluded.data, updated = now();
   return jsonb_build_object('ok', true);
+end $$;
+
+-- start a timed exam: the server records the start time and works out the end, including the student's extra time
+create or replace function public.hw_exam_start(p_token text, p_hw text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare l text := hw.who(p_token, 'student'); ex jsonb; extra numeric; old jsonb; st timestamptz; en timestamptz;
+begin
+  ex := hw.exam_for(l, p_hw);
+  if ex is null then return jsonb_build_object('error', 'not_exam'); end if;
+  if now() < (ex ->> 'opens')::timestamptz then return jsonb_build_object('error', 'not_open'); end if;
+  select r.data into old from hw.rows r where r.coll = 'work' and r.key = l || '|' || p_hw;
+  if old -> 'exam' ->> 'started' is not null then
+    return jsonb_build_object('started', old -> 'exam' -> 'started', 'ends', old -> 'exam' -> 'ends', 'now', now());
+  end if;
+  if now() >= (ex ->> 'closes')::timestamptz then return jsonb_build_object('error', 'closed'); end if;
+  select coalesce(nullif(r.data ->> 'extraTime', '')::numeric, 0) into extra from hw.rows r where r.coll = 'students' and r.key = l;
+  st := now();
+  en := least(st + make_interval(secs => (ex ->> 'minutes')::numeric * 60 * (1 + coalesce(extra, 0) / 100)), (ex ->> 'closes')::timestamptz);
+  insert into hw.rows (coll, key, data)
+  values ('work', l || '|' || p_hw, jsonb_build_object('parts', '{}'::jsonb, 'submitted', null, 'exam', jsonb_build_object('started', st, 'ends', en, 'leaves', '[]'::jsonb)))
+  on conflict (coll, key) do update
+    set data = hw.rows.data || jsonb_build_object('exam', jsonb_build_object('started', st, 'ends', en, 'leaves', coalesce(hw.rows.data -> 'exam' -> 'leaves', '[]'::jsonb))), updated = now();
+  return jsonb_build_object('started', st, 'ends', en, 'now', now());
 end $$;
 
 -- teachers -------------------------------------------------------------
@@ -336,7 +409,7 @@ begin
     'hw_setup_admin(text, text, text, text)', 'hw_staff_login(text, text)', 'hw_staff_load(text)',
     'hw_staff_sync(text, jsonb, jsonb)', 'hw_staff_password(text, text, text)',
     'hw_staff_create(text, text, text, text, boolean)', 'hw_staff_reset(text, text, text)',
-    'hw_staff_set_admin(text, text, boolean)', 'hw_staff_delete(text, text)', 'hw_checker_login(text)'] loop
+    'hw_staff_set_admin(text, text, boolean)', 'hw_staff_delete(text, text)', 'hw_checker_login(text)', 'hw_exam_start(text, text)'] loop
     execute format('revoke all on function public.%s from public', f);
     execute format('grant execute on function public.%s to anon, authenticated', f);
   end loop;

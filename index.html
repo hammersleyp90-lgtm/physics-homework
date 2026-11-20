@@ -273,6 +273,16 @@ ol.trayl li > div:first-child{min-width:0}
 @media (prefers-reduced-motion: reduce){ .bar i{transition:none} }
 .recaps summary{cursor:pointer;color:var(--muted);font-size:.95rem;margin:.1rem 0 .4rem}
 .recaps table{margin-top:.4rem}
+.examtimer{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:var(--card,#fff);border:1px solid var(--line,#d6dde8);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.examtimer .clock{font-variant-numeric:tabular-nums;font-size:1.25rem;margin-left:.3rem}
+.examtimer.low{border-color:#c2410c}.examtimer.low .clock{color:#c2410c}
+.booklet{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);overflow:auto;z-index:20;padding:16px 18px;background:var(--card,#fff);border-left:1px solid var(--line,#d6dde8);box-shadow:-6px 0 24px rgba(0,0,0,.15)}
+.booklet[hidden]{display:none}
+.tickrow{display:flex;gap:.5rem;align-items:baseline}
+.exbox{border-left:3px solid var(--line,#d6dde8);padding-left:12px}
+.exbox[hidden]{display:none}
+.gb{display:flex;gap:.35rem;align-items:center}
+.exam-rules ul{margin:0;padding-left:1.2rem;display:grid;gap:.35rem}
 </style>
 </head>
 <body>
@@ -549,7 +559,7 @@ async function sync(keepalive){
         put.forEach(k => BASE.set(k, cur.get(k))); del.forEach(k => BASE.delete(k));
       }
       pending = false; saveFailed(false);
-    } catch (e) { if (e.session) sessionLost(); else saveFailed(true); }
+    } catch (e) { if (e.session) sessionLost(); else if (/^(time_up|marks_closed)$/.test(e.message)) examRejected(); else saveFailed(true); }
   })();
   try { await syncing; } finally { syncing = null; if (syncAgain){ syncAgain = false; sync(); } }
 }
@@ -560,7 +570,7 @@ window.addEventListener('beforeunload', e => { if (pending || toastEl){ sync(tru
 async function reload(){                  // fetch the latest from the server (after saving anything still waiting)
   clearTimeout(saveTimer); await sync(); if (toastEl) return false;
   if (SESSION.kind === 'student'){
-    const r = await rpc('hw_student_load', { p_token: SESSION.token }); const lg = r.login;
+    const r = await rpc('hw_student_load', { p_token: SESSION.token }); const lg = r.login; setSkew(r);
     dbFromRows(r.rows); ME = DB.students[lg] || null; if (!ME) throw Object.assign(new Error('session'), { session: true });
   } else {
     const r = await rpc('hw_staff_load', { p_token: SESSION.token });
@@ -770,7 +780,10 @@ function checkBox(stu, P, st){
 
 /* ================= one part ================= */
 function renderPart(P, st, mode, w, refresh, stu){
-  // mode: 'edit' (student, before submitting) or 'view' (submitted, or teacher)
+  // mode: 'edit' (student, before submitting) or 'view' (submitted, or teacher);
+  // 'exam' (answering during an exam: no locking, no mark scheme) or 'examdone' (answers locked, mark scheme not open yet)
+  const exam = mode === 'exam', hideMs = mode === 'examdone';
+  if (exam) mode = 'edit'; if (hideMs) mode = 'view';
   const li = h('li', { class: 'part' });
   const edit = mode === 'edit';
   const canGreen = edit && !!st.locked && !st.markLocked;   // green work allowed until the self-mark is locked
@@ -801,7 +814,9 @@ function renderPart(P, st, mode, w, refresh, stu){
   ans.append(padObj.pad);
   body.append(ans);
 
-  if (!st.locked){
+  if (exam){ /* answers stay open until the exam ends */ }
+  else if (hideMs) body.append(h('p', { class: 'locked-note' }, 'Answer saved. The mark scheme opens when the exam closes.'));
+  else if (!st.locked){
     if (edit){
       const bar = h('div', { class: 'lockbar' });
       const lockBtn = h('button', { type: 'button', class: 'lock', onclick: () => {
@@ -915,7 +930,7 @@ function screenLogin(){
     try {
       const r = await rpc('hw_student_login', { p_login: n, p_pin: p });
       if (r.error) return err.textContent = r.error === 'locked' ? 'Too many wrong tries. Wait 10 minutes, then try again.' : 'That student number and PIN don’t match.';
-      setSession({ kind: 'student', token: r.token }); dbFromRows(r.rows); ME = DB.students[r.login]; screenList();
+      setSession({ kind: 'student', token: r.token }); dbFromRows(r.rows); setSkew(r); ME = DB.students[r.login]; screenList();
     } catch (x) { err.textContent = 'Couldn’t connect. Check your internet connection and try again.'; }
     finally { busy = false; }
   } },
@@ -938,6 +953,7 @@ const fmtDue = d => d ? new Date(d + 'T12:00').toLocaleDateString('en-GB', { wee
 const whoAmI = () => { const c = classesOf(ME).map(x => x.name); return ME.name + (c.length ? ' · ' + c.join(', ') : ''); };
 
 function screenList(){
+  stopExamWatch();
   if (fresh('student', screenList)) return;
   app.replaceChildren();
   const mine = classesOf(ME);
@@ -952,6 +968,17 @@ function screenList(){
   rows.forEach(({ hw, due, w, s, total }) => {
     const par = parentOf(hw) && getHW(parentOf(hw));
     const late = due && !w.submitted && due < today();
+    const ex = examFor(hw.id), ph = ex && examPhase(ex, w);
+    if (ex){
+      const mins = allowedMins(ex, ME), btxt = { notyet: 'Not open yet', ready: 'Start exam', running: 'Continue exam', waiting: 'View answers', marking: w.submitted ? 'View' : 'Mark your exam' }[ph];
+      const pill = w.submitted ? h('span', { class: 'pill done' }, `Submitted · ${s.score}/${total}`) : { notyet: h('span', { class: 'pill' }, 'Opens ' + fmtWhen(ex.opens)), ready: h('span', { class: 'pill' }, 'Not started'),
+        running: h('span', { class: 'pill redo' }, 'In progress: time running'), waiting: h('span', { class: 'pill prog' }, 'Finished · mark scheme opens ' + fmtWhen(ex.closes)), marking: h('span', { class: 'pill redo' }, 'Mark scheme open: mark your exam') }[ph];
+      app.append(h('div', { class: 'card hw-row' },
+        h('div', {}, h('h2', {}, hw.title), h('div', { class: 'muted' }, `Exam · ${mins} minutes${ME.extraTime ? ` (includes ${ME.extraTime}% extra time)` : ''} · ${hw.questions.length} questions · ${total} marks`),
+          h('div', { class: 'muted' }, `Open ${fmtWhen(ex.opens)} until ${fmtWhen(ex.closes)}`)),
+        h('div', { class: 'io-row' }, pill, h('button', { type: 'button', class: 'primary', disabled: ph === 'notyet', onclick: () => { setHW(hw); CURQ = 0; window.scrollTo(0, 0); screenHomework(); } }, btxt))));
+      return;
+    }
     const status = w.submitted ? h('span', { class: 'pill done' }, `Submitted · ${s.score}/${total}`) : w.reopened ? h('span', { class: 'pill redo' }, 'Corrections needed') : s.locked ? h('span', { class: 'pill prog' }, `In progress · ${s.locked}/${s.n} answered`) : h('span', { class: 'pill' }, 'Not started');
     app.append(h('div', { class: 'card hw-row' },
       h('div', {}, h('h2', {}, hw.title), par ? h('div', { class: 'why-s' }, 'Quick recap of earlier topics, set with ' + par.title + '.') : null, h('div', { class: 'muted' }, due ? 'Due ' + fmtDue(due) + ' · ' : '', `${hw.questions.length} questions · ${total} marks`, late ? h('span', { class: 'flagtxt' }, ' · overdue') : null),
@@ -998,13 +1025,127 @@ const DATA = {
     ['alternating current', '<i>I</i><sub>rms</sub> = <i>I</i><sub>0</sub>/√2 &nbsp; <i>V</i><sub>rms</sub> = <i>V</i><sub>0</sub>/√2'], ['transformer equations', '<i>N</i><sub>s</sub>/<i>N</i><sub>p</sub> = <i>V</i><sub>s</sub>/<i>V</i><sub>p</sub>'],
     ['transformer efficiency', '<i>I</i><sub>s</sub><i>V</i><sub>s</sub> / <i>I</i><sub>p</sub><i>V</i><sub>p</sub>']]
 };
-function dataSheet(hw){
-  const subs = Object.keys(BANK).filter(k => hw.questions.some(Q => Q.sub === k)), row = ([a, b]) => h('div', {}, h('span', { html: a }), h('span', { html: b }));
-  return h('details', { class: 'sheetdata' }, h('summary', {}, 'Data and formulae'),
-    h('div', { class: 'dgrid' }, h('h3', {}, 'Data'), DATA.constants.map(row), subs.some(k => ['PT', 'QU', 'WA', 'NU', 'AST'].includes(k)) ? DATA.more.map(row) : null, subs.map(k => [h('h3', {}, BANK[k].name), DATA[k].map(row)])));
+function dataGrid(hw, all){
+  const subs = Object.keys(BANK).filter(k => DATA[k] && (all || hw.questions.some(Q => Q.sub === k))), row = ([a, b]) => h('div', {}, h('span', { html: a }), h('span', { html: b }));
+  return h('div', { class: 'dgrid' }, h('h3', {}, 'Data'), DATA.constants.map(row), all || subs.some(k => ['PT', 'QU', 'WA', 'NU', 'AST'].includes(k)) ? DATA.more.map(row) : null, subs.map(k => [h('h3', {}, BANK[k].name), DATA[k].map(row)]));
+}
+function dataSheet(hw){ return h('details', { class: 'sheetdata' }, h('summary', {}, 'Data and formulae'), dataGrid(hw)); }
+function booklet(hw){                             // the whole data and formulae booklet in a panel that slides out over the exam
+  const panel = h('aside', { class: 'booklet', hidden: true, 'aria-label': 'Data and formulae booklet' },
+    h('div', { class: 'hw-row' }, h('h2', {}, 'Data and formulae booklet'), h('button', { type: 'button', class: 'linkbtn', onclick: () => { panel.hidden = true; } }, 'Close')), dataGrid(hw, true));
+  return [h('button', { type: 'button', class: 'ghost', onclick: () => { panel.hidden = !panel.hidden; } }, 'Data and formulae booklet'), panel];
 }
 
-function screenHomework(){
+/* ================= exam mode ================= */
+// Approximate grade boundaries (% of the marks): the average of AQA A-level Physics (7408) overall boundaries, June 2024–2026.
+const GRADES = [['A*', 73], ['A', 60], ['B', 50], ['C', 40], ['D', 30], ['E', 21]];
+let SKEW = 0;                                     // server clock minus this device's clock, so a changed clock can't buy extra time
+const nowMs = () => Date.now() + SKEW;
+const setSkew = r => { if (r && r.now) SKEW = Date.parse(r.now) - Date.now(); };
+function examFor(id, stu){                        // exam settings for a homework from the student's class, or null if it isn't an exam
+  const st = stu || ME; if (!st) return null;
+  for (const c of classesOf(st)){ const a = c.assigned[id]; if (a && a.exam && (!a.only || a.only.includes(st.key))) return a.exam; }
+  return null;
+}
+const allowedMins = (ex, stu) => Math.round(ex.minutes * (1 + (+stu.extraTime || 0) / 100));
+function examPhase(ex, w){
+  const t = nowMs(), e = w.exam || {};
+  if (t < Date.parse(ex.opens)) return 'notyet';
+  if (t >= Date.parse(ex.closes)) return 'marking';
+  if (!e.started) return 'ready';
+  if (e.finished || t >= Date.parse(e.ends)) return 'waiting';
+  return 'running';
+}
+const gradeFor = (pct, b) => { for (const [g, v] of (b || GRADES)) if (pct >= v) return g; return 'U'; };
+const fmtClock = ms => { const x = Math.max(0, Math.ceil(ms / 1000)), m = Math.floor(x / 60); return (m >= 60 ? Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0') : m) + ':' + String(x % 60).padStart(2, '0'); };
+const pad2 = n => String(n).padStart(2, '0');
+const localDT = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+function lockAllExam(w, at){ let n = 0; ALL_PARTS.forEach(P => { const x = w.parts[P.id]; if (!x.locked){ x.locked = at; n++; } }); return n; }
+function shuffledFor(hw, key){                    // same order every time for one student, different between students
+  let x = 7; for (const ch of key + '|' + hw.id) x = (x * 31 + ch.charCodeAt(0)) | 0;
+  const rnd = () => { x = (Math.imul(x, 1103515245) + 12345) | 0; return ((x >>> 8) % 100000) / 100000; };
+  const qs = hw.questions.slice(); for (let i = qs.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [qs[i], qs[j]] = [qs[j], qs[i]]; }
+  return Object.assign({}, hw, { questions: qs });
+}
+let TICK = null, WATCH = null;
+function stopExamWatch(){
+  clearInterval(TICK); TICK = null;
+  if (WATCH){ window.removeEventListener('blur', WATCH.out); window.removeEventListener('focus', WATCH.back); document.removeEventListener('visibilitychange', WATCH.vis); WATCH = null; }
+}
+function watchLeaving(w){                         // record each time the student switches away from the exam, and for how long
+  let away = null;
+  const out = () => { if (away === null) away = Date.now(); };
+  const back = () => { if (away === null) return; const secs = Math.round((Date.now() - away) / 1000), t = new Date(away + SKEW).toISOString(); away = null;
+    if (secs < 1 || !w.exam) return; (w.exam.leaves = w.exam.leaves || []).push({ t, s: secs }); if (w.exam.leaves.length > 300) w.exam.leaves.shift(); save(true); };
+  const vis = () => document.visibilityState === 'hidden' ? out() : back();
+  window.addEventListener('blur', out); window.addEventListener('focus', back); document.addEventListener('visibilitychange', vis);
+  WATCH = { out, back, vis };
+}
+async function startExam(w){
+  const r = await rpc('hw_exam_start', { p_token: SESSION.token, p_hw: HW.id });
+  if (r.error) throw new Error(r.error);
+  setSkew(r); w.exam = Object.assign(w.exam || {}, { started: r.started, ends: r.ends, leaves: (w.exam && w.exam.leaves) || [] });
+  save(true);
+}
+async function examRejected(){                    // the server refused late changes: reload the saved copy
+  try { const r = await rpc('hw_student_load', { p_token: SESSION.token }); dbFromRows(r.rows); setSkew(r); ME = DB.students[r.login]; } catch (e) {}
+  saveFailed(false); pending = false; screenList();
+  app.prepend(h('div', { class: 'card flag', role: 'alert' }, 'Your exam time had already ended, so your last changes couldn’t be saved. Everything you did before the end is kept.'));
+}
+function screenExam(ex, w){
+  const phase = examPhase(ex, w), base = getHW(HW.id);
+  if (ex.shuffle) setHW(shuffledFor(base, ME.key));
+  if (phase === 'marking'){ if (lockAllExam(w, ex.closes)) save(true); return screenHomework(true); }
+  app.replaceChildren();
+  app.append(topbar(whoAmI(), screenList), h('header', {}, h('h1', {}, HW.title)));
+  const mins = allowedMins(ex, ME), extra = +ME.extraTime || 0;
+  if (phase === 'notyet'){ app.append(h('div', { class: 'card' }, 'This exam opens on ', h('b', {}, fmtWhen(ex.opens)), '.')); return; }
+  if (phase === 'ready'){
+    const err = h('p', { class: 'err', role: 'alert' });
+    const go = h('button', { type: 'button', class: 'primary', onclick: async () => { go.disabled = true; err.textContent = '';
+      try { await startExam(w); CURQ = 0; screenHomework(); } catch (e) { go.disabled = false; err.textContent = e.message === 'closed' ? 'This exam has closed.' : e.message === 'not_open' ? 'This exam isn’t open yet.' : 'Couldn’t start the exam. Check your internet connection and try again.'; } } }, 'Start exam');
+    app.append(h('div', { class: 'card stack exam-rules' },
+      h('h2', {}, 'Exam conditions'),
+      h('ul', {}, h('li', {}, h('b', {}, `You have ${mins} minutes`), extra ? ` (including ${extra}% extra time)` : '', ' from when you press Start. The clock keeps running if you close the page.'),
+        h('li', {}, `${HW.questions.length} questions, ${HW.total} marks. Answer in black: type, draw or both. Your answers save as you go.`),
+        h('li', {}, 'When the time runs out your answers are locked. You can also finish early.'),
+        h('li', {}, 'The mark scheme opens for everyone when the exam closes on ', h('b', {}, fmtWhen(ex.closes)), '. You then mark your own answers in green, as with homework.'),
+        ex.booklet ? h('li', {}, 'You can open the data and formulae booklet at any time.') : null,
+        ex.logLeave ? h('li', {}, 'Your teacher can see each time you leave this page during the exam, and for how long.') : null),
+      err, h('div', {}, go)));
+    return;
+  }
+  if (phase === 'waiting'){
+    if (lockAllExam(w, w.exam.finished || w.exam.ends)) save(true);
+    app.append(h('div', { class: 'card stack' }, h('b', {}, 'Exam finished. Your answers are saved.'),
+      h('span', { class: 'muted' }, 'The mark scheme opens when the exam closes on ', h('b', {}, fmtWhen(ex.closes)), '. Come back then to mark your answers in green.')));
+    const go = i => { CURQ = i; window.scrollTo(0, 0); screenHomework(); };
+    CURQ = Math.min(CURQ, HW.questions.length - 1);
+    app.append(pager(go, Q => qState(Q, w)), sheetFor(HW.questions[CURQ], CURQ, w, 'examdone', () => screenHomework()), prevNext(go));
+    return;
+  }
+  // running
+  const ends = Date.parse(w.exam.ends);
+  const clock = h('b', { class: 'clock', 'aria-live': 'off' }), finishBox = h('span', {});
+  const finish = (timeUp) => { stopExamWatch(); w.exam.finished = new Date(timeUp ? ends : nowMs()).toISOString(); lockAllExam(w, w.exam.finished); save(true); CURQ = 0; screenHomework(); };
+  const tick = () => { const left = ends - nowMs(); clock.textContent = fmtClock(left); clock.parentNode && clock.parentNode.classList.toggle('low', left < 5 * 60000); if (left <= 0) finish(true); };
+  const bar = h('div', { class: 'examtimer', role: 'timer' }, h('span', {}, 'Time left ', clock), ex.booklet ? booklet(HW) : null,
+    twoClick('Finish exam', 'Click again to finish: you can’t change answers afterwards', () => finish(false), { class: 'ghost' }));
+  app.append(bar);
+  if (ex.logLeave) app.append(h('p', { class: 'muted', style: 'margin:0;font-size:.9rem' }, 'Leaving this page is recorded for your teacher.'));
+  CURQ = Math.min(CURQ, HW.questions.length - 1);
+  const go = i => { CURQ = i; window.scrollTo(0, 0); screenHomework(); };
+  const qs = Q => Q.parts.some(P => { const x = w.parts[P.id]; return x.text.trim() || x.strokes.length; }) ? 'prog' : '';
+  app.append(pager(go, qs), sheetFor(HW.questions[CURQ], CURQ, w, 'exam', () => {}), prevNext(go));
+  if (ex.logLeave) watchLeaving(w);
+  tick(); TICK = setInterval(tick, 1000);
+}
+
+
+function screenHomework(examMarking){
+  stopExamWatch();
+  const ex = !examMarking && examFor(HW.id);
+  if (ex) return screenExam(ex, workFor(ME));
   const w = workFor(ME), mode = w.submitted ? 'view' : 'edit';
   const y = window.scrollY;
   app.replaceChildren();
@@ -1015,6 +1156,7 @@ function screenHomework(){
   app.append(h('div', { class: 'legend' },
     h('span', {}, h('span', { class: 'swatch', style: 'background:var(--ink)' }), 'Before locking: your attempt'),
     h('span', { style: 'color:var(--green);font-weight:600' }, h('span', { class: 'swatch g' }), 'After locking: corrections and marking')), dataSheet(HW));
+  if (examMarking && !w.submitted) app.append(h('div', { class: 'card', role: 'status' }, 'The exam has closed and the mark scheme is open. Mark each answer in green, then submit.'));
   const pct = Math.round(100 * (s.locked + s.marked) / (2 * s.n));
   app.append(h('div', { class: 'progress', 'aria-live': 'polite' },
     h('span', {}, `Answered ${s.locked}/${s.n}`), h('span', {}, `Marked ${s.marked}/${s.n}`),
@@ -1099,7 +1241,7 @@ function makeStaffLogin(name){
 }
 const pwProblem = (a, b) => a.length < 8 ? 'Use at least 8 characters for the password.' : a !== b ? 'The two passwords don’t match.' : '';
 async function logOut(){
-  clearTimeout(saveTimer); await sync();
+  stopExamWatch(); clearTimeout(saveTimer); await sync();
   if (toastEl && !confirmLeave()) return;
   const t = SESSION && SESSION.token; setSession(null); ME = null; STAFF = null; saveFailed(false); pending = false;
   dbFromRows([]); if (t) rpc('hw_logout', { p_token: t }).catch(() => {});
@@ -1293,9 +1435,13 @@ function screenClass(cls){
     const due = h('input', { class: 'inp', type: 'date', style: 'width:auto', 'aria-label': 'Due date for ' + hw.title }); due.value = a.due || '';
     due.addEventListener('change', () => { a.due = due.value; recapsOf(cls, id).forEach(r => { cls.assigned[r].due = due.value; }); save(true); });
     const hs = hwStudents(cls, id), done = hs.filter(x => x.work && x.work[id] && x.work[id].submitted).length;
+    const ex = a.exam, closeIn = ex ? h('input', { class: 'inp', type: 'datetime-local', style: 'width:auto', 'aria-label': 'Exam closes' }) : null;
+    if (ex){ closeIn.value = localDT(new Date(ex.closes));
+      closeIn.addEventListener('change', () => { const d = new Date(closeIn.value); if (isNaN(d) || d <= new Date(ex.opens)) return; ex.closes = d.toISOString(); a.due = closeIn.value.slice(0, 10); save(true); }); }
+    const started = ex ? hs.filter(x => x.work && x.work[id] && x.work[id].exam && x.work[id].exam.started).length : 0;
     hwCard.append(h('div', { class: 'hw-row setrow' },
-      h('div', {}, h('b', {}, hw.title), h('div', { class: 'muted' }, `${hw.questions.length} questions · ${hw.total} marks · ${done}/${hs.length} submitted`)),
-      h('div', { class: 'io-row' }, h('span', { class: 'muted' }, 'Due'), due,
+      h('div', {}, h('b', {}, hw.title), h('div', { class: 'muted' }, ex ? `Timed exam · ${ex.minutes} minutes · opens ${fmtWhen(ex.opens)} · ${started}/${hs.length} started · ${done}/${hs.length} marked and submitted` : `${hw.questions.length} questions · ${hw.total} marks · ${done}/${hs.length} submitted`)),
+      h('div', { class: 'io-row' }, h('span', { class: 'muted' }, ex ? 'Closes' : 'Due'), ex ? closeIn : due,
         h('button', { type: 'button', class: 'primary', onclick: () => screenResults(cls, hw) }, 'Results'),
         h('button', { type: 'button', class: 'ghost', onclick: () => screenPreview(cls, hw) }, 'Preview'),
         twoClick('Unset', 'Click again to unset', () => { recapsOf(cls, id).forEach(r => delete cls.assigned[r]); delete cls.assigned[id]; save(true); screenClass(cls); }, { class: 'linkbtn del' }))));
@@ -1352,6 +1498,8 @@ function screenClass(cls){
     tb.append(h('tr', {},
       h('td', {}, st.name, elsewhere.length ? h('div', { class: 'muted', style: 'font-size:.85rem' }, 'Also in ' + elsewhere.map(c => c.name).join(', ')) : null),
       h('td', { class: 'mono' }, st.login), h('td', { class: 'mono' }, st.pin),
+      h('td', {}, (() => { const xt = h('select', { class: 'inp', style: 'width:auto', 'aria-label': `Exam extra time for ${st.name}` }, [0, 10, 25, 50].map(v => h('option', { value: v }, v ? `+${v}%` : 'None')));
+        xt.value = String(+st.extraTime || 0); xt.addEventListener('change', () => { if (+xt.value) st.extraTime = +xt.value; else delete st.extraTime; save(true); }); return xt; })()),
       h('td', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => { st.pin = makePin(); save(true); screenClass(cls); } }, 'New PIN')),
       h('td', {}, free.length ? sel : null),
       h('td', {}, twoClick(last ? 'Delete' : 'Remove', last ? 'Click again to delete this student and their work' : 'Click again to remove from this class',
@@ -1371,7 +1519,7 @@ function screenClass(cls){
   const more = h('textarea', { class: 'inp names', style: 'min-height:4.5em', placeholder: 'Add student numbers, one per line', 'aria-label': 'Students to add' });
   app.append(h('div', { class: 'card stack' },
     h('div', { class: 'hw-row' }, h('h2', {}, `Class list and logins (${studs.length})`), studs.length ? copyBtn : null), status, outBox,
-    studs.length ? h('div', { style: 'overflow-x:auto' }, h('table', { class: 'res' }, h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Login name'), h('th', {}, 'PIN'), h('th'), h('th'), h('th'))), tb))
+    studs.length ? h('div', { style: 'overflow-x:auto' }, h('table', { class: 'res' }, h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Login name'), h('th', {}, 'PIN'), h('th', { title: 'Extra time in timed exams, for students with access arrangements' }, 'Exam extra time'), h('th'), h('th'), h('th'))), tb))
       : h('p', { class: 'muted', style: 'margin:0' }, 'No students in this class yet.'),
     more, h('div', { class: 'io-row' }, h('button', { type: 'button', class: 'ghost', onclick: () => { const names = parseNames(more.value); if (!names.length) return; addStudents(cls, names); save(true); screenClass(cls); } }, 'Add new students'), outside.length ? addSel : null),
     h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'A student in two classes keeps one login and PIN and sees the homework from both.')));
@@ -1422,7 +1570,7 @@ function bankPicker(cls){
   const mixHW = p => withWhy(buildHW('tmp', p.title, INTRO(fmtMins(p.mix.total * MIN_PER_MARK)), p.mix.items.map(it => getQ(it.sub, it.code))), p.items);
   const already = p => p.pack ? !!cls.assigned[getHW(p.pack).id]
     : Object.keys(cls.assigned).some(id => DB.custom[id] && DB.custom[id].title === p.title && JSON.stringify(DB.custom[id].items.map(x => x.code)) === JSON.stringify(p.items.map(x => x.code)));
-  const setBtn = h('button', { type: 'button', class: 'primary', onclick: () => { const p = plan(); if (!p || already(p)) return;
+  const setBtn = h('button', { type: 'button', class: 'primary', onclick: () => { const p = plan(); if (!p) return; if (exOn.checked) return setExam(p); if (already(p)) return;
     if (p.pack){ const hw = getHW(p.pack); cls.assigned[hw.id] = { due: '' }; DB.packs[hw.id] = hw.codes; afterClassSet(cls, hw.id); }
     else afterClassSet(cls, createCustom(cls, p.title, p.items, null, 'mixed'));
     save(true); screenClass(cls); } }, 'Set for this class');
@@ -1451,11 +1599,52 @@ function bankPicker(cls){
       if (g.missing.length){ warn.hidden = false; warn.textContent = `This length is too short to include every ticked sub-topic. It leaves out ${g.missing.length <= 4 ? g.missing.map(topicName).join(', ') : `${g.missing.length} of the ${p.topics.length}`}. Choose a longer homework or tick fewer.`; }
     }
     const has = already(p); setBtn.disabled = has; setBtn.textContent = has ? 'Already set for this class' : 'Set for this class';
+    if (typeof examUpdate === 'function') examUpdate(p);
+  }
+  // ---- timed exam options ----
+  const exOn = h('input', { type: 'checkbox', id: 'ex-on' }), exErr = h('p', { class: 'err', role: 'alert', style: 'margin:0' });
+  const t0 = new Date(); t0.setSeconds(0, 0); t0.setMinutes(Math.ceil(t0.getMinutes() / 5) * 5);
+  const t1 = new Date(t0.getTime() + 7 * 864e5); t1.setHours(23, 59, 0, 0);
+  const exOpens = h('input', { class: 'inp', type: 'datetime-local', id: 'ex-opens', style: 'width:auto' }), exCloses = h('input', { class: 'inp', type: 'datetime-local', id: 'ex-closes', style: 'width:auto' });
+  exOpens.value = localDT(t0); exCloses.value = localDT(t1);
+  const exMins = h('input', { class: 'inp', type: 'number', id: 'ex-mins', min: 5, max: 300, step: 5, style: 'width:6rem' });
+  exMins.addEventListener('input', () => { exMins.dataset.touched = '1'; });
+  const tick = (id, label, on) => { const c = h('input', { type: 'checkbox', id, checked: on }); return [c, h('label', { for: id, class: 'tickrow' }, c, h('span', {}, label))]; };
+  const [exShuf, exShufL] = tick('ex-shuf', 'Shuffle the question order for each student', true), [exBook, exBookL] = tick('ex-book', 'Data and formulae booklet available', true),
+    [exLeave, exLeaveL] = tick('ex-leave', 'Record when students leave the exam page', true);
+  const gIn = GRADES.map(([g, v]) => h('input', { class: 'inp', type: 'number', min: 0, max: 100, step: 1, value: v, style: 'width:4.4rem', 'aria-label': `Grade ${g} boundary (%)` }));
+  const exBox = h('div', { class: 'stack exbox', hidden: true },
+    h('div', { class: 'pick' }, h('div', {}, h('label', { class: 'lab', for: 'ex-opens' }, 'Opens'), exOpens), h('div', {}, h('label', { class: 'lab', for: 'ex-closes' }, 'Closes'), exCloses), h('div', {}, h('label', { class: 'lab', for: 'ex-mins' }, 'Time allowed (minutes)'), exMins)),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Each student’s clock starts when they press Start, any time while the exam is open, and stops at the time allowed or when it closes, whichever comes first. Students with extra time (set in the class list) get it added automatically. Mark schemes stay hidden from everyone until it closes; then students self-mark in green and the overnight check reviews it.'),
+    exShufL, exBookL, exLeaveL,
+    h('div', {}, h('span', { class: 'lab' }, 'Approximate grade boundaries (% of marks)'), h('div', { class: 'io-row' }, ...GRADES.map(([g], i) => h('label', { class: 'gb' }, h('b', {}, g), gIn[i])))),
+    h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Set from the average of AQA A-level Physics overall boundaries for June 2024, 2025 and 2026. Change them if you like.'), exErr);
+  exOn.addEventListener('change', () => { exBox.hidden = !exOn.checked; update(); });
+  function examUpdate(p){
+    if (!p) return;
+    const total = p.pack ? getHW(p.pack).total : p.mix.total;
+    if (!exMins.dataset.touched) exMins.value = Math.max(5, Math.ceil(total * 1.4 / 5) * 5);   // AQA papers allow about 1.4 minutes per mark
+    if (exOn.checked){ setBtn.disabled = false; setBtn.textContent = 'Set exam for this class'; }
+  }
+  function setExam(p){
+    exErr.textContent = '';
+    const o = new Date(exOpens.value), c = new Date(exCloses.value), m = Math.round(+exMins.value);
+    if (isNaN(o) || isNaN(c)) return exErr.textContent = 'Choose when the exam opens and closes.';
+    if (c <= o) return exErr.textContent = 'The exam must close after it opens.';
+    if (!(m >= 5 && m <= 300)) return exErr.textContent = 'Time allowed must be between 5 and 300 minutes.';
+    const bounds = GRADES.map(([g], i) => [g, Math.max(0, Math.min(100, Math.round(+gIn[i].value) || 0))]);
+    if (bounds.some((b, i) => i && b[1] >= bounds[i - 1][1])) return exErr.textContent = 'Each grade boundary must be lower than the one above it.';
+    const src = p.pack ? getHW(p.pack) : null;
+    const items = src ? src.questions.map(Q => ({ sub: Q.sub, code: Q.code })) : p.items.map(x => ({ sub: x.sub, code: x.code }));
+    const name = (src ? src.title : p.title).split(' · ').filter(x => !/\b(minutes?|hours?)\b/.test(x)).join(' · ');   // the pack's homework length means nothing in an exam
+    const id = createCustom(cls, `Exam: ${name} · ${m} minutes`, items, null, 'exam');
+    cls.assigned[id] = { due: exCloses.value.slice(0, 10), exam: { opens: o.toISOString(), closes: c.toISOString(), minutes: m, shuffle: exShuf.checked, booklet: exBook.checked, logLeave: exLeave.checked, bounds } };
+    save(true); screenClass(cls);
   }
   [sizeSel, packSel].forEach(x => x.addEventListener('change', update)); update();
   return h('div', { class: 'card stack' }, h('h2', {}, 'Set homework from the question bank'),
     h('div', { class: 'pick' }, h('div', {}, h('span', { class: 'lab', id: 'bk-topic-lab' }, 'Topics'), dd), h('div', {}, h('label', { class: 'lab', for: 'bk-size' }, 'Length'), sizeSel), h('div', {}, h('label', { class: 'lab', for: 'bk-pack' }, 'Pack'), packSel)),
-    info, warn, h('div', { class: 'io-row' }, setBtn, prevBtn),
+    info, warn, h('label', { for: 'ex-on', class: 'tickrow' }, exOn, h('span', {}, h('b', {}, 'Set as a timed exam'), ' instead of homework')), exBox, h('div', { class: 'io-row' }, setBtn, prevBtn),
     h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Tick one topic or sub-topic for a standard pack, or several to mix them: the homework takes about the same number of questions from each, plus any questions that link them. Lengths allow about 1.5 minutes per mark, which includes the time students spend marking and correcting. Packs A to E are different sets of questions for the same choice and length.'));
 }
 
@@ -1481,9 +1670,23 @@ function screenResults(cls, hw){
   setHW(hw);
   app.replaceChildren();
   app.append(tbar(cls.name, () => screenClass(cls), '← ' + cls.name));
-  const due = fmtDue((cls.assigned[hw.id] || {}).due);
-  app.append(h('h1', {}, HW.title), h('p', { class: 'muted', style: 'margin:0' }, cls.name + (due ? ' · due ' + due : '')));
+  const due = fmtDue((cls.assigned[hw.id] || {}).due), ex = (cls.assigned[hw.id] || {}).exam;
+  app.append(h('h1', {}, HW.title), h('p', { class: 'muted', style: 'margin:0' }, cls.name + (ex ? ` · timed exam, ${ex.minutes} minutes · open ${fmtWhen(ex.opens)} to ${fmtWhen(ex.closes)}` : due ? ' · due ' + due : '')));
+  if (ex) app.append(h('p', { class: 'muted', style: 'margin:0;font-size:.92rem' }, 'Approximate grades: ' + (ex.bounds || GRADES).map(([g, v]) => `${g} ${v}%`).join(' · ') + '. Based on Claude’s marks where every part has been checked, otherwise the student’s self-marks.'));
   const studs = hwStudents(cls, hw.id);
+  // exam extras for one student: time used, leaving the page, and an approximate grade
+  const exCells = st => {
+    const w = st.work && st.work[hw.id], e = w && w.exam;
+    if (!e || !e.started) return { time: '–', left: '–', grade: '–', n: 0 };
+    const end = Math.min(Date.parse(e.finished || e.ends), Date.parse(e.ends)), used = Math.max(0, Math.min(end, Date.now()) - Date.parse(e.started));
+    const L = e.leaves || [], away = L.reduce((a, x) => a + x.s, 0);
+    const c = (DB.checks[hw.id] || {})[st.key], s = stats(w);
+    const allChecked = c && ALL_PARTS.every(P => c[P.id]);
+    const score = allChecked ? ALL_PARTS.reduce((a, P) => a + Math.min(c[P.id].suggested, P.marks), 0) : s.marked === s.n ? s.score : null;
+    const pct = score === null ? null : Math.round(100 * score / TOTAL);
+    return { time: `${fmtClock(used)} of ${allowedMins(ex, st)}:00` + (st.extraTime ? ` (+${st.extraTime}%)` : ''), left: L.length ? `${L.length}× · ${fmtClock(away * 1000)} away` : 'Never',
+      leftTitle: L.map(x => `${fmtWhen(x.t)}: ${x.s} s`).join('\n'), n: L.length, grade: pct === null ? 'Not marked yet' : `${pct}% · ${gradeFor(pct, ex.bounds)}` + (allChecked ? ' (Claude)' : ' (self-mark)') };
+  };
   const tb = h('tbody');
   studs.forEach(st => {
     const w = workFor(st), s = stats(w);
@@ -1492,6 +1695,7 @@ function screenResults(cls, hw){
       h('td', {}, w.submitted ? 'Submitted' : w.reopened ? 'Reopened for corrections' : s.locked ? 'In progress' : 'Not started'),
       h('td', { class: 'num' }, `${s.locked}/${s.n}`),
       h('td', { class: 'num' }, s.marked ? `${s.score}/${TOTAL}` : '–'),
+      ...(ex ? (() => { const x = exCells(st); return [h('td', {}, x.time), h('td', { class: x.n ? 'flagtxt' : '', title: x.leftTitle || '' }, x.left), h('td', {}, h('b', {}, x.grade))]; })() : []),
       h('td', {}, (() => { const f = checkFlags(st), sb = sendable(st);
         if (!f.checked) return h('span', { class: 'muted' }, 'Not checked');
         return h('div', { class: 'stack', style: 'gap:2px' }, ...[f.n ? h('span', { class: 'flagtxt' }, `⚑ ${f.n} to review`) : null,
@@ -1501,7 +1705,7 @@ function screenResults(cls, hw){
   });
   const toSend = studs.map(x => [x, sendable(x)]).filter(([, a]) => a.length);
   app.append(h('div', { class: 'card', style: 'overflow-x:auto' }, studs.length ? h('table', { class: 'res' },
-    h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Status'), h('th', { class: 'num' }, 'Answered'), h('th', { class: 'num' }, 'Self-mark'), h('th', {}, 'Claude check'), h('th'))), tb)
+    h('thead', {}, h('tr', {}, h('th', {}, 'Student'), h('th', {}, 'Status'), h('th', { class: 'num' }, 'Answered'), h('th', { class: 'num' }, 'Self-mark'), ...(ex ? [h('th', {}, 'Time used'), h('th', {}, 'Left the page'), h('th', {}, 'Approx. grade')] : []), h('th', {}, 'Claude check'), h('th'))), tb)
     : h('p', { class: 'muted', style: 'margin:0' }, 'No students in this class yet.')));
   if (LOADMSG && !studs.length) LOADMSG = '';
   if (toSend.length){
@@ -1518,6 +1722,7 @@ function screenResults(cls, hw){
     app.append(h('div', { class: 'io-row' }, h('button', { type: 'button', class: 'ghost', onclick: async () => {
       const rows = [['Student', 'Login name', 'Status', 'Answered', 'Self-mark', 'Claude mark', 'Out of', 'To review']].concat(studs.map(x => { const w = workFor(x), s = stats(w), c = (DB.checks[HW.id] || {})[x.key], f = checkFlags(x);
         return [x.name, x.login, w.submitted ? 'Submitted' : w.reopened ? 'Reopened for corrections' : s.locked ? 'In progress' : 'Not started', `${s.locked} of ${s.n}`, s.marked ? s.score : '', c ? ALL_PARTS.reduce((a, P) => a + (c[P.id] ? Math.min(c[P.id].suggested, P.marks) : 0), 0) : '', TOTAL, f.checked ? f.n : '']; }));
+      if (ex) rows.forEach((r, i) => { if (!i) return r.push('Time used', 'Left the page', 'Approx. grade'); const x = exCells(studs[i - 1]); r.push(x.time, x.left, x.grade); });
       const txt = rows.map(r => r.join('\t')).join('\n'); box.value = txt;
       try { await navigator.clipboard.writeText(txt); st.textContent = 'Copied. Paste it into Excel.'; box.hidden = true; } catch (e) { box.hidden = false; box.select(); st.textContent = 'Copying was blocked, so select the text below and copy it yourself.'; }
     } }, 'Copy results table'), st), box);
@@ -1570,7 +1775,7 @@ function checkPanel(cls){
   } }, 'Load results');
   return h('div', { class: 'card stack' },
     h('h2', {}, 'Check marking with Claude'),
-    h('p', { class: 'muted', style: 'margin:0' }, 'Copy the class’s work, paste it into a chat with Claude and ask it to check the self-marking and corrections. Paste Claude’s results back here and any disagreements are flagged for you. Nothing goes back to a student until you choose to send back their flagged parts. Once the platform is hosted, a scheduled task will do this automatically each evening.'),
+    h('p', { class: 'muted', style: 'margin:0' }, 'Copy the class’s work, paste it into a chat with Claude and ask it to check the self-marking and corrections. Paste Claude’s results back here and any disagreements are flagged for you. Nothing goes back to a student until you choose to send back their flagged parts. Claude also does this automatically every night at 11pm, and flags anything it finds on your teacher home page.'),
     h('div', { class: 'io-row' }, copyBtn), status, outBox,
     inBox, h('div', { class: 'io-row' }, apply), inMsg);
 }
