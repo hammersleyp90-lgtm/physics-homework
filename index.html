@@ -283,6 +283,7 @@ ol.trayl li > div:first-child{min-width:0}
 .exbox[hidden]{display:none}
 .gb{display:flex;gap:.35rem;align-items:center}
 .exam-rules ul{margin:0;padding-left:1.2rem;display:grid;gap:.35rem}
+.todo{margin:.2rem 0 0;padding-left:1.2rem;display:grid;gap:.15rem}
 </style>
 </head>
 <body>
@@ -709,7 +710,10 @@ const COMMON = new Set(('a an the i it is was be been should would not no to of 
   'answer method unit units convert converted conversion power ten sign direction force field current wire charge equal equals into out ' +
   'when same more less larger smaller up down left right zero why how what which per').split(' '));
 function textLooksReal(t){
-  const words = t.match(/[A-Za-z]+|\d+(?:\.\d+)?/g) || [];
+  const words = t.match(/[A-Za-zΑ-Ωα-ωµ]+|\d+(?:\.\d+)?/g) || [];
+  // working counts as a real correction in physics: an equation with at least one number, e.g. "I = 2.5 A", "F = BIL = 0.3 N"
+  const working = /=/.test(t) && /\d/.test(t) && words.length >= 3 && new Set(words.map(w => w.toLowerCase())).size >= 3 && !/(.)\1{3}/.test(t.replace(/[\s0.]/g, ''));
+  if (working) return true;
   if (words.length < 4) return false;
   const real = words.filter(w => /^\d/.test(w) || w.length <= 2 ||                       // numbers and unit symbols (m, cm, N, V, Wb)
     (w.length <= 20 && /[aeiouy]/i.test(w) && !/(.)\1\1/i.test(w) && !/[bcdfghjklmnpqrstvwxz]{5,}/i.test(w)));
@@ -723,7 +727,7 @@ function greenInk(st){
 const greenSig = st => st.green.trim() + '|' + st.strokes.filter(k => k.c === 'g' && !k.t).length + '|' + Math.round(greenInk(st));
 function correctionProblem(st){
   const t = st.green.trim(), ink = greenInk(st);
-  if (t && !textLooksReal(t)) return 'Your typed correction doesn’t read as a real explanation. Write at least a sentence saying what you got wrong and what the right answer or method is.';
+  if (t && !textLooksReal(t)) return 'Your typed correction doesn’t read as a real correction. Write the correct working (for example “F = BIL = 0.2 × 3 × 0.5 = 0.3 N”) or a sentence saying what you got wrong.';
   if (!t && ink === 0) return 'Add your corrections in green (type or draw) before you lock in your mark. Ticks and crosses on their own don’t count.';
   if (!t && ink < 150) return 'Your green drawing is too small to be a correction. Redraw the correct answer, or type what you got wrong.';
   return null;
@@ -780,6 +784,9 @@ function checkBox(stu, P, st){
 
 /* ================= one part ================= */
 function renderPart(P, st, mode, w, refresh, stu){
+  const _li = renderPartInner(P, st, mode, w, refresh, stu); _li.id = 'part-' + P.id; return _li;
+}
+function renderPartInner(P, st, mode, w, refresh, stu){
   // mode: 'edit' (student, before submitting) or 'view' (submitted, or teacher);
   // 'exam' (answering during an exam: no locking, no mark scheme) or 'examdone' (answers locked, mark scheme not open yet)
   const exam = mode === 'exam', hideMs = mode === 'examdone';
@@ -1179,7 +1186,17 @@ function screenHomework(examMarking){
   } else {
     const ready = s.locked === s.n && s.marked === s.n;
     box.append(h('h2', {}, 'Submit homework'),
-      h('p', { class: 'muted', style: 'margin:0' }, ready ? (w.reopened ? 'Corrections done. Submit again for your teacher.' : 'Every part is locked and self-marked.') : `Lock in your answer and your mark for every part to submit (${s.n - s.marked} still to do).`));
+      h('p', { class: 'muted', style: 'margin:0' }, ready ? (w.reopened ? 'Corrections done. Submit again for your teacher.' : 'Every part is locked and self-marked.') : `Lock in your answer and your mark for every part to submit (${s.n - s.marked} still to do):`));
+    if (!ready){                                  // list what is left on each part, with a button straight to it
+      const todo = h('ul', { class: 'todo' });
+      HW.questions.forEach((Q, qi) => Q.parts.forEach(P => {
+        const x = w.parts[P.id]; if (x.markLocked) return;
+        const why = !x.locked ? 'lock in your answer' : (x.mark === null || x.mark === undefined) ? 'choose your mark' : x.redo ? 'look at this part again (sent back by your teacher)'
+          : x.mark < P.marks && correctionProblem(x) ? 'add a green correction, then lock in your mark' : 'press Lock in mark';
+        todo.append(h('li', {}, h('button', { type: 'button', class: 'linkbtn', onclick: () => { CURQ = qi; screenHomework(); const el = document.getElementById('part-' + P.id); if (el) el.scrollIntoView({ block: 'center' }); } }, partLabel(P)), ': ' + why));
+      }));
+      box.append(todo);
+    }
     const sb = h('button', { type: 'button', class: 'primary', disabled: !ready, onclick: () => {
       sb.replaceWith(h('div', { class: 'confirm' }, h('span', {}, 'Submit to your teacher? You won’t be able to add more green corrections.'),
         h('button', { type: 'button', class: 'primary', onclick: () => { w.submitted = new Date().toISOString(); delete w.reopened; save(true); screenHomework(); window.scrollTo(0, document.body.scrollHeight); } }, 'Yes, submit'),
