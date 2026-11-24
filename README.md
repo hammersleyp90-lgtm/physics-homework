@@ -8,3 +8,7 @@ classes and accounts stored in a Supabase database.
 - `supabase/schema.sql` sets up the database: private tables, login checks, lockout after 8 wrong attempts,
   and functions the site calls. Only those functions are reachable with the public key in `config.js`.
 - No names are needed: use student numbers in class lists.
+
+## Question generators
+
+`generators/` holds the stand-alone A-level question generators (one HTML page per topic) with a links page at `generators/index.html`, so students can open them in any browser, including on iPads.

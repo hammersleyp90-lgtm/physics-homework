@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Particles and Quantum Phenomena Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+.nuc{display:inline-flex;flex-direction:column;vertical-align:-0.42em;font-size:.68em;line-height:1.02;text-align:right;margin-right:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Particles and Quantum Phenomena Question Generator</h1>
+    <p>AQA-style practice on section 3.2 (Particles and radiation). 51 question types and many thousands of different questions with mark schemes: Feynman, energy-level, decay-chain and electron-diffraction diagrams, graphs of photoelectron energy, stopping potential and the strong force, data tables, plus calculation and description questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="PE3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number(x.toPrecision(n));
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    let e = Math.floor(Math.log10(a) + 1e-12), m = Number((x / Math.pow(10, e)).toPrecision(n));
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+let ASF = 2;                                          // significant figures of the data in the question being built
+const A = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : N(x, 3);      // answers: 3 sf (2 sf when exact and the data are given to 2 sf)
+const AV = (x, unit) => A(x) + ' ' + unit;
+const I3 = x => isNice(x, 3) ? N(x, 3) : N(x, 4);      // a working value from data given to 3 sf
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? .9 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside, halo: !!o.halo });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}${l.halo ? ' stroke="#fff" stroke-width="4" paint-order="stroke"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+// axis label: ^{..} superscript, _{..} subscript
+const axl = s => esc(s).replace(/\^\{([^}]*)\}/g, '<tspan dy="-6" font-size="10">$1</tspan><tspan dy="6">\u200b</tspan>').replace(/_\{([^}]*)\}/g, '<tspan dy="4" font-size="10">$1</tspan><tspan dy="-4">\u200b</tspan>');
+const axp = s => String(s).replace(/[\^_]\{([^}]*)\}/g, '$1');
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = g.top ? 16 : 52, mt = g.top ? 52 : 16, mr = 22;      // top: the r axis is at the top (all values negative)
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(m) + 1e-9));
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${g.top ? mt - 10 : mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(xa <= 0 && xb >= 0 ? 0 : xa), ay0 = Y(ya <= 0 && yb >= 0 ? 0 : ya);
+  let marks = '';
+  (g.shade || []).forEach(c => { const pts = []; for (let i = 0; i <= 120; i++){ const x = c.from + (c.to - c.from) * i / 120; pts.push(n2(X(x)) + ',' + n2(Y(Math.min(c.f(x), yb)))); } pts.push(n2(X(c.to)) + ',' + n2(Y(Math.max(ya, 0))), n2(X(c.from)) + ',' + n2(Y(Math.max(ya, 0)))); marks += `<polygon points="${pts.join(' ')}" fill="#c9cfd4" fill-opacity="0.65" stroke="none"/>`; });
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= ya - 1e-9 && y <= yb + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.dots || []).forEach(d => { marks += `<circle cx="${n2(X(d.x))}" cy="${n2(Y(d.y))}" r="4.2" fill="#000"/><text x="${n2(X(d.x) + (d.dx || 9))}" y="${n2(Y(d.y) + (d.dy || 5))}" font-weight="700" font-size="15" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(d.t)}</text>`; });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(axp(g.yl))} against ${esc(axp(g.xl))}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${g.top ? 20 : th - 8}" text-anchor="middle">${axl(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${axl(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [ya, yb] = g.y, inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.dots || []).forEach(p => { if (!inX(p.x) || !inY(p.y)) e.push('marked nuclide outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+/* ---------- particles and quantum phenomena: shared helpers ---------- */
+const TOPICS = { AT: 'Constituents of the atom', SN: 'Stable and unstable nuclei', PA: 'Particles, antiparticles and photons', IN: 'Particle interactions', CL: 'Classification and conservation', PE: 'The photoelectric effect', EL: 'Energy levels and spectra', WP: 'Wave–particle duality' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const INT = { int: true, noSkill: true };
+const NEG = { neg: true };
+const r3 = x => Number(x.toPrecision(3));
+const I = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join(' ')}</tr> ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join(' ')}</tr>`).join(' ')}</table>`;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const an = w => /^[aeiou]/i.test(w) ? 'an' : 'a';
+const dot = (s, x, y, r = 3.2) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+const nuc = (sym, A, Z) => `<span class="nuc"><span>${A}</span><span>${Z}</span></span>${sym}`;
+// AQA data-sheet values
+const QE = 1.60e-19, SE = '1.60 × 10<sup>−19</sup>', HP = 6.63e-34, SH = '6.63 × 10<sup>−34</sup>', SC = '3.00 × 10<sup>8</sup>', MEL = 9.11e-31, SME = '9.11 × 10<sup>−31</sup>';
+const MPR = 1.673e-27, SMP = '1.673 × 10<sup>−27</sup>', MNU = 1.67e-27, SMN = '1.67 × 10<sup>−27</sup>', EPS0 = 8.85e-12, KC = 1 / (4 * Math.PI * EPS0), K4 = '4π × 8.85 × 10<sup>−12</sup>', GN = 6.67e-11;
+const MEV = 1.60e-13, SMEV = '1.60 × 10<sup>−13</sup>';
+const RE = { e: 0.510999, mu: 105.659, pic: 139.576, pi0: 134.972, Kc: 493.821, K0: 497.762, p: 938.257, n: 939.551 };
+const CKG = 'C kg<sup>−1</sup>', HZ = 'Hz', NUC_NOTE = `Use ${SMN} kg for the mass of a nucleon and ignore the mass of any electrons.`;
+const SPEC = 'The charge of the particle divided by its mass ✓';
+const ISO = 'Nuclei (atoms) with the same number of protons but different numbers of neutrons ✓';
+
+/* ===== Constituents of the atom ===== */
+const NUCS = [['carbon-14', 'C', 14, 6], ['oxygen-18', 'O', 18, 8], ['sodium-23', 'Na', 23, 11], ['titanium-48', 'Ti', 48, 22], ['iron-56', 'Fe', 56, 26], ['cobalt-60', 'Co', 60, 27], ['strontium-90', 'Sr', 90, 38], ['iodine-131', 'I', 131, 53], ['caesium-137', 'Cs', 137, 55], ['radium-226', 'Ra', 226, 88], ['uranium-235', 'U', 235, 92], ['americium-241', 'Am', 241, 95], ['lead-208', 'Pb', 208, 82], ['chlorine-37', 'Cl', 37, 17]];
+T.AT1 = R => {
+  const ni = Math.floor(R() * NUCS.length), [nm, sy, A, Z] = NUCS[ni], Q = Z * QE, m = A * MNU, sc = Q / m;
+  return NOFIG(3, { ni }, `A nucleus of ${nm} is represented by ${nuc(sy, A, Z)}.<br>${NUC_NOTE}`, [
+    calc('State the number of neutrons in the nucleus.', 1, A - Z, '', `${eq(`${A} − ${Z} = ${A - Z}`)} ✓`, INT),
+    calc('Calculate the charge of the nucleus.', 1, Q, 'C', `${eq(`<i>Q</i> = ${Z} × ${SE} = ${AV(Q, 'C')}`)} ✓`),
+    calc('Calculate the specific charge of the nucleus.', 2, sc, CKG, `${eq(`<i>m</i> = ${A} × ${SMN} = ${I(m)}`)} kg ✓<br>${eq(`specific charge = ${I(Q)} / ${I(m)} = ${AV(sc, CKG)}`)} ✓`),
+    choose(R, 'Which has the greater specific charge?', 1, 'a proton', [`${an(nm)} ${nm} nucleus`, 'they are equal'], `A proton: it has one unit of charge per nucleon, while the ${nm} nucleus has ${Z} units of charge for ${A} nucleons ✓`),
+    text('State what is meant by the specific charge of a particle.', 1, SPEC)
+  ]);
+};
+
+const IONS = [['sodium-23', 'Na', 23, 11, 1], ['magnesium-24', 'Mg', 24, 12, 2], ['aluminium-27', 'Al', 27, 13, 3], ['chlorine-35', 'Cl', 35, 17, -1], ['oxygen-16', 'O', 16, 8, -2], ['iron-56', 'Fe', 56, 26, 3], ['calcium-40', 'Ca', 40, 20, 2], ['sulfur-32', 'S', 32, 16, -2], ['lithium-7', 'Li', 7, 3, 1], ['potassium-39', 'K', 39, 19, 1]];
+T.AT2 = R => {
+  const ii = Math.floor(R() * IONS.length), [nm, sy, A, Z, q] = IONS[ii], qa = Math.abs(q), Q = q * QE, m = A * MNU, sci = qa * QE / m, scn = Z * QE / m;
+  return NOFIG(3, { ii }, `An atom of ${nm} (${nuc(sy, A, Z)}) ${q > 0 ? 'loses' : 'gains'} ${qa === 1 ? 'one electron' : qa === 2 ? 'two electrons' : 'three electrons'} to form an ion.<br>${NUC_NOTE}`, [
+    calc('State the number of electrons in the ion.', 1, Z - q, '', `${eq(`${Z} ${q > 0 ? '−' : '+'} ${qa} = ${Z - q}`)} ✓`, INT),
+    calc('Calculate the charge of the ion.', 1, Q, 'C', `${eq(`<i>Q</i> = ${q > 0 ? '' : '−'}${qa} × ${SE} = ${AV(Q, 'C')}`)} ✓`, q < 0 ? NEG : {}),
+    calc('Calculate the magnitude of the specific charge of the ion.', 2, sci, CKG, `${eq(`<i>m</i> = ${A} × ${SMN} = ${I(m)}`)} kg ✓<br>${eq(`specific charge = ${qa} × ${SE} / ${I(m)} = ${AV(sci, CKG)}`)} ✓`),
+    calc('Calculate the specific charge of the nucleus of this atom.', 1, scn, CKG, `${eq(`${Z} × ${SE} / (${A} × ${SMN}) = ${AV(scn, CKG)}`)} ✓`),
+    text('Explain why the mass of the electrons can be ignored in these calculations.', 1, 'The mass of an electron is about 1/1800 of the mass of a nucleon, so the electrons make a negligible contribution to the mass ✓')
+  ]);
+};
+
+T.AT3 = R => {
+  const v = find(() => ({ ni: Math.floor(R() * NUCS.length) }), o => { const [, , A, Z] = NUCS[o.ni], s = r3(Z * QE / (A * MNU)); return A <= 150 && Math.round(Z * QE / (s * MNU)) === A && Math.abs(Z * QE / (s * MNU) - A) < .3; });
+  const [nm, , A, Z] = NUCS[v.ni], el = nm.split('-')[0], sc = r3(Z * QE / (A * MNU)), m = Z * QE / sc, An = m / MNU;
+  return NOFIG(3, { ni: v.ni }, `A nucleus of an isotope of ${el} has a proton number of ${Z} and a specific charge of ${V(sc, CKG, 3)}.<br>Use ${SMN} kg for the mass of a nucleon.`, [
+    calc('Calculate the mass of the nucleus.', 2, m, 'kg', `<i>m</i> = <i>Q</i> / specific charge ✓<br>${eq(`<i>m</i> = ${Z} × ${SE} / ${N(sc, 3)} = ${AV(m, 'kg')}`)} ✓`),
+    calc('Determine the number of nucleons in the nucleus.', 1, A, '', `${eq(`${I(m)} / ${SMN} = ${N(An, 4)}`)}, so ${A} nucleons ✓`, INT),
+    calc('Determine the number of neutrons in the nucleus.', 1, A - Z, '', `${eq(`${A} − ${Z} = ${A - Z}`)} ✓`, INT),
+    choose(R, `Another isotope of ${el} has two more neutrons. How does the specific charge of its nucleus compare?`, 1, 'it is smaller', ['it is greater', 'it is the same'], 'Smaller: the same charge but a greater mass ✓'),
+    text('State what is meant by isotopes.', 1, ISO)
+  ]);
+};
+
+const XPART = [['a deuteron (hydrogen-2 nucleus)', 1, 3.34e-27], ['a triton (hydrogen-3 nucleus)', 1, 5.01e-27], ['a helium-3 nucleus', 2, 5.01e-27], ['a lithium-7 nucleus', 3, 1.17e-26]];
+T.AT4 = R => {
+  const xi = Math.floor(R() * XPART.length), [xn, xq, xm] = XPART[xi], se = QE / MEL, sa = 2 * QE / 6.64e-27, sx = xq * QE / xm, ratio = MPR / MEL;
+  return NOFIG(3, { xi }, `This question compares the specific charges of some particles.<br>mass of an electron = ${SME} kg<br>mass of a proton = ${SMP} kg<br>mass of an alpha particle = 6.64 × 10<sup>−27</sup> kg<br>${cap(xn)} has a charge of +${xq}<i>e</i> and a mass of ${V(xm, 'kg', 3)}.`, [
+    calc('Calculate the specific charge of an electron.', 1, se, CKG, `${eq(`${SE} / ${SME} = ${AV(se, CKG)}`)} ✓`),
+    calc('Calculate the specific charge of an alpha particle.', 2, sa, CKG, `charge = 2 × ${SE} C ✓<br>${eq(`2 × ${SE} / 6.64 × 10<sup>−27</sup> = ${AV(sa, CKG)}`)} ✓`),
+    calc(`Calculate the specific charge of ${xn.split(' (')[0]}.`, 1, sx, CKG, `${eq(`${xq} × ${SE} / ${N(xm, 3)} = ${AV(sx, CKG)}`)} ✓`),
+    calc('Calculate the ratio specific charge of an electron / specific charge of a proton.', 1, ratio, '', `The charges are equal in size, so ${eq(`ratio = ${SMP} / ${SME} = ${A(ratio)}`)} ✓`, { noSkill: true }),
+    choose(R, 'Which particle has a specific charge of zero?', 1, 'a neutron', ['a proton', 'a positron', 'an alpha particle'], 'A neutron: it has no charge ✓')
+  ]);
+};
+
+T.AT5 = R => {
+  const ni = Math.floor(R() * NUCS.length), [nm, sy, Am, Z] = NUCS[ni], Qe = -Z * QE, me = Z * MEL, mn = Am * MNU, pct = me / (mn + me) * 100;
+  return NOFIG(3, { ni }, `This question is about a neutral atom of ${nm} (${nuc(sy, Am, Z)}).<br>Use ${SMN} kg for the mass of a nucleon and ${SME} kg for the mass of an electron.`, [
+    calc('Calculate the total charge of the electrons in the atom.', 1, Qe, 'C', `${eq(`−${Z} × ${SE} = ${AV(Qe, 'C')}`)} ✓`, NEG),
+    calc('Calculate the total mass of the electrons.', 1, me, 'kg', `${eq(`${Z} × ${SME} = ${AV(me, 'kg')}`)} ✓`),
+    calc('Calculate the mass of the nucleus.', 1, mn, 'kg', `${eq(`${Am} × ${SMN} = ${AV(mn, 'kg')}`)} ✓`),
+    calc('Calculate the percentage of the mass of the atom that is due to its electrons.', 2, pct, '%', `${eq(`${I(me)} / (${I(mn)} + ${I(me)}) × 100`)} ✓<br>${eq(`= ${A(pct)}`)}% ✓`, { noSkill: true }),
+    choose(R, 'What is the specific charge of the neutral atom?', 1, 'zero', ['the same as that of its nucleus', 'the same as that of an electron', 'the same as that of a proton'], 'Zero: the atom has no overall charge ✓')
+  ]);
+};
+
+const ISOP = [['carbon', 'C', 6, 12, 14], ['chlorine', 'Cl', 17, 35, 37], ['uranium', 'U', 92, 235, 238], ['iron', 'Fe', 26, 54, 56], ['strontium', 'Sr', 38, 88, 90], ['potassium', 'K', 19, 39, 40], ['hydrogen', 'H', 1, 2, 3], ['lithium', 'Li', 3, 6, 7]];
+T.AT6 = R => {
+  const ii = Math.floor(R() * ISOP.length), [el, sy, Z, A1, A2] = ISOP[ii], s1 = Z * QE / (A1 * MNU), s2 = Z * QE / (A2 * MNU);
+  return NOFIG(3, { ii }, `Two isotopes of ${el} are ${nuc(sy, A1, Z)} and ${nuc(sy, A2, Z)}.<br>Use ${SMN} kg for the mass of a nucleon.`, [
+    text('State what is meant by isotopes.', 1, ISO),
+    calc(`Calculate the specific charge of ${an(el)} ${el}-${A1} nucleus.`, 1, s1, CKG, `${eq(`${Z} × ${SE} / (${A1} × ${SMN}) = ${AV(s1, CKG)}`)} ✓`),
+    calc(`Calculate the specific charge of ${an(el)} ${el}-${A2} nucleus.`, 1, s2, CKG, `${eq(`${Z} × ${SE} / (${A2} × ${SMN}) = ${AV(s2, CKG)}`)} ✓`),
+    calc(`Calculate the ratio specific charge of ${el}-${A1} nucleus / specific charge of ${el}-${A2} nucleus.`, 1, A2 / A1, '', `The charges are equal, so ${eq(`ratio = ${A2} / ${A1} = ${A(A2 / A1)}`)} ✓`, { noSkill: true }),
+    choose(R, 'What do the two isotopes have in common?', 1, 'the same number of protons', ['the same number of neutrons', 'the same number of nucleons', 'the same specific charge'], 'The same number of protons ✓')
+  ]);
+};
+
+/* ===== Stable and unstable nuclei ===== */
+T.SN1 = R => {
+  const r0 = R.pick([0.4, 0.5, 0.6]), Fm = R.pick([10, 15, 20, 25]), C = 4 * Fm, F = r => C * (Math.exp(-4 * (r - r0)) - Math.exp(-2 * (r - r0))), rmin = r0 + Math.log(2) / 2, r1 = R.pick([1.0, 2.0, 3.0]);
+  const [ya, yM] = axisFor(Fm * 1.6), rs = (() => { let lo = r0 - .6, hi = r0; for (let i = 0; i < 60; i++){ const m = (lo + hi) / 2; if (F(m) > ya) lo = m; else hi = m; } return hi; })();
+  const Fe = KC * QE * QE / Math.pow(r1 * 1e-15, 2);
+  const fig = graph({ x: [0, 4, 1], y: [-ya, ya, yM], xdiv: 10, ydiv: 5, h: 320, xl: 'separation / fm', yl: 'force / kN', curves: [{ f: F, from: rs, to: 4 }], reads: [[r0, 0], [rmin, -Fm]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { r0, Fm, r1 },
+    stem: '<b>Figure 1</b> shows how the strong nuclear force between two nucleons varies with their separation. A positive force is repulsive and a negative force is attractive.',
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the separation at which the strong force is zero.', 1, r0, 'fm', `${A(r0)} fm ✓`, { abs: .05, noSkill: true }),
+      calc('Use <b>Figure 1</b> to determine the separation at which the attractive force is greatest.', 1, rmin, 'fm', `${A(rmin)} fm ✓`, { abs: .1, noSkill: true }),
+      calc('Use <b>Figure 1</b> to determine the greatest attractive force.', 1, Fm, 'kN', `${A(Fm)} kN ✓`, { abs: yM / 10, noSkill: true }),
+      text('Explain how the strong nuclear force keeps a nucleus stable.', 2, `It is attractive for separations from about ${A(r0)} fm to about 3 fm, holding the nucleons together against the electrostatic repulsion of the protons ✓<br>it is repulsive at separations less than about ${A(r0)} fm, so it stops the nucleons being pulled into each other ✓`),
+      calc(`Calculate the electrostatic force between two protons ${V(r1, 'fm')} apart.`, 2, Fe, 'N', `${eq(`<i>F</i> = <i>e</i><sup>2</sup> / 4π<i>ε</i><sub>0</sub><i>r</i><sup>2</sup> = (${SE})<sup>2</sup> / (${K4} × (${N(r1)} × 10<sup>−15</sup>)<sup>2</sup>)`)} ✓<br>${eq(`<i>F</i> = ${AV(Fe, 'N')}`)} ✓`),
+      choose(R, 'Which particles does the strong nuclear force act on?', 1, 'hadrons only', ['all charged particles', 'leptons only', 'all particles with mass'], 'Hadrons only, such as protons and neutrons ✓')
+    ] };
+};
+
+const ALPHA = [['uranium-238', 'U', 238, 92, 'thorium', 4.20], ['radium-226', 'Ra', 226, 88, 'radon', 4.78], ['polonium-210', 'Po', 210, 84, 'lead', 5.30], ['americium-241', 'Am', 241, 95, 'neptunium', 5.49], ['plutonium-239', 'Pu', 239, 94, 'uranium', 5.16], ['thorium-232', 'Th', 232, 90, 'radium', 4.01], ['radon-222', 'Rn', 222, 86, 'polonium', 5.49]];
+T.SN2 = R => {
+  const ai = Math.floor(R() * ALPHA.length), [nm, sy, A, Z, dn, K] = ALPHA[ai], KJ = K * MEV;
+  return NOFIG(3, { ai }, `A nucleus of ${nm} (${nuc(sy, A, Z)}) decays by emitting an alpha particle to form a nucleus of ${dn}. The alpha particle has a kinetic energy of ${V(K, 'MeV', 3)}.`, [
+    calc(`State the nucleon number of the ${dn} nucleus.`, 1, A - 4, '', `${eq(`${A} − 4 = ${A - 4}`)} ✓`, INT),
+    calc(`State the proton number of the ${dn} nucleus.`, 1, Z - 2, '', `${eq(`${Z} − 2 = ${Z - 2}`)} ✓`, INT),
+    calc(`State the number of neutrons in the ${dn} nucleus.`, 1, A - Z - 2, '', `${eq(`${A - 4} − ${Z - 2} = ${A - Z - 2}`)} ✓`, INT),
+    choose(R, 'What does an alpha particle consist of?', 1, 'two protons and two neutrons', ['two protons and two electrons', 'four protons', 'two neutrons'], 'Two protons and two neutrons (a helium-4 nucleus) ✓'),
+    calc('Calculate the kinetic energy of the alpha particle in joules.', 1, KJ, 'J', `${eq(`${N(K, 3)} × ${SMEV} = ${AV(KJ, 'J')}`)} ✓`),
+    text('State what is meant by ionisation.', 1, 'Removing one or more electrons from an atom (or adding electrons), so that it becomes charged ✓')
+  ]);
+};
+
+const BETA = [['carbon-14', 'C', 14, 6, 'nitrogen', 0.156], ['phosphorus-32', 'P', 32, 15, 'sulfur', 1.71], ['strontium-90', 'Sr', 90, 38, 'yttrium', 0.546], ['caesium-137', 'Cs', 137, 55, 'barium', 0.514], ['cobalt-60', 'Co', 60, 27, 'nickel', 0.318], ['iodine-131', 'I', 131, 53, 'xenon', 0.606]];
+const QDN = 'a down quark changes into an up quark', QUP = 'an up quark changes into a down quark';
+T.SN3 = R => {
+  const bi = Math.floor(R() * BETA.length), [nm, sy, Am, Z, dn, Em] = BETA[bi], [xm, xM] = axisFor(Em * 1.15), k = 100 / (Math.sqrt(Em / 3) * Math.pow(Em * 2 / 3, 2)), f = E => k * Math.sqrt(E) * Math.pow(Em - E, 2);
+  const fig = graph({ x: [0, xm, xM], y: [0, 120, 20], xdiv: 5, ydiv: 5, h: 300, xl: 'kinetic energy / MeV', yl: 'number of β^{−} particles', curves: [{ f, from: 0, to: Em }], reads: [[Em, 0]] });
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: { bi },
+    stem: `A nucleus of ${nm} (${nuc(sy, Am, Z)}) decays by β<sup>−</sup> emission to form a nucleus of ${dn}. <b>Figure 1</b> shows the distribution of the kinetic energies of the β<sup>−</sup> particles emitted.`,
+    parts: [
+      calc(`State the proton number of the ${dn} nucleus.`, 1, Z + 1, '', `${eq(`${Z} + 1 = ${Z + 1}`)} ✓`, INT),
+      choose(R, 'Which particles are emitted in this decay?', 1, 'an electron and an electron antineutrino', ['an electron and an electron neutrino', 'a positron and an electron neutrino', 'an electron only'], 'An electron and an electron antineutrino ✓'),
+      calc('Use <b>Figure 1</b> to determine the maximum kinetic energy of the β<sup>−</sup> particles.', 1, Em, 'MeV', `${A(Em)} MeV ✓`, { abs: xM / 20, noSkill: true }),
+      calc('Calculate this maximum kinetic energy in joules.', 1, Em * MEV, 'J', `${eq(`${A(Em)} × ${SMEV} = ${AV(Em * MEV, 'J')}`)} ✓`, { noSkill: true }),
+      text('Explain how <b>Figure 1</b> shows that another particle must be emitted in the decay.', 2, 'The same amount of energy is released in every decay, but the β<sup>−</sup> particles have a range of kinetic energies up to a maximum ✓<br>so another particle (the antineutrino) must carry away the rest of the energy ✓'),
+      choose(R, 'What change happens to a quark in this decay?', 1, QDN, [QUP, 'a strange quark changes into an up quark', 'an up quark changes into a strange quark'], cap(QDN) + ' ✓')
+    ] };
+};
+
+function nzGrid(chain){
+  const Zs = chain.map(c => c[0]), Ns = chain.map(c => c[1]), z0 = Math.min(...Zs) - 1, z1 = Math.max(...Zs) + 1, n0 = Math.min(...Ns) - 1, n1 = Math.max(...Ns) + 1, cw = 38, ox = 90, oy = 40;
+  const X = z => ox + (z - z0) * cw, Y = n => oy + (n1 - n) * cw, s = new Scene('A grid of neutron number against proton number showing a chain of decays as numbered arrows');
+  for (let z = z0; z <= z1; z++){ s.line(X(z), Y(n1), X(z), Y(n0), { w: .6, stroke: '#bbb', free: true }); s.label(X(z), Y(n0) + 20, String(z), { size: 12 }); }
+  for (let n = n0; n <= n1; n++){ s.line(X(z0), Y(n), X(z1), Y(n), { w: .6, stroke: '#bbb', free: true }); s.label(X(z0) - 8, Y(n) + 4, String(n), { size: 12, anchor: 'end' }); }
+  s.label((X(z0) + X(z1)) / 2, Y(n0) + 42, 'proton number Z', { size: 13 }); s.label(X(z0) - 8, Y(n1) - 16, 'neutron number N', { size: 13, anchor: 'start' });
+  chain.forEach(c => dot(s, X(c[0]), Y(c[1]), 4.5));
+  for (let i = 0; i + 1 < chain.length; i++){ const [a, b] = [chain[i], chain[i + 1]], x1 = X(a[0]), y1 = Y(a[1]), x2 = X(b[0]), y2 = Y(b[1]), L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L;
+    s.arrow(x1 + 6 * ux, y1 + 6 * uy, x2 - 6 * ux, y2 - 6 * uy, { s: 8, w: 1.5, tag: 'd' + (i + 1) });
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, cands = [[mx - uy * 14, my + ux * 14], [mx + uy * 14, my - ux * 14]];
+    const far = cands.map(p => Math.min(...chain.slice(0, -1).map((cc, j) => j === i ? 1e9 : Math.hypot(p[0] - (X(cc[0]) + X(chain[j + 1][0])) / 2, p[1] - (Y(cc[1]) + Y(chain[j + 1][1])) / 2))));
+    const [lx, ly] = far[0] >= far[1] ? cands[0] : cands[1]; s.label(lx, ly + 5, String(i + 1), { bold: true, size: 14 }); }
+  return s;
+}
+const DEC = { a: [-2, -2], b: [1, -1] };
+T.SN4 = R => {
+  const seq = find(() => Array.from({ length: 4 }, () => R.chance(.5) ? 'a' : 'b'), s => s.includes('a') && s.includes('b'));
+  const Z0 = R.pick([84, 86, 88, 90, 92]), A0 = Z0 * 2 + R.pick([42, 44, 46, 50, 54]) + (Z0 % 4), chain = [[Z0, A0 - Z0]];
+  seq.forEach(d => { const [dz, dn] = DEC[d], c = chain[chain.length - 1]; chain.push([c[0] + dz, c[1] + dn]); });
+  const [Zf, Nf] = chain[4], k = 2 + Math.floor(R() * 3), nmd = d => d === 'a' ? 'alpha decay' : 'beta-minus decay', dopts = ['alpha decay', 'beta-minus decay', 'beta-plus decay', 'gamma emission'];
+  return { sf: 2, scenes: [nzGrid(chain)], data: { seq, Z0, A0, k },
+    stem: `A nucleus with proton number ${Z0} and nucleon number ${A0} decays through a chain of four decays. <b>Figure 1</b> shows the chain on a grid of neutron number <i>N</i> against proton number <i>Z</i>. The arrows are numbered in order.`,
+    parts: [
+      opt('Which decay is shown by arrow 1?', 1, dopts, dopts.indexOf(nmd(seq[0])), `${cap(nmd(seq[0]))}: <i>Z</i> ${seq[0] === 'a' ? 'falls by 2 and <i>N</i> falls by 2' : 'rises by 1 and <i>N</i> falls by 1'} ✓`),
+      opt(`Which decay is shown by arrow ${k}?`, 1, dopts, dopts.indexOf(nmd(seq[k - 1])), `${cap(nmd(seq[k - 1]))} ✓`),
+      calc('State the proton number of the nucleus at the end of the chain.', 1, Zf, '', `${Zf} ✓`, INT),
+      calc('State the nucleon number of the nucleus at the end of the chain.', 1, Zf + Nf, '', `${eq(`${Zf} + ${Nf} = ${Zf + Nf}`)} ✓`, INT),
+      calc('Calculate the total number of neutrons lost in the four decays.', 1, A0 - Z0 - Nf, '', `${eq(`${A0 - Z0} − ${Nf} = ${A0 - Z0 - Nf}`)} ✓`, INT),
+      text('Stable heavy nuclei have more neutrons than protons. Explain why, with reference to the forces between nucleons.', 2, 'The strong force acts between all nucleons but has a short range, while the electrostatic repulsion acts only between protons and has a long range ✓<br>extra neutrons add strong attraction without adding repulsion, so they are needed to hold a large nucleus together ✓')
+    ] };
+};
+
+const BPL = [['fluorine-18', 'F', 18, 9, 'oxygen'], ['carbon-11', 'C', 11, 6, 'boron'], ['sodium-22', 'Na', 22, 11, 'neon'], ['nitrogen-13', 'N', 13, 7, 'carbon'], ['oxygen-15', 'O', 15, 8, 'nitrogen']];
+T.SN5 = R => {
+  const bi = Math.floor(R() * BPL.length), [nm, sy, A, Z, dn] = BPL[bi];
+  return NOFIG(6, { bi }, `${cap(nm)} (${nuc(sy, A, Z)}) decays by β<sup>+</sup> emission to form ${dn}. It is used as a source of positrons in medical imaging.<br>rest energy of an electron = ${N(RE.e, 6)} MeV`, [
+    calc(`State the proton number of the ${dn} nucleus formed.`, 1, Z - 1, '', `${eq(`${Z} − 1 = ${Z - 1}`)} ✓`, INT),
+    choose(R, 'Which particles are emitted in β<sup>+</sup> decay?', 1, 'a positron and an electron neutrino', ['a positron and an electron antineutrino', 'an electron and an electron antineutrino', 'a proton and a positron'], 'A positron and an electron neutrino ✓'),
+    choose(R, 'What change happens to a quark in this decay?', 1, QUP, [QDN, 'an up quark changes into a strange quark', 'a down quark changes into a strange quark'], cap(QUP) + ' ✓'),
+    choose(R, 'Which exchange particle is involved in β<sup>+</sup> decay?', 1, 'W⁺ boson', ['W⁻ boson', 'virtual photon', 'pion'], 'The W<sup>+</sup> boson (weak interaction) ✓'),
+    calc('The positron annihilates with an electron. Both are at rest. Calculate the energy of each photon produced, in MeV.', 1, RE.e, 'MeV', `Two photons, each with energy equal to the rest energy of one particle: ${N(RE.e, 6)} MeV, so 0.511 MeV ✓`, { noSkill: true }),
+    text('Another isotope decays by electron capture. State the particles that interact in electron capture.', 1, 'A proton (in the nucleus) and an (inner-shell) electron ✓')
+  ]);
+};
+
+T.SN6 = R => {
+  const r = R.pick([1.0, 1.5, 2.0, 2.5, 3.0]), d = r * 1e-15, Fe = KC * QE * QE / (d * d), Fg = GN * MPR * MPR / (d * d), ratio = Fe / Fg;
+  return NOFIG(2, { r }, `Two protons in a nucleus are ${V(r, 'fm')} apart.<br>mass of a proton = ${SMP} kg<br>gravitational constant <i>G</i> = 6.67 × 10<sup>−11</sup> N m<sup>2</sup> kg<sup>−2</sup>`, [
+    calc('Calculate the electrostatic force between the protons.', 2, Fe, 'N', `${eq(`<i>F</i> = <i>e</i><sup>2</sup> / 4π<i>ε</i><sub>0</sub><i>r</i><sup>2</sup> = (${SE})<sup>2</sup> / (${K4} × (${N(r)} × 10<sup>−15</sup>)<sup>2</sup>)`)} ✓<br>${eq(`<i>F</i> = ${AV(Fe, 'N')}`)} ✓`),
+    calc('Calculate the gravitational force between the protons.', 2, Fg, 'N', `${eq(`<i>F</i> = <i>Gm</i><sup>2</sup> / <i>r</i><sup>2</sup> = 6.67 × 10<sup>−11</sup> × (${SMP})<sup>2</sup> / (${N(r)} × 10<sup>−15</sup>)<sup>2</sup>`)} ✓<br>${eq(`<i>F</i> = ${AV(Fg, 'N')}`)} ✓`),
+    calc('Calculate the ratio electrostatic force / gravitational force.', 1, ratio, '', `${eq(`${I(Fe)} / ${I(Fg)} = ${A(ratio)}`)} ✓`, { noSkill: true }),
+    text('Explain why the nucleus does not fly apart.', 1, 'The strong nuclear force between the nucleons is attractive at this separation and is larger than the electrostatic repulsion ✓'),
+    choose(R, 'What is the approximate range of the strong nuclear force?', 1, 'about 3 fm', ['about 0.5 fm', 'about 3 nm', 'infinite'], 'About 3 fm ✓'),
+    choose(R, 'What happens to the strong force between two nucleons at separations below about 0.5 fm?', 1, 'it becomes repulsive', ['it becomes more strongly attractive', 'it becomes zero', 'it acts only between protons'], 'It becomes repulsive ✓')
+  ]);
+};
+
+/* ===== Particles, antiparticles and photons ===== */
+const LIGHT = [[405, 'visible light'], [450, 'visible light'], [532, 'visible light'], [589, 'visible light'], [633, 'visible light'], [650, 'visible light'], [254, 'ultraviolet'], [1060, 'infrared']];
+const REGIONS = ['visible light', 'ultraviolet', 'infrared', 'X-rays', 'gamma rays', 'microwaves'];
+T.PA1 = R => {
+  const li = Math.floor(R() * LIGHT.length), [ln, rg] = LIGHT[li], P = R.pick([1.0, 2.0, 5.0]), lam = ln * 1e-9, f = C0 / lam, E = HP * f, n = P * 1e-3 / E;
+  return NOFIG(3, { li, P }, `A source emits monochromatic electromagnetic radiation of wavelength ${V(ln, 'nm', 3)}. The power of the beam is ${V(P, 'mW')}.`, [
+    calc('Calculate the frequency of the radiation.', 1, f, HZ, `${eq(`<i>f</i> = <i>c</i> / <i>λ</i> = ${SC} / ${N(lam, 3)} = ${AV(f, HZ)}`)} ✓`),
+    calc('Calculate the energy of one photon.', 2, E, 'J', `<i>E</i> = <i>hf</i> ✓<br>${eq(`<i>E</i> = ${SH} × ${I(f)} = ${AV(E, 'J')}`)} ✓`),
+    calc('Calculate the energy of one photon in eV.', 1, E / QE, 'eV', `${eq(`${I(E)} / ${SE} = ${A(E / QE)}`)} eV ✓`, { noSkill: true }),
+    calc('Calculate the number of photons emitted per second.', 2, n, 's<sup>−1</sup>', `number = power / energy of one photon ✓<br>${eq(`${N(P)} × 10<sup>−3</sup> / ${I(E)} = ${A(n)}`)} s<sup>−1</sup> ✓`, { noSkill: true }),
+    choose(R, 'In which region of the electromagnetic spectrum is this radiation?', 1, rg, REGIONS.filter(x => x !== rg).slice(0, 3), cap(rg) + ' ✓')
+  ]);
+};
+
+T.PA2 = R => {
+  const K = R.pick([0, 0, 0.10, 0.25, 0.50, 1.2]), Eg = RE.e + K, EJ = Eg * MEV, lam = HP * C0 / EJ;
+  const st = K === 0 ? 'An electron and a positron, both at rest, annihilate.' : `An electron and a positron, each with a kinetic energy of ${V(K, 'MeV')}, collide head-on and annihilate.`;
+  return NOFIG(K === 0 ? 3 : 2, { K }, `${st} Two photons are produced.<br>rest energy of an electron = ${N(RE.e, 6)} MeV`, [
+    text('Explain why two photons are produced rather than one.', 1, 'The total momentum before the annihilation is zero, so the photons must travel in opposite directions with equal momenta to conserve momentum ✓'),
+    calc('Calculate the energy of each photon in MeV.', 1, Eg, 'MeV', K === 0 ? `Each photon has the rest energy of one particle: ${N(RE.e, 6)} MeV, so 0.511 MeV ✓` : `${eq(`${N(RE.e, 6)} + ${N(K)} = ${A(Eg)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate the energy of each photon in joules.', 1, EJ, 'J', `${eq(`${K === 0 ? '0.511' : I(Eg)} × ${SMEV} = ${AV(EJ, 'J')}`)} ✓`, { noSkill: true }),
+    calc('Calculate the wavelength of each photon.', 2, lam, 'm', `<i>λ</i> = <i>hc</i> / <i>E</i> ✓<br>${eq(`<i>λ</i> = ${SH} × ${SC} / ${I(EJ)} = ${AV(lam, 'm')}`)} ✓`),
+    choose(R, 'In which directions do the two photons travel?', 1, 'in opposite directions', ['in the same direction', 'at right angles to each other', 'in random directions'], 'In opposite directions ✓')
+  ]);
+};
+
+const PAIRS = [['an electron and a positron', 'electron', RE.e], ['a muon and an antimuon', 'muon', RE.mu], ['a proton and an antiproton', 'proton', RE.p], ['a neutron and an antineutron', 'neutron', RE.n]];
+T.PA3 = R => {
+  const pi = Math.floor(R() * PAIRS.length), [pn, part, m] = PAIRS[pi], fct = R.pick([1.2, 1.5, 2.0]), Eg = r3(2 * m * fct), Emin = 2 * m, lmax = HP * C0 / (Emin * MEV), K = (Eg - Emin) / 2;
+  const chg = { electron: '+1 e (positive)', muon: '+1 e (positive)', proton: '−1 e (negative)', neutron: 'zero' }[part];
+  return NOFIG(3, { pi, fct }, `A photon produces ${pn} (pair production).<br>rest energy of ${an(part)} ${part} = ${N(m, 6)} MeV`, [
+    calc('Calculate the minimum photon energy needed, in MeV.', 1, Emin, 'MeV', `${eq(`2 × ${N(m, 6)} = ${Emin >= 1000 ? fx(Emin, 0) : A(Emin)}`)} MeV ✓`, Emin >= 1000 ? { noSkill: true, fx: 0 } : { noSkill: true }),
+    calc('Calculate the maximum wavelength of a photon that can produce this pair.', 2, lmax, 'm', `${eq(`<i>E</i> = ${I(Emin)} × ${SMEV} = ${I(Emin * MEV)}`)} J ✓<br>${eq(`<i>λ</i> = <i>hc</i> / <i>E</i> = ${SH} × ${SC} / ${I(Emin * MEV)} = ${AV(lmax, 'm')}`)} ✓`),
+    calc(`A photon of energy ${V(Eg, 'MeV', 3)} produces the pair. The particles share the kinetic energy equally. Calculate the kinetic energy of each particle in MeV.`, 1, K, 'MeV', `${eq(`(${N(Eg, 3)} − ${I(Emin)}) / 2 = ${A(K)}`)} MeV ✓`, { noSkill: true }),
+    choose(R, `What is the charge of the antiparticle of the ${part}?`, 1, chg, ['+1 e (positive)', '−1 e (negative)', 'zero', '+2 e'].filter(x => x !== chg).slice(0, 3), cap(chg) + ': equal in size and opposite in sign to that of the particle ✓'),
+    text('Explain why a photon cannot produce a single particle such as one electron.', 1, 'Charge (and lepton or baryon number) must be conserved; a photon has none, so a particle must be created together with its antiparticle ✓')
+  ]);
+};
+
+const ANTI = [['proton', RE.p, 'antiproton', '−1 e'], ['electron', RE.e, 'positron', '+1 e'], ['neutron', RE.n, 'antineutron', 'zero'], ['muon', RE.mu, 'antimuon', '+1 e']];
+T.PA4 = R => {
+  const ai = Math.floor(R() * ANTI.length), [pn, m, apn, ch] = ANTI[ai], EJ = m * MEV, f = EJ / HP;
+  return NOFIG(6, { ai }, `This question is about the ${pn} and its antiparticle.<br>rest energy of ${an(pn)} ${pn} = ${N(m, 6)} MeV`, [
+    choose(R, `What is the antiparticle of the ${pn} called?`, 1, apn, ANTI.filter(a => a[0] !== pn).map(a => a[2]), cap(apn) + ' ✓'),
+    choose(R, `What is the charge of the ${apn}?`, 1, ch, ['+1 e', '−1 e', 'zero', '+2 e'].filter(x => x !== ch).slice(0, 3), `${cap(ch)}: opposite to the charge of the ${pn} ✓`),
+    choose(R, `How does the rest energy of the ${apn} compare with that of the ${pn}?`, 1, 'it is the same', ['it is greater', 'it is smaller', 'it is zero'], 'It is the same ✓'),
+    calc(`Calculate the rest energy of the ${apn} in joules.`, 1, EJ, 'J', `${eq(`${N(m, 6)} × ${SMEV} = ${AV(EJ, 'J')}`)} ✓`, { noSkill: true }),
+    text(`State what happens when ${an(pn)} ${pn} meets ${an(apn)} ${apn}.`, 1, 'They annihilate: their mass is converted into energy in the form of two photons ✓'),
+    calc(`The ${pn} and the ${apn} annihilate when both are at rest. Calculate the frequency of each photon produced.`, 2, f, HZ, `Each photon has energy equal to one rest energy, ${I(EJ)} J ✓<br>${eq(`<i>f</i> = <i>E</i> / <i>h</i> = ${I(EJ)} / ${SH} = ${AV(f, HZ)}`)} ✓`, { sf: 3 })
+  ]);
+};
+
+const PHOT = [['a gamma photon from technetium-99m', 140, 'keV', 1e3, 'gamma rays'], ['a gamma photon from cobalt-60', 1.33, 'MeV', 1e6, 'gamma rays'], ['an X-ray photon', 17.5, 'keV', 1e3, 'X-rays'], ['an ultraviolet photon', 5.0, 'eV', 1, 'ultraviolet'], ['an infrared photon', 1.2, 'eV', 1, 'infrared'], ['a gamma photon from caesium-137', 662, 'keV', 1e3, 'gamma rays']];
+T.PA5 = R => {
+  const pi = Math.floor(R() * PHOT.length), [pn, Ev, u, k, rg] = PHOT[pi], P = R.pick([2.0, 5.0, 8.0]), EJ = Ev * k * QE, f = EJ / HP, lam = C0 / f, n = P * 1e-6 / EJ;
+  return NOFIG(3, { pi, P }, `This question is about ${pn}, which has an energy of ${V(Ev, u, 3)}.`, [
+    calc('Calculate the energy of the photon in joules.', 1, EJ, 'J', `${eq(`${N(Ev, 3)} × ${k === 1 ? '' : '10<sup>' + Math.round(Math.log10(k)) + '</sup> × '}${SE} = ${AV(EJ, 'J')}`)} ✓`),
+    calc('Calculate the frequency of the photon.', 1, f, HZ, `${eq(`<i>f</i> = <i>E</i> / <i>h</i> = ${I(EJ)} / ${SH} = ${AV(f, HZ)}`)} ✓`),
+    calc('Calculate the wavelength of the photon.', 2, lam, 'm', `<i>λ</i> = <i>c</i> / <i>f</i> ✓<br>${eq(`<i>λ</i> = ${SC} / ${I(f)} = ${AV(lam, 'm')}`)} ✓`),
+    choose(R, 'In which region of the electromagnetic spectrum is this photon?', 1, rg, REGIONS.filter(x => x !== rg).slice(0, 3), cap(rg) + ' ✓'),
+    calc(`A source emits these photons with a total power of ${V(P, 'μW')}. Calculate the number of photons emitted per second.`, 2, n, 's<sup>−1</sup>', `number = power / energy of one photon ✓<br>${eq(`${N(P)} × 10<sup>−6</sup> / ${I(EJ)} = ${A(n)}`)} s<sup>−1</sup> ✓`, { noSkill: true })
+  ]);
+};
+
+T.PA6 = R => {
+  const K = R.pick([300, 500, 800, 1000, 1200]), tot = 2 * (RE.e + K), yes = tot >= 2 * RE.p, Kmu = (tot - 2 * RE.mu) / 2;
+  return NOFIG(3, { K }, `In a collider, an electron and a positron, each with a kinetic energy of ${V(K, 'MeV', 3)}, collide head-on and annihilate.<br>rest energy of an electron = ${N(RE.e, 6)} MeV<br>rest energy of a muon = ${N(RE.mu, 6)} MeV<br>rest energy of a proton = ${N(RE.p, 6)} MeV`, [
+    calc('Calculate the total energy available, in MeV.', 1, tot, 'MeV', `${eq(`2 × (${N(RE.e, 6)} + ${K}) = ${fx(tot, 0)}`)} MeV ✓`, { noSkill: true, fx: 0 }),
+    opt('State whether this energy is enough to produce a proton–antiproton pair.', 1, ['yes', 'no'], yes ? 0 : 1, `${yes ? 'Yes' : 'No'}: a proton–antiproton pair needs ${eq(`2 × ${N(RE.p, 6)} = ${N(2 * RE.p, 7)}`)} MeV ✓`),
+    calc('The energy produces a muon–antimuon pair. The particles share the kinetic energy equally. Calculate the kinetic energy of each muon in MeV.', 1, Kmu, 'MeV', `${eq(`(${fx(tot, 0)} − 2 × ${N(RE.mu, 6)}) / 2 = ${Kmu >= 1000 ? fx(Kmu, 0) : A(Kmu)}`)} MeV ✓`, Kmu >= 1000 ? { noSkill: true, fx: 0 } : { noSkill: true }),
+    calc('Calculate the total energy available in joules.', 1, tot * MEV, 'J', `${eq(`${fx(tot, 0)} × ${SMEV} = ${AV(tot * MEV, 'J')}`)} ✓`, { noSkill: true }),
+    text('Explain why particles produced in this way are always produced as a particle–antiparticle pair.', 1, 'Charge, baryon number and lepton number are all zero before the collision, so they must be zero afterwards; this needs a particle and its antiparticle ✓')
+  ]);
+};
+/* ===== Particle interactions ===== */
+const FP = { n: ['n', 'neutron'], p: ['p', 'proton'], em: ['e^{−}', 'electron'], ep: ['e^{+}', 'positron'], nue: ['ν_{e}', 'electron neutrino'], nueb: ['ν̄_{e}', 'electron antineutrino'], mum: ['μ^{−}', 'muon'], numu: ['ν_{μ}', 'muon neutrino'], Wm: ['W^{−}', 'W⁻ boson'], Wp: ['W^{+}', 'W⁺ boson'], g: ['γ', 'virtual photon'] };
+const PROC = {
+  bminus: { decay: 1, a: ['n', 'p'], bos: 'Wm', b: ['nueb', 'em'], inter: 'weak', what: 'β<sup>−</sup> decay' },
+  bplus: { decay: 1, a: ['p', 'n'], bos: 'Wp', b: ['nue', 'ep'], inter: 'weak', what: 'β<sup>+</sup> decay' },
+  ecap: { a: ['p', 'n'], bos: 'Wp', b: ['em', 'nue'], inter: 'weak', what: 'electron capture' },
+  nucol: { a: ['n', 'p'], bos: 'Wm', b: ['nue', 'em'], inter: 'weak', what: 'an interaction between an electron neutrino and a neutron' },
+  anucol: { a: ['p', 'n'], bos: 'Wp', b: ['nueb', 'ep'], inter: 'weak', what: 'an interaction between an electron antineutrino and a proton' },
+  eescat: { a: ['em', 'em'], bos: 'g', b: ['em', 'em'], inter: 'electromagnetic', what: 'the repulsion between two electrons' },
+  mudec: { decay: 1, a: ['mum', 'numu'], bos: 'Wm', b: ['nueb', 'em'], inter: 'weak', what: 'the decay of a muon' }
+};
+function wavy(s, x1, y1, x2, y2){ const L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L, n = Math.round(L / 16), pts = [];
+  for (let i = 0; i <= 120; i++){ const t = i / 120, a = 6 * Math.sin(t * n * 2 * Math.PI); pts.push([x1 + (x2 - x1) * t - uy * a, y1 + (y2 - y1) * t + ux * a]); } s.poly(pts, { w: 1.5 }); }
+// slots: 0 A-in, 1 A-out, 2 boson, 3 B-first, 4 B-second
+function feyn(pr, lab){
+  const s = new Scene('Feynman diagram of ' + plain(pr.what) + ', with time running upwards'), A = pr.decay ? [200, 200] : [200, 180], B = pr.decay ? [360, 120] : [360, 180];
+  const ln = (x1, y1, x2, y2) => { s.line(x1, y1, x2, y2, { w: 1.6 }); s.mid(x1, y1, x2, y2, .5, 9); };
+  ln(110, 320, A[0], A[1]); ln(A[0], A[1], 110, 40); wavy(s, A[0], A[1], B[0], B[1]);
+  s.label(110, 344, lab[0], { size: 16 }); s.label(110, 30, lab[1], { size: 16 });
+  const mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2, L = Math.hypot(B[0] - A[0], B[1] - A[1]), nx = (B[1] - A[1]) / L, ny = -(B[0] - A[0]) / L;
+  s.label(mx + nx * 24, my + ny * 24 + 5, lab[2], { size: 16 });
+  if (pr.decay){ ln(B[0], B[1], 290, 40); ln(B[0], B[1], 450, 40); s.label(290, 30, lab[3], { size: 16 }); s.label(450, 30, lab[4], { size: 16 }); }
+  else { ln(450, 320, B[0], B[1]); ln(B[0], B[1], 450, 40); s.label(450, 344, lab[3], { size: 16 }); s.label(450, 30, lab[4], { size: 16 }); }
+  return s;
+}
+const fslots = pr => [pr.a[0], pr.a[1], pr.bos, pr.b[0], pr.b[1]];
+function feynQ(R, key, extra){
+  const pr = PROC[key], sl = fslots(pr), hid = pickN(R, [1, 2, 3, 4], 2), lab = sl.map((k, i) => i === hid[0] ? 'X' : i === hid[1] ? 'Y' : FP[k][0]);
+  const pool = Object.keys(FP).map(k => FP[k][1]), idQ = (h, L) => { const c = FP[sl[h]][1]; return choose(R, `Identify particle ${L}.`, 1, c, pickN(R, pool.filter(x => x !== c), 3), `${cap(c)} ✓`); };
+  return { sf: 2, scenes: [feyn(pr, lab)], data: { key, hid },
+    stem: `<b>Figure 1</b> is a Feynman diagram for ${pr.what}. Two of the particles are labelled X and Y.`,
+    parts: [idQ(hid[0], 'X'), idQ(hid[1], 'Y'), choose(R, 'Which fundamental interaction is shown?', 1, pr.inter, ['strong', 'weak', 'electromagnetic', 'gravitational'].filter(x => x !== pr.inter), cap(pr.inter) + ' ✓')].concat(extra(pr)) };
+}
+const WPROP = R => choose(R, 'Which statement about W bosons is correct?', 1, 'they have mass, so the weak interaction has a very short range', ['they have no mass, so the weak interaction has an infinite range', 'they are exchanged only between hadrons', 'they carry no charge'], 'They have mass, so the range of the weak interaction is very short ✓');
+T.IN1 = R => feynQ(R, 'bminus', pr => [
+  choose(R, 'What change happens to a quark in this decay?', 1, QDN, [QUP, 'a strange quark changes into an up quark', 'an up quark changes into a strange quark'], cap(QDN) + ' ✓'),
+  text('Show that charge is conserved at the vertex where the neutron changes into a proton.', 1, 'Neutron (0) → proton (+1) + W<sup>−</sup> (−1): the total charge is zero on both sides ✓'),
+  WPROP(R)]);
+T.IN2 = R => feynQ(R, 'ecap', pr => [
+  choose(R, 'What change happens to a quark in electron capture?', 1, QUP, [QDN, 'a strange quark changes into an up quark', 'a down quark changes into a strange quark'], cap(QUP) + ' ✓'),
+  text('A nucleus of an isotope that decays only by electron capture can exist with no orbiting electrons. Explain why the neutral atom is less stable than this nucleus.', 1, 'Electron capture needs an electron (from an inner shell) to be captured; a nucleus with no electrons cannot decay in this way ✓'),
+  WPROP(R)]);
+T.IN3 = R => feynQ(R, 'bplus', pr => [
+  choose(R, 'What change happens to a quark in this decay?', 1, QUP, [QDN, 'a strange quark changes into an up quark', 'a down quark changes into a strange quark'], cap(QUP) + ' ✓'),
+  text('Show that charge is conserved at the vertex where the proton changes into a neutron.', 1, 'Proton (+1) → neutron (0) + W<sup>+</sup> (+1): the total charge is +1 on both sides ✓'),
+  WPROP(R)]);
+T.IN4 = R => { const key = R.pick(['nucol', 'anucol', 'eescat', 'mudec']), q = feynQ(R, key, pr => {
+    const ch = { Wm: '−1 e', Wp: '+1 e', g: 'zero' }[pr.bos];
+    return [choose(R, 'What is the charge of the exchange particle?', 1, ch, ['−1 e', '+1 e', 'zero', '+2 e'].filter(x => x !== ch).slice(0, 3), `${cap(ch)} ✓`),
+      text('Explain what is meant by an exchange particle.', 1, 'A (virtual) particle passed between the interacting particles that transfers energy, momentum (and sometimes charge) between them, producing the force or the change ✓')]; });
+  q.data.key = key; return q; };
+
+const PRX = [['π<sup>0</sup> → γ + γ', 'electromagnetic'], ['K<sup>+</sup> → μ<sup>+</sup> + ν<sub>μ</sub>', 'weak'], ['n → p + e<sup>−</sup> + ν̄<sub>e</sub>', 'weak'], ['p + p → p + p + π<sup>0</sup>', 'strong'], ['K<sup>−</sup> + p → Λ + π<sup>0</sup>', 'strong'], ['Λ → p + π<sup>−</sup>', 'weak'], ['e<sup>+</sup> + e<sup>−</sup> → γ + γ', 'electromagnetic'], ['μ<sup>−</sup> → e<sup>−</sup> + ν̄<sub>e</sub> + ν<sub>μ</sub>', 'weak'], ['π<sup>−</sup> + p → n + π<sup>0</sup>', 'strong'], ['Σ<sup>0</sup> → Λ + γ', 'electromagnetic']];
+const INTS = ['strong', 'weak', 'electromagnetic'];
+T.IN5 = R => NOFIG(2, {}, 'There are four fundamental interactions.', [
+  text('State the names of the four fundamental interactions.', 1, 'Strong, weak, electromagnetic and gravitational ✓'),
+  choose(R, 'Which particle is exchanged in the electromagnetic interaction?', 1, 'virtual photon', ['W boson', 'pion', 'gluon'], 'The virtual photon ✓'),
+  choose(R, 'Which interaction is responsible for the decay of a free neutron?', 1, 'weak', ['strong', 'electromagnetic', 'gravitational'], 'The weak interaction: a quark changes flavour (down to up) ✓'),
+  text('Two electrons moving towards each other change direction. Explain, using the concept of exchange particles, why their paths change.', 3, 'The electrons interact through the electromagnetic interaction ✓<br>a virtual photon is exchanged between them ✓<br>the virtual photon transfers momentum (and energy) from one electron to the other, so the electrons repel and change direction ✓'),
+  choose(R, 'Which particles are affected by the strong interaction?', 1, 'hadrons', ['leptons', 'all charged particles', 'photons'], 'Hadrons ✓')
+]);
+T.IN6 = R => { const pk = pickN(R, PRX.map((_, i) => i), 4);
+  return NOFIG(2, { pk }, 'This question is about the interactions responsible for some particle processes.', pk.map(i => opt(`State the interaction responsible for ${PRX[i][0]}.`, 1, INTS, INTS.indexOf(PRX[i][1]), `${cap(PRX[i][1])} ✓`)).concat([
+    text('Explain how you can tell that a process must involve the weak interaction.', 1, 'Neutrinos are involved, or a quark changes flavour (for example strangeness is not conserved) ✓'),
+    choose(R, 'Which particle is the exchange particle of the strong nuclear force between nucleons?', 1, 'pion', ['W boson', 'virtual photon', 'muon'], 'The pion ✓')])); };
+
+/* ===== Classification and conservation ===== */
+const qb = c => c + '̄';
+// key: [html, name, charge, baryon number, electron lepton number, muon lepton number, strangeness, class, quarks]
+const PD = {
+  p: ['p', 'proton', 1, 1, 0, 0, 0, 'baryon', 'uud'], pb: ['p̄', 'antiproton', -1, -1, 0, 0, 0, 'antibaryon', qb('u') + qb('u') + qb('d')], n: ['n', 'neutron', 0, 1, 0, 0, 0, 'baryon', 'udd'],
+  pip: ['π<sup>+</sup>', 'positive pion (π⁺)', 1, 0, 0, 0, 0, 'meson', 'u' + qb('d')], pim: ['π<sup>−</sup>', 'negative pion (π⁻)', -1, 0, 0, 0, 0, 'meson', 'd' + qb('u')], pi0: ['π<sup>0</sup>', 'neutral pion (π⁰)', 0, 0, 0, 0, 0, 'meson', 'u' + qb('u') + ' or d' + qb('d')],
+  Kp: ['K<sup>+</sup>', 'positive kaon (K⁺)', 1, 0, 0, 0, 1, 'meson', 'u' + qb('s')], Km: ['K<sup>−</sup>', 'negative kaon (K⁻)', -1, 0, 0, 0, -1, 'meson', 's' + qb('u')], K0: ['K<sup>0</sup>', 'neutral kaon (K⁰)', 0, 0, 0, 0, 1, 'meson', 'd' + qb('s')],
+  L: ['Λ', 'lambda (Λ)', 0, 1, 0, 0, -1, 'baryon', 'uds'], Sp: ['Σ<sup>+</sup>', 'sigma-plus (Σ⁺)', 1, 1, 0, 0, -1, 'baryon', 'uus'], Sm: ['Σ<sup>−</sup>', 'sigma-minus (Σ⁻)', -1, 1, 0, 0, -1, 'baryon', 'dds'],
+  Xi0: ['Ξ<sup>0</sup>', 'xi-zero (Ξ⁰)', 0, 1, 0, 0, -2, 'baryon', 'uss'], Om: ['Ω<sup>−</sup>', 'omega-minus (Ω⁻)', -1, 1, 0, 0, -3, 'baryon', 'sss'],
+  em: ['e<sup>−</sup>', 'electron', -1, 0, 1, 0, 0, 'lepton'], ep: ['e<sup>+</sup>', 'positron', 1, 0, -1, 0, 0, 'lepton'], mum: ['μ<sup>−</sup>', 'muon', -1, 0, 0, 1, 0, 'lepton'], mup: ['μ<sup>+</sup>', 'antimuon', 1, 0, 0, -1, 0, 'lepton'],
+  nue: ['ν<sub>e</sub>', 'electron neutrino', 0, 0, 1, 0, 0, 'lepton'], nueb: ['ν̄<sub>e</sub>', 'electron antineutrino', 0, 0, -1, 0, 0, 'lepton'], numu: ['ν<sub>μ</sub>', 'muon neutrino', 0, 0, 0, 1, 0, 'lepton'], numub: ['ν̄<sub>μ</sub>', 'muon antineutrino', 0, 0, 0, -1, 0, 'lepton']
+};
+const sg = x => x > 0 ? '+' + x : x < 0 ? '−' + (-x) : '0';
+const rx = (l, r) => l.map(k => PD[k][0]).join(' + ') + ' → ' + r.map(k => PD[k][0]).join(' + ');
+const tot = (ks, i) => ks.reduce((s, k) => s + PD[k][i], 0);
+const nm0 = k => PD[k][1].split(' (')[0];
+T.CL1 = R => { const ks = pickN(R, ['p', 'n', 'pip', 'pim', 'Kp', 'K0', 'L', 'Sp', 'em', 'mum', 'nue', 'numu', 'Om', 'Km'], 4), cls = ['baryon', 'meson', 'lepton'];
+  return NOFIG(2, { ks }, 'This question is about the classification of particles.', ks.map(k => opt(`Classify the ${nm0(k)} (${PD[k][0]}).`, 1, cls, cls.indexOf(PD[k][7]), `${cap(PD[k][7])} ✓`)).concat([
+    choose(R, 'Which is the only stable baryon?', 1, 'proton', ['neutron', 'lambda', 'sigma-plus'], 'The proton ✓'),
+    text('State one property that all hadrons have but leptons do not.', 1, 'Hadrons are made of quarks (and feel the strong interaction) ✓')])); };
+
+T.CL2 = R => { const k = R.pick(['p', 'n', 'pip', 'pim', 'Kp', 'Km', 'K0', 'L', 'Sp', 'Sm', 'Xi0', 'Om', 'pb']), d = PD[k], q = d[8];
+  const conj = (() => { const out = []; const cs = [...q]; for (let i = 0; i < cs.length; i++){ if (cs[i + 1] === '̄'){ out.push(cs[i]); i++; } else out.push(qb(cs[i])); } return out.join(''); })();
+  const wrongQ = [q, conj.replace(/u/, 'd'), q.split('').reverse().join('').replace(/̄(.)/g, '$1̄')].filter((x, i, a) => x !== conj && a.indexOf(x) === i);
+  const opts4 = (c, all) => [c].concat(all.filter(x => x !== c)).slice(0, 4);
+  return NOFIG(2, { k }, `A ${nm0(k)} has the quark composition ${q}.`, [
+    choose(R, 'What is the charge of this particle, in units of <i>e</i>?', 1, sg(d[2]), ['+1', '0', '−1', '+2'].filter(x => x !== sg(d[2])).slice(0, 3), `${sg(d[2])}: u = +2/3, d = −1/3, s = −1/3 (antiquarks opposite) ✓`),
+    choose(R, 'What is the baryon number of this particle?', 1, sg(d[3]), ['+1', '0', '−1', '+3'].filter(x => x !== sg(d[3])).slice(0, 3), `${sg(d[3])} ✓`),
+    choose(R, 'What is the strangeness of this particle?', 1, sg(d[6]), ['+1', '0', '−1', '−2', '−3'].filter(x => x !== sg(d[6])).slice(0, 3), `${sg(d[6])}: each s quark has strangeness −1 and each s̄ has +1 ✓`),
+    choose(R, 'How is this particle classified?', 1, d[7], ['baryon', 'antibaryon', 'meson', 'lepton'].filter(x => x !== d[7]), `${cap(d[7])} ✓`),
+    choose(R, 'What is the quark composition of its antiparticle?', 1, conj, wrongQ.length >= 1 ? wrongQ.slice(0, 2) : ['uud'], `${conj}: each quark is replaced by its antiquark ✓`),
+    choose(R, 'Which interaction can change the strangeness of a particle?', 1, 'the weak interaction', ['the strong interaction', 'the electromagnetic interaction', 'none: strangeness is always conserved'], 'The weak interaction ✓')
+  ]); };
+
+const R3 = [[['p', 'p'], ['p', 'p', 'pi0']], [['p', 'p'], ['p', 'n', 'pip']], [['p', 'n'], ['p', 'p', 'pim']], [['pim', 'p'], ['K0', 'L']], [['pim', 'p'], ['Km', 'Sp']], [['pim', 'p'], ['Kp', 'Sm']], [['p', 'p'], ['p', 'p', 'n']], [['n'], ['p', 'em', 'nueb']], [['n'], ['p', 'em', 'nue']], [['mum'], ['em', 'nueb', 'numu']], [['mum'], ['em', 'nue', 'numub']], [['pip'], ['mup', 'numu']], [['pip'], ['mup', 'numub']], [['Kp'], ['pip', 'pi0']], [['p', 'pim'], ['n', 'pi0']], [['em', 'p'], ['n', 'nue']], [['em', 'p'], ['n', 'nueb']], [['p', 'pb'], ['pip', 'pim', 'pi0']], [['L'], ['p', 'pim']], [['Km', 'p'], ['L', 'pi0']]];
+function verdict(l, r){ const c = i => tot(l, i) === tot(r, i), Q = c(2), B = c(3), L = c(4) && c(5), dS = tot(r, 6) - tot(l, 6), lep = l.concat(r).some(k => PD[k][7] === 'lepton');
+  const v = !Q || !B || !L || Math.abs(dS) > 1 ? 'no, it cannot occur' : (dS !== 0 || lep) ? 'yes, by the weak interaction' : 'yes, by the strong interaction';
+  return { Q, B, L, S: dS === 0, v, dS, lep }; }
+const OCC = ['yes, by the strong interaction', 'yes, by the weak interaction', 'no, it cannot occur'];
+T.CL3 = R => { const ri = Math.floor(R() * R3.length), [l, r] = R3[ri], w = verdict(l, r), yn = b => b ? 0 : 1, ssum = v => v.map((x, n) => n === 0 ? (x < 0 ? '−' + (-x) : String(x)) : (x < 0 ? ' − ' + (-x) : ' + ' + x)).join('') + (v.length > 1 ? ' = ' + (s => s < 0 ? '−' + (-s) : String(s))(v.reduce((a, b) => a + b, 0)) : ''), sm = (i, nm) => `${nm}: ${ssum(l.map(k => PD[k][i]))} → ${ssum(r.map(k => PD[k][i]))}`;
+  const why = w.v.startsWith('no') ? `${!w.Q ? 'Charge' : !w.B ? 'Baryon number' : !w.L ? 'Lepton number' : 'Strangeness'} is not conserved${w.Q && w.B && w.L ? ' (it changes by 2, which no interaction allows)' : ''}, so the interaction cannot occur ✓`
+    : w.v.includes('weak') ? `${w.dS !== 0 ? 'Strangeness changes by 1, which only the weak interaction allows' : 'Leptons (neutrinos) are involved, so it must be the weak interaction'} ✓` : 'All quantities including strangeness are conserved and only hadrons are involved, so it can be a strong interaction ✓';
+  return NOFIG(2, { ri }, `A student suggests that the following interaction can occur:<br>${rx(l, r)}`, [
+    opt('Is charge conserved?', 1, ['yes', 'no'], yn(w.Q), `${w.Q ? 'Yes' : 'No'}: ${sm(2, 'charge')} ✓`),
+    opt('Is baryon number conserved?', 1, ['yes', 'no'], yn(w.B), `${w.B ? 'Yes' : 'No'}: ${sm(3, 'baryon number')} ✓`),
+    opt('Is lepton number conserved?', 1, ['yes', 'no'], yn(w.L), `${w.L ? 'Yes' : 'No'}: ${sm(4, 'electron lepton number')}; ${sm(5, 'muon lepton number')} ✓`),
+    opt('Is strangeness conserved?', 1, ['yes', 'no'], yn(w.S), `${w.S ? 'Yes' : 'No'}: ${sm(6, 'strangeness')} ✓`),
+    opt('Can the interaction occur?', 1, OCC, OCC.indexOf(w.v), cap(w.v) + ' ✓'),
+    text('Explain your answer to the previous part.', 1, why)
+  ]); };
+
+const D4 = [['Kp', ['pip', 'pi0']], ['Kp', ['mup', 'numu']], ['K0', ['pip', 'pim']], ['pip', ['mup', 'numu']], ['pim', ['mum', 'numub']], ['mum', ['em', 'nueb', 'numu']], ['Kp', ['pip', 'pip', 'pim']]];
+const REK = { Kp: RE.Kc, K0: RE.K0, pip: RE.pic, pim: RE.pic, pi0: RE.pi0, mup: RE.mu, mum: RE.mu, em: RE.e, ep: RE.e, numu: 0, numub: 0, nueb: 0, nue: 0, p: RE.p, n: RE.n };
+T.CL4 = R => { const di = Math.floor(R() * D4.length), [pk, pr] = D4[di], Er = REK[pk] - pr.reduce((s, k) => s + REK[k], 0), strange = PD[pk][6] !== 0;
+  const used = [pk].concat(pr).filter((k, i, a) => REK[k] > 0 && a.indexOf(k) === i);
+  return NOFIG(6, { di }, `A ${nm0(pk)} decays as follows:<br>${rx([pk], pr)}<br>${used.map(k => `rest energy of ${PD[k][0]} = ${N(REK[k], 6)} MeV`).join('<br>')}${pr.some(k => /nu/.test(k)) ? '<br>Assume that the rest energy of a neutrino is zero.' : ''}`, [
+    calc('Calculate the energy released in the decay, in MeV.', 2, Er, 'MeV', `Energy released = rest energy of ${PD[pk][0]} − total rest energy of the products ✓<br>${eq(`${N(REK[pk], 6)} − ${(L => L.length > 1 ? '(' + L.join(' + ') + ')' : L[0])(pr.filter(k => REK[k] > 0).map(k => N(REK[k], 6)))} = ${A(Er)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate the energy released in joules.', 1, Er * MEV, 'J', `${eq(`${I(Er)} × ${SMEV} = ${AV(Er * MEV, 'J')}`)} ✓`, { noSkill: true }),
+    choose(R, 'Which interaction is responsible for this decay?', 1, 'weak', ['strong', 'electromagnetic', 'gravitational'], 'The weak interaction ✓'),
+    text('Explain how you can tell which interaction is responsible.', 1, strange ? 'Strangeness is not conserved (it changes by 1), which only happens in the weak interaction ✓' : 'Leptons (neutrinos) are produced and a particle changes type, which only happens in the weak interaction ✓'),
+    choose(R, `How is the ${nm0(pk)} classified?`, 1, PD[pk][7], ['baryon', 'meson', 'lepton'].filter(x => x !== PD[pk][7]), `${cap(PD[pk][7])} ✓`)
+  ]); };
+
+T.CL5 = R => { const neg = R.chance(.6), mu = neg ? 'mum' : 'mup', pr = neg ? ['em', 'nueb', 'numu'] : ['ep', 'nue', 'numub'], X = pr[2], Er = RE.mu - RE.e;
+  return NOFIG(6, { neg }, `${neg ? 'A muon' : 'An antimuon'} decays as follows:<br>${PD[mu][0]} → ${PD[pr[0]][0]} + ${PD[pr[1]][0]} + X<br>rest energy of a muon = ${N(RE.mu, 6)} MeV<br>rest energy of an electron = ${N(RE.e, 6)} MeV`, [
+    choose(R, `What is the muon lepton number of the ${neg ? 'muon' : 'antimuon'}?`, 1, neg ? '+1' : '−1', [neg ? '−1' : '+1', '0'], `${neg ? '+1' : '−1'} ✓`),
+    choose(R, 'Identify particle X.', 1, PD[X][1], ['muon neutrino', 'muon antineutrino', 'electron neutrino', 'electron antineutrino'].filter(x => x !== PD[X][1]).slice(0, 3), `${cap(PD[X][1])}: muon lepton number must be conserved ✓`),
+    calc('Calculate the energy released, in MeV, assuming the neutrinos have zero rest energy.', 1, Er, 'MeV', `${eq(`${N(RE.mu, 6)} − ${N(RE.e, 6)} = ${A(Er)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate the energy released in joules.', 1, Er * MEV, 'J', `${eq(`${I(Er)} × ${SMEV} = ${AV(Er * MEV, 'J')}`)} ✓`, { noSkill: true }),
+    choose(R, 'Which interaction is responsible for this decay?', 1, 'weak', ['strong', 'electromagnetic', 'gravitational'], 'The weak interaction ✓'),
+    text('State one property that a muon has in common with an electron.', 1, 'Both are leptons with a charge of −1<i>e</i> (and neither feels the strong interaction) ✓')
+  ]); };
+
+const X6 = [[['p', 'p'], ['p', 'n', 'X'], 'pip'], [['pim', 'p'], ['n', 'X'], 'pi0'], [['Km', 'p'], ['X', 'pi0'], 'L'], [['em', 'p'], ['n', 'X'], 'nue'], [['n'], ['p', 'em', 'X'], 'nueb'], [['pip'], ['mup', 'X'], 'numu'], [['Kp'], ['pi0', 'X'], 'pip'], [['L'], ['p', 'X'], 'pim']];
+T.CL6 = R => { const xi = Math.floor(R() * X6.length), [l, r, X] = X6[xi], d = PD[X], tup = k => [2, 3, 4, 5].map(i => PD[k][i]).join();   // distractors differ in charge, baryon or lepton number
+  const dis = pickN(R, Object.keys(PD).filter(k => tup(k) !== tup(X)), 3).map(k => PD[k][1]);
+  const show = r.map(k => k === 'X' ? 'X' : PD[k][0]).join(' + ');
+  return NOFIG(2, { xi }, `The following interaction occurs:<br>${l.map(k => PD[k][0]).join(' + ')} → ${show}`, [
+    choose(R, 'What is the charge of X, in units of <i>e</i>?', 1, sg(d[2]), ['+1', '0', '−1'].filter(x => x !== sg(d[2])), `${sg(d[2])}: charge is conserved ✓`),
+    choose(R, 'What is the baryon number of X?', 1, sg(d[3]), ['+1', '0', '−1'].filter(x => x !== sg(d[3])), `${sg(d[3])}: baryon number is conserved ✓`),
+    choose(R, 'Identify X.', 1, d[1], dis, `${cap(d[1])} ✓`),
+    choose(R, 'How is X classified?', 1, d[7], ['baryon', 'meson', 'lepton'].filter(x => x !== d[7]), `${cap(d[7])} ✓`),
+    text('State the conservation laws you used to identify X.', 1, 'Conservation of charge, baryon number and lepton number (and strangeness, if the interaction is strong) ✓')
+  ]); };
+
+const D7 = [['L', ['p', 'pim'], 1115.7], ['Sp', ['p', 'pi0'], 1189.4], ['Sp', ['n', 'pip'], 1189.4], ['Xi0', ['L', 'pi0'], 1314.9], ['Om', ['L', 'Km'], 1672.5], ['Sm', ['n', 'pim'], 1197.4]];
+const RE7 = Object.assign({}, REK, { L: 1115.7, Km: RE.Kc });
+T.CL7 = R => { const di = Math.floor(R() * D7.length), [pk, pr, Ep] = D7[di], Er = Ep - pr.reduce((s, k) => s + RE7[k], 0), dS = tot(pr, 6) - PD[pk][6], q = PD[pk][8];
+  return NOFIG(5, { di }, `The ${nm0(pk)} is a strange baryon. It decays as follows:<br>${rx([pk], pr)}<br>rest energy of ${PD[pk][0]} = ${N(Ep, 5)} MeV<br>${pr.map(k => `rest energy of ${PD[k][0]} = ${N(RE7[k], k === 'L' ? 5 : 6)} MeV`).join('<br>')}`, [
+    calc('Calculate the energy released in the decay, in MeV.', 1, Er, 'MeV', `${eq(`${N(Ep, 5)} − (${pr.map(k => N(RE7[k], k === 'L' ? 5 : 6)).join(' + ')}) = ${A(Er)}`)} MeV ✓`, { noSkill: true }),
+    choose(R, `What is the quark composition of the ${nm0(pk)}?`, 1, q, ['uds', 'uus', 'dds', 'uss', 'sss', 'udd'].filter(x => x !== q).slice(0, 3), `${q} ✓`),
+    choose(R, 'By how much does the total strangeness change in the decay?', 1, sg(dS), ['+1', '−1', '0', '+2'].filter(x => x !== sg(dS)).slice(0, 3), `${sg(dS)}: strangeness ${sg(PD[pk][6])} → ${sg(tot(pr, 6))} ✓`),
+    choose(R, 'Which interaction is responsible for this decay?', 1, 'weak', ['strong', 'electromagnetic', 'gravitational'], 'The weak interaction ✓'),
+    text('Explain why this decay must be caused by the weak interaction.', 1, 'Strangeness is not conserved, and only the weak interaction can change strangeness ✓')
+  ]); };
+
+const P8 = [[['pim', 'p'], ['K0', 'L']], [['pip', 'p'], ['Kp', 'Sp']], [['pim', 'p'], ['Kp', 'Sm']]];
+const RE8 = { pim: RE.pic, pip: RE.pic, p: RE.p, K0: RE.K0, Kp: RE.Kc, L: 1115.7, Sp: 1189.4, Sm: 1197.4 };
+T.CL8 = R => { const pi = Math.floor(R() * P8.length), [l, r] = P8[pi], [mes, bar] = r, E = r.reduce((s, k) => s + RE8[k], 0) - l.reduce((s, k) => s + RE8[k], 0), d8 = k => N(RE8[k], RE8[k] > 1100 && RE8[k] < 1200 ? 5 : 6);
+  const opts = ['+1', '0', '−1', '−2'];
+  return NOFIG(5, { pi }, `Strange particles are produced in the strong interaction:<br>${rx(l, r)}<br>${l.concat(r).map(k => `rest energy of ${PD[k][0]} = ${d8(k)} MeV`).join('<br>')}`, [
+    choose(R, `What is the strangeness of the ${PD[mes][0]}?`, 1, sg(PD[mes][6]), opts.filter(x => x !== sg(PD[mes][6])).slice(0, 3), `${sg(PD[mes][6])}: it contains an s̄ antiquark ✓`),
+    choose(R, `What is the strangeness of the ${PD[bar][0]}?`, 1, sg(PD[bar][6]), opts.filter(x => x !== sg(PD[bar][6])).slice(0, 3), `${sg(PD[bar][6])}: it contains one s quark ✓`),
+    text('Explain why strange particles are always produced in pairs in strong interactions.', 1, 'Strangeness is conserved in the strong interaction and is zero before the collision, so particles with strangeness +1 and −1 must be produced together ✓'),
+    choose(R, `What is the quark composition of the ${PD[mes][0]}?`, 1, PD[mes][8], ['u' + qb('s'), 'd' + qb('s'), 's' + qb('u'), 'u' + qb('d')].filter(x => x !== PD[mes][8]).slice(0, 3), `${PD[mes][8]} ✓`),
+    calc('Calculate the minimum kinetic energy, in MeV, that the colliding particles must have for this interaction to occur. Ignore any kinetic energy of the products.', 1, E, 'MeV', `${eq(`(${r.map(d8).join(' + ')}) − (${l.map(d8).join(' + ')}) = ${A(E)}`)} MeV ✓`, { noSkill: true }),
+    choose(R, 'Which particle is a baryon?', 1, nm0(bar), [nm0(mes), nm0(l[0])], `The ${nm0(bar)} ✓`)
+  ]); };
+/* ===== The photoelectric effect ===== */
+const METALS = [['caesium', 2.10], ['potassium', 2.30], ['sodium', 2.28], ['calcium', 2.87], ['magnesium', 3.68], ['zinc', 4.30], ['aluminium', 4.08], ['copper', 4.70], ['platinum', 5.65]];
+const WF = 'The minimum energy needed to remove an electron from the surface of the metal ✓';
+const phE = lnm => HP * C0 / (lnm * 1e-9);
+const photonEV = (lnm, marks) => `${eq(`<i>E</i> = <i>hc</i> / <i>λ</i> = ${SH} × ${SC} / ${N(lnm * 1e-9, 3)} = ${I(phE(lnm))}`)} J ✓${marks > 1 ? '<br>' : ', '}${eq(`${I(phE(lnm))} / ${SE} = ${A(phE(lnm) / QE)}`)} eV ✓`;
+T.PE1 = R => {
+  const v = find(() => ({ mi: Math.floor(R() * METALS.length), ln: R.pick([200, 250, 300, 350, 400, 450]) }), o => phE(o.ln) / QE - METALS[o.mi][1] >= .3);
+  const [mn, wf] = METALS[v.mi], E = phE(v.ln) / QE, K = E - wf, KJ = K * QE, sp = Math.sqrt(2 * KJ / MEL);
+  return NOFIG(3, v, `Monochromatic radiation of wavelength ${V(v.ln, 'nm', 3)} is incident on a clean ${mn} surface. The work function of ${mn} is ${V(wf, 'eV', 3)}.`, [
+    calc('Calculate the energy of one photon in eV.', 2, E, 'eV', photonEV(v.ln, 2), { noSkill: true }),
+    calc('Calculate the maximum kinetic energy of the emitted electrons in eV.', 1, K, 'eV', `${eq(`${I(E)} − ${N(wf, 3)} = ${A(K)}`)} eV ✓`, { noSkill: true }),
+    calc('Calculate the maximum speed of the emitted electrons.', 2, sp, MS1, `${eq(`<i>E</i><sub>k</sub> = ${I(K)} × ${SE} = ${I(KJ)}`)} J ✓<br>${eq(`<i>v</i> = √(2 × ${I(KJ)} / ${SME}) = ${AV(sp, MS1)}`)} ✓`),
+    calc('State the stopping potential.', 1, K, 'V', `The stopping potential in volts equals the maximum kinetic energy in eV: ${A(K)} V ✓`, { noSkill: true }),
+    choose(R, 'The intensity of the radiation is doubled. What happens to the maximum kinetic energy of the electrons?', 1, 'it does not change', ['it doubles', 'it halves', 'it increases by a factor of four'], 'It does not change: each photon still has the same energy ✓'),
+    text('State what is meant by the work function of a metal.', 1, WF)
+  ]);
+};
+
+T.PE2 = R => {
+  const mi = R.pick([0, 1, 2, 3, 4, 5, 6]), [mn, wf] = METALS[mi], b = wf * QE / 1e-19, s1 = HP * 1e14 / 1e-19, f0 = b / s1, F = f => s1 * f - b;
+  const fig = graph({ x: [0, 15, 5], y: [-8, 8, 2], xdiv: 10, ydiv: 5, h: 320, xl: 'f / 10^{14} Hz', yl: 'E_{k(max)} / 10^{−19} J', curves: [{ f: F, from: f0, to: 15 }, { f: F, from: 0, to: f0, dash: '7 5', w: 1.3 }], reads: [[f0, 0], [0, -b], [15, F(15)]] });
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: { mi },
+    stem: `<b>Figure 1</b> shows how the maximum kinetic energy of the electrons emitted from ${an(mn)} ${mn} surface varies with the frequency of the incident radiation. The dashed line is an extrapolation.`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the threshold frequency.', 1, f0 * 1e14, HZ, `${AV(f0 * 1e14, HZ)} ✓`, { abs: .25e14, noSkill: true }),
+      calc('Use your answer to calculate the work function of the metal in eV.', 2, wf, 'eV', `<i>ϕ</i> = <i>hf</i><sub>0</sub> ✓<br>${eq(`<i>ϕ</i> = ${SH} × ${I(f0 * 1e14)} / ${SE} = ${A(wf)}`)} eV ✓`, { tol: .04, noSkill: true }),
+      calc('Determine the gradient of the line.', 2, HP, 'J s', `Uses two points on the line, for example (${I(f0)}, 0) and (15, ${I(F(15))}) ✓<br>${eq(`gradient = ${I(F(15))} × 10<sup>−19</sup> / ((15 − ${I(f0)}) × 10<sup>14</sup>) = ${AV(HP, 'J s')}`)} ✓`, { tol: .04, noSkill: true }),
+      text('State what is represented by the intercept of the extrapolated line on the vertical axis.', 1, 'The negative of the work function, −<i>ϕ</i> ✓'),
+      choose(R, 'How would the line differ for a metal with a greater work function?', 1, 'parallel to this line but further to the right', ['steeper, through the same threshold frequency', 'parallel to this line but further to the left', 'the same line'], 'Parallel (gradient <i>h</i> is the same) but further to the right (higher threshold frequency) ✓')
+    ] };
+};
+
+T.PE3 = R => {
+  const v = find(() => ({ mi: R.pick([0, 1, 2, 3, 4]), ls: pickN(R, [250, 275, 300, 325, 350, 375, 400, 425, 450], 5).sort((a, b) => a - b), miss: Math.floor(R() * 5) }),
+    o => o.ls.every(l => phE(l) / QE - METALS[o.mi][1] >= .15) && C0 / (o.ls[4] * 1e-9) > 4.5e14);
+  const [mn, wf] = METALS[v.mi], fs = v.ls.map(l => C0 / (l * 1e-9)), Vs = v.ls.map(l => r3(phE(l) / QE - wf)), gr = HP / QE, f0 = wf * QE / HP;
+  const ym = axisFor(gr * 14e14 - wf);
+  const fig = graph({ x: [4, 14, 2], y: [0, ym[0], ym[1]], xdiv: 4, ydiv: 5, h: 320, xl: 'f / 10^{14} Hz', yl: 'V_{s} / V', crosses: fs.map(f => [f / 1e14, gr * f - wf]), curves: [{ f: x => gr * x * 1e14 - wf, from: f0 / 1e14, to: 14 }], reads: [[f0 / 1e14, 0], [14, gr * 14e14 - wf]] });
+  const tab = tableH('Table 1', ['<i>λ</i> / nm', '<i>f</i> / 10<sup>14</sup> Hz', '<i>V</i><sub>s</sub> / V'], v.ls.map((l, i) => [String(l), i === v.miss ? '' : N(fs[i] / 1e14, 3), N(Vs[i], 3)]));
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: v,
+    stem: `A student measures the stopping potential <i>V</i><sub>s</sub> for electrons emitted from ${mn} when it is illuminated with light of different wavelengths <i>λ</i>. Table 1 shows the results. <b>Figure 1</b> is a graph of <i>V</i><sub>s</sub> against frequency <i>f</i>.<br>${tab}`,
+    parts: [
+      calc(`Calculate the missing frequency for <i>λ</i> = ${v.ls[v.miss]} nm.`, 1, fs[v.miss], HZ, `${eq(`<i>f</i> = ${SC} / ${N(v.ls[v.miss] * 1e-9, 3)} = ${AV(fs[v.miss], HZ)}`)} ✓`, { noSkill: true }),
+      calc('Determine the gradient of the graph.', 2, gr, 'V s', `Uses a large triangle on the line, for example (${I(f0 / 1e14)}, 0) and (14, ${I(gr * 14e14 - wf)}) ✓<br>${eq(`gradient = ${I(gr * 14e14 - wf)} / ((14 − ${I(f0 / 1e14)}) × 10<sup>14</sup>) = ${AV(gr, 'V s')}`)} ✓`, { tol: .03, noSkill: true }),
+      calc('Use the gradient to calculate the Planck constant.', 1, HP, 'J s', `<i>eV</i><sub>s</sub> = <i>hf</i> − <i>ϕ</i>, so gradient = <i>h</i>/<i>e</i> and ${eq(`<i>h</i> = ${I(gr)} × ${SE} = ${AV(HP, 'J s')}`)} ✓`, { tol: .03, noSkill: true, guide: ['Allow ecf from their gradient in (b).'] }),
+      calc('Use <b>Figure 1</b> to determine the threshold frequency.', 1, f0, HZ, `The line meets the frequency axis at ${AV(f0, HZ)} ✓`, { abs: .2e14, noSkill: true }),
+      calc('Calculate the work function of the metal in eV.', 1, wf, 'eV', `${eq(`<i>ϕ</i> = <i>hf</i><sub>0</sub> / <i>e</i> = ${SH} × ${I(f0)} / ${SE} = ${A(wf)}`)} eV ✓`, { tol: .04, noSkill: true }),
+      text('Describe how the stopping potential is measured.', 1, 'A reverse potential difference across the photocell is increased until the current just falls to zero; that potential difference is the stopping potential ✓')
+    ] };
+};
+
+T.PE4 = R => {
+  const v = find(() => ({ ms: pickN(R, [0, 1, 3, 4, 5, 6, 7, 8], 4).sort((a, b) => METALS[a][1] - METALS[b][1]), ln: R.pick([200, 250, 300, 350, 400, 450, 500]) }),
+    o => { const w = o.ms.map(i => METALS[i][1]), E = phE(o.ln) / QE, k = w.filter(x => x < E).length; return k >= 1 && k <= 3 && w.every(x => Math.abs(x - E) > .1) && w.every((x, i) => i === 0 || x - w[i - 1] > .25); });
+  const ms = v.ms.map(i => METALS[i]), E = phE(v.ln) / QE, k = ms.filter(m => m[1] < E).length, nm = ms.map(m => m[0]);
+  const ops = [`${nm[0]} only`, `${nm[0]} and ${nm[1]} only`, `${nm[0]}, ${nm[1]} and ${nm[2]} only`, 'all four metals'], l0 = HP * C0 / (ms[3][1] * QE);
+  const tab = tableH('Table 1', ['Metal', 'Work function / eV'], ms.map(m => [m[0], N(m[1], 3)]));
+  return NOFIG(3, v, `Table 1 shows the work functions of four metals. Each metal is illuminated with radiation of wavelength ${V(v.ln, 'nm', 3)}.<br>${tab}`, [
+    calc('Calculate the energy of one photon in eV.', 2, E, 'eV', photonEV(v.ln, 2), { noSkill: true }),
+    opt('Which metals emit electrons?', 1, ops, k - 1, `${cap(ops[k - 1])}: only metals with a work function less than ${A(E)} eV ✓`),
+    calc(`Calculate the maximum kinetic energy, in eV, of the electrons emitted from ${nm[0]}.`, 1, E - ms[0][1], 'eV', `${eq(`${I(E)} − ${N(ms[0][1], 3)} = ${A(E - ms[0][1])}`)} eV ✓`, { noSkill: true }),
+    calc(`Calculate the threshold wavelength for ${nm[3]}.`, 2, l0, 'm', `<i>λ</i><sub>0</sub> = <i>hc</i> / <i>ϕ</i> ✓<br>${eq(`<i>λ</i><sub>0</sub> = ${SH} × ${SC} / (${N(ms[3][1], 3)} × ${SE}) = ${AV(l0, 'm')}`)} ✓`),
+    text(`Explain why ${nm[3]} does not emit electrons, however intense the radiation is.`, 1, `Each electron absorbs the energy of one photon only, and one photon has less energy than the work function of ${nm[3]} ✓`)
+  ]);
+};
+
+T.PE5 = R => {
+  const ln = R.pick([254, 300, 365, 405]), P = R.pick([0.50, 1.0, 2.0]), k = R.pick([100, 1000, 5000]), E = phE(ln), n = P * 1e-3 / E, Ic = n * QE / k;
+  return NOFIG(3, { ln, P, k }, `Ultraviolet radiation of wavelength ${V(ln, 'nm', 3)} and power ${V(P, 'mW')} is incident on a metal surface. One electron is emitted for every ${k} photons that reach the surface.`, [
+    text('The wave theory of light cannot explain why there is a threshold frequency. Explain how the photon model does explain it.', 2, 'Light energy arrives in photons of energy <i>hf</i>, and each electron absorbs one photon ✓<br>an electron is emitted only if <i>hf</i> is at least the work function, so below the threshold frequency no electrons are emitted whatever the intensity ✓'),
+    choose(R, 'The intensity of the radiation increases. What happens to the number of electrons emitted per second?', 1, 'it increases', ['it decreases', 'it stays the same', 'it becomes zero'], 'It increases: more photons arrive per second ✓'),
+    choose(R, 'The intensity of the radiation increases. What happens to the maximum kinetic energy of the electrons?', 1, 'it stays the same', ['it increases', 'it decreases', 'it doubles'], 'It stays the same: the photon energy is unchanged ✓'),
+    calc('Calculate the number of photons reaching the surface per second.', 2, n, 's<sup>−1</sup>', `${eq(`<i>E</i> = ${SH} × ${SC} / ${N(ln * 1e-9, 3)} = ${I(E)}`)} J ✓<br>${eq(`number = ${N(P)} × 10<sup>−3</sup> / ${I(E)} = ${A(n)}`)} s<sup>−1</sup> ✓`, { noSkill: true }),
+    calc('Calculate the maximum photoelectric current.', 1, Ic, 'A', `${eq(`<i>I</i> = ${I(n)} / ${k} × ${SE} = ${AV(Ic, 'A')}`)} ✓`)
+  ]);
+};
+
+T.PE6 = R => {
+  const v = find(() => ({ mi: R.pick([0, 1, 2, 3]), l: pickN(R, [300, 350, 400, 450], 2).sort((a, b) => b - a) }), o => phE(o.l[0]) / QE - METALS[o.mi][1] >= .2);
+  const [mn, wf] = METALS[v.mi], [l1, l2] = v.l, f1 = C0 / (l1 * 1e-9), f2 = C0 / (l2 * 1e-9), V1 = r3(phE(l1) / QE - wf), V2 = r3(phE(l2) / QE - wf), h = QE * (V2 - V1) / (f2 - f1), wc = (h * f1 / QE) - V1;
+  const tab = tableH('Table 1', ['Wavelength / nm', 'Stopping potential / V'], [[l1, N(V1, 3)], [l2, N(V2, 3)]]);
+  return NOFIG(3, v, `A student measures the stopping potential for electrons emitted from ${mn} using light of two different wavelengths. Table 1 shows the results.<br>${tab}`, [
+    calc(`Calculate the frequency of the light of wavelength ${l1} nm.`, 1, f1, HZ, `${eq(`<i>f</i> = ${SC} / ${N(l1 * 1e-9, 3)} = ${AV(f1, HZ)}`)} ✓`, { noSkill: true }),
+    calc(`Calculate the frequency of the light of wavelength ${l2} nm.`, 1, f2, HZ, `${eq(`<i>f</i> = ${SC} / ${N(l2 * 1e-9, 3)} = ${AV(f2, HZ)}`)} ✓`, { noSkill: true }),
+    calc('Use the results to calculate a value for the Planck constant.', 2, h, 'J s', `<i>eV</i><sub>s</sub> = <i>hf</i> − <i>ϕ</i> for both, so <i>h</i> = <i>e</i>(<i>V</i><sub>2</sub> − <i>V</i><sub>1</sub>) / (<i>f</i><sub>2</sub> − <i>f</i><sub>1</sub>) ✓<br>${eq(`<i>h</i> = ${SE} × (${N(V2, 3)} − ${N(V1, 3)}) / (${I(f2)} − ${I(f1)}) = ${AV(h, 'J s')}`)} ✓`, { noSkill: true }),
+    calc('Use your value to calculate the work function of the metal in eV.', 1, wc, 'eV', `${eq(`<i>ϕ</i> = <i>hf</i><sub>1</sub>/<i>e</i> − <i>V</i><sub>1</sub> = ${I(h)} × ${I(f1)} / ${SE} − ${N(V1, 3)} = ${A(wc)}`)} eV ✓`, { noSkill: true }),
+    text('Explain why the stopping potential gives the maximum kinetic energy of the emitted electrons.', 1, 'At the stopping potential even the fastest electrons are just stopped, so <i>eV</i><sub>s</sub> equals their kinetic energy ✓')
+  ]);
+};
+
+T.PE7 = R => {
+  const ln = R.pick([200, 220, 240, 254]), l2 = R.pick([450, 500, 550, 600]), E = phE(ln) / QE, K = E - 4.30;
+  return NOFIG(3, { ln, l2 }, `A clean zinc plate is placed on top of a gold-leaf electroscope. The work function of zinc is 4.30 eV.`, [
+    choose(R, `The plate is negatively charged and ultraviolet radiation of wavelength ${V(ln, 'nm', 3)} is shone on it. What happens to the leaf?`, 1, 'it falls', ['it rises', 'it does not move', 'it falls and then rises again'], 'It falls ✓'),
+    text('Explain your answer to the previous part.', 2, 'Each ultraviolet photon has more energy than the work function, so electrons are emitted from the zinc ✓<br>the plate and leaf lose negative charge, so the repulsion between the leaf and the stem decreases and the leaf falls ✓'),
+    choose(R, 'The plate is positively charged and the same ultraviolet radiation is shone on it. What happens to the leaf?', 1, 'it does not move', ['it falls', 'it rises', 'it falls and then rises again'], 'It does not move: any emitted electrons are attracted back to the positive plate ✓'),
+    calc('Calculate the energy of one ultraviolet photon in eV.', 2, E, 'eV', photonEV(ln, 2), { noSkill: true }),
+    calc('Calculate the maximum kinetic energy of the emitted electrons in eV.', 1, K, 'eV', `${eq(`${I(E)} − 4.30 = ${A(K)}`)} eV ✓`, { noSkill: true }),
+    choose(R, `The negatively charged plate is illuminated with very bright light of wavelength ${l2} nm instead. What happens to the leaf?`, 1, 'it does not move', ['it falls', 'it rises', 'it falls slowly'], 'It does not move: each photon has less energy than the work function ✓')
+  ]);
+};
+
+/* ===== Energy levels and spectra ===== */
+const ATOMS_S = [['mercury', ['-10.4', '-5.5', '-4.9', '-3.7', '-1.6']], ['hydrogen', ['-13.6', '-3.40', '-1.51', '-0.850', '-0.544']], ['sodium', ['-5.14', '-3.03', '-1.95', '-1.52', '-0.860']]];
+const ATOMS = ATOMS_S.map(([a, L]) => [a, L.map(Number)]), LVS = new Map();
+ATOMS_S.forEach(([a, L]) => L.forEach(s => LVS.set(Number(s.slice(1)), s.slice(1))));
+const fE = x => (x < 0 ? '−' : '') + (LVS.get(Math.abs(x)) || String(Math.abs(x)));       // a level energy exactly as printed
+const fD = (ai, x) => fx(x, ai === 0 ? 1 : 2);       // an energy difference: mercury levels are given to 0.1 eV, the others to 0.01 eV or better
+const lvTable = (Es, miss) => tableH('Table 1', ['Level', 'Energy / eV'], Es.map((e, i) => ['<i>n</i> = ' + (i + 1), i === miss ? '?' : fE(e)]));
+const lev = Es => Es.map((e, i) => `<i>n</i> = ${i + 1}: ${fE(e)} eV`).join('<br>');
+function levelDiagram(Es, arrows){
+  const s = new Scene('An energy-level diagram with five levels and the ionisation level, with downward transitions labelled'), x0 = 150, x1 = 470, Y = i => 330 - i * 55;
+  s.line(x0, 52, x1, 52, { w: 1.2, dash: '6 4' }); s.label(x1 + 8, 57, '0 eV', { anchor: 'start', size: 13 }); s.label(x0 - 8, 57, 'ionisation', { anchor: 'end', size: 13 });
+  Es.forEach((e, i) => { s.line(x0, Y(i), x1, Y(i), { w: 1.6 }); s.label(x1 + 8, Y(i) + 5, fE(e) + ' eV', { anchor: 'start', size: 13 }); s.label(x0 - 8, Y(i) + 5, '*n* = ' + (i + 1), { anchor: 'end', size: 13 }); });
+  arrows.forEach(([a, b, L], j) => { const x = 210 + j * 85; s.arrow(x, Y(a) + 2, x, Y(b) - 2, { s: 9, w: 1.5, tag: 't' + L }); s.label(x - 10, (Y(a) + Y(a - 1)) / 2 + 5, L, { bold: true, anchor: 'end', size: 14 }); });
+  return s;
+}
+T.EL1 = R => {
+  const ai = Math.floor(R() * ATOMS.length), [an_, Es] = ATOMS[ai];
+  const tr = find(() => { const all = []; for (let a = 1; a < 5; a++) for (let b = 0; b < a; b++) all.push([a, b]); return pickN(R, all, 3); }, t => { const d = t.map(([a, b]) => Es[a] - Es[b]); return new Set(d.map(x => x.toFixed(3))).size === 3; });
+  const arrows = tr.map((t, j) => [t[0], t[1], 'ABC'[j]]), dE = tr.map(([a, b]) => Es[a] - Es[b]), big = dE.indexOf(Math.max(...dE)), EB = dE[1] * QE, lamB = HP * C0 / EB, Ion = -Es[0] * QE;
+  return { sf: 3, scenes: [levelDiagram(Es, arrows)], data: { ai, tr },
+    stem: `<b>Figure 1</b> shows some of the energy levels of ${an_ === 'hydrogen' ? 'a hydrogen atom' : 'an atom of ' + an_}. Three transitions are labelled A, B and C. The diagram is not to scale.`,
+    parts: [
+      opt('Which transition emits the photon with the highest frequency?', 1, ['A', 'B', 'C'], big, `${'ABC'[big]}: it has the largest energy difference ✓`),
+      calc('Calculate the energy of the photon emitted in transition B, in joules.', 2, EB, 'J', `${eq(`Δ<i>E</i> = ${fE(Es[tr[1][0]])} − (${fE(Es[tr[1][1]])}) = ${fD(ai, dE[1])}`)} eV ✓<br>${eq(`${fD(ai, dE[1])} × ${SE} = ${AV(EB, 'J')}`)} ✓`),
+      calc('Calculate the wavelength of this photon.', 2, lamB, 'm', `<i>λ</i> = <i>hc</i> / Δ<i>E</i> ✓<br>${eq(`<i>λ</i> = ${SH} × ${SC} / ${I(EB)} = ${AV(lamB, 'm')}`)} ✓`),
+      calc('Calculate the ionisation energy of an atom in the ground state, in joules.', 1, Ion, 'J', `${eq(`${fE(-Es[0])} × ${SE} = ${AV(Ion, 'J')}`)} ✓`),
+      calc('An atom is excited to the level <i>n</i> = 4. How many different photon energies can it emit as it returns to the ground state?', 1, 6, '', '6: transitions 4→3, 4→2, 4→1, 3→2, 3→1 and 2→1 ✓', INT),
+      text('Explain why the energy levels are given negative values.', 1, 'Zero energy is defined as the energy of an electron that has just been freed from the atom (ionisation); a bound electron has less energy than this ✓')
+    ] };
+};
+
+T.EL2 = R => {
+  const ai = Math.floor(R() * ATOMS.length), [an_, Es] = ATOMS[ai], g = Es.map(e => e - Es[0]);
+  const v = find(() => { const k = 1 + Math.floor(R() * 3); return { k, K: Number(((g[k] + g[k + 1]) / 2).toPrecision(2)) }; }, o => o.K > g[o.k] + .02 && o.K < g[o.k + 1] - .02);
+  const { k, K } = v, rem = K - g[1], sp = Math.sqrt(2 * K * QE / MEL), nPh = (k + 1) * k / 2;
+  return NOFIG(2, { ai, k, K }, `An electron with a kinetic energy of ${V(K, 'eV')} collides with ${an_ === 'hydrogen' ? 'a hydrogen atom' : 'an atom of ' + an_} in its ground state. The energy levels of the atom are:<br>${lev(Es)}`, [
+    opt('What is the highest level to which the atom can be excited?', 1, ['<i>n</i> = 2', '<i>n</i> = 3', '<i>n</i> = 4', '<i>n</i> = 5'].map(plain), k - 1, `<i>n</i> = ${k + 1}: excitation to <i>n</i> = ${k + 2} needs ${fD(ai, g[k + 1])} eV, which is more than ${N(K)} eV ✓`),
+    calc('The atom is excited to <i>n</i> = 2. Calculate the kinetic energy of the electron after the collision, in eV.', 1, rem, 'eV', `${eq(`${N(K)} − (${fE(Es[1])} − (${fE(Es[0])})) = ${A(rem)}`)} eV ✓`, { noSkill: true }),
+    calc('Calculate the speed of the electron before the collision.', 2, sp, MS1, `${eq(`<i>E</i><sub>k</sub> = ${N(K)} × ${SE} = ${I(K * QE)}`)} J ✓<br>${eq(`<i>v</i> = √(2 × ${I(K * QE)} / ${SME}) = ${AV(sp, MS1)}`)} ✓`),
+    calc('The atom is excited to the highest possible level. How many different photon energies could be emitted as it returns to the ground state?', 1, nPh, '', `${nPh} ✓`, INT),
+    text('State the difference between excitation and ionisation.', 1, 'In excitation an electron moves to a higher energy level but stays in the atom; in ionisation the electron is removed from the atom ✓')
+  ]);
+};
+
+T.EL3 = R => {
+  const Va = R.pick([100, 110, 130, 150]), dE = R.pick([4.89, 6.70]), sp = Math.sqrt(2 * QE * Va / MEL), lam = HP * C0 / (dE * QE);
+  return NOFIG(3, { Va, dE }, `In a fluorescent tube, electrons are accelerated from rest by a potential difference of ${V(Va, 'V', 3)} and collide with mercury atoms. A mercury atom emits an ultraviolet photon when it de-excites through an energy change of ${V(dE, 'eV', 3)}. The inside of the tube is coated with a phosphor.`, [
+    calc('Calculate the maximum speed of an electron in the tube.', 2, sp, MS1, `½<i>mv</i><sup>2</sup> = <i>eV</i> ✓<br>${eq(`<i>v</i> = √(2 × ${SE} × ${Va} / ${SME}) = ${AV(sp, MS1)}`)} ✓`),
+    text('Explain why the average speed of the electrons is much less than this maximum speed.', 1, 'The electrons lose kinetic energy in collisions with mercury atoms before they have been accelerated through the whole potential difference ✓'),
+    text('Explain how the electrons cause the mercury atoms to emit ultraviolet photons.', 2, 'A moving electron collides with a mercury atom and transfers energy to an orbital electron, which moves to a higher energy level (excitation) ✓<br>the orbital electron returns to a lower level, emitting a photon with energy equal to the difference between the levels ✓'),
+    calc('Calculate the wavelength of the ultraviolet photon.', 2, lam, 'm', `${eq(`Δ<i>E</i> = ${N(dE, 3)} × ${SE} = ${I(dE * QE)}`)} J ✓<br>${eq(`<i>λ</i> = ${SH} × ${SC} / ${I(dE * QE)} = ${AV(lam, 'm')}`)} ✓`),
+    text('Explain the purpose of the phosphor coating.', 2, 'The phosphor atoms absorb the ultraviolet photons and are excited to high energy levels ✓<br>they de-excite in several smaller steps, emitting photons of visible light ✓')
+  ]);
+};
+
+T.EL4 = R => {
+  const ni = 2 + Math.floor(R() * 5), nf = 1 + Math.floor(R() * (ni - 1)), Ei = -13.6 / (ni * ni), Ef = -13.6 / (nf * nf), dE = Ei - Ef, lam = HP * C0 / (dE * QE), rg = lam < 400e-9 ? 'ultraviolet' : lam <= 700e-9 ? 'visible light' : 'infrared';
+  return NOFIG(3, { ni, nf }, `The energy levels of a hydrogen atom are given by <i>E</i><sub><i>n</i></sub> = −13.6 / <i>n</i><sup>2</sup> eV, where <i>n</i> is the number of the level. An electron in a hydrogen atom moves from level <i>n</i> = ${ni} to level <i>n</i> = ${nf}.`, [
+    calc(`Calculate the energy of level <i>n</i> = ${ni}, in eV.`, 1, Ei, 'eV', `${eq(`−13.6 / ${ni}<sup>2</sup> = ${A(Ei)}`)} eV ✓`, Object.assign({ noSkill: true }, NEG)),
+    calc('Calculate the energy of the photon emitted, in eV.', 1, dE, 'eV', `${eq(`${I(Ei)} − (${I(Ef)}) = ${A(dE)}`)} eV ✓`, { noSkill: true }),
+    calc('Calculate the wavelength of the photon.', 2, lam, 'm', `${eq(`Δ<i>E</i> = ${I(dE)} × ${SE} = ${I(dE * QE)}`)} J ✓<br>${eq(`<i>λ</i> = ${SH} × ${SC} / ${I(dE * QE)} = ${AV(lam, 'm')}`)} ✓`),
+    choose(R, 'In which region of the electromagnetic spectrum is this photon?', 1, rg, ['ultraviolet', 'visible light', 'infrared', 'X-rays'].filter(x => x !== rg), cap(rg) + ' ✓'),
+    calc(`Calculate the energy needed to ionise a hydrogen atom with its electron in level <i>n</i> = ${ni}, in joules.`, 1, -Ei * QE, 'J', `${eq(`${I(-Ei)} × ${SE} = ${AV(-Ei * QE, 'J')}`)} ✓`, { noSkill: true })
+  ]);
+};
+
+T.EL5 = R => {
+  const ai = Math.floor(R() * ATOMS.length), [an_, Es] = ATOMS[ai], miss = R.pick([1, 2]), j = miss + 1 + Math.floor(R() * (4 - miss)), lP = r3(HP * C0 / ((Es[j] - Es[miss]) * QE) * 1e9);
+  const EP = HP * C0 / (lP * 1e-9) / QE, Em = Es[j] - EP, lam2 = HP * C0 / ((Es[j] - Es[0]) * QE);
+  return NOFIG(3, { ai, miss, j }, `Table 1 shows the energy levels of ${an_ === 'hydrogen' ? 'a hydrogen atom' : 'an atom of ' + an_}. The energy of level <i>n</i> = ${miss + 1} is missing. A line P in the emission spectrum of the atom has a wavelength of ${V(lP, 'nm', 3)} and is produced by the transition from level <i>n</i> = ${j + 1} to level <i>n</i> = ${miss + 1}.<br>${lvTable(Es, miss)}`, [
+    calc('Calculate the energy of a photon in line P, in eV.', 2, EP, 'eV', photonEV(lP, 2), { noSkill: true }),
+    calc(`Calculate the energy of level <i>n</i> = ${miss + 1}, in eV.`, 1, Em, 'eV', `${eq(`${fE(Es[j])} − ${I(EP)} = ${A(Em)}`)} eV ✓`, Object.assign({ noSkill: true }, NEG)),
+    calc(`Calculate the wavelength of the photon emitted in the transition from <i>n</i> = ${j + 1} to <i>n</i> = 1.`, 2, lam2, 'm', `${eq(`Δ<i>E</i> = (${fE(Es[j])} − (${fE(Es[0])})) × ${SE} = ${I((Es[j] - Es[0]) * QE)}`)} J ✓<br>${eq(`<i>λ</i> = ${SH} × ${SC} / ${I((Es[j] - Es[0]) * QE)} = ${AV(lam2, 'm')}`)} ✓`),
+    choose(R, 'White light passes through a cool sample of the gas. What does the spectrum of the light that has passed through look like?', 1, 'a continuous spectrum crossed by dark lines', ['bright lines on a dark background', 'a continuous spectrum with no lines', 'a single bright line'], 'A continuous spectrum crossed by dark lines at the same wavelengths as the emission lines ✓'),
+    text('Explain why a line spectrum is evidence that atoms have discrete energy levels.', 1, 'Only certain photon wavelengths (energies) are emitted, so electrons can only move between levels with fixed energy differences ✓')
+  ]);
+};
+
+T.EL6 = R => {
+  const ai = Math.floor(R() * ATOMS.length), [an_, Es] = ATOMS[ai], g = Es.map(e => e - Es[0]), k = 1 + Math.floor(R() * 4), lam = HP * C0 / (g[1] * QE), fI = -Es[0] * QE / HP;
+  const fmt = x => fD(ai, x) + ' eV', ok = fmt(g[k]), wrong = [...new Set([g[1] / 2, (g[1] + g[2]) / 2, (g[2] + g[3]) / 2, (g[3] + g[4]) / 2, g[1] - .4].map(fmt))].filter(w => w !== ok && !g.some(x => fmt(x) === w)).slice(0, 3);      // all below the ionisation energy and matching no transition from the ground state
+  return NOFIG(3, { ai, k }, `White light passes through a gas of ${an_} atoms, all in their ground state. The energy levels of the atom are:<br>${lev(Es)}`, [
+    choose(R, 'Which photon energy can be absorbed by a ground-state atom?', 1, ok, wrong, `${ok}: equal to the energy difference between the ground state and <i>n</i> = ${k + 1} ✓`),
+    calc('Calculate the longest wavelength of radiation absorbed by the ground-state atoms.', 2, lam, 'm', `Longest wavelength = smallest energy difference: ${eq(`(${fE(Es[1])} − (${fE(Es[0])})) × ${SE} = ${I(g[1] * QE)}`)} J ✓<br>${eq(`<i>λ</i> = ${SH} × ${SC} / ${I(g[1] * QE)} = ${AV(lam, 'm')}`)} ✓`),
+    text('Explain why dark lines are seen in the spectrum of the light that has passed through the gas.', 2, 'Photons with energies equal to the differences between levels are absorbed, exciting the atoms ✓<br>the atoms then de-excite and re-emit photons in all directions, so less light of those wavelengths continues in the original direction ✓'),
+    calc('Calculate the minimum frequency of a photon that can ionise a ground-state atom.', 2, fI, HZ, `${eq(`<i>E</i> = ${fE(-Es[0])} × ${SE} = ${I(-Es[0] * QE)}`)} J ✓<br>${eq(`<i>f</i> = <i>E</i> / <i>h</i> = ${I(-Es[0] * QE)} / ${SH} = ${AV(fI, HZ)}`)} ✓`)
+  ]);
+};
+
+/* ===== Wave–particle duality ===== */
+T.WP1 = R => {
+  const Va = R.pick([50, 100, 150, 200, 500, 1000, 2000, 5000]), KE = QE * Va, sp = Math.sqrt(2 * KE / MEL), p = MEL * sp, lam = HP / p;
+  return NOFIG(3, { Va }, `An electron is accelerated from rest through a potential difference of ${V(Va, 'V', 3)}.`, [
+    calc('Calculate the kinetic energy of the electron.', 1, KE, 'J', `${eq(`<i>E</i><sub>k</sub> = <i>eV</i> = ${SE} × ${N(Va, 3)} = ${AV(KE, 'J')}`)} ✓`),
+    calc('Calculate the speed of the electron.', 2, sp, MS1, `½<i>mv</i><sup>2</sup> = <i>eV</i> ✓<br>${eq(`<i>v</i> = √(2 × ${I(KE)} / ${SME}) = ${AV(sp, MS1)}`)} ✓`),
+    calc('Calculate the momentum of the electron.', 1, p, 'kg m s<sup>−1</sup>', `${eq(`<i>p</i> = <i>mv</i> = ${SME} × ${I(sp)} = ${AV(p, 'kg m s<sup>−1</sup>')}`)} ✓`),
+    calc('Calculate the de Broglie wavelength of the electron.', 2, lam, 'm', `<i>λ</i> = <i>h</i> / <i>mv</i> ✓<br>${eq(`<i>λ</i> = ${SH} / ${I(p)} = ${AV(lam, 'm')}`)} ✓`),
+    choose(R, 'The accelerating potential difference is increased by a factor of four. What happens to the de Broglie wavelength?', 1, 'it halves', ['it doubles', 'it falls to one quarter', 'it stays the same'], 'It halves: <i>v</i> ∝ √<i>V</i> and <i>λ</i> ∝ 1/<i>v</i> ✓')
+  ]);
+};
+
+function tube(){
+  const s = new Scene('An electron diffraction tube: an electron gun fires electrons through a thin graphite target on to a screen, where rings are seen');
+  s.rect(40, 130, 60, 40, { fill: '#e6e6e6' }); s.label(70, 200, 'electron gun', { size: 13 });
+  s.line(125, 120, 125, 145, { w: 2 }); s.line(125, 155, 125, 180, { w: 2 }); s.label(125, 106, 'anode', { size: 13 });
+  s.arrow(102, 150, 230, 150, { s: 8, w: 1.3 }); s.rect(240, 128, 6, 44, { fill: '#888' }); s.label(243, 106, 'graphite', { size: 13 });
+  s.arc(250, 150, 160, -28, 28, { w: 2 }); s.label(410, 236, 'screen', { size: 13 });
+  [[248, 150, 380, 115], [248, 150, 380, 185], [248, 150, 385, 150]].forEach(([a, b, c, d]) => s.line(a, b, c, d, { w: .9, dash: '4 3' }));
+  const cx = 560, cy = 150; s.circle(cx, cy, 70, { w: 1.2 }); s.circle(cx, cy, 24, { w: 2.2 }); s.circle(cx, cy, 44, { w: 2.2 }); dot(s, cx, cy, 4); s.label(cx, 246, 'pattern on the screen', { size: 13 });
+  return s;
+}
+T.WP2 = R => {
+  const Va = R.pick([2000, 3000, 4000, 5000]), sp = Math.sqrt(2 * QE * Va / MEL), p = MEL * sp, lam = HP / p;
+  return { sf: 2, scenes: [tube()], data: { Va },
+    stem: `<b>Figure 1</b> shows an electron diffraction tube. Electrons are accelerated through a potential difference of ${V(Va, 'V')} and pass through a thin layer of graphite. Rings are seen on the screen.`,
+    parts: [
+      text('Explain what the rings show about the nature of electrons.', 1, 'Electrons are diffracted, which shows that they have wave properties ✓'),
+      choose(R, 'The accelerating potential difference is increased. What happens to the diameters of the rings?', 1, 'they decrease', ['they increase', 'they stay the same', 'the rings disappear'], 'They decrease: faster electrons have a shorter wavelength, so they are diffracted less ✓'),
+      calc('Calculate the de Broglie wavelength of the electrons.', 3, lam, 'm', `${eq(`<i>v</i> = √(2 × ${SE} × ${Va} / ${SME}) = ${I(sp)}`)} m s<sup>−1</sup> ✓<br>${eq(`<i>p</i> = ${SME} × ${I(sp)} = ${I(p)}`)} kg m s<sup>−1</sup> ✓<br>${eq(`<i>λ</i> = ${SH} / ${I(p)} = ${AV(lam, 'm')}`)} ✓`),
+      choose(R, 'Why is a thin layer of graphite used?', 1, 'the spacing of its atoms is similar to the de Broglie wavelength of the electrons', ['it absorbs the electrons that are not diffracted', 'it is a good conductor, so it stops the electrons building up charge', 'it emits light when electrons hit it'], 'The spacing between its atoms is similar to the wavelength, so diffraction is significant ✓'),
+      text('Suggest why a beam of electrons that is not accelerated would not give a useful pattern with graphite.', 1, 'The electrons would have a much longer de Broglie wavelength, much larger than the atomic spacing, so no clear rings would form ✓')
+    ] };
+};
+
+T.WP3 = R => {
+  const ln = R.pick([0.10, 0.15, 0.20, 0.50, 1.0]), lam = ln * 1e-9, ve = HP / (MEL * lam), vp = HP / (MPR * lam), Ke = .5 * MEL * ve * ve, ratio = MPR / MEL;
+  return NOFIG(2, { ln }, `An electron and a proton each have a de Broglie wavelength of ${V(ln, 'nm')}.<br>mass of a proton = ${SMP} kg`, [
+    calc('Calculate the speed of the electron.', 1, ve, MS1, `${eq(`<i>v</i> = <i>h</i> / <i>mλ</i> = ${SH} / (${SME} × ${N(lam)}) = ${AV(ve, MS1)}`)} ✓`),
+    calc('Calculate the speed of the proton.', 1, vp, MS1, `${eq(`<i>v</i> = ${SH} / (${SMP} × ${N(lam)}) = ${AV(vp, MS1)}`)} ✓`),
+    calc('Calculate the kinetic energy of the electron in eV.', 2, Ke / QE, 'eV', `${eq(`<i>E</i><sub>k</sub> = ½ × ${SME} × (${I(ve)})<sup>2</sup> = ${I(Ke)}`)} J ✓<br>${eq(`${I(Ke)} / ${SE} = ${A(Ke / QE)}`)} eV ✓`, { noSkill: true }),
+    calc('Calculate the ratio kinetic energy of the electron / kinetic energy of the proton.', 1, ratio, '', `They have the same momentum, so <i>E</i><sub>k</sub> = <i>p</i><sup>2</sup>/2<i>m</i> gives ${eq(`ratio = ${SMP} / ${SME} = ${A(ratio)}`)} ✓`, { noSkill: true }),
+    choose(R, 'How do the momenta of the electron and the proton compare?', 1, 'they are equal', ['the electron has more momentum', 'the proton has more momentum'], 'They are equal: <i>p</i> = <i>h</i>/<i>λ</i> ✓')
+  ]);
+};
+
+T.WP4 = R => {
+  const pr = R.chance(.5), m = pr ? MPR : MEL, ex = pr ? 4 : 7, k = HP / m, sl = k * Math.pow(10, -ex) / 1e-11, vv = pr ? R.pick([2.0, 2.5, 4.0]) * 1e4 : R.pick([2.0, 2.5, 4.0]) * 1e7, xr = 1 / vv / Math.pow(10, -ex), lamR = sl * xr;
+  const [ym, yM] = axisFor(sl);
+  const fig = graph({ x: [0, 1.0, 0.2], y: [0, ym, yM], xdiv: 5, ydiv: 10, h: 320, xl: `1/v / 10^{−${ex}} s m^{−1}`, yl: 'λ / 10^{−11} m', crosses: [0.2, 0.4, 0.6, 0.8, 1.0].map(x => [x, sl * x]), curves: [{ f: x => sl * x, from: 0, to: 1.0 }], reads: [[0, 0], [1.0, sl], [xr, lamR]] });
+  const pn = pr ? 'proton' : 'electron', ms = pr ? SMP : SME;
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: { pr, vv },
+    stem: `A student uses data for ${pn}s moving at different speeds <i>v</i>. <b>Figure 1</b> shows how the de Broglie wavelength <i>λ</i> varies with 1/<i>v</i>.<br>mass of ${an(pn)} ${pn} = ${ms} kg`,
+    parts: [
+      text('Explain how <b>Figure 1</b> shows that <i>λ</i> is inversely proportional to <i>v</i>.', 1, 'The graph is a straight line through the origin ✓'),
+      calc('Determine the gradient of the graph.', 2, k, 'm<sup>2</sup> s<sup>−1</sup>', `Uses a large triangle, for example (0, 0) and (1.0, ${A(sl)}) ✓<br>${eq(`gradient = ${A(sl)} × 10<sup>−11</sup> / 1.0 × 10<sup>−${ex}</sup> = ${A(k)}`)} m<sup>2</sup> s<sup>−1</sup> ✓`, { tol: .03, noSkill: true }),
+      calc('Use your gradient to calculate the Planck constant.', 1, HP, 'J s', `gradient = <i>h</i>/<i>m</i>, so ${eq(`<i>h</i> = ${A(k)} × ${ms} = ${AV(HP, 'J s')}`)} ✓`, { tol: .03, noSkill: true, guide: ['Allow ecf from their gradient in (b).'] }),
+      calc(`Use <b>Figure 1</b> to determine the de Broglie wavelength of ${an(pn)} ${pn} moving at ${V(vv, MS1)}.`, 1, lamR * 1e-11, 'm', `1/<i>v</i> = ${N(xr, 3)} × 10<sup>−${ex}</sup> s m<sup>−1</sup>, so <i>λ</i> = ${AV(lamR * 1e-11, 'm')} ✓`, { abs: yM / 20 * 1e-11, noSkill: true }),
+      choose(R, 'How would the graph differ for particles of greater mass?', 1, 'the gradient would be smaller', ['the gradient would be greater', 'the line would not pass through the origin', 'the graph would be the same'], 'Smaller: the gradient is <i>h</i>/<i>m</i> ✓')
+    ] };
+};
+
+T.WP5 = R => {
+  const Ke = R.pick([0.025, 0.040, 0.050, 0.10]), mn = 1.675e-27, KJ = Ke * QE, sp = Math.sqrt(2 * KJ / mn), lam = HP / (mn * sp);
+  return NOFIG(2, { Ke }, `Thermal neutrons with a kinetic energy of ${V(Ke, 'eV')} are used to investigate the structure of crystals.<br>mass of a neutron = 1.675 × 10<sup>−27</sup> kg`, [
+    calc('Calculate the kinetic energy of a neutron in joules.', 1, KJ, 'J', `${eq(`${N(Ke)} × ${SE} = ${AV(KJ, 'J')}`)} ✓`),
+    calc('Calculate the speed of the neutrons.', 2, sp, MS1, `½<i>mv</i><sup>2</sup> = <i>E</i><sub>k</sub> ✓<br>${eq(`<i>v</i> = √(2 × ${I(KJ)} / 1.675 × 10<sup>−27</sup>) = ${AV(sp, MS1)}`)} ✓`),
+    calc('Calculate the de Broglie wavelength of the neutrons.', 2, lam, 'm', `<i>λ</i> = <i>h</i>/<i>mv</i> ✓<br>${eq(`<i>λ</i> = ${SH} / (1.675 × 10<sup>−27</sup> × ${I(sp)}) = ${AV(lam, 'm')}`)} ✓`),
+    choose(R, 'The atoms in the crystals are about 0.1 nm to 0.3 nm apart. Are these neutrons suitable for diffraction by the crystals?', 1, 'yes: their wavelength is similar to the spacing of the atoms', ['no: their wavelength is far too long', 'no: their wavelength is far too short', 'no: neutrons cannot be diffracted'], 'Yes: the wavelength is similar to the atomic spacing ✓'),
+    text('Suggest one advantage of using neutrons rather than electrons to study crystals.', 1, 'Neutrons are uncharged, so they penetrate further into the crystal (they are not deflected by electric fields) ✓')
+  ]);
+};
+
+T.WP6 = R => {
+  const ln = R.pick([0.10, 0.20, 0.50, 1.0, 5.0]), lam = ln * 1e-9, Eph = HP * C0 / lam, p = HP / lam, Ke = p * p / (2 * MEL), ratio = Eph / Ke;
+  return NOFIG(2, { ln }, `A photon and an electron both have a wavelength of ${V(ln, 'nm')}.`, [
+    calc('Calculate the energy of the photon.', 1, Eph, 'J', `${eq(`<i>E</i> = <i>hc</i>/<i>λ</i> = ${SH} × ${SC} / ${N(lam)} = ${AV(Eph, 'J')}`)} ✓`),
+    calc('Calculate the momentum of the electron.', 1, p, 'kg m s<sup>−1</sup>', `${eq(`<i>p</i> = <i>h</i>/<i>λ</i> = ${SH} / ${N(lam)} = ${AV(p, 'kg m s<sup>−1</sup>')}`)} ✓`),
+    calc('Calculate the kinetic energy of the electron.', 2, Ke, 'J', `<i>E</i><sub>k</sub> = <i>p</i><sup>2</sup>/2<i>m</i> ✓<br>${eq(`<i>E</i><sub>k</sub> = (${I(p)})<sup>2</sup> / (2 × ${SME}) = ${AV(Ke, 'J')}`)} ✓`),
+    calc('Calculate the ratio energy of the photon / kinetic energy of the electron.', 1, ratio, '', `${eq(`${I(Eph)} / ${I(Ke)} = ${A(ratio)}`)} ✓`, { noSkill: true }),
+    choose(R, 'Which statement about the photon and the electron is correct?', 1, 'the photon has more energy than the electron', ['the electron has more energy than the photon', 'they have the same energy', 'the photon has no momentum'], 'The photon has more energy ✓')
+  ]);
+};
+
+/* ecf links set by hand where the numbers alone do not show them (whole-number answers, or values that are also given data) */
+const ECF = { AT2: { c: 'b', d: '' }, AT3: { c: 'b' }, SN2: { c: 'ab' }, SN4: { d: 'c' }, PE1: { d: 'b' } };
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number(a.toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  const E0 = typeof ECF !== 'undefined' && ECF[q.id], ECFX = E0 ? (typeof E0 === 'function' ? E0(q.data) : E0) : {};   // ecf links set by hand where numbers alone mislead
+  const ecfNote = l => 'Allow ecf from their answer' + (l.length > 1 ? 's' : '') + ' to ' + (l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0]) + '.';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(p.ans < 0 ? lo : Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    const fixed = ECFX[L[i]];
+    if (fixed !== undefined){ if (fixed && !g.some(x => /ecf/.test(x))) g.push(ecfNote([...fixed].map(c => '(' + c + ')'))); }
+    else if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      const findNum = (m, a) => { for (let k = m.indexOf(a); k >= 0; k = m.indexOf(a, k + 1)){ const b = m[k - 1] || '', b2 = m[k - 2] || '', c = m[k + a.length] || '';
+          if (/[\d.^]/.test(b) || (b === '−' && b2 === '^')) continue;                       // inside another number or an exponent
+          if (c === '^' && a === '10') continue;                                              // a power of ten, not a value
+          if (a.includes('×')){ if (/\d/.test(c)) continue; return [k, a.length]; }          // a different power of ten
+          const full = m.slice(k).match(/^\d*\.?\d+/)[0].replace(/\.$/, ''), dp = a.includes('.') ? a.split('.')[1].length : 0;
+          if (full === a || Number(full).toFixed(dp) === a) return [k, full.length];          // the same value, perhaps shown to more figures
+        } return null; };
+      const hasNum = (m, a) => !!findNum(m, a);
+      let own = plain(p.ms);                                                                  // the part's own result is not a carried value
+      for (const a of [plain(I(Math.abs(p.ans))), plain(A(Math.abs(p.ans)))]) for (let f = findNum(own, a); f; f = findNum(own, a)) own = own.slice(0, f[0]) + '#' + own.slice(f[0] + f[1]);
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0 || pj.int) continue; const a = plain(A(Math.abs(pj.ans))), a4 = plain(I(Math.abs(pj.ans))), m = own; if ((hasNum(m, a) || hasNum(m, a4)) && !hasNum(given, a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length && !g.some(x => /ecf/.test(x))) g.push(ecfNote(ecf));
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], ''], ['Bq', ['bq', 'becquerel', 'becquerels', 's-1'], 'Accept s<sup>−1</sup>.'], ['s<sup>−1</sup>', ['s-1', '/s', 'persecond'], ''], ['T', ['t', 'tesla'], ''], ['N kg<sup>−1</sup>', ['nkg-1', 'n/kg', 'ms-2', 'm/s2'], 'Accept m s<sup>−2</sup>.'], ['J kg<sup>−1</sup>', ['jkg-1', 'j/kg'], ''], ['N m<sup>2</sup> kg<sup>−2</sup>', ['nm2kg-2', 'nm^2kg^-2'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  ASF = 2; ASF = T[tpl](makeRand(seedFor(tpl, seed))).sf || 2;      // a first pass finds the significant figures of the data
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : p.s3 ? N(p.ans, 3) : A(p.ans); });      // s3: shown to 3 sf, like the table it completes
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+// a drop-down option can only hold plain text, so superscripts and subscripts are written with Unicode characters
+const SUPC = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '−': '⁻', '-': '⁻', '+': '⁺' }, SUBC = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', e: 'ₑ' };
+const uni = (s, map, mark) => [...s].every(c => map[c]) ? [...s].map(c => map[c]).join('') : mark + '(' + s + ')';
+const optText = h => String(h).replace(/<sup>(.*?)<\/sup>/g, (m, s) => uni(s, SUPC, '^')).replace(/<sub>(.*?)<\/sub>/g, (m, s) => uni(s, SUBC, '_')).replace(/<[^>]+>/g, '');
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${optText(o)}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like PE3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>

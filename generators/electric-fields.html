@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Electric Fields Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+.nuc{display:inline-flex;flex-direction:column;vertical-align:-0.42em;font-size:.68em;line-height:1.02;text-align:right;margin-right:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Electric Fields Question Generator</h1>
+    <p>AQA-style practice on section 3.7.3 (Electric fields). 51 question types and many thousands of different questions with mark schemes: field-line, apparatus and particle-path diagrams, graphs of field strength and potential, tables of results, plus calculation and description questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="UF3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number(x.toPrecision(n));
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    let e = Math.floor(Math.log10(a) + 1e-12), m = Number((x / Math.pow(10, e)).toPrecision(n));
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+let ASF = 2;                                          // significant figures of the data in the question being built
+const A = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : N(x, 3);      // answers: 3 sf (2 sf when exact and the data are given to 2 sf)
+const AV = (x, unit) => A(x) + ' ' + unit;
+const I3 = x => isNice(x, 3) ? N(x, 3) : N(x, 4);      // a working value from data given to 3 sf
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? .9 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside, halo: !!o.halo });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}${l.halo ? ' stroke="#fff" stroke-width="4" paint-order="stroke"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+// axis label: ^{..} superscript, _{..} subscript
+const axl = s => esc(s).replace(/\^\{([^}]*)\}/g, '<tspan dy="-6" font-size="10">$1</tspan><tspan dy="6">\u200b</tspan>').replace(/_\{([^}]*)\}/g, '<tspan dy="4" font-size="10">$1</tspan><tspan dy="-4">\u200b</tspan>');
+const axp = s => String(s).replace(/[\^_]\{([^}]*)\}/g, '$1');
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = g.top ? 16 : 52, mt = g.top ? 52 : 16, mr = 22;      // top: the r axis is at the top (all values negative)
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(m) + 1e-9));
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${g.top ? mt - 10 : mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(xa <= 0 && xb >= 0 ? 0 : xa), ay0 = Y(ya <= 0 && yb >= 0 ? 0 : ya);
+  let marks = '';
+  (g.shade || []).forEach(c => { const pts = []; for (let i = 0; i <= 120; i++){ const x = c.from + (c.to - c.from) * i / 120; pts.push(n2(X(x)) + ',' + n2(Y(Math.min(c.f(x), yb)))); } pts.push(n2(X(c.to)) + ',' + n2(Y(Math.max(ya, 0))), n2(X(c.from)) + ',' + n2(Y(Math.max(ya, 0)))); marks += `<polygon points="${pts.join(' ')}" fill="#c9cfd4" fill-opacity="0.65" stroke="none"/>`; });
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= ya - 1e-9 && y <= yb + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.dots || []).forEach(d => { marks += `<circle cx="${n2(X(d.x))}" cy="${n2(Y(d.y))}" r="4.2" fill="#000"/><text x="${n2(X(d.x) + (d.dx || 9))}" y="${n2(Y(d.y) + (d.dy || 5))}" font-weight="700" font-size="15" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(d.t)}</text>`; });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(axp(g.yl))} against ${esc(axp(g.xl))}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${g.top ? 20 : th - 8}" text-anchor="middle">${axl(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${axl(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [ya, yb] = g.y, inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.dots || []).forEach(p => { if (!inX(p.x) || !inY(p.y)) e.push('marked nuclide outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+/* ---------- electric fields: shared helpers ---------- */
+const TOPICS = { CL: "Coulomb's law", UF: 'Uniform electric fields', RF: 'Radial electric fields', CP: 'Charged particles in fields', EP: 'Electric potential', FG: 'Field and potential graphs' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const INT = { int: true, noSkill: true };
+const UNC = { u: true, noSkill: true };
+const r3 = x => Number(x.toPrecision(3));
+const I = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join(' ')}</tr> ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join(' ')}</tr>`).join(' ')}</table>`;
+const an = w => (/^[aeiou]/i.test(w) ? 'an ' : 'a ') + w;
+const meanOf = a => a.reduce((s, x) => s + x, 0) / a.length;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const dot = (s, x, y, r = 3.2) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+const LET = ['A', 'B', 'C', 'D', 'E'];
+// AQA data-sheet values
+const QE = 1.60e-19, EPS0 = 8.85e-12, KC = 1 / (4 * Math.PI * EPS0), MEL = 9.11e-31, MPR = 1.673e-27, GN = 6.67e-11, MEVJ = 1.60e-13;
+const SE = '1.60 × 10<sup>−19</sup>', K4 = '4π × 8.85 × 10<sup>−12</sup>', SME = '9.11 × 10<sup>−31</sup>', SMP = '1.673 × 10<sup>−27</sup>', SG = '6.67 × 10<sup>−11</sup>';
+const VM = 'V m<sup>−1</sup>', NCU = 'N C<sup>−1</sup>';
+const PF = { pC: 1e-12, nC: 1e-9, 'μC': 1e-6 };
+// a given charge with its sign, e.g. +3.0 nC (the magnitude must be exact at the figures shown)
+const QV = (q, u, n = 2) => (q < 0 ? '−' : '+') + V(Math.abs(q), u, n);
+const QL = (q, u, n = 2) => (q < 0 ? '−' : '+') + N(Math.abs(q), n) + ' ' + u;          // the same, for diagram labels
+const SG_ = q => q < 0 ? '−' : '+';
+// a small charged object drawn as a circle with its sign inside
+function charge(s, x, y, sign){ s.circle(x, y, 12, { fill: '#fff', w: 1.6 }); if (sign) s.label(x, y + 6, sign, { size: 18, bold: true, inside: true }); }
+function plateH(s, x, y, w){ s.rect(x, y, w, 7, { fill: '#555' }); }
+function plateV(s, x, y, h){ s.rect(x, y, 7, h, { fill: '#555' }); }
+
+/* ===== Coulomb's law ===== */
+function twoCharges(q1, q2, u, rlab){
+  const s = new Scene('Two point charges a distance r apart'); const x1 = 130, x2 = 400, y = 120;
+  charge(s, x1, y, SG_(q1)); charge(s, x2, y, SG_(q2));
+  s.label(x1, y - 24, QL(q1, u), { size: 14 }); s.label(x2, y - 24, QL(q2, u), { size: 14 });
+  s.label(x1 - 30, y + 5, 'A', { bold: true, anchor: 'end' }); s.label(x2 + 30, y + 5, 'B', { bold: true, anchor: 'start' });
+  s.line(x1, y + 14, x1, y + 56, { dash: '4 3', w: 1 }); s.line(x2, y + 14, x2, y + 56, { dash: '4 3', w: 1 });
+  s.dim(x1, y + 50, x2, y + 50, rlab, { below: true });
+  return s;
+}
+T.CL1 = R => {
+  const q1 = R.pick([2.0, 3.0, 4.5, 5.0, 6.0, 8.0]) * (R.chance(.5) ? 1 : -1), q2 = R.pick([2.0, 3.0, 4.0, 5.0, 6.5]) * (R.chance(.5) ? 1 : -1), rc = R.pick([2.0, 3.0, 4.0, 5.0, 6.0]);
+  const r = rc / 100, F = KC * Math.abs(q1 * q2) * 1e-18 / (r * r), k = R.pick([2, 3, 0.5]), rk = rc * k, Ft = Number((F * R.pick([0.25, 0.5, 2])).toPrecision(2)), rt = Math.sqrt(KC * Math.abs(q1 * q2) * 1e-18 / Ft), att = q1 * q2 < 0;
+  const s = twoCharges(q1, q2, 'nC', N(rc) + ' cm');
+  return { sf: 2, scenes: [s], data: { q1, q2, rc, k, Ft },
+    stem: `<b>Figure 1</b> shows two small charged spheres A and B, with charges of ${QV(q1, 'nC')} and ${QV(q2, 'nC')}, a distance of ${V(rc, 'cm')} apart in air. Treat the spheres as point charges.`,
+    parts: [
+      calc('Calculate the magnitude of the electrostatic force between the spheres.', 2, F, 'N', `${eq(`<i>F</i> = (${N(Math.abs(q1))} × 10<sup>−9</sup> × ${N(Math.abs(q2))} × 10<sup>−9</sup>) / (${K4} × ${N(r)}<sup>2</sup>)`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+      opt('State whether the force is attractive or repulsive.', 1, ['attractive', 'repulsive'], att ? 0 : 1, att ? 'Attractive: the charges have opposite signs ✓' : 'Repulsive: the charges have the same sign ✓'),
+      choose(R, 'Which statement about the force on B due to A is correct?', 1, 'It is equal in size and opposite in direction to the force on A due to B.', ['It is larger than the force on A if B has the larger charge.', 'It is smaller than the force on A if B has the larger charge.', 'It is in the same direction as the force on A due to B.'], 'Equal in size and opposite in direction (Newton\'s third law) ✓'),
+      calc(`The distance between the spheres is changed to ${V(rk, 'cm')}.<br>Calculate the new force.`, 1, F / (k * k), 'N', `${eq(`<i>F</i> ∝ 1 / <i>r</i><sup>2</sup>, so <i>F</i> = ${I(F)} × (${N(rc)} / ${N(rk)})<sup>2</sup> = ${AV(F / (k * k), 'N')}`)} ✓`),
+      text('State one condition needed for Coulomb\'s law to give the force accurately.', 1, 'The charged objects must be small compared with their separation (behave as point charges) / the charges are in a vacuum (or air) ✓'),
+      calc(`Calculate the distance between the spheres at which the force would be ${V(Ft, 'N')}.`, 2, rt, 'm', `${eq(`<i>r</i> = √((${N(Math.abs(q1))} × 10<sup>−9</sup> × ${N(Math.abs(q2))} × 10<sup>−9</sup>) / (${K4} × ${N(Ft)}))`)} ✓<br>${eq(`<i>r</i> = ${AV(rt, 'm')}`)} ✓`)
+    ] };
+};
+
+T.CL2 = R => {
+  const r = R.pick([5.3e-11, 2.1e-10, 4.8e-10]), Fe = KC * QE * QE / (r * r), Fg = GN * MEL * MPR / (r * r), v = Math.sqrt(Fe * r / MEL);
+  return NOFIG(2, { r }, `In a simple model of the hydrogen atom, the electron moves in a circular orbit of radius ${V(r, 'm')} around the proton.`, [
+    calc('Calculate the electrostatic force between the electron and the proton.', 2, Fe, 'N', `${eq(`<i>F</i> = (${SE})<sup>2</sup> / (${K4} × (${N(r)})<sup>2</sup>)`)} ✓<br>${eq(`<i>F</i> = ${AV(Fe, 'N')}`)} ✓`),
+    calc('Calculate the gravitational force between the electron and the proton.', 2, Fg, 'N', `${eq(`<i>F</i> = <i>Gm</i><sub>e</sub><i>m</i><sub>p</sub> / <i>r</i><sup>2</sup> = ${SG} × ${SME} × ${SMP} / (${N(r)})<sup>2</sup>`)} ✓<br>${eq(`<i>F</i> = ${AV(Fg, 'N')}`)} ✓`),
+    calc('Calculate the ratio electrostatic force / gravitational force.', 1, Fe / Fg, '', `${eq(`${I(Fe)} / ${I(Fg)} = ${A(Fe / Fg)}`)} ✓`, { noSkill: true }),
+    calc('The electrostatic force provides the centripetal force on the electron.<br>Calculate the speed of the electron.', 2, v, MS1, `${eq(`<i>m</i><sub>e</sub><i>v</i><sup>2</sup> / <i>r</i> = <i>F</i>, so <i>v</i> = √(${I(Fe)} × ${N(r)} / ${SME})`)} ✓<br>${eq(`<i>v</i> = ${AV(v, MS1)}`)} ✓`),
+    text('Explain why gravitational forces can be ignored when describing the structure of atoms.', 1, 'The gravitational force is smaller than the electrostatic force by a factor of about 10<sup>39</sup>, so it has a negligible effect ✓')
+  ]);
+};
+
+function spheresScene(){
+  const s = new Scene('Two identical charged spheres A and B hanging from a common point on non-conducting threads'), px = 250, py = 40, L = 230, th = 12 * Math.PI / 180, ax = px - L * Math.sin(th), bx = px + L * Math.sin(th), y = py + L * Math.cos(th), rs = 16;
+  s.line(170, py, 330, py, { w: 2.4 });
+  s.line(px, py, ax + rs * Math.sin(th), y - rs * Math.cos(th)); s.line(px, py, bx - rs * Math.sin(th), y - rs * Math.cos(th));
+  s.circle(ax, y, rs, { fill: '#e7eaed' }); s.circle(bx, y, rs, { fill: '#e7eaed' });
+  s.line(px, py + 4, px, py + 150, { dash: '5 4', w: 1 });
+  s.arc(px, py, 70, 270, 282, { w: 1.1 }); s.label(px + 98 * Math.sin(6 * Math.PI / 180), py + 98 * Math.cos(6 * Math.PI / 180) + 5, '*θ*');
+  s.label(ax - rs - 10, y + 5, 'A', { bold: true, anchor: 'end' }); s.label(bx + rs + 10, y + 5, 'B', { bold: true, anchor: 'start' });
+  s.line(ax + rs, y + 6, ax + rs, y + 50, { dash: '4 3', w: 1 }); s.line(bx - rs, y + 6, bx - rs, y + 50, { dash: '4 3', w: 1 });
+  s.dim(ax + rs, y + 44, bx - rs, y + 44, '*d*', { below: true });
+  return s;
+}
+T.CL3 = R => {
+  const v = find(() => ({ m: R.pick([1.5, 2.0, 2.5, 3.2, 4.0]), rs: R.pick([10, 15, 20]), d: R.pick([30, 40, 50]), Q: R.pick([30, 40, 52, 60]) }),
+    o => { const c = (o.d + 2 * o.rs) / 1000, F = KC * Math.pow(o.Q * 1e-9, 2) / (c * c), th = Math.atan(F / (o.m * 1e-3 * GRAV)) * 180 / Math.PI; return th > 3 && th < 30; });
+  const { m, rs, d, Q } = v, c = (d + 2 * rs) / 1000, Vs = KC * Q * 1e-9 / (rs / 1000), F = KC * Math.pow(Q * 1e-9, 2) / (c * c), mg = m * 1e-3 * GRAV, th = Math.atan(F / mg) * 180 / Math.PI, Fg = GN * Math.pow(m * 1e-3, 2) / (c * c);
+  return { sf: 2, scenes: [spheresScene()], data: { m, rs, d, Q },
+    stem: `<b>Figure 1</b> shows two identical conducting spheres A and B suspended from the same point by non-conducting threads. Each sphere has a mass of ${V(m, 'g')} and a radius of ${V(rs, 'mm')}. Each sphere carries a charge of ${V(Q, 'nC')}. At equilibrium, the gap <i>d</i> between the surfaces of the spheres is ${V(d, 'mm')}. The diagram is not to scale. The capacitance of a sphere of radius <i>r</i> is 4π<i>ε</i><sub>0</sub><i>r</i>.`,
+    parts: [
+      calc('Calculate the potential of one of the spheres.', 2, Vs, 'V', `${eq(`<i>V</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>r</i> = ${N(Q)} × 10<sup>−9</sup> / (${K4} × ${N(rs / 1000)})`)} ✓<br>${eq(`<i>V</i> = ${AV(Vs, 'V')}`)} ✓`),
+      choose(R, 'Which forces act on sphere B?', 1, 'its weight, the tension in the thread and the electrostatic repulsion from A', ['its weight and the tension in the thread only', 'its weight, the tension in the thread and the electrostatic attraction to A', 'the tension in the thread and the electrostatic repulsion from A only'], 'Weight, tension and electrostatic repulsion ✓'),
+      calc('Calculate the magnitude of the electrostatic force on each sphere.', 3, F, 'N', `Distance between the centres = ${d} + 2 × ${rs} = ${d + 2 * rs} mm ✓<br>${eq(`<i>F</i> = (${N(Q)} × 10<sup>−9</sup>)<sup>2</sup> / (${K4} × ${N(c)}<sup>2</sup>)`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+      calc('Calculate the angle <i>θ</i> that each thread makes with the vertical.', 2, th, '°', `Uses tan <i>θ</i> = <i>F</i> / <i>mg</i> ✓<br>${eq(`<i>θ</i> = tan<sup>−1</sup>(${I(F)} / (${N(m / 1000)} × 9.81)) = ${A(th)}°`)} ✓`, { noSkill: true }),
+      calc('Calculate the gravitational force between the two spheres.', 1, Fg, 'N', `${eq(`<i>F</i> = ${SG} × (${N(m / 1000)})<sup>2</sup> / ${N(c)}<sup>2</sup> = ${AV(Fg, 'N')}`)} ✓`),
+      text('Explain whether the gravitational force between the spheres has a significant effect on the angle <i>θ</i>.', 1, `No: the gravitational force is about 10<sup>${Math.round(Math.log10(Fg / F))}</sup> times the electrostatic force, so its effect is negligible ✓`.replace('<sup>-', '<sup>−'))
+    ] };
+};
+
+function lineScene(items, dims, aria){
+  const s = new Scene(aria), y = 120;
+  items.forEach(it => { if (it.q !== undefined){ charge(s, it.x, y, it.q ? SG_(it.q) : null); s.label(it.x, y - 24, it.top, { size: 14 }); s.label(it.x, y + 34, it.name, { bold: true }); } else { dot(s, it.x, y, 4); s.label(it.x, y - 14, it.name, { bold: true }); } });
+  dims.forEach(([x1, x2, lab, lev], k) => { const yy = y + 62 + 36 * (lev || 0); s.line(x1, y + (items.find(i => i.x === x1).q !== undefined ? 40 : 6), x1, yy + 6, { dash: '4 3', w: 1 }); s.line(x2, y + (items.find(i => i.x === x2).q !== undefined ? 40 : 6), x2, yy + 6, { dash: '4 3', w: 1 }); s.dim(x1, yy, x2, yy, lab, { below: true }); });
+  return s;
+}
+T.CL4 = R => {
+  const v = find(() => ({ qa: R.pick([1.0, 2.0, 3.0, 4.0, 5.0]) * (R.chance(.5) ? 1 : -1), qb: R.pick([1.0, 2.0, 3.0]) * (R.chance(.5) ? 1 : -1), qc: R.pick([1.0, 2.0, 3.0, 4.0, 5.0]) * (R.chance(.5) ? 1 : -1), a: R.pick([10, 15, 20, 25, 30]), b: R.pick([10, 15, 20, 25, 30]) }),
+    o => { const fa = KC * Math.abs(o.qa * o.qb) * 1e-12 / Math.pow(o.a / 100, 2) * (o.qa * o.qb > 0 ? 1 : -1), fc = KC * Math.abs(o.qc * o.qb) * 1e-12 / Math.pow(o.b / 100, 2) * (o.qc * o.qb > 0 ? -1 : 1); return Math.abs(fa + fc) > .25 * Math.max(Math.abs(fa), Math.abs(fc)); });
+  const { qa, qb, qc, a, b } = v, Fa = KC * Math.abs(qa * qb) * 1e-12 / Math.pow(a / 100, 2), Fc = KC * Math.abs(qc * qb) * 1e-12 / Math.pow(b / 100, 2);
+  const fa = Fa * (qa * qb > 0 ? 1 : -1), fc = Fc * (qc * qb > 0 ? -1 : 1), res = fa + fc;          // + means towards C
+  const sc = 380 / (a + b), xa = 90, xb = 90 + a * sc, xc = 90 + (a + b) * sc;
+  const s = lineScene([{ x: xa, q: qa, top: QL(qa, 'μC'), name: 'A' }, { x: xb, q: qb, top: QL(qb, 'μC'), name: 'B' }, { x: xc, q: qc, top: QL(qc, 'μC'), name: 'C' }], [[xa, xb, a + ' cm'], [xb, xc, b + ' cm']], 'Three point charges A, B and C on a straight line');
+  const same = (p, q) => p * q > 0;
+  return { sf: 2, scenes: [s], data: { qa, qb, qc, a, b },
+    stem: `<b>Figure 1</b> shows three point charges A, B and C on a straight line in air. A has a charge of ${QV(qa, 'μC')}, B has a charge of ${QV(qb, 'μC')} and C has a charge of ${QV(qc, 'μC')}. A is ${V(a, 'cm')} from B and C is ${V(b, 'cm')} from B.`,
+    parts: [
+      calc('Calculate the magnitude of the force on B due to A.', 2, Fa, 'N', `${eq(`<i>F</i> = (${N(Math.abs(qa))} × 10<sup>−6</sup> × ${N(Math.abs(qb))} × 10<sup>−6</sup>) / (${K4} × ${N(a / 100)}<sup>2</sup>)`)} ✓<br>${eq(`<i>F</i> = ${AV(Fa, 'N')}`)} ✓`),
+      calc('Calculate the magnitude of the force on B due to C.', 1, Fc, 'N', `${eq(`<i>F</i> = (${N(Math.abs(qc))} × 10<sup>−6</sup> × ${N(Math.abs(qb))} × 10<sup>−6</sup>) / (${K4} × ${N(b / 100)}<sup>2</sup>) = ${AV(Fc, 'N')}`)} ✓`),
+      calc('Calculate the magnitude of the resultant force on B.', 2, Math.abs(res), 'N', `The force due to A acts ${same(qa, qb) ? 'away from A (towards C)' : 'towards A'} and the force due to C acts ${same(qc, qb) ? 'away from C (towards A)' : 'towards C'} ✓<br>${eq(`resultant = ${(fa > 0) === (fc > 0) ? I(Fa) + ' + ' + I(Fc) : '|' + I(Fa) + ' − ' + I(Fc) + '|'} = ${AV(Math.abs(res), 'N')}`)} ✓`),
+      opt('State the direction of the resultant force on B.', 1, ['towards A', 'towards C'], res > 0 ? 1 : 0, `${res > 0 ? 'Towards C' : 'Towards A'} ✓`),
+      calc('B is removed. Calculate the magnitude of the force between A and C.', 2, KC * Math.abs(qa * qc) * 1e-12 / Math.pow((a + b) / 100, 2), 'N', `Separation = ${a + b} cm = ${N((a + b) / 100)} m ✓<br>${eq(`<i>F</i> = (${N(Math.abs(qa))} × 10<sup>−6</sup> × ${N(Math.abs(qc))} × 10<sup>−6</sup>) / (${K4} × ${N((a + b) / 100)}<sup>2</sup>) = ${AV(KC * Math.abs(qa * qc) * 1e-12 / Math.pow((a + b) / 100, 2), 'N')}`)} ✓`)
+    ] };
+};
+
+function triScene(q0, q1, q2, a, b){
+  const s = new Scene('Three point charges at the corners of a right-angled triangle'), sc = 230 / Math.max(a, b), ox = 150, oy = 300, x1 = ox + a * sc, y2 = oy - b * sc;
+  s.line(ox + 12, oy, x1 - 12, oy, { dash: '6 4', w: 1 }); s.line(ox, oy - 12, ox, y2 + 12, { dash: '6 4', w: 1 });
+  s.poly([[ox + 14, oy - 14], [ox + 26, oy - 14], [ox + 26, oy - 2]], { w: 1, free: true });
+  charge(s, ox, oy, SG_(q0)); charge(s, x1, oy, SG_(q1)); charge(s, ox, y2, SG_(q2));
+  s.label(ox - 22, oy - 10, 'P', { bold: true, anchor: 'end' }); s.label(x1 + 20, oy + 5, 'X', { bold: true, anchor: 'start' }); s.label(ox - 22, y2 - 10, 'Y', { bold: true, anchor: 'end' });
+  s.label(ox + 22, oy + 30, QL(q0, 'μC'), { size: 14, anchor: 'start' }); s.label(x1, oy - 22, QL(q1, 'μC'), { size: 14 }); s.label(ox + 20, y2 + 5, QL(q2, 'μC'), { size: 14, anchor: 'start' });
+  s.line(ox, oy + 14, ox, oy + 56, { dash: '4 3', w: 1 }); s.line(x1, oy + 14, x1, oy + 56, { dash: '4 3', w: 1 }); s.dim(ox, oy + 50, x1, oy + 50, a + ' cm', { below: true });
+  s.line(ox - 14, oy, ox - 56, oy, { dash: '4 3', w: 1 }); s.line(ox - 14, y2, ox - 56, y2, { dash: '4 3', w: 1 }); s.dim(ox - 50, oy, ox - 50, y2, b + ' cm', { left: true });
+  return s;
+}
+const DIRS = { '-1,1': 'up and to the left', '1,1': 'up and to the right', '-1,-1': 'down and to the left', '1,-1': 'down and to the right' };
+T.CL5 = R => {
+  const q0 = R.pick([1.0, 2.0, 3.0, 4.0]) * (R.chance(.5) ? 1 : -1), q1 = R.pick([2.0, 3.0, 5.0, 6.0]) * (R.chance(.5) ? 1 : -1), q2 = R.pick([2.0, 4.0, 5.0, 8.0]) * (R.chance(.5) ? 1 : -1), a = R.pick([20, 25, 30, 40]), b = R.pick([15, 20, 30, 40]);
+  const F1 = KC * Math.abs(q0 * q1) * 1e-12 / Math.pow(a / 100, 2), F2 = KC * Math.abs(q0 * q2) * 1e-12 / Math.pow(b / 100, 2), Fr = Math.hypot(F1, F2), ang = Math.atan(F2 / F1) * 180 / Math.PI;
+  const sx = q0 * q1 > 0 ? -1 : 1, sy = q0 * q2 > 0 ? -1 : 1, dir = DIRS[sx + ',' + sy];
+  return { sf: 2, scenes: [triScene(q0, q1, q2, a, b)], data: { q0, q1, q2, a, b },
+    stem: `<b>Figure 1</b> shows three point charges in air. Charge X is ${V(a, 'cm')} to the right of charge P and charge Y is ${V(b, 'cm')} vertically above P. The charges are P: ${QV(q0, 'μC')}, X: ${QV(q1, 'μC')} and Y: ${QV(q2, 'μC')}.`,
+    parts: [
+      calc('Calculate the magnitude of the force on P due to X.', 2, F1, 'N', `${eq(`<i>F</i> = (${N(Math.abs(q0))} × 10<sup>−6</sup> × ${N(Math.abs(q1))} × 10<sup>−6</sup>) / (${K4} × ${N(a / 100)}<sup>2</sup>)`)} ✓<br>${eq(`<i>F</i> = ${AV(F1, 'N')}`)} ✓`),
+      calc('Calculate the magnitude of the force on P due to Y.', 1, F2, 'N', `${eq(`<i>F</i> = (${N(Math.abs(q0))} × 10<sup>−6</sup> × ${N(Math.abs(q2))} × 10<sup>−6</sup>) / (${K4} × ${N(b / 100)}<sup>2</sup>) = ${AV(F2, 'N')}`)} ✓`),
+      calc('Calculate the magnitude of the resultant force on P.', 2, Fr, 'N', `The two forces are at right angles ✓<br>${eq(`<i>F</i> = √(${I(F1)}<sup>2</sup> + ${I(F2)}<sup>2</sup>) = ${AV(Fr, 'N')}`)} ✓`),
+      calc('Calculate the angle between the resultant force on P and the line PX.', 1, ang, '°', `${eq(`tan<sup>−1</sup>(${I(F2)} / ${I(F1)}) = ${A(ang)}°`)} ✓`, { noSkill: true }),
+      opt('State the direction of the resultant force on P in <b>Figure 1</b>.', 1, Object.values(DIRS), Object.values(DIRS).indexOf(dir), `${cap(dir)}: the force due to X is ${sx < 0 ? 'to the left (repulsion)' : 'to the right (attraction)'} and the force due to Y is ${sy < 0 ? 'downwards (repulsion)' : 'upwards (attraction)'} ✓`)
+    ] };
+};
+
+T.CL6 = R => {
+  const v = find(() => { const Q = R.pick([20, 25, 30, 40]), rs = pickN(R, [0.040, 0.050, 0.060, 0.070, 0.080, 0.100], 5).sort((x, y) => x - y), Fs = rs.map(r => r3(KC * Q * Q * 1e-18 / (r * r) * 1e3 * (1 + (R() * 2 - 1) * .025))); return { Q, rs, Fs, miss: Math.floor(R() * 5) }; },
+    o => { const p = o.rs.map((r, i) => r3(o.Fs[i] * r * r * 1e3)); return new Set(p).size >= 3; });
+  const { Q, rs, Fs, miss } = v, P = rs.map((r, i) => r3(Fs[i] * r * r * 1e3)), mean = meanOf(P), Qc = Math.sqrt(mean * 1e-6 / KC);
+  const tab = tableH('Table 1', ['<i>r</i> / m', '<i>F</i> / 10<sup>−3</sup> N', '<i>Fr</i><sup>2</sup> / 10<sup>−6</sup> N m<sup>2</sup>'], rs.map((r, i) => [N(r, 2), N(Fs[i], 3), i === miss ? '' : N(P[i], 3)]));
+  return NOFIG(3, { rs, Fs, miss }, `Two small identical spheres carry equal charges. A student measures the electrostatic force <i>F</i> between them for different distances <i>r</i> between their centres. Table 1 shows the results.<br>${tab}`, [
+    calc(`Calculate the missing value of <i>Fr</i><sup>2</sup> for <i>r</i> = ${N(rs[miss], 2)} m, in 10<sup>−6</sup> N m<sup>2</sup>.`, 1, Fs[miss] * rs[miss] * rs[miss] * 1e3, '× 10<sup>−6</sup> N m<sup>2</sup>', `${eq(`${N(Fs[miss], 3)} × 10<sup>−3</sup> × ${N(rs[miss], 2)}<sup>2</sup> = ${A(Fs[miss] * rs[miss] * rs[miss] * 1e3)} × 10<sup>−6</sup>`)} N m<sup>2</sup> ✓`, { noSkill: true }),
+    text('Explain how the results support Coulomb\'s law.', 1, 'The values of <i>Fr</i><sup>2</sup> are (approximately) constant, so <i>F</i> ∝ 1 / <i>r</i><sup>2</sup> ✓'),
+    calc('Calculate the mean value of <i>Fr</i><sup>2</sup>, in 10<sup>−6</sup> N m<sup>2</sup>. Use the values to 3 significant figures.', 1, mean, '× 10<sup>−6</sup> N m<sup>2</sup>', `${eq(`mean = (${P.map(x => N(x, 3)).join(' + ')}) / 5 = ${A(mean)}`)} × 10<sup>−6</sup> N m<sup>2</sup> ✓`, { noSkill: true }),
+    calc('Calculate the charge on each sphere.', 2, Qc, 'C', `${eq(`<i>Fr</i><sup>2</sup> = <i>Q</i><sup>2</sup> / 4π<i>ε</i><sub>0</sub>`)} ✓<br>${eq(`<i>Q</i> = √(${I(mean)} × 10<sup>−6</sup> × ${K4}) = ${AV(Qc, 'C')}`)} ✓`),
+    text('Suggest two reasons why measurements like these may not agree exactly with Coulomb\'s law.', 2, 'Any two from:<br>the spheres are not point charges, so at small separations the charges redistribute on the spheres ✓<br>charge leaks away from the spheres (for example into damp air) during the experiment ✓<br>nearby objects (and the student) affect the field ✓<br>the uncertainty in measuring <i>r</i> between the centres ✓')
+  ]);
+};
+
+T.CL7 = R => {
+  const G = R.pick([0.0050, 0.0060, 0.0080, 0.010]), Q = Math.sqrt(G * 1e-3 / KC), xs = [150, 250, 350, 450, 550, 650, 750], pts = xs.map(x => [x, G * x * (1 + (R() * 2 - 1) * .02)]);
+  const [ym, yM] = axisFor(G * 800 * 1.05), rp = R.pick([0.030, 0.032, 0.035]), Fp = G * 1e-3 / (rp * rp);
+  const fig = graph({ x: [0, 800, 200], y: [0, ym, yM], xdiv: 5, ydiv: 10, h: 330, xl: '1/r^{2} / m^{−2}', yl: 'F / 10^{−3} N', crosses: pts, curves: [{ f: x => G * x, from: 0, to: 800 }], reads: [[0, 0], [800, G * 800]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { G, rp },
+    stem: `Two small spheres carry equal charges <i>Q</i>. <b>Figure 1</b> shows a graph of the electrostatic force <i>F</i> between them against 1/<i>r</i><sup>2</sup>, where <i>r</i> is the distance between their centres.`,
+    parts: [
+      text('Explain how <b>Figure 1</b> shows that the force obeys an inverse-square law.', 1, 'The graph of <i>F</i> against 1/<i>r</i><sup>2</sup> is a straight line through the origin, so <i>F</i> ∝ 1/<i>r</i><sup>2</sup> ✓'),
+      calc('Determine the gradient of the graph in N m<sup>2</sup>.', 2, G * 1e-3, 'N m<sup>2</sup>', `Uses a large triangle, for example (0, 0) and (800, ${N(G * 800, 2)}) ✓<br>${eq(`gradient = ${N(G * 800, 2)} × 10<sup>−3</sup> / 800 = ${A(G * 1e-3)}`)} N m<sup>2</sup> ✓`, { tol: .03, noSkill: true }),
+      calc('Calculate <i>Q</i>.', 2, Q, 'C', `${eq(`gradient = <i>Q</i><sup>2</sup> / 4π<i>ε</i><sub>0</sub>`)} ✓<br>${eq(`<i>Q</i> = √(${A(G * 1e-3)} × ${K4}) = ${AV(Q, 'C')}`)} ✓`, { tol: .02, noSkill: true, guide: ['Allow ecf from their gradient in (b).'] }),
+      calc(`Calculate the force when the distance between the centres is ${V(rp, 'm')}.`, 2, Fp, 'N', `${eq(`<i>F</i> = gradient / <i>r</i><sup>2</sup> = ${A(G * 1e-3)} / ${N(rp)}<sup>2</sup>`)} ✓<br>${eq(`<i>F</i> = ${AV(Fp, 'N')}`)} ✓`, { tol: .03, noSkill: true, guide: ['Allow ecf from their gradient in (b).'] }),
+      opt('The charge on one sphere is doubled. State the effect on the gradient of the graph.', 1, ['it doubles', 'it is four times as large', 'it halves', 'it is unchanged'], 0, 'It doubles, because the gradient is proportional to <i>Q</i><sub>1</sub><i>Q</i><sub>2</sub> ✓')
+    ] };
+};
+
+T.CL8 = R => {
+  const r = R.pick([1.5, 2.0, 2.5, 3.0]), F = KC * QE * QE / Math.pow(r * 1e-15, 2), a = F / MPR, Fg = GN * MPR * MPR / Math.pow(r * 1e-15, 2), k = R.pick([2, 3]);
+  return NOFIG(2, { r, k }, `Two protons in a nucleus have their centres ${V(r, 'fm')} apart.`, [
+    calc('Calculate the electrostatic force between the protons.', 2, F, 'N', `${eq(`<i>F</i> = (${SE})<sup>2</sup> / (${K4} × (${N(r)} × 10<sup>−15</sup>)<sup>2</sup>)`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+    calc('Calculate the acceleration that this force would give one proton if it were free to move.', 1, a, MS2, `${eq(`<i>a</i> = ${I(F)} / ${SMP} = ${AV(a, MS2)}`)} ✓`),
+    calc('Calculate the gravitational force between the protons.', 1, Fg, 'N', `${eq(`<i>F</i> = ${SG} × (${SMP})<sup>2</sup> / (${N(r)} × 10<sup>−15</sup>)<sup>2</sup> = ${AV(Fg, 'N')}`)} ✓`),
+    text('Explain why the protons in a stable nucleus do not move apart.', 2, 'The strong nuclear force acts between the nucleons ✓<br>at separations of about 1 fm (up to about 3 fm) it is attractive and stronger than the electrostatic repulsion ✓'),
+    opt(`The separation of the protons is divided by ${k}. State the factor by which the electrostatic force increases.`, 1, [String(k), String(k * k), String(k * k * k), N(Math.sqrt(k), 3)], 1, `${k * k}, because <i>F</i> ∝ 1/<i>r</i><sup>2</sup> ✓`)
+  ]);
+};
+
+/* ===== Uniform electric fields ===== */
+const PARTS = { electron: [-1, MEL, 'an electron'], proton: [1, MPR, 'a proton'], alpha: [2, 6.64e-27, 'an alpha particle'] };
+function platesScene(topV, botV, dlab, particle){
+  const s = new Scene('Two horizontal parallel metal plates with a uniform electric field between them'), x = 100, w = 300, yt = 70, yb = 230, up = botV > topV;
+  plateH(s, x, yt, w); plateH(s, x, yb, w);
+  [130, 190, 310, 370].forEach(xx => s.arrow(xx, up ? yb - 4 : yt + 11, xx, up ? yt + 11 : yb - 4, { w: 1.2 }));
+  s.label(x + w + 12, yt + 8, topV + ' V', { anchor: 'start', size: 14 }); s.label(x + w + 12, yb + 8, botV + ' V', { anchor: 'start', size: 14 });
+  s.line(x - 30, yt + 3.5, x - 6, yt + 3.5, { w: 1, dash: '4 3' }); s.line(x - 30, yb + 3.5, x - 6, yb + 3.5, { w: 1, dash: '4 3' });
+  s.dim(x - 24, yt + 3.5, x - 24, yb + 3.5, dlab, { left: true });
+  if (particle){ dot(s, 250, 150, 4.5); s.label(250, 135, particle, { size: 14 }); }
+  return s;
+}
+T.UF1 = R => {
+  const pk = R.pick(['electron', 'proton', 'alpha']), [qs, m, pn] = PARTS[pk], V0 = R.pick([200, 300, 400, 500, 600, 800]), d = R.pick([2.0, 2.5, 4.0, 5.0, 8.0]), topPos = R.chance(.5);
+  const E = V0 / (d / 100), F = Math.abs(qs) * QE * E, W = Math.abs(qs) * QE * V0, k = R.pick([2, 0.5]);
+  const s = platesScene(topPos ? V0 : 0, topPos ? 0 : V0, N(d) + ' cm', pk === 'alpha' ? 'alpha particle' : pk);
+  const fieldDown = topPos, forceDown = qs > 0 ? fieldDown : !fieldDown;
+  return { sf: 2, scenes: [s], data: { pk, V0, d, topPos, k },
+    stem: `<b>Figure 1</b> shows two parallel metal plates ${V(d, 'cm')} apart in a vacuum. The ${topPos ? 'top' : 'bottom'} plate is at a potential of ${V0} V and the other plate is at 0 V. ${cap(pn)} is between the plates.`,
+    parts: [
+      calc('Calculate the electric field strength between the plates.', 2, E, VM, `Converts the separation to ${N(d / 100)} m ✓<br>${eq(`<i>E</i> = <i>V</i> / <i>d</i> = ${V0} / ${N(d / 100)} = ${AV(E, VM)}`)} ✓`),
+      opt('State the direction of the electric field between the plates.', 1, ['from the top plate to the bottom plate', 'from the bottom plate to the top plate'], fieldDown ? 0 : 1, `From the positive (${topPos ? 'top' : 'bottom'}) plate to the 0 V plate ✓`),
+      calc(`Calculate the magnitude of the force on the ${pk === 'alpha' ? 'alpha particle' : pk}.`, 1, F, 'N', `${eq(`<i>F</i> = <i>EQ</i> = ${I(E)} × ${qs === 2 ? '2 × ' : ''}${SE} = ${AV(F, 'N')}`)} ✓`),
+      opt(`State the direction of the force on the ${pk === 'alpha' ? 'alpha particle' : pk}.`, 1, ['towards the top plate', 'towards the bottom plate'], forceDown ? 1 : 0, `${forceDown ? 'Towards the bottom plate' : 'Towards the top plate'}: ${qs > 0 ? 'a positive charge is pushed along the field' : 'a negative charge is pushed against the field'} ✓`),
+      calc(`Calculate the work done by the field when the ${pk === 'alpha' ? 'alpha particle' : pk} moves from one plate to the other.`, 1, W, 'J', `${eq(`<i>W</i> = <i>QV</i> = ${qs === 2 ? '2 × ' : ''}${SE} × ${V0} = ${AV(W, 'J')}`)} ✓`),
+      text('Describe the electric field lines between the plates, away from the edges.', 1, 'They are parallel, equally spaced and perpendicular to the plates (the field is uniform) ✓'),
+      opt(`The separation of the plates is ${k === 2 ? 'doubled' : 'halved'} and the potential difference is unchanged. State the effect on the electric field strength.`, 1, ['it doubles', 'it halves', 'it is unchanged', 'it is four times as large'], k === 2 ? 1 : 0, `${k === 2 ? 'It halves' : 'It doubles'}, because <i>E</i> = <i>V</i> / <i>d</i> ✓`)
+    ] };
+};
+
+function dropScene(dlab){
+  const s = new Scene('An oil drop between two horizontal parallel plates'), x = 110, w = 280, yt = 70, yb = 230;
+  plateH(s, x, yt, w); plateH(s, x, yb, w);
+  s.label(x + w + 12, yt + 8, 'top plate', { anchor: 'start', size: 14 }); s.label(x + w + 12, yb + 8, 'bottom plate', { anchor: 'start', size: 14 });
+  s.circle(250, 150, 6, { fill: '#c9cdd1' }); s.label(266, 155, 'oil drop', { anchor: 'start', size: 14 });
+  s.line(x - 30, yt + 3.5, x - 6, yt + 3.5, { w: 1, dash: '4 3' }); s.line(x - 30, yb + 3.5, x - 6, yb + 3.5, { w: 1, dash: '4 3' });
+  s.dim(x - 24, yt + 3.5, x - 24, yb + 3.5, dlab, { left: true });
+  return s;
+}
+T.UF2 = R => {
+  const v = find(() => { const n = 2 + Math.floor(R() * 7), d = R.pick([5.0, 6.0, 8.0, 10]), Vp = R.pick([150, 200, 250, 300, 400, 500, 600]); const m = r3(n * QE * Vp / (GRAV * d / 1000)); return { n, d, Vp, m }; },
+    o => o.m > 2e-15 && o.m < 2e-14);
+  const { n, d, Vp, m } = v, E = Vp / (d / 1000), Q = m * GRAV * d / 1000 / Vp, ne = Math.round(Q / QE);
+  return { sf: 3, scenes: [dropScene(N(d) + ' mm')], data: { d, Vp, m },
+    stem: `<b>Figure 1</b> shows a negatively charged oil drop of mass ${V(m, 'kg', 3)} between two horizontal plates ${V(d, 'mm')} apart. The potential difference between the plates is adjusted until the drop is stationary. This happens when the potential difference is ${V(Vp, 'V', 3)}.`,
+    parts: [
+      choose(R, 'Which forces act on the stationary drop? Ignore the upthrust from the air.', 1, 'its weight downwards and an equal electric force upwards', ['its weight downwards only', 'an electric force downwards and an equal force from the air upwards', 'its weight downwards and a larger electric force upwards'], 'Weight downwards and an equal and opposite electric force ✓'),
+      opt('State which plate is positive.', 1, ['the top plate', 'the bottom plate'], 0, 'The top plate: the field must point downwards to push the negative drop upwards ✓'),
+      calc('Calculate the charge on the drop.', 3, Q, 'C', `${eq(`<i>E</i> = ${Vp} / ${N(d / 1000)} = ${I(E)} ${VM}`)} ✓<br><i>EQ</i> = <i>mg</i> ✓<br>${eq(`<i>Q</i> = ${N(m, 3)} × 9.81 / ${I(E)} = ${AV(Q, 'C')}`)} ✓`),
+      calc('Calculate the number of excess electrons on the drop.', 1, ne, '', `${eq(`${I(Q)} / ${SE} = ${ne}`)} ✓`, INT),
+      opt('The potential difference is increased. State what happens to the drop.', 1, ['it accelerates upwards', 'it accelerates downwards', 'it stays stationary'], 0, 'It accelerates upwards, because the electric force is now larger than the weight ✓'),
+      text('Millikan measured the charges on many drops. State what his results showed about electric charge.', 1, 'Charge is quantised: every charge was a whole-number multiple of 1.6 × 10<sup>−19</sup> C (the charge of the electron) ✓')
+    ] };
+};
+
+function ballScene(leftPos, dlab){
+  const s = new Scene('A small charged ball hanging on a thread between two vertical charged plates'), xl = 90, xr = 410, yt = 60, h = 270, px = 250, py = 70, L = 170, th = 16 * Math.PI / 180;
+  plateV(s, xl, yt, h); plateV(s, xr, yt, h);
+  s.label(xl - 12, yt + 18, leftPos ? '+' : '−', { size: 20, bold: true, anchor: 'end' }); s.label(xr + 19, yt + 18, leftPos ? '−' : '+', { size: 20, bold: true, anchor: 'start' });
+  s.line(px - 40, py, px + 40, py, { w: 2.4 });
+  const dirn = leftPos ? 1 : -1, bx = px + dirn * L * Math.sin(th), by = py + L * Math.cos(th);
+  s.line(px, py, bx - dirn * 8 * Math.sin(th), by - 8 * Math.cos(th)); s.circle(bx, by, 8, { fill: '#c9cdd1' });
+  s.line(px, py + 4, px, py + 130, { dash: '5 4', w: 1 });
+  s.arc(px, py, 60, leftPos ? 270 : 254, leftPos ? 286 : 270, { w: 1.1 }); s.label(px + dirn * 82 * Math.sin(8 * Math.PI / 180) + dirn * 3, py + 82 * Math.cos(8 * Math.PI / 180) + 5, '*θ*');
+  s.line(xl + 3.5, yt + h + 6, xl + 3.5, yt + h + 40, { dash: '4 3', w: 1 }); s.line(xr + 3.5, yt + h + 6, xr + 3.5, yt + h + 40, { dash: '4 3', w: 1 });
+  s.dim(xl + 3.5, yt + h + 34, xr + 3.5, yt + h + 34, dlab, { below: true });
+  return s;
+}
+T.UF3 = R => {
+  const v = find(() => ({ m: R.pick([0.50, 1.0, 1.5, 2.0]), q: R.pick([10, 20, 30, 50]), Vp: R.pick([2.0, 3.0, 4.0, 5.0]), d: R.pick([10, 15, 20]) }),
+    o => { const th = Math.atan(o.q * 1e-9 * o.Vp * 1e3 / (o.d / 100) / (o.m * 1e-3 * GRAV)) * 180 / Math.PI; return th > 5 && th < 40; });
+  const { m, q, Vp, d } = v, leftPos = R.chance(.5), E = Vp * 1e3 / (d / 100), F = q * 1e-9 * E, mg = m * 1e-3 * GRAV, th = Math.atan(F / mg) * 180 / Math.PI, Tn = Math.hypot(F, mg);
+  return { sf: 2, scenes: [ballScene(leftPos, N(d) + ' cm')], data: { m, q, Vp, d },
+    stem: `A small conducting ball of mass ${V(m, 'g')} carries a charge of +${V(q, 'nC')}. It hangs on an insulating thread between two vertical parallel plates ${V(d, 'cm')} apart, as shown in <b>Figure 1</b>. The potential difference between the plates is ${V(Vp, 'kV')}.`,
+    parts: [
+      calc('Calculate the electric field strength between the plates.', 1, E, VM, `${eq(`<i>E</i> = ${N(Vp)} × 10<sup>3</sup> / ${N(d / 100)} = ${AV(E, VM)}`)} ✓`),
+      calc('Calculate the electric force on the ball.', 1, F, 'N', `${eq(`<i>F</i> = <i>EQ</i> = ${I(E)} × ${N(q)} × 10<sup>−9</sup> = ${AV(F, 'N')}`)} ✓`),
+      calc('Calculate the angle <i>θ</i> between the thread and the vertical.', 2, th, '°', `Uses tan <i>θ</i> = <i>F</i> / <i>mg</i> ✓<br>${eq(`<i>θ</i> = tan<sup>−1</sup>(${I(F)} / (${N(m / 1000)} × 9.81)) = ${A(th)}°`)} ✓`, { noSkill: true }),
+      calc('Calculate the tension in the thread.', 2, Tn, 'N', `The tension balances the resultant of the weight and the electric force ✓<br>${eq(`<i>T</i> = √((${I(mg)})<sup>2</sup> + (${I(F)})<sup>2</sup>) = ${AV(Tn, 'N')}`)} ✓`),
+      text('The thread breaks. Describe and explain the motion of the ball, assuming it does not touch a plate.', 2, 'The weight and the electric force are both constant, so the resultant force is constant and acts along the line of the thread ✓<br>the ball accelerates uniformly from rest in a straight line at angle <i>θ</i> to the vertical, away from the support ✓')
+    ] };
+};
+
+function eqpScene(n, V0, ia, ib, ya, yb, dlab){
+  const s = new Scene('Two parallel plates with equally spaced equipotential lines between them and two points A and B'), x0 = 80, W = 360, yt = 70, h = 240, dx = W / n;
+  plateV(s, x0 - 7, yt, h); plateV(s, x0 + W, yt, h);
+  for (let i = 0; i <= n; i++){ const x = x0 + i * dx + (i === n ? 3.5 : i === 0 ? -3.5 : 0); if (i > 0 && i < n) s.line(x, yt, x, yt + h, { dash: '6 5', w: 1.1 }); s.label(x, yt - 12, Math.round(V0 * i / n) + ' V', { size: 13 }); }
+  dot(s, x0 + ia * dx, ya, 4.5); s.label(x0 + ia * dx + 10, ya - 8, 'A', { bold: true, anchor: 'start' });
+  dot(s, x0 + ib * dx, yb, 4.5); s.label(x0 + ib * dx + 10, yb - 8, 'B', { bold: true, anchor: 'start' });
+  s.line(x0 - 3.5, yt + h + 6, x0 - 3.5, yt + h + 40, { dash: '4 3', w: 1 }); s.line(x0 + W + 3.5, yt + h + 6, x0 + W + 3.5, yt + h + 40, { dash: '4 3', w: 1 });
+  s.dim(x0 - 3.5, yt + h + 34, x0 + W + 3.5, yt + h + 34, dlab, { below: true });
+  return s;
+}
+T.UF4 = R => {
+  const n = R.pick([4, 5]), V0 = R.pick([n === 4 ? 200 : 250, n === 4 ? 400 : 500, n === 4 ? 800 : 1000]), d = R.pick([4.0, 5.0, 8.0, 10]), [ia, ib] = pickN(R, [1, 2, 3, n - 1].filter((v, i, a) => a.indexOf(v) === i), 2);
+  const ya = R.pick([110, 140, 170]), yb = R.pick([220, 250, 280]), q = R.pick([2.0, 3.0, 5.0]), E = V0 / (d / 100), VA = V0 * ia / n, VB = V0 * ib / n, W = q * 1e-9 * (VB - VA);
+  const s = eqpScene(n, V0, ia, ib, ya, yb, N(d) + ' cm');
+  return { sf: 2, scenes: [s], data: { n, V0, d, ia, ib, q },
+    stem: `<b>Figure 1</b> shows two parallel plates ${V(d, 'cm')} apart with a potential difference of ${V0} V between them. The dashed lines are equipotentials. A and B are two points between the plates.`,
+    parts: [
+      calc('Calculate the electric field strength between the plates.', 2, E, VM, `${eq(`<i>E</i> = Δ<i>V</i> / Δ<i>d</i> = ${V0} / ${N(d / 100)}`)} ✓<br>${eq(`<i>E</i> = ${AV(E, VM)}`)} ✓`),
+      calc('State the potential difference between A and B.', 1, Math.abs(VB - VA), 'V', `${eq(`${Math.max(VA, VB)} − ${Math.min(VA, VB)} = ${Math.abs(VB - VA)} V`)} ✓`, { noSkill: true }),
+      calc(`Calculate the work done on a charge of +${V(q, 'nC')} when it is moved from A to B.`, 1, Math.abs(W), 'J', `${eq(`<i>W</i> = <i>Q</i>Δ<i>V</i> = ${N(q)} × 10<sup>−9</sup> × ${Math.abs(VB - VA)} = ${AV(Math.abs(W), 'J')}`)} ✓`),
+      opt(`State whether this work is done on the charge by an external force or by the electric field.`, 1, ['by an external force (the charge moves to a higher potential)', 'by the electric field (the charge moves to a lower potential)'], VB > VA ? 0 : 1, VB > VA ? 'An external force does work: B is at a higher potential than A ✓' : 'The field does work: B is at a lower potential than A ✓'),
+      opt('State the work done when the charge moves along an equipotential.', 1, ['zero', 'it depends on the distance moved', 'it equals <i>EQd</i>'], 0, 'Zero: the potential does not change ✓'),
+      text('Explain why the electric field lines are perpendicular to the equipotentials.', 1, 'No work is done moving along an equipotential, so the electric force (and the field) has no component along it ✓'),
+      calc(`Calculate the force on the +${N(q)} nC charge at A.`, 1, q * 1e-9 * E, 'N', `${eq(`<i>F</i> = <i>EQ</i> = ${I(E)} × ${N(q)} × 10<sup>−9</sup> = ${AV(q * 1e-9 * E, 'N')}`)} ✓`)
+    ] };
+};
+
+T.UF5 = R => {
+  const d = R.pick([4.0, 5.0, 8.0, 10]), V0 = R.pick([100, 200, 300, 400, 500]), [ym, yM] = axisFor(V0), xs = d / 10;
+  const v = find(() => { const i1 = 5 + Math.floor(R() * 5), i2 = Math.floor(R() * 4); return { x1: i1 * xs, x2: i2 * xs }; }, o => o.x1 - o.x2 >= 3 * xs);
+  const { x1, x2 } = v, Vx = x => V0 * (1 - x / d), E = V0 / (d / 100), dK = QE * (Vx(x2) - Vx(x1)), sp = Math.sqrt(2 * dK / MEL);
+  const fig = graph({ x: [0, axisFor(d)[0], axisFor(d)[1]], y: [0, ym, yM], xdiv: 10, ydiv: 10, h: 320, xl: 'x / cm', yl: 'V / V', curves: [{ f: Vx, from: 0, to: d }], reads: [[0, V0], [d, 0], [x1, Vx(x1)], [x2, Vx(x2)]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { d, V0, x1, x2 },
+    stem: `Two parallel plates are ${V(d, 'cm')} apart in a vacuum. <b>Figure 1</b> shows how the electric potential <i>V</i> varies with the distance <i>x</i> from one plate.`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the electric field strength between the plates.', 2, E, VM, `Gradient = ${V0} V / ${N(d / 100)} m (uses the whole line) ✓<br>${eq(`<i>E</i> = ${V0} / ${N(d / 100)} = ${AV(E, VM)}`)} ✓`, { tol: .03, noSkill: true }),
+      opt('State the direction of the electric field.', 1, ['in the direction of increasing <i>x</i>', 'in the direction of decreasing <i>x</i>'], 0, 'In the direction of increasing <i>x</i>: the field points from high to low potential ✓'),
+      calc('Calculate the magnitude of the force on an electron between the plates.', 1, QE * E, 'N', `${eq(`<i>F</i> = ${SE} × ${I(E)} = ${AV(QE * E, 'N')}`)} ✓`, { tol: .03, noSkill: true }),
+      calc(`An electron is released from rest at <i>x</i> = ${N(x1, 2)} cm and moves to <i>x</i> = ${N(x2, 2)} cm.<br>Calculate the kinetic energy it gains.`, 2, dK, 'J', `Reads <i>V</i> = ${N(Vx(x1), 3)} V and ${N(Vx(x2), 3)} V, so Δ<i>V</i> = ${N(Vx(x2) - Vx(x1), 3)} V ✓<br>${eq(`<i>E</i><sub>k</sub> = <i>e</i>Δ<i>V</i> = ${SE} × ${N(Vx(x2) - Vx(x1), 3)} = ${AV(dK, 'J')}`)} ✓`, { tol: .03, noSkill: true }),
+      calc('Calculate the speed of the electron at this point.', 2, sp, MS1, `${eq(`<i>v</i> = √(2<i>E</i><sub>k</sub> / <i>m</i>) = √(2 × ${I(dK)} / ${SME})`)} ✓<br>${eq(`<i>v</i> = ${AV(sp, MS1)}`)} ✓`, { tol: .02, noSkill: true, guide: ['Allow ecf from their answer to (d).'] })
+    ] };
+};
+
+T.UF6 = R => {
+  const v = find(() => { const Eb = R.pick([2.9, 3.0, 3.1]), ds = [1.0, 2.0, 3.0, 4.0, 5.0], Vs = ds.map(d => Number((Eb * d * (1 + (R() * 2 - 1) * .05)).toPrecision(2))); return { ds, Vs, miss: Math.floor(R() * 5) }; },
+    o => { const e = o.Vs.map((x, i) => r3(x / o.ds[i])); return Math.max(...e) - Math.min(...e) >= .1; });
+  const { ds, Vs, miss } = v, Es = Vs.map((x, i) => r3(x / ds[i])), mean = meanOf(Es), hr = (Math.max(...Es) - Math.min(...Es)) / 2, Vsup = R.pick([12, 15, 20, 25, 30]), gap = Vsup / mean;
+  const tab = tableH('Table 1', ['gap / mm', 'breakdown pd / kV', '<i>E</i> / MV m<sup>−1</sup>'], ds.map((d, i) => [N(d), N(Vs[i]), i === miss ? '' : N(Es[i], 3)]));
+  return NOFIG(2, { ds, Vs, miss, Vsup }, `A student increases the potential difference across a gap between two flat electrodes until a spark jumps across the gap. Table 1 shows the breakdown potential difference for different gaps.<br>${tab}`, [
+    calc(`Calculate the electric field strength at breakdown for the ${N(ds[miss])} mm gap, in MV m<sup>−1</sup>.`, 1, Vs[miss] / ds[miss], 'MV m<sup>−1</sup>', `${eq(`<i>E</i> = <i>V</i> / <i>d</i> = ${N(Vs[miss])} × 10<sup>3</sup> / ${N(ds[miss])} × 10<sup>−3</sup> = ${N(Vs[miss] / ds[miss], 3)} × 10<sup>6</sup>`)} V m<sup>−1</sup> ✓`, { noSkill: true, s3: true }),
+    calc('Calculate the mean breakdown field strength in MV m<sup>−1</sup>. Use the values to 3 significant figures.', 1, mean, 'MV m<sup>−1</sup>', `${eq(`(${Es.map(x => N(x, 3)).join(' + ')}) / 5 = ${N(mean, 3)}`)} MV m<sup>−1</sup> ✓`, { noSkill: true, s3: true }),
+    calc('The uncertainty is half the range of the values. Calculate the uncertainty in the mean, in MV m<sup>−1</sup>.', 1, hr, 'MV m<sup>−1</sup>', `${eq(`(${N(Math.max(...Es), 3)} − ${N(Math.min(...Es), 3)}) / 2 = ${U(hr)}`)} MV m<sup>−1</sup> ✓`, UNC),
+    calc(`A spark must not jump between two electrodes connected to a ${Vsup} kV supply.<br>Calculate the smallest safe gap, in mm.`, 2, gap, 'mm', `Uses <i>d</i> = <i>V</i> / <i>E</i> ✓<br>${eq(`<i>d</i> = ${Vsup} × 10<sup>3</sup> / ${I3(mean)} × 10<sup>6</sup> = ${I(gap / 1000)}`)} m = ${A(gap)} mm ✓`, { noSkill: true }),
+    text('Explain why air conducts when the electric field strength is large enough.', 2, 'The few free electrons (and ions) in the air are accelerated by the field and gain enough kinetic energy between collisions to ionise molecules ✓<br>this produces more free electrons, which ionise more molecules, so the number of charge carriers increases rapidly (an avalanche) ✓'),
+    text('State one safety precaution for this experiment.', 1, 'Use a supply with a high internal resistance (limited current) / do not touch the electrodes while the supply is switched on / switch off and discharge before adjusting the gap ✓')
+  ]);
+};
+
+T.UF7 = R => {
+  const E = R.pick([1.5, 2.0, 2.5, 4.0, 5.0]), s = R.pick([5.0, 8.0, 10, 12]), m = R.pick([2.0, 5.0, 10]), h = R.pick([1.5, 2.0, 3.0]);
+  const a = QE * E * 1e3 / MEL, W = QE * E * 1e3 * s / 100, Wg = m * GRAV * h;
+  return NOFIG(2, { E, s, m, h }, `A region contains a uniform electric field of strength ${V(E, 'kV m<sup>−1</sup>')}. Uniform electric fields and uniform gravitational fields have many similarities.`, [
+    calc('Calculate the acceleration of an electron in this field.', 2, a, MS2, `${eq(`<i>F</i> = <i>eE</i> = ${SE} × ${N(E)} × 10<sup>3</sup> = ${I(QE * E * 1e3)} N`)} ✓<br>${eq(`<i>a</i> = ${I(QE * E * 1e3)} / ${SME} = ${AV(a, MS2)}`)} ✓`),
+    calc('Calculate the ratio of this acceleration to the acceleration due to gravity, 9.81 m s<sup>−2</sup>.', 1, a / GRAV, '', `${eq(`${I(a)} / 9.81 = ${A(a / GRAV)}`)} ✓`, { noSkill: true }),
+    text('Explain why the gravitational force on an electron is usually ignored in electric-field calculations.', 1, 'The electric force is very many times larger than the gravitational force (by the ratio calculated), so the weight has a negligible effect ✓'),
+    calc(`Calculate the work done by the field when a proton moves ${V(s, 'cm')} along the direction of the field.`, 1, W, 'J', `${eq(`<i>W</i> = <i>Fd</i> = ${SE} × ${N(E)} × 10<sup>3</sup> × ${N(s / 100)} = ${AV(W, 'J')}`)} ✓`),
+    calc(`Calculate the work done by gravity when a ${V(m, 'kg')} mass falls through ${V(h, 'm')}.`, 1, Wg, 'J', `${eq(`<i>W</i> = <i>mgh</i> = ${N(m)} × 9.81 × ${N(h)} = ${AV(Wg, 'J')}`)} ✓`),
+    choose(R, 'Which statement is a difference between electric and gravitational fields?', 1, 'Gravitational forces are always attractive, but electric forces can be attractive or repulsive.', ['Only electric fields can be uniform.', 'Only gravitational field strength is a vector.', 'Only electric forces obey an inverse-square law for point sources.'], 'Gravitational forces are always attractive; electric forces can attract or repel ✓'),
+    text('Compare the definitions of electric field strength and gravitational field strength.', 2, 'Electric field strength is the force per unit charge (on a positive charge), in N C<sup>−1</sup> ✓<br>gravitational field strength is the force per unit mass, in N kg<sup>−1</sup> ✓')
+  ]);
+};
+
+T.UF8 = R => {
+  const Vp = R.pick([20, 30, 40, 50]), d = R.pick([10, 15, 20, 25]), ne = R.pick([200, 500, 800]), m = R.pick([2.0e-15, 5.0e-15, 1.0e-14]);
+  const E = Vp * 1e3 / (d / 100), Q = ne * QE, F = E * Q, a = F / m, t = Math.sqrt(2 * (d / 200) / a);
+  return NOFIG(2, { Vp, d, ne, m }, `In an electrostatic precipitator, smoke particles in a chimney gain negative charge and are attracted to a collecting plate. Two parallel plates ${V(d, 'cm')} apart have a potential difference of ${V(Vp, 'kV')}. A smoke particle of mass ${V(m, 'kg')} carries a charge equal to that of ${ne} electrons.`, [
+    calc('Calculate the electric field strength between the plates.', 1, E, VM, `${eq(`<i>E</i> = ${Vp} × 10<sup>3</sup> / ${N(d / 100)} = ${AV(E, VM)}`)} ✓`),
+    calc('Calculate the electric force on the particle.', 1, F, 'N', `${eq(`<i>F</i> = ${ne} × ${SE} × ${I(E)} = ${AV(F, 'N')}`)} ✓`),
+    calc('Calculate the acceleration of the particle. Ignore gravity and air resistance.', 1, a, MS2, `${eq(`<i>a</i> = ${I(F)} / ${N(m)} = ${AV(a, MS2)}`)} ✓`),
+    calc('The particle starts from rest midway between the plates. Calculate the time it takes to reach a plate.', 2, t, 's', `Distance = ${I(d / 200)} m ✓<br>${eq(`<i>t</i> = √(2<i>s</i> / <i>a</i>) = √(2 × ${I(d / 200)} / ${I(a)}) = ${AV(t, 's')}`)} ✓`),
+    opt('State which plate the particle moves towards.', 1, ['the positive plate', 'the negative plate'], 0, 'The positive plate: the particle is negatively charged ✓'),
+    text('Suggest why the real time taken is longer than the value calculated.', 1, 'Air resistance (drag) opposes the motion of the particle / the gas carries the particle along ✓')
+  ]);
+};
+
+T.UF9 = R => {
+  const h = R.pick([500, 800, 1000, 1500]), Vc = R.pick([1.0, 2.0, 3.0]), Qf = R.pick([10, 15, 20, 25]), tl = R.pick([0.50, 1.0, 2.0]), q = R.pick([2.0, 5.0, 8.0]), m = R.pick([2.0, 4.0, 5.0]), P = R.pick([2.0, 3.0]);
+  const E = Vc * 1e8 / h, W = Qf * Vc * 1e8, I_ = Qf / (tl * 1e-3), F = q * 1e-12 * E, mg = m * 1e-6 * GRAV, th = W / (P * 1e3);
+  return NOFIG(2, { h, Vc, Qf, tl, q, m, P }, `The base of a thundercloud is ${V(h, 'm')} above flat ground. The potential difference between the cloud base and the ground is ${N(Vc)} × 10<sup>8</sup> V.`, [
+    calc('Calculate the electric field strength between the cloud base and the ground.', 1, E, VM, `${eq(`<i>E</i> = ${N(Vc)} × 10<sup>8</sup> / ${h} = ${AV(E, VM)}`)} ✓`),
+    text('State one assumption you made in this calculation.', 1, 'The field is uniform (the cloud base and the ground act like parallel plates) ✓'),
+    calc(`A lightning strike transfers ${V(Qf, 'C')} of charge across this potential difference.<br>Calculate the energy transferred.`, 1, W, 'J', `${eq(`<i>W</i> = <i>QV</i> = ${Qf} × ${N(Vc)} × 10<sup>8</sup> = ${AV(W, 'J')}`)} ✓`),
+    calc(`The strike lasts ${V(tl, 'ms')}. Calculate the average current.`, 1, I_, 'A', `${eq(`<i>I</i> = ${Qf} / ${N(tl * 1e-3)} = ${AV(I_, 'A')}`)} ✓`),
+    calc(`A raindrop of mass ${V(m, 'mg')} carries a charge of ${V(q, 'pC')}.<br>Calculate the electric force on it.`, 1, F, 'N', `${eq(`<i>F</i> = <i>EQ</i> = ${I(E)} × ${N(q)} × 10<sup>−12</sup> = ${AV(F, 'N')}`)} ✓`),
+    opt('State whether this force is larger or smaller than the weight of the raindrop.', 1, ['larger', 'smaller'], F > mg ? 0 : 1, `${F > mg ? 'Larger' : 'Smaller'}: the weight is ${N(m)} × 10<sup>−6</sup> × 9.81 = ${A(mg)} N ✓`),
+    calc(`Calculate how long this energy could run a ${V(P, 'kW')} heater.`, 1, th, 's', `${eq(`<i>t</i> = ${I(W)} / ${N(P)} × 10<sup>3</sup> = ${AV(th, 's')}`)} ✓`)
+  ]);
+};
+/* ===== Radial electric fields ===== */
+T.RF1 = R => {
+  const q = R.pick([2.0, 4.0, 5.0, 8.0, 12, 20]) * (R.chance(.5) ? 1 : -1), rc = R.pick([2.0, 3.0, 5.0, 8.0, 10]), k = R.pick([2, 3, 4]), Et = R.pick([1.0, 2.0, 5.0]) * 1e3;
+  const r = rc / 100, E = KC * Math.abs(q) * 1e-9 / (r * r), rt = Math.sqrt(KC * Math.abs(q) * 1e-9 / Et);
+  return NOFIG(2, { q, rc, k, Et }, `A small sphere carries a charge of ${QV(q, 'nC')}. Treat the sphere as a point charge.`, [
+    text('Define the electric field strength at a point.', 2, 'The force per unit charge ✓<br>acting on a small positive (test) charge placed at the point ✓'),
+    calc(`Calculate the electric field strength at a distance of ${V(rc, 'cm')} from the sphere.`, 2, E, NCU, `${eq(`<i>E</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>r</i><sup>2</sup> = ${N(Math.abs(q))} × 10<sup>−9</sup> / (${K4} × ${N(r)}<sup>2</sup>)`)} ✓<br>${eq(`<i>E</i> = ${AV(E, NCU)}`)} ✓`),
+    opt('State the direction of the field at this point.', 1, ['away from the sphere', 'towards the sphere'], q > 0 ? 0 : 1, q > 0 ? 'Away from the sphere: the charge is positive ✓' : 'Towards the sphere: the charge is negative ✓'),
+    calc(`Calculate the field strength at ${k === 2 ? "twice" : k + " times"} this distance.`, 1, E / (k * k), NCU, `${eq(`<i>E</i> = ${I(E)} / ${k}<sup>2</sup> = ${AV(E / (k * k), NCU)}`)} ✓`),
+    calc(`Calculate the magnitude of the force on an electron placed ${V(rc, 'cm')} from the sphere.`, 1, E * QE, 'N', `${eq(`<i>F</i> = <i>eE</i> = ${SE} × ${I(E)} = ${AV(E * QE, 'N')}`)} ✓`),
+    calc(`Calculate the distance from the sphere at which the field strength is ${V(Et, NCU)}.`, 2, rt, 'm', `${eq(`<i>r</i> = √(<i>Q</i> / 4π<i>ε</i><sub>0</sub><i>E</i>) = √(${N(Math.abs(q))} × 10<sup>−9</sup> / (${K4} × ${N(Et)}))`)} ✓<br>${eq(`<i>r</i> = ${AV(rt, 'm')}`)} ✓`)
+  ]);
+};
+
+// field lines of two point charges, traced numerically through the resultant field
+function fieldLines(qL, qM){
+  const s = new Scene('Electric field lines around two charged objects L and M'), y0 = 180, xL = 180, xM = 360, box = [20, 20, 520, 340], ch = [[xL, y0, qL], [xM, y0, qM]];
+  s.rect(box[0], box[1], box[2] - box[0], box[3] - box[1], { free: true, stroke: '#fff', w: .1 });
+  const Ef = (x, y) => { let ex = 0, ey = 0; ch.forEach(([cx, cy, q]) => { const dx = x - cx, dy = y - cy, r = Math.hypot(dx, dy); ex += q * dx / (r * r * r); ey += q * dy / (r * r * r); }); return [ex, ey]; };
+  const small = Math.min(Math.abs(qL), Math.abs(qM)), same = qL * qM > 0;
+  const src = same ? ch : [Math.abs(qL) >= Math.abs(qM) ? ch[0] : ch[1]];
+  src.forEach(([cx, cy, q]) => { const n = Math.round(6 * Math.abs(q) / small), sg = Math.sign(q);
+    for (let k = 0; k < n; k++){ const a = 2 * Math.PI * (k + .5) / n; let x = cx + 14 * Math.cos(a), y = cy + 14 * Math.sin(a); const pts = [[x, y]];
+      for (let i = 0; i < 2000; i++){ const [ex, ey] = Ef(x, y), m = Math.hypot(ex, ey); if (m < 1e-12) break; x += 2.5 * sg * ex / m; y += 2.5 * sg * ey / m;
+        const hit = ch.find(c => c[0] !== cx && Math.hypot(x - c[0], y - c[1]) < 14); if (hit){ const d = Math.hypot(x - hit[0], y - hit[1]); pts.push([hit[0] + (x - hit[0]) * 13 / d, hit[1] + (y - hit[1]) * 13 / d]); break; }
+        if (x < box[0] || x > box[2] || y < box[1] || y > box[3]) break; pts.push([x, y]); }
+      if (pts.length < 6) continue;
+      s.poly(pts, { w: 1.2 });
+      const j = Math.min(pts.length - 2, Math.max(4, Math.round(pts.length * .35))), [p1, p2] = sg > 0 ? [pts[j], pts[j + 1]] : [pts[j + 1], pts[j]];
+      s.mid(p1[0], p1[1], p2[0], p2[1], .5, 8); } });
+  ch.forEach(([cx, cy], i) => { s.circle(cx, cy, 12, { fill: '#fff', w: 1.8 }); s.label(cx, cy + 5.5, i ? 'M' : 'L', { bold: true, size: 15, inside: true }); });
+  return s;
+}
+T.RF2 = R => {
+  const k = R.pick([2, 3]), bigL = R.chance(.5), same = R.chance(.4), posL = same ? true : R.chance(.5), u = R.pick([2.0, 3.0, 4.0]);
+  const mL = bigL ? k * u : u, mM = bigL ? u : k * u, qL = (posL ? 1 : -1) * mL, qM = (same ? 1 : posL ? -1 : 1) * mM, s_ = R.pick([10, 12, 15, 20]);
+  const sc = fieldLines(qL, qM), smallName = bigL ? 'M' : 'L', bigName = bigL ? 'L' : 'M', ratio = k, x = same ? s_ / (1 + Math.sqrt(ratio)) : s_ / (Math.sqrt(ratio) - 1);
+  const NP = [`between L and M, closer to L`, `between L and M, closer to M`, `on the line through L and M, beyond L`, `on the line through L and M, beyond M`];
+  const ans = same ? (smallName === 'L' ? 0 : 1) : (smallName === 'L' ? 2 : 3);
+  const pos = same ? 2 : posL ? 0 : 1;
+  return { sf: 2, scenes: [sc], data: { qL, qM, s: s_ },
+    stem: `<b>Figure 1</b> shows the electric field lines around two small charged objects L and M.`,
+    parts: [
+      opt('State which object has the charge of greater magnitude.', 1, ['L', 'M'], bigL ? 0 : 1, `${bigName}: more field lines start or end on it ✓`),
+      opt('State which object or objects carry a positive charge.', 1, ['L only', 'M only', 'both L and M', 'neither L nor M'], pos, `${['L only', 'M only', 'both L and M'][pos]}: field lines point away from positive charges ✓`),
+      text('Explain why the lines in <b>Figure 1</b> could not represent a gravitational field.', 1, same ? 'The field lines point away from both objects, but gravitational field lines always point towards a mass because gravity is only attractive ✓' : 'The field lines start on one object and end on the other; gravitational field lines can only end on masses (point towards them) because gravity is only attractive ✓'),
+      opt('There is one point near the objects where the resultant field strength is zero. Where is it?', 1, NP, ans, `${cap(NP[ans])}: ${same ? 'the fields are opposite between like charges, and the point is closer to the smaller charge' : 'between unlike charges the fields add, so the point is outside, closer to the smaller charge'} ✓`),
+      calc(`The charges are ${QV(qL, 'nC')} on L and ${QV(qM, 'nC')} on M, and their centres are ${V(s_, 'cm')} apart.<br>Calculate the distance of this point from ${smallName}.`, 2, x, 'cm', same ? `${eq(`${N(Math.min(mL, mM))} / <i>x</i><sup>2</sup> = ${N(Math.max(mL, mM))} / (${s_} − <i>x</i>)<sup>2</sup>`)} ✓<br>${eq(`<i>x</i> = ${s_} / (1 + √(${ratio})) = ${A(x)}`)} cm ✓` : `${eq(`${N(Math.min(mL, mM))} / <i>x</i><sup>2</sup> = ${N(Math.max(mL, mM))} / (${s_} + <i>x</i>)<sup>2</sup>`)} ✓<br>${eq(`<i>x</i> = ${s_} / (√(${ratio}) − 1) = ${A(x)}`)} cm ✓`, { noSkill: true }),
+      text('Describe how an equipotential line would be drawn on <b>Figure 1</b>.', 1, 'It crosses every field line at right angles (perpendicular to the field lines) ✓')
+    ] };
+};
+
+T.RF3 = R => {
+  const v = find(() => ({ q: R.pick([12, 20, 30, 46, 60]), s: R.pick([100, 120, 150]), x: R.pick([40, 45, 50, 55, 60, 66, 70]) }), o => o.x < o.s * .62 && o.x > o.s * .3);
+  const { q, s, x } = v, Q = q * Math.pow(x / (s - x), 2), EA = KC * q * 1e-6 / Math.pow((s - x) / 1000, 2), Vp = KC * (q * 1e-6 / ((s - x) / 1000) + Q * 1e-6 / (x / 1000));
+  const sc = 380 / s, xa = 90, xq = 90 + s * sc, xp = xq - x * sc;
+  const scn = lineScene([{ x: xa, q, top: '+' + N(q) + ' μC', name: 'A' }, { x: xp, name: 'P' }, { x: xq, q: 0, top: '*Q*', name: 'B' }], [[xa, xq, s + ' mm', 1], [xp, xq, x + ' mm', 0]], 'A point charge A and a second charge B with a point P on the line between them');
+  return { sf: 2, scenes: [scn], data: { q, s, x },
+    stem: `<b>Figure 1</b> shows a point charge A of +${V(q, 'μC')} placed ${V(s, 'mm')} from a second point charge B of charge <i>Q</i>. Point P is on the line joining the charges, ${V(x, 'mm')} from B. The resultant electric field strength at P is zero.`,
+    parts: [
+      calc('Calculate the electric field strength at P due to A.', 2, EA, NCU, `${eq(`<i>E</i> = ${N(q)} × 10<sup>−6</sup> / (${K4} × ${N((s - x) / 1000)}<sup>2</sup>)`)} ✓<br>${eq(`<i>E</i> = ${AV(EA, NCU)}`)} ✓`),
+      calc('Calculate <i>Q</i>, in μC.', 2, Q, 'μC', `The fields at P due to A and B are equal in size: ${eq(`<i>Q</i> / ${x}<sup>2</sup> = ${N(q)} / ${s - x}<sup>2</sup>`)} ✓<br>${eq(`<i>Q</i> = ${N(q)} × (${x} / ${s - x})<sup>2</sup> = ${A(Q)}`)} μC ✓`, { noSkill: true }),
+      opt('State the sign of the charge <i>Q</i>.', 1, ['positive', 'negative'], 0, 'Positive: the field can only be zero between two charges of the same sign ✓'),
+      text('Explain, without calculation, whether work must be done to move a proton from infinity to P.', 2, 'The field at P is zero, but the potential at P is not zero ✓<br>both charges are positive so the potential at P is positive, and work must be done (against the repulsion) to bring a proton from infinity to P ✓'),
+      calc('Calculate the electric potential at P.', 2, Vp, 'V', `Potentials add as scalars ✓<br>${eq(`<i>V</i> = (${N(q)} × 10<sup>−6</sup> / ${N((s - x) / 1000)} + ${I(Q)} × 10<sup>−6</sup> / ${N(x / 1000)}) / (${K4}) = ${AV(Vp, 'V')}`)} ✓`)
+    ] };
+};
+
+T.RF4 = R => {
+  const v = find(() => ({ qa: R.pick([2.0, 3.0, 4.0, 6.0, 8.0]) * (R.chance(.5) ? 1 : -1), qb: R.pick([2.0, 3.0, 4.0, 6.0, 8.0]) * (R.chance(.5) ? 1 : -1), mid: R.chance(.5), d1: R.pick([4.0, 5.0, 6.0, 8.0]), d2: R.pick([2.0, 3.0, 4.0, 5.0]) }),
+    o => { const ra = o.mid ? o.d1 : o.d1 + o.d2, rb = o.d2, ea = KC * o.qa * 1e-9 / Math.pow(ra / 100, 2), eb = KC * o.qb * 1e-9 / Math.pow(rb / 100, 2), xa = 1, xb = o.mid ? -1 : 1; const net = ea * xa + eb * xb; return Math.abs(net) > .25 * Math.max(Math.abs(ea), Math.abs(eb)); });
+  const { qa, qb, mid, d1, d2 } = v, ra = mid ? d1 : d1 + d2, rb = d2, Ea = KC * Math.abs(qa) * 1e-9 / Math.pow(ra / 100, 2), Eb = KC * Math.abs(qb) * 1e-9 / Math.pow(rb / 100, 2);
+  // x to the right; A on the left. Field of a positive charge points away from it.
+  const fa = Math.sign(qa) * Ea, fb = (mid ? -1 : 1) * Math.sign(qb) * Eb, net = fa + fb;
+  const sc = 360 / (d1 + d2), xa = 90, xp = mid ? 90 + d1 * sc : 90 + (d1 + d2) * sc, xb = mid ? xp + d2 * sc : 90 + d1 * sc;
+  const s = lineScene([{ x: xa, q: qa, top: QL(qa, 'nC'), name: 'A' }, { x: xb, q: qb, top: QL(qb, 'nC'), name: 'B' }, { x: xp, name: 'P' }], mid ? [[xa, xp, N(d1) + ' cm'], [xp, xb, N(d2) + ' cm']] : [[xa, xb, N(d1) + ' cm'], [xb, xp, N(d2) + ' cm']], 'Two point charges A and B and a point P on the same line');
+  const dirTxt = x => x > 0 ? 'to the right' : 'to the left';
+  return { sf: 2, scenes: [s], data: { qa, qb, mid, d1, d2 },
+    stem: `<b>Figure 1</b> shows two point charges A (${QV(qa, 'nC')}) and B (${QV(qb, 'nC')}) in air, and a point P on the line through them.`,
+    parts: [
+      calc('Calculate the magnitude of the electric field strength at P due to A.', 2, Ea, NCU, `Distance from A to P = ${ra} cm ✓<br>${eq(`<i>E</i> = ${N(Math.abs(qa))} × 10<sup>−9</sup> / (${K4} × ${N(ra / 100)}<sup>2</sup>) = ${AV(Ea, NCU)}`)} ✓`),
+      calc('Calculate the magnitude of the electric field strength at P due to B.', 1, Eb, NCU, `${eq(`<i>E</i> = ${N(Math.abs(qb))} × 10<sup>−9</sup> / (${K4} × ${N(rb / 100)}<sup>2</sup>) = ${AV(Eb, NCU)}`)} ✓`),
+      calc('Calculate the magnitude of the resultant electric field strength at P.', 2, Math.abs(net), NCU, `The field due to A is ${dirTxt(fa)} and the field due to B is ${dirTxt(fb)} ✓<br>${eq(`<i>E</i> = ${(fa > 0) === (fb > 0) ? I(Ea) + ' + ' + I(Eb) : '|' + I(Ea) + ' − ' + I(Eb) + '|'} = ${AV(Math.abs(net), NCU)}`)} ✓`),
+      opt('State the direction of the resultant field at P in <b>Figure 1</b>.', 1, ['to the left', 'to the right'], net > 0 ? 1 : 0, `${cap(dirTxt(net))} ✓`),
+      calc('Calculate the magnitude of the force on an electron placed at P.', 1, QE * Math.abs(net), 'N', `${eq(`<i>F</i> = ${SE} × ${I(Math.abs(net))} = ${AV(QE * Math.abs(net), 'N')}`)} ✓`),
+      opt('State the direction of the force on the electron.', 1, ['to the left', 'to the right'], net > 0 ? 0 : 1, `${cap(dirTxt(-net))}: opposite to the field, because the electron is negative ✓`)
+    ] };
+};
+
+function bisectScene(q1, q2, aLab, hLab){
+  const s = new Scene('Two point charges and a point P on the perpendicular bisector of the line joining them'), x1 = 140, x2 = 380, y = 300, xp = 260, yp = 110;
+  s.line(x1 + 12, y, x2 - 12, y, { dash: '6 4', w: 1 }); s.line(x1 + 8, y - 9, xp - 4, yp + 6, { dash: '6 4', w: 1 }); s.line(x2 - 8, y - 9, xp + 4, yp + 6, { dash: '6 4', w: 1 });
+  s.line(xp, y - 4, xp, yp + 6, { dash: '3 4', w: .9 });
+  charge(s, x1, y, SG_(q1)); charge(s, x2, y, SG_(q2)); dot(s, xp, yp, 4.5); s.label(xp, yp - 14, 'P', { bold: true });
+  s.label(x1 - 20, y + 5, QL(q1, 'nC'), { size: 14, anchor: 'end' }); s.label(x2 + 20, y + 5, QL(q2, 'nC'), { size: 14, anchor: 'start' });
+  s.line(x1, y + 14, x1, y + 48, { dash: '4 3', w: 1 }); s.line(xp, y + 4, xp, y + 48, { dash: '4 3', w: 1 }); s.dim(x1, y + 42, xp, y + 42, aLab, { below: true });
+  s.dim(xp + 70, y, xp + 70, yp, hLab); s.line(xp + 4, yp, xp + 76, yp, { dash: '4 3', w: 1 });
+  return s;
+}
+T.RF5 = R => {
+  const q = R.pick([2.0, 3.0, 4.0, 5.0, 6.0]), same = R.chance(.5), pos1 = R.chance(.5) || same, q1 = q * (pos1 ? 1 : -1), q2 = same ? q1 : -q1, a = R.pick([3.0, 4.0, 5.0, 6.0]), h = R.pick([4.0, 5.0, 6.0, 8.0]);
+  const r = Math.hypot(a, h), E1 = KC * q * 1e-9 / Math.pow(r / 100, 2), Er = same ? 2 * E1 * h / r : 2 * E1 * a / r;
+  const dir = same ? (q1 > 0 ? 'vertically upwards' : 'vertically downwards') : (q1 > 0 ? 'horizontally to the right' : 'horizontally to the left');
+  const DOPT = ['vertically upwards', 'vertically downwards', 'horizontally to the left', 'horizontally to the right'];
+  return { sf: 2, scenes: [bisectScene(q1, q2, N(a) + ' cm', N(h) + ' cm')], data: { q1, q2, a, h },
+    stem: `<b>Figure 1</b> shows two point charges of ${QV(q1, 'nC')} and ${QV(q2, 'nC')}. Point P is ${V(h, 'cm')} above the midpoint of the line joining them, and each charge is ${V(a, 'cm')} from the midpoint.`,
+    parts: [
+      calc('Calculate the distance from each charge to P.', 1, r, 'cm', `${eq(`√(${N(a)}<sup>2</sup> + ${N(h)}<sup>2</sup>) = ${A(r)}`)} cm ✓`, { noSkill: true }),
+      calc('Calculate the magnitude of the electric field strength at P due to one charge.', 2, E1, NCU, `${eq(`<i>E</i> = ${N(q)} × 10<sup>−9</sup> / (${K4} × (${I(r / 100)})<sup>2</sup>)`)} ✓<br>${eq(`<i>E</i> = ${AV(E1, NCU)}`)} ✓`),
+      calc('Calculate the magnitude of the resultant electric field strength at P.', 2, Er, NCU, `${same ? 'The horizontal components cancel; the vertical components add' : 'The vertical components cancel; the horizontal components add'} ✓<br>${eq(`<i>E</i> = 2 × ${I(E1)} × ${same ? N(h) : N(a)} / ${I(r)} = ${AV(Er, NCU)}`)} ✓`),
+      opt('State the direction of the resultant field at P.', 1, DOPT, DOPT.indexOf(dir), `${cap(dir)} ✓`),
+      text('Explain why one pair of components of the field at P cancels.', 1, 'P is the same distance from charges of equal magnitude, so the two fields are equal in size and symmetric about the vertical line through P; one pair of components is equal and opposite ✓')
+    ] };
+};
+
+T.RF6 = R => {
+  const Rd = R.pick([0.10, 0.15, 0.20, 0.25]), Eb = 3.0e6, k = R.pick([2, 3, 4]), qp = R.pick([1.0, 2.0, 5.0]);
+  const Q = 4 * Math.PI * EPS0 * Rd * Rd * Eb, Vm = Eb * Rd, Ek = Eb / (k * k), F = qp * 1e-9 * Ek;
+  return NOFIG(2, { Rd, k, qp }, `The dome of a Van de Graaff generator is a conducting sphere of radius ${V(Rd, 'm')}. Air becomes conducting when the electric field strength reaches 3.0 × 10<sup>6</sup> V m<sup>−1</sup>.`, [
+    calc('Calculate the maximum charge that the dome can hold.', 2, Q, 'C', `${eq(`<i>E</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>R</i><sup>2</sup>, so <i>Q</i> = ${K4} × ${N(Rd)}<sup>2</sup> × 3.0 × 10<sup>6</sup>`)} ✓<br>${eq(`<i>Q</i> = ${AV(Q, 'C')}`)} ✓`),
+    calc('Calculate the maximum potential of the dome.', 1, Vm, 'V', `${eq(`<i>V</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>R</i> = <i>ER</i> = 3.0 × 10<sup>6</sup> × ${N(Rd)} = ${AV(Vm, 'V')}`)} ✓`),
+    calc(`Calculate the field strength at a distance of ${k}<i>R</i> from the centre of the dome when it holds this charge.`, 1, Ek, VM, `${eq(`<i>E</i> = 3.0 × 10<sup>6</sup> / ${k}<sup>2</sup> = ${AV(Ek, VM)}`)} ✓`),
+    opt('State the electric field strength inside the dome.', 1, ['zero', 'the same as at the surface', 'twice the value at the surface'], 0, 'Zero: the charge sits on the outer surface of the conductor ✓'),
+    text('Explain why a larger dome can reach a higher potential.', 1, 'The maximum field at the surface is fixed, and <i>V</i> = <i>ER</i>, so the maximum potential is proportional to the radius ✓'),
+    calc(`Calculate the force on a small object carrying a charge of ${V(qp, 'nC')} at a distance of ${k}<i>R</i> from the centre.`, 1, F, 'N', `${eq(`<i>F</i> = ${N(qp)} × 10<sup>−9</sup> × ${I(Ek)} = ${AV(F, 'N')}`)} ✓`),
+    text('Explain why the charge on the dome can be treated as a point charge at its centre when calculating the field outside it.', 1, 'The charge is spread uniformly over the spherical surface, so outside the dome the field is radial, the same as that of a point charge at the centre ✓')
+  ]);
+};
+
+T.RF7 = R => {
+  const v = find(() => { const Q = R.pick([10, 20, 30, 40]), rs = pickN(R, [0.040, 0.050, 0.060, 0.080, 0.100, 0.120], 5).sort((x, y) => x - y), Es = rs.map(r => r3(KC * Q * 1e-9 / (r * r) * (1 + (R() * 2 - 1) * .02) / 1e3)); return { Q, rs, Es, miss: Math.floor(R() * 5) }; },
+    o => new Set(o.rs.map((r, i) => r3(o.Es[i] * 1e3 * r * r))).size >= 3);
+  const { rs, Es, miss } = v, P = rs.map((r, i) => r3(Es[i] * 1e3 * r * r)), mean = meanOf(P), Q = mean * 4 * Math.PI * EPS0, hr = (Math.max(...P) - Math.min(...P)) / 2, rn = R.pick([0.15, 0.20, 0.25]);
+  const tab = tableH('Table 1', ['<i>r</i> / m', '<i>E</i> / 10<sup>3</sup> V m<sup>−1</sup>', '<i>Er</i><sup>2</sup> / V m'], rs.map((r, i) => [N(r, 2), N(Es[i], 3), i === miss ? '' : N(P[i], 3)]));
+  return NOFIG(3, { rs, Es, miss, rn }, `A student uses a field probe to measure the electric field strength <i>E</i> at distances <i>r</i> from the centre of a small charged sphere. Table 1 shows the results.<br>${tab}`, [
+    calc(`Calculate the missing value of <i>Er</i><sup>2</sup>, in V m.`, 1, Es[miss] * 1e3 * rs[miss] * rs[miss], 'V m', `${eq(`${N(Es[miss], 3)} × 10<sup>3</sup> × ${N(rs[miss], 2)}<sup>2</sup> = ${A(Es[miss] * 1e3 * rs[miss] * rs[miss])}`)} V m ✓`, { noSkill: true }),
+    text('Explain how the results show that the field obeys an inverse-square law.', 1, 'The values of <i>Er</i><sup>2</sup> are (approximately) constant, so <i>E</i> ∝ 1/<i>r</i><sup>2</sup> ✓'),
+    calc('Calculate the mean value of <i>Er</i><sup>2</sup>. Use the values to 3 significant figures.', 1, mean, 'V m', `${eq(`(${P.map(x => N(x, 3)).join(' + ')}) / 5 = ${A(mean)}`)} V m ✓`, { noSkill: true }),
+    calc('The uncertainty is half the range of the values. Calculate the percentage uncertainty in the mean.', 1, hr / mean * 100, '%', `${eq(`(${N(Math.max(...P), 3)} − ${N(Math.min(...P), 3)}) / 2 / ${I(mean)} × 100 = ${U(hr / mean * 100)}%`)} ✓`, UNC),
+    calc('Calculate the charge on the sphere.', 1, Q, 'C', `${eq(`<i>Q</i> = 4π<i>ε</i><sub>0</sub><i>Er</i><sup>2</sup> = ${K4} × ${I(mean)} = ${AV(Q, 'C')}`)} ✓`),
+    calc(`Calculate the field strength at a distance of ${V(rn, 'm')} from the centre of the sphere.`, 1, mean / (rn * rn), VM, `${eq(`<i>E</i> = ${I(mean)} / ${N(rn)}<sup>2</sup> = ${AV(mean / (rn * rn), VM)}`)} ✓`),
+    text('Suggest why readings taken very close to the sphere may not fit the pattern.', 1, 'The probe (or the student) disturbs the field / the charge on the sphere is not uniformly distributed when another object is near, so it does not act as a point charge ✓')
+  ]);
+};
+
+T.RF8 = R => {
+  const Rc = R.pick([5.0, 10]), Es = R.pick([200, 240, 300, 400]), [ym, yM] = axisFor(Es), kQ = Es * 1e3 * Math.pow(Rc / 100, 2), Q = kQ / KC;
+  const fig = graph({ x: [0, 5 * Rc, Rc], y: [0, ym, yM], xdiv: 5, ydiv: 10, h: 320, xl: 'r / cm', yl: 'E / kV m^{−1}', curves: [{ f: () => 0, from: 0, to: Rc }, { f: r => Es * Rc * Rc / (r * r), from: Rc, to: 5 * Rc }], reads: [[Rc, Es], [2 * Rc, Es / 4]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Rc, Es },
+    stem: `A charged conducting sphere has a radius of ${V(Rc, 'cm')}. <b>Figure 1</b> shows how the electric field strength <i>E</i> varies with the distance <i>r</i> from the centre of the sphere.`,
+    parts: [
+      calc(`Use <b>Figure 1</b> to determine the field strength at <i>r</i> = ${N(2 * Rc, 2)} cm, in kV m<sup>−1</sup>.`, 1, Es / 4, 'kV m<sup>−1</sup>', `${N(Es / 4, 2)} kV m<sup>−1</sup> ✓`, { abs: yM / 20, noSkill: true }),
+      text('Show that the field outside the sphere obeys an inverse-square law.', 1, `Doubling <i>r</i> from ${N(Rc, 2)} cm to ${N(2 * Rc, 2)} cm reduces <i>E</i> from ${Es} to ${N(Es / 4, 2)} kV m<sup>−1</sup>, a factor of 4 (= 2<sup>2</sup>) ✓`),
+      calc('Calculate the charge on the sphere.', 2, Q, 'C', `Reads <i>E</i> = ${Es} kV m<sup>−1</sup> at the surface ✓<br>${eq(`<i>Q</i> = ${K4} × ${N(Rc / 100)}<sup>2</sup> × ${Es} × 10<sup>3</sup> = ${AV(Q, 'C')}`)} ✓`, { tol: .03 }),
+      opt('State the electric field strength inside the sphere.', 1, ['zero', 'the same as at the surface', 'it increases towards the centre'], 0, 'Zero ✓'),
+      calc('Calculate the potential at the surface of the sphere.', 1, Es * 1e3 * Rc / 100, 'V', `${eq(`<i>V</i> = <i>ER</i> = ${Es} × 10<sup>3</sup> × ${N(Rc / 100)} = ${AV(Es * 1e3 * Rc / 100, 'V')}`)} ✓`, { tol: .03 }),
+      opt('The charge on the sphere is doubled. State the effect on the graph outside the sphere.', 1, ['every value of <i>E</i> doubles', 'every value of <i>E</i> is four times as large', 'the curve is unchanged', 'every value of <i>E</i> halves'], 0, 'Every value of <i>E</i> doubles, because <i>E</i> ∝ <i>Q</i> ✓')
+    ] };
+};
+
+/* ===== Charged particles in fields ===== */
+function gunScene(){
+  const s = new Scene('An electron gun: a heated cathode and an anode with a hole, inside an evacuated tube');
+  s.rect(40, 60, 460, 200, { w: 1.8 });
+  s.rect(80, 140, 10, 40, { fill: '#555' }); s.label(85, 205, 'cathode', { size: 14 });
+  s.rect(240, 90, 8, 55, { fill: '#555' }); s.rect(240, 175, 8, 55, { fill: '#555' }); s.label(244, 82, 'anode', { size: 14 });
+  s.arrow(96, 160, 470, 160, { w: 1.3, dash: '6 4' }); s.label(380, 150, 'electron beam', { size: 14 });
+  s.label(380, 240, 'vacuum', { size: 14 });
+  return s;
+}
+T.CP1 = R => {
+  const Vk = R.pick([1.5, 2.0, 2.5, 3.0, 4.0, 5.0]), L = R.pick([20, 25, 30]), V0 = Vk * 1e3, Ek = QE * V0, v = Math.sqrt(2 * Ek / MEL), t = L / 100 / v, vp = Math.sqrt(2 * Ek / MPR);
+  return { sf: 2, scenes: [gunScene()], data: { Vk, L },
+    stem: `<b>Figure 1</b> shows an electron gun. Electrons leave the cathode with negligible speed and are accelerated through a potential difference of ${V(Vk, 'kV')} between the cathode and the anode.`,
+    parts: [
+      calc('Calculate the kinetic energy of an electron as it passes through the anode.', 1, Ek, 'J', `${eq(`<i>E</i><sub>k</sub> = <i>eV</i> = ${SE} × ${N(Vk)} × 10<sup>3</sup> = ${AV(Ek, 'J')}`)} ✓`),
+      calc('Calculate the speed of the electron as it passes through the anode.', 2, v, MS1, `${eq(`½<i>mv</i><sup>2</sup> = <i>eV</i>, so <i>v</i> = √(2 × ${I(Ek)} / ${SME})`)} ✓<br>${eq(`<i>v</i> = ${AV(v, MS1)}`)} ✓`),
+      opt('The accelerating potential difference is made four times as large. State the effect on the speed of the electrons.', 1, ['it doubles', 'it is four times as large', 'it is sixteen times as large', 'it is unchanged'], 0, 'It doubles, because <i>v</i> ∝ √<i>V</i> ✓'),
+      calc(`Calculate the time taken for the electron to travel ${V(L, 'cm')} beyond the anode.`, 1, t, 's', `${eq(`<i>t</i> = ${N(L / 100)} / ${I(v)} = ${AV(t, 's')}`)} ✓`),
+      text('Explain why the tube must be evacuated.', 1, 'So that the electrons do not collide with (and lose energy to) gas molecules ✓'),
+      calc('A proton is accelerated from rest through the same potential difference. Calculate its final speed.', 1, vp, MS1, `${eq(`<i>v</i> = √(2 × ${I(Ek)} / ${SMP}) = ${AV(vp, MS1)}`)} ✓`)
+    ] };
+};
+
+function deflScene(topPos, y, d, L, dLab, LLab){
+  const s = new Scene('An electron beam passing between two horizontal deflecting plates'), x0 = 120, W = 260, yt = 90, gap = 120, mid = yt + 7 + gap / 2, Yp = y / d * gap * (topPos ? -1 : 1);
+  plateH(s, x0, yt, W); plateH(s, x0, yt + 7 + gap, W);
+  s.label(x0 - 12, yt + 8, topPos ? '+' : '0 V', { anchor: 'end', size: topPos ? 18 : 14, bold: topPos }); s.label(x0 - 12, yt + gap + 15, topPos ? '0 V' : '+', { anchor: 'end', size: topPos ? 14 : 18, bold: !topPos });
+  const pts = [[40, mid], [x0, mid]]; for (let i = 1; i <= 40; i++){ const f = i / 40; pts.push([x0 + W * f, mid + Yp * f * f]); }
+  const ex = x0 + W, ey = mid + Yp, slope = 2 * Yp / W; pts.push([ex + 14, ey + slope * 14]);
+  pts[0] = [20, mid]; s.poly(pts, { w: 1.6 }); s.mid(20, mid, x0, mid, .5, 9); s.label(52, mid - 12, 'electron', { size: 14 });
+  s.line(x0 + W + 6, yt + 3.5, x0 + W + 50, yt + 3.5, { w: 1, dash: '4 3' }); s.line(x0 + W + 6, yt + gap + 10.5, x0 + W + 50, yt + gap + 10.5, { w: 1, dash: '4 3' });
+  s.dim(x0 + W + 44, yt + 3.5, x0 + W + 44, yt + gap + 10.5, dLab);
+  s.line(x0, yt + gap + 18, x0, yt + gap + 54, { dash: '4 3', w: 1 }); s.line(x0 + W, yt + gap + 18, x0 + W, yt + gap + 54, { dash: '4 3', w: 1 }); s.dim(x0, yt + gap + 48, x0 + W, yt + gap + 48, LLab, { below: true });
+  return s;
+}
+T.CP2 = R => {
+  const v = find(() => ({ u: R.pick([2.0, 2.5, 3.0, 4.0]), L: R.pick([4.0, 5.0, 6.0]), d: R.pick([2.0, 2.5, 3.0]), Vp: R.pick([50, 100, 150, 200, 250]) }),
+    o => { const a = QE * o.Vp / (o.d / 100) / MEL, t = o.L / 100 / (o.u * 1e7), y = .5 * a * t * t; return y < .4 * o.d / 100 && y > .08 * o.d / 100; });
+  const { u, L, d, Vp } = v, topPos = R.chance(.5), E = Vp / (d / 100), a = QE * E / MEL, t = L / 100 / (u * 1e7), y = .5 * a * t * t;
+  return { sf: 2, scenes: [deflScene(topPos, y, d / 100, L, N(d) + ' cm', N(L) + ' cm')], data: { u, L, d, Vp, topPos },
+    stem: `<b>Figure 1</b> shows an electron entering the region between two parallel plates at a speed of ${V(u * 1e7, MS1)}, travelling parallel to the plates and midway between them. The plates are ${V(L, 'cm')} long and ${V(d, 'cm')} apart, with a potential difference of ${V(Vp, 'V')} between them.`,
+    parts: [
+      calc('Calculate the electric field strength between the plates.', 1, E, VM, `${eq(`<i>E</i> = ${Vp} / ${N(d / 100)} = ${AV(E, VM)}`)} ✓`),
+      calc('Calculate the acceleration of the electron between the plates.', 2, a, MS2, `${eq(`<i>F</i> = <i>eE</i> = ${SE} × ${I(E)} = ${I(QE * E)} N`)} ✓<br>${eq(`<i>a</i> = ${I(QE * E)} / ${SME} = ${AV(a, MS2)}`)} ✓`),
+      calc('Calculate the time the electron spends between the plates.', 1, t, 's', `${eq(`<i>t</i> = ${N(L / 100)} / ${N(u * 1e7)} = ${AV(t, 's')}`)} ✓`),
+      calc('Calculate the vertical displacement of the electron when it leaves the plates.', 1, y, 'm', `${eq(`<i>y</i> = ½<i>at</i><sup>2</sup> = 0.5 × ${I(a)} × (${I(t)})<sup>2</sup> = ${AV(y, 'm')}`)} ✓`),
+      opt('State the direction in which the electron is deflected.', 1, ['towards the top plate', 'towards the bottom plate'], topPos ? 0 : 1, `Towards the positive (${topPos ? 'top' : 'bottom'}) plate ✓`),
+      text('Explain why the path of the electron between the plates is a parabola.', 2, 'The force on the electron is constant and perpendicular to its initial velocity, so the horizontal velocity stays constant ✓<br>the vertical velocity increases uniformly, so the vertical displacement is proportional to the square of the horizontal distance ✓')
+    ] };
+};
+
+T.CP3 = R => {
+  const v = R.pick([2.0, 3.0, 4.0, 5.0]), E = R.pick([50, 80, 100, 150]), Ek = .5 * MPR * Math.pow(v * 1e6, 2), F = QE * E * 1e3, s = Ek / F, t = MPR * v * 1e6 / F;
+  return NOFIG(3, { v, E }, `A proton travelling at ${V(v * 1e6, MS1)} enters a uniform electric field of strength ${V(E, 'kV m<sup>−1</sup>')}. It moves in the opposite direction to the field.`, [
+    calc('Calculate the kinetic energy of the proton as it enters the field.', 1, Ek, 'J', `${eq(`<i>E</i><sub>k</sub> = ½ × ${SMP} × (${N(v * 1e6)})<sup>2</sup> = ${AV(Ek, 'J')}`)} ✓`),
+    calc('Calculate the force on the proton.', 1, F, 'N', `${eq(`<i>F</i> = <i>eE</i> = ${SE} × ${E} × 10<sup>3</sup> = ${AV(F, 'N')}`)} ✓`),
+    calc('Calculate the distance the proton travels before it stops.', 2, s, 'm', `Work done by the field = loss of kinetic energy: <i>Fs</i> = <i>E</i><sub>k</sub> ✓<br>${eq(`<i>s</i> = ${I(Ek)} / ${I(F)} = ${AV(s, 'm')}`)} ✓`),
+    calc('Calculate the time taken for the proton to stop.', 1, t, 's', `${eq(`<i>t</i> = <i>mv</i> / <i>F</i> = ${SMP} × ${N(v * 1e6)} / ${I(F)} = ${AV(t, 's')}`)} ✓`),
+    opt('State what happens to the proton after it stops.', 1, ['it accelerates back in the direction of the field', 'it stays at rest', 'it continues to slow down', 'it moves at constant speed in the direction of the field'], 0, 'It accelerates back the way it came (in the direction of the field) ✓'),
+    calc('Calculate the potential difference through which the proton moves before it stops.', 1, Ek / QE, 'V', `${eq(`<i>V</i> = <i>E</i><sub>k</sub> / <i>e</i> = ${I(Ek)} / ${SE} = ${AV(Ek / QE, 'V')}`)} ✓`)
+  ]);
+};
+
+function selectorScene(topPos, into){
+  const s = new Scene('A velocity selector: parallel plates with a magnetic field between them and an aperture'), x0 = 110, W = 300, yt = 80, gap = 140, mid = yt + 7 + gap / 2;
+  plateH(s, x0, yt, W); plateH(s, x0, yt + 7 + gap, W);
+  s.label(x0 + W / 2, yt - 10, topPos ? '+' : '−', { size: 20, bold: true }); s.label(x0 + W / 2, yt + gap + 36, topPos ? '−' : '+', { size: 20, bold: true });
+  s.field(x0 + 10, yt + 14, W - 20, gap - 14, into ? 'in' : 'out', { step: 34 });
+  s.arrow(30, mid, 470, mid, { w: 1.5 }); s.label(56, mid - 12, 'ions', { size: 14 });
+  s.line(480, yt - 10, 480, mid - 9, { w: 3 }); s.line(480, mid + 9, 480, yt + gap + 24, { w: 3 }); s.label(492, mid + 5, 'aperture', { size: 14, anchor: 'start' });
+  return s;
+}
+const ION = { 'lithium-6': 9.99e-27, 'lithium-7': 1.17e-26, 'neon-20': 3.32e-26, 'sodium-23': 3.82e-26 };
+T.CP4 = R => {
+  const into = R.chance(.5), Vp = R.pick([200, 300, 450, 600]), d = R.pick([1.0, 1.5, 2.0]), B = R.pick([0.10, 0.12, 0.15, 0.20]), ion = R.pick(Object.keys(ION)), m = ION[ion], B2 = R.pick([0.20, 0.25, 0.30]);
+  const E = Vp / (d / 100), v = E / B, rr = m * v / (QE * B2), magUp = into, topPos = magUp;          // positive ion moving right: force up when the field is into the page
+  return { sf: 2, scenes: [selectorScene(topPos, into)], data: { into, Vp, d, B, ion, B2 },
+    stem: `<b>Figure 1</b> shows a velocity selector. Singly charged positive ${ion} ions enter between two parallel plates ${V(d, 'cm')} apart, with a potential difference of ${V(Vp, 'V')} between them. A uniform magnetic field of flux density ${V(B, 'T')} acts ${into ? 'into' : 'out of'} the page between the plates. Ions with one particular speed pass straight through to the aperture.`,
+    parts: [
+      opt('State the direction of the magnetic force on an ion as it enters the field.', 1, ['towards the top of the page', 'towards the bottom of the page'], magUp ? 0 : 1, `${magUp ? 'Towards the top' : 'Towards the bottom'}, by Fleming's left-hand rule ✓`),
+      opt('State the direction of the electric force on an ion that passes straight through.', 1, ['towards the top of the page', 'towards the bottom of the page'], magUp ? 1 : 0, `${magUp ? 'Towards the bottom' : 'Towards the top'}: it must be opposite to the magnetic force ✓`),
+      calc('Calculate the electric field strength between the plates.', 1, E, VM, `${eq(`<i>E</i> = ${Vp} / ${N(d / 100)} = ${AV(E, VM)}`)} ✓`),
+      calc('Calculate the speed of the ions that pass straight through.', 2, v, MS1, `<i>eE</i> = <i>Bev</i> ✓<br>${eq(`<i>v</i> = <i>E</i> / <i>B</i> = ${I(E)} / ${N(B)} = ${AV(v, MS1)}`)} ✓`),
+      opt('State how ions moving faster than this are deflected.', 1, ['in the direction of the magnetic force', 'in the direction of the electric force', 'they are not deflected'], 0, 'In the direction of the magnetic force, because <i>Bqv</i> is now larger than <i>Eq</i> ✓'),
+      text('Explain why the selected speed does not depend on the mass or the charge of the ions.', 1, 'Both forces are proportional to the charge, so <i>q</i> cancels in <i>qE</i> = <i>Bqv</i>, and the mass does not appear: <i>v</i> = <i>E</i> / <i>B</i> ✓'),
+      calc(`The selected ions then enter a magnetic field of flux density ${V(B2, 'T')}. The mass of each ion is ${V(m, 'kg', 3)}.<br>Calculate the radius of their path.`, 2, rr, 'm', `${eq(`<i>r</i> = <i>mv</i> / <i>Bq</i> = ${N(m, 3)} × ${I(v)} / (${N(B2)} × ${SE})`)} ✓<br>${eq(`<i>r</i> = ${AV(rr, 'm')}`)} ✓`)
+    ] };
+};
+
+const TOF = [['lithium-6', 9.99e-27, 'lithium-7', 1.17e-26], ['neon-20', 3.32e-26, 'neon-22', 3.65e-26], ['chlorine-35', 5.81e-26, 'chlorine-37', 6.14e-26], ['potassium-39', 6.47e-26, 'potassium-41', 6.80e-26]];
+T.CP5 = R => {
+  const ti = Math.floor(R() * TOF.length), [n1, m1, n2, m2] = TOF[ti], Vp = R.pick([500, 1000, 1500, 2000]), L = R.pick([0.50, 1.0, 1.5]);
+  const v1 = Math.sqrt(2 * QE * Vp / m1), v2 = Math.sqrt(2 * QE * Vp / m2), t1 = L / v1, t2 = L / v2;
+  return NOFIG(3, { ti, Vp, L }, `In a time-of-flight mass spectrometer, singly charged positive ions start from rest, are accelerated through a potential difference of ${V(Vp, 'V')} and then travel ${V(L, 'm')} at constant speed to a detector. Table 1 gives the masses of two ions.<br>${tableH('Table 1', ['Ion', 'Mass / kg'], [[n1, N(m1, 3)], [n2, N(m2, 3)]])}`, [
+    calc(`Calculate the speed of a ${n1} ion after it has been accelerated.`, 2, v1, MS1, `${eq(`½<i>mv</i><sup>2</sup> = <i>eV</i>, so <i>v</i> = √(2 × ${SE} × ${Vp} / ${N(m1, 3)})`)} ✓<br>${eq(`<i>v</i> = ${AV(v1, MS1)}`)} ✓`),
+    calc(`Calculate the time taken for a ${n1} ion to travel to the detector.`, 1, t1, 's', `${eq(`<i>t</i> = ${N(L)} / ${I(v1)} = ${AV(t1, 's')}`)} ✓`),
+    calc(`Calculate the time taken for a ${n2} ion to travel to the detector.`, 2, t2, 's', `${eq(`<i>v</i> = √(2 × ${SE} × ${Vp} / ${N(m2, 3)}) = ${I(v2)} m s<sup>−1</sup>`)} ✓<br>${eq(`<i>t</i> = ${N(L)} / ${I(v2)} = ${AV(t2, 's')}`)} ✓`),
+    text('Explain how the masses of different ions can be compared using their times of flight.', 2, 'All the ions gain the same kinetic energy <i>eV</i>, so <i>v</i> ∝ 1/√<i>m</i> ✓<br>so the time of flight <i>t</i> ∝ √<i>m</i>, and the ratio of masses equals the square of the ratio of the times ✓'),
+    opt(`A doubly charged ${n1} ion is accelerated in the same way. State how its time of flight compares with that of the singly charged ion.`, 1, ['it is shorter', 'it is longer', 'it is the same'], 0, 'Shorter: it gains twice the kinetic energy, so it moves faster ✓')
+  ]);
+};
+
+T.CP6 = R => {
+  const q = R.pick([1.0, 1.5, 2.0]), m = R.pick([5.0, 6.5, 8.0]), Vp = R.pick([1.0, 1.5, 2.0]), d = R.pick([1.0, 1.5, 2.0]), L = R.pick([5.0, 8.0, 10]), u = R.pick([15, 20, 25]), D = R.pick([1.0, 1.5, 2.0]);
+  const E = Vp * 1e3 / (d / 1000), F = q * 1e-13 * E, a = F / (m * 1e-11), t = L / 1000 / u, y = .5 * a * t * t, vy = a * t, Y = y + vy * D / 100 / u;
+  return NOFIG(2, { q, m, Vp, d, L, u, D }, `In an inkjet printer, a charged drop of ink of mass ${V(m * 1e-11, 'kg')} and charge ${V(q * 1e-13, 'C')} moves horizontally at ${V(u, MS1)} between two horizontal deflecting plates. The plates are ${V(L, 'mm')} long and ${V(d, 'mm')} apart, with a potential difference of ${V(Vp, 'kV')} between them. Ignore gravity and air resistance.`, [
+    calc('Calculate the electric field strength between the plates.', 1, E, VM, `${eq(`<i>E</i> = ${N(Vp)} × 10<sup>3</sup> / ${N(d / 1000)} = ${AV(E, VM)}`)} ✓`),
+    calc('Calculate the force on the drop.', 1, F, 'N', `${eq(`<i>F</i> = ${N(q * 1e-13)} × ${I(E)} = ${AV(F, 'N')}`)} ✓`),
+    calc('Calculate the acceleration of the drop.', 1, a, MS2, `${eq(`<i>a</i> = ${I(F)} / ${N(m * 1e-11)} = ${AV(a, MS2)}`)} ✓`),
+    calc('Calculate the time the drop spends between the plates.', 1, t, 's', `${eq(`<i>t</i> = ${N(L / 1000)} / ${u} = ${AV(t, 's')}`)} ✓`),
+    calc('Calculate the vertical deflection of the drop as it leaves the plates.', 1, y, 'm', `${eq(`<i>y</i> = 0.5 × ${I(a)} × (${I(t)})<sup>2</sup> = ${AV(y, 'm')}`)} ✓`),
+    calc(`The paper is ${V(D, 'cm')} beyond the end of the plates.<br>Calculate the total vertical deflection of the drop when it reaches the paper.`, 3, Y, 'm', `Vertical velocity on leaving the plates: ${eq(`<i>v</i> = <i>at</i> = ${I(vy)}`)} ${MS1} ✓<br>${eq(`time to reach the paper = ${N(D / 100)} / ${u} = ${I(D / 100 / u)}`)} s, so extra deflection = ${eq(`${I(vy)} × ${I(D / 100 / u)} = ${I(vy * D / 100 / u)}`)} m ✓<br>${eq(`total = ${I(y)} + ${I(vy * D / 100 / u)} = ${AV(Y, 'm')}`)} ✓`)
+  ]);
+};
+
+const CPK = { electron: [1, MEL], proton: [1, MPR], 'alpha particle': [2, 6.64e-27] };
+T.CP7 = R => {
+  const pk = R.pick(Object.keys(CPK)), [qn, m] = CPK[pk], E = R.pick([2.0, 2.5, 4.0, 5.0]) * 1e4, Kx = x => qn * E * x / 100 / 1e3, [ym, yM] = axisFor(Kx(10)), X = R.pick([4, 5, 6, 8]);
+  const fig = graph({ x: [0, 10, 2], y: [0, ym, yM], xdiv: 10, ydiv: 10, h: 320, xl: 'distance moved / cm', yl: 'kinetic energy / keV', curves: [{ f: Kx, from: 0, to: 10 }], reads: [[0, 0], [10, Kx(10)], [X, Kx(X)]] });
+  const v = Math.sqrt(2 * Kx(X) * 1e3 * QE / m);
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { pk, E, X },
+    stem: `${cap(an(pk))} starts from rest in a uniform electric field in a vacuum. <b>Figure 1</b> shows how its kinetic energy varies with the distance it moves along the field.${pk === 'alpha particle' ? '<br>mass of an alpha particle = 6.64 × 10<sup>−27</sup> kg' : ''}`,
+    parts: [
+      calc('Use the gradient of <b>Figure 1</b> to determine the electric field strength.', 2, E, VM, `Gradient = force = ${N(Kx(10), 2)} keV / 0.10 m = ${I(Kx(10) * 1e3 * QE / 0.1)} N ✓<br>${eq(`<i>E</i> = <i>F</i> / <i>Q</i> = ${I(Kx(10) * 1e3 * QE / 0.1)} / ${qn === 2 ? '(2 × ' + SE + ')' : SE} = ${AV(E, VM)}`)} ✓`, { tol: .03, noSkill: true }),
+      calc(`Calculate the force on the ${pk}.`, 1, qn * QE * E, 'N', `${eq(`<i>F</i> = <i>QE</i> = ${qn === 2 ? '2 × ' : ''}${SE} × ${I(E)} = ${AV(qn * QE * E, 'N')}`)} ✓`, { tol: .03, noSkill: true }),
+      calc(`Calculate the potential difference through which the ${pk} moves in the first ${X} cm.`, 1, Kx(X) * 1e3 / qn, 'V', `Reads <i>E</i><sub>k</sub> = ${N(Kx(X), 3)} keV, so ${eq(`<i>V</i> = ${N(Kx(X), 3)} × 10<sup>3</sup>${qn === 2 ? ' / 2' : ''} = ${A(Kx(X) * 1e3 / qn)}`)} V ✓`, { tol: .03, noSkill: true }),
+      calc(`Calculate the speed of the ${pk} after it has moved ${X} cm.`, 2, v, MS1, `${eq(`<i>E</i><sub>k</sub> = ${N(Kx(X), 3)} × 10<sup>3</sup> × ${SE} = ${I(Kx(X) * 1e3 * QE)} J`)} ✓<br>${eq(`<i>v</i> = √(2 × ${I(Kx(X) * 1e3 * QE)} / ${pk === 'proton' ? SMP : N(m, 3)}) = ${AV(v, MS1)}`)} ✓`, { tol: .03, noSkill: true }),
+      opt('A particle with twice the charge is placed in the same field. State how the gradient of its graph compares.', 1, ['it is twice as steep', 'it is half as steep', 'it is the same', 'it is four times as steep'], 0, 'Twice as steep: the force <i>QE</i> doubles ✓')
+    ] };
+};
+
+T.CP8 = R => {
+  const v = R.pick([2.0, 3.0, 4.0]) * 1e7, E = R.pick([5.0, 8.0, 10]) * 1e3, B = R.pick([1.0, 2.0, 5.0]) * 1e-3, r = MEL * v / (QE * B), a = QE * E / MEL;
+  const SH = ['a parabola', 'an arc of a circle', 'a straight line', 'a spiral'];
+  return NOFIG(2, { v, E, B }, `An electron moving at ${V(v, MS1)} enters a region of uniform field at right angles to the field lines. The field is either an electric field of strength ${V(E, VM)} or a magnetic field of flux density ${V(B, 'T')}.`, [
+    opt('State the shape of the path of the electron in the electric field.', 1, SH, 0, 'A parabola ✓'),
+    opt('State the shape of the path of the electron in the magnetic field.', 1, SH, 1, 'An arc of a circle ✓'),
+    text('Explain why the speed of the electron changes in the electric field but not in the magnetic field.', 2, 'The magnetic force is always perpendicular to the velocity, so it does no work and the kinetic energy (speed) is constant ✓<br>the electric force has a constant direction, so it has a component along the motion, does work on the electron and changes its kinetic energy ✓'),
+    calc('Calculate the radius of the path in the magnetic field.', 2, r, 'm', `${eq(`<i>r</i> = <i>mv</i> / <i>Be</i> = ${SME} × ${N(v)} / (${N(B)} × ${SE})`)} ✓<br>${eq(`<i>r</i> = ${AV(r, 'm')}`)} ✓`),
+    calc('Calculate the acceleration of the electron in the electric field.', 1, a, MS2, `${eq(`<i>a</i> = <i>eE</i> / <i>m</i> = ${SE} × ${N(E)} / ${SME} = ${AV(a, MS2)}`)} ✓`)
+  ]);
+};
+
+T.CP9 = R => {
+  const n = R.pick([10, 20, 30]), Vg = R.pick([50, 80, 100, 150]), Ek = n * Vg * 1e3 * QE, v = Math.sqrt(2 * Ek / MPR);
+  return NOFIG(2, { n, Vg }, `In a linear accelerator, protons pass through ${n} gaps between drift tubes. In each gap the proton is accelerated through a potential difference of ${V(Vg, 'kV')}. The protons start with negligible kinetic energy.`, [
+    calc('Calculate the final kinetic energy of a proton, in J.', 2, Ek, 'J', `${eq(`total potential difference = ${n} × ${Vg} × 10<sup>3</sup> = ${I(n * Vg * 1e3)}`)} V ✓<br>${eq(`<i>E</i><sub>k</sub> = ${SE} × ${I(n * Vg * 1e3)} = ${AV(Ek, 'J')}`)} ✓`),
+    calc('Calculate the final speed of the proton. Ignore relativistic effects.', 2, v, MS1, `${eq(`<i>v</i> = √(2<i>E</i><sub>k</sub> / <i>m</i>) = √(2 × ${I(Ek)} / ${SMP})`)} ✓<br>${eq(`<i>v</i> = ${AV(v, MS1)}`)} ✓`),
+    text('Explain why the drift tubes get longer along the accelerator.', 2, 'The protons speed up in each gap ✓<br>so they travel further in each half-cycle of the alternating pd, and must spend the same time in each tube to arrive at every gap when the field accelerates them ✓'),
+    opt('Alpha particles are accelerated through the same accelerator. State how their final kinetic energy compares with that of the protons.', 1, ['it is twice as large', 'it is the same', 'it is half as large', 'it is four times as large'], 0, 'Twice as large: the alpha particle has twice the charge ✓')
+  ]);
+};
+/* ===== Electric potential ===== */
+const NEG = { neg: true };
+T.EP1 = R => {
+  const Q = R.pick([2.0, 4.0, 5.0, 8.0, 12]) * (R.chance(.5) ? 1 : -1), rA = R.pick([2.0, 3.0, 4.0, 5.0]), rB = rA + R.pick([4.0, 5.0, 6.0, 10]), q = R.pick([1.0, 2.0, 3.0]);
+  const VA = KC * Q * 1e-9 / (rA / 100), VB = KC * Q * 1e-9 / (rB / 100), W = q * 1e-9 * (VA - VB);
+  return NOFIG(2, { Q, rA, rB, q }, `A small sphere carries a charge of ${QV(Q, 'nC')}. Point A is ${V(rA, 'cm')} from the centre of the sphere and point B is ${V(rB, 'cm')} from it. Treat the sphere as a point charge.`, [
+    text('Define the electric potential at a point.', 2, 'The work done per unit charge ✓<br>in moving a small positive charge from infinity to the point ✓'),
+    calc('Calculate the electric potential at A.', 2, VA, 'V', `${eq(`<i>V</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>r</i> = ${Q < 0 ? '−' : ''}${N(Math.abs(Q))} × 10<sup>−9</sup> / (${K4} × ${N(rA / 100)})`)} ✓<br>${eq(`<i>V</i> = ${AV(VA, 'V')}`)} ✓`, NEG),
+    calc('Calculate the electric potential at B.', 1, VB, 'V', `${eq(`<i>V</i> = ${Q < 0 ? '−' : ''}${N(Math.abs(Q))} × 10<sup>−9</sup> / (${K4} × ${N(rB / 100)}) = ${AV(VB, 'V')}`)} ✓`, NEG),
+    calc(`Calculate the magnitude of the work done when a charge of +${V(q, 'nC')} is moved from B to A.`, 2, Math.abs(W), 'J', `Uses <i>W</i> = <i>Q</i>Δ<i>V</i> with Δ<i>V</i> = ${A(Math.abs(VA - VB))} V ✓<br>${eq(`<i>W</i> = ${N(q)} × 10<sup>−9</sup> × ${I(Math.abs(VA - VB))} = ${AV(Math.abs(W), 'J')}`)} ✓`),
+    opt('State whether energy must be supplied to move the charge from B to A, or whether energy is released.', 1, ['energy must be supplied', 'energy is released'], W > 0 ? 0 : 1, W > 0 ? 'Energy must be supplied: the positive charge moves to a higher potential (against the repulsion) ✓' : 'Energy is released: the positive charge moves to a lower potential (it is attracted) ✓')
+  ]);
+};
+
+T.EP2 = R => {
+  const q1 = R.pick([2.0, 3.0, 4.0, 5.0]), q2 = R.pick([2.0, 3.0, 6.0, 8.0]), r = R.pick([2.0, 3.0, 4.0, 5.0]), r2 = r * R.pick([0.5, 2, 3]), m = R.pick([0.50, 1.0, 2.0]);
+  const U1 = KC * q1 * q2 * 1e-18 / (r / 100), U2 = KC * q1 * q2 * 1e-18 / (r2 / 100), v = Math.sqrt(2 * U1 / (m * 1e-3));
+  return NOFIG(2, { q1, q2, r, r2, m }, `Two small spheres carry charges of +${V(q1, 'nC')} and +${V(q2, 'nC')}. Their centres are ${V(r, 'cm')} apart. Treat them as point charges.`, [
+    calc('Calculate the electric potential energy of the pair of charges.', 2, U1, 'J', `${eq(`<i>E</i><sub>p</sub> = <i>Q</i><sub>1</sub><i>Q</i><sub>2</sub> / 4π<i>ε</i><sub>0</sub><i>r</i> = ${N(q1)} × 10<sup>−9</sup> × ${N(q2)} × 10<sup>−9</sup> / (${K4} × ${N(r / 100)})`)} ✓<br>${eq(`<i>E</i><sub>p</sub> = ${AV(U1, 'J')}`)} ✓`),
+    choose(R, 'What does this potential energy represent?', 1, 'the work done to bring the charges from infinite separation to this separation', ['the work done by the field as the charges come together from infinity', 'the force between the charges multiplied by their separation', 'the kinetic energy of the charges'], 'The work done (against the repulsion) to bring the charges together from infinity ✓'),
+    calc(`Calculate the change in electric potential energy when the separation changes to ${V(r2, 'cm')}.`, 2, Math.abs(U2 - U1), 'J', `${eq(`<i>E</i><sub>p</sub> at ${N(r2)} cm = ${AV(U2, 'J')}`)} ✓<br>${eq(`change = |${I(U2)} − ${I(U1)}| = ${AV(Math.abs(U2 - U1), 'J')}`)} ✓`),
+    calc(`One sphere is fixed. The other, of mass ${V(m, 'g')}, is released from rest when the separation is ${V(r, 'cm')}. Calculate its speed when it is a very long way away. Ignore gravity and air resistance.`, 2, v, MS1, `All the potential energy becomes kinetic energy: ½<i>mv</i><sup>2</sup> = ${I(U1)} J ✓<br>${eq(`<i>v</i> = √(2 × ${I(U1)} / ${N(m / 1000)}) = ${AV(v, MS1)}`)} ✓`)
+  ]);
+};
+
+const brn = s => /^−/.test(s) ? '(' + s + ')' : s;      // brackets round a negative value only
+T.EP3 = R => {
+  const { q1, q2, s, c } = find(() => ({ q1: R.pick([2.0, 3.0, 4.0, 5.0]), q2: R.pick([1.0, 2.0, 3.0, 6.0]) * (R.chance(.5) ? 1 : -1), s: R.pick([8.0, 10, 12]), c: R.pick([2.0, 3.0, 4.0]) }), o => { const vp = (o.q1 + o.q2) / (o.s / 2), vr = o.q1 / (o.s + o.c) + o.q2 / o.c, v1 = o.q1 / (o.s / 2); return Math.abs(vp) > .1 * v1 && Math.abs(vr) > .1 * v1 && Math.abs(vp - vr) > .1 * v1; });
+  const VP1 = KC * q1 * 1e-9 / (s / 200), VP = VP1 + KC * q2 * 1e-9 / (s / 200), VR = KC * q1 * 1e-9 / ((s + c) / 100) + KC * q2 * 1e-9 / (c / 100), W = QE * Math.abs(VP - VR);
+  const sc = 360 / (s + c), xa = 90, xp = 90 + s / 2 * sc, xb = 90 + s * sc, xr = 90 + (s + c) * sc;
+  const scn = lineScene([{ x: xa, q: q1, top: QL(q1, 'nC'), name: 'A' }, { x: xp, name: 'P' }, { x: xb, q: q2, top: QL(q2, 'nC'), name: 'B' }, { x: xr, name: 'R' }], [[xa, xp, N(s / 2) + ' cm'], [xp, xb, N(s / 2) + ' cm'], [xb, xr, N(c) + ' cm']], 'Two point charges A and B with points P and R on the line through them');
+  return { sf: 2, scenes: [scn], data: { q1, q2, s, c },
+    stem: `<b>Figure 1</b> shows two point charges A (${QV(q1, 'nC')}) and B (${QV(q2, 'nC')}). P is midway between them and R is on the line through them, ${V(c, 'cm')} beyond B.`,
+    parts: [
+      calc('Calculate the electric potential at P due to A alone.', 1, VP1, 'V', `${eq(`<i>V</i> = ${N(q1)} × 10<sup>−9</sup> / (${K4} × ${N(s / 200)}) = ${AV(VP1, 'V')}`)} ✓`),
+      calc('Calculate the electric potential at P due to both charges.', 2, VP, 'V', `${eq(`potential due to B = ${q2 < 0 ? '−' : ''}${N(Math.abs(q2))} × 10<sup>−9</sup> / (${K4} × ${N(s / 200)}) = ${I(VP - VP1)}`)} V ✓<br>${eq(`<i>V</i> = ${I(VP1)} + ${brn(I(VP - VP1))} = ${AV(VP, 'V')}`)} ✓`, NEG),
+      calc('Calculate the electric potential at R.', 2, VR, 'V', `Distances: ${N(s + c)} cm from A and ${N(c)} cm from B ✓<br>${eq(`<i>V</i> = (${N(q1)} × 10<sup>−9</sup> / ${N((s + c) / 100)} + ${q2 < 0 ? '(−' + N(-q2) + ' × 10<sup>−9</sup>)' : N(q2) + ' × 10<sup>−9</sup>'} / ${N(c / 100)}) / (${K4}) = ${AV(VR, 'V')}`)} ✓`, NEG),
+      calc('Calculate the magnitude of the work done when a proton is moved from R to P.', 2, W, 'J', `${eq(`Δ<i>V</i> = |${N(VP, 5)} − ${brn(N(VR, 5))}| = ${I(Math.abs(VP - VR))}`)} V ✓<br>${eq(`<i>W</i> = ${SE} × ${I(Math.abs(VP - VR))} = ${AV(W, 'J')}`)} ✓`),
+      choose(R, 'Which statement about potential and field strength is correct?', 1, 'Potentials due to several charges add as scalars, but field strengths add as vectors.', ['Potentials and field strengths both add as vectors.', 'Potentials add as vectors, but field strengths add as scalars.', 'Potentials and field strengths both add as scalars.'], 'Potentials add as scalars; field strengths add as vectors ✓')
+    ] };
+};
+
+const TGT = [['gold', 79], ['silver', 47], ['tin', 50], ['lead', 82], ['copper', 29]];
+T.EP4 = R => {
+  const ti = Math.floor(R() * TGT.length), [nm, Z] = TGT[ti], K = R.pick([4.0, 5.0, 5.5, 6.0, 7.5]), EJ = K * MEVJ, d = 2 * Z * QE * QE / (4 * Math.PI * EPS0 * EJ), Vn = KC * Z * QE / d;
+  return NOFIG(2, { ti, K }, `An alpha particle with a kinetic energy of ${V(K, 'MeV')} travels directly towards a stationary ${nm} nucleus, which has a proton number of ${Z}.`, [
+    calc('Calculate the kinetic energy of the alpha particle in J.', 1, EJ, 'J', `${eq(`${N(K)} × 1.60 × 10<sup>−13</sup> = ${AV(EJ, 'J')}`)} ✓`),
+    calc('Calculate the distance of closest approach to the centre of the nucleus.', 3, d, 'm', `At closest approach all the kinetic energy has become electric potential energy ✓<br>${eq(`<i>d</i> = (2 × ${Z} × (${SE})<sup>2</sup>) / (${K4} × ${I(EJ)})`)} ✓<br>${eq(`<i>d</i> = ${AV(d, 'm')}`)} ✓`),
+    calc('Calculate the electric potential due to the nucleus at this distance.', 1, Vn, 'V', `${eq(`<i>V</i> = ${Z} × ${SE} / (${K4} × ${I(d)}) = ${AV(Vn, 'V')}`)} ✓`),
+    opt('A proton with the same kinetic energy travels directly towards the same nucleus. State how its distance of closest approach compares.', 1, ['it is half as large', 'it is the same', 'it is twice as large', 'it is four times as large'], 0, 'Half as large: the proton has half the charge of the alpha particle ✓'),
+    text('State one assumption made in this calculation.', 1, 'The nucleus does not recoil / only the electrostatic force acts (the alpha particle does not reach the range of the strong force) ✓')
+  ]);
+};
+
+function eqCircles(Vs, rpx, rcm){
+  const s = new Scene('Equipotentials around a positive point charge, drawn as concentric circles, with points X and Y'), cx = 260, cy = 230;
+  dot(s, cx, cy, 5); s.label(cx + 10, cy + 20, '+*Q*', { size: 15, anchor: 'start' });
+  rpx.forEach((r, i) => { s.circle(cx, cy, r, { dash: '6 5', w: 1.3 }); s.label(cx, cy - r - 6, Vs[i] + ' V', { size: 13 }); });
+  const a = -35 * Math.PI / 180, xx = cx + rpx[2] * Math.cos(a), xy = cy - rpx[2] * Math.sin(a); dot(s, xx, xy, 4.5); s.label(xx + 10, xy + 16, 'X', { bold: true, anchor: 'start' });
+  const b = 210 * Math.PI / 180, yx = cx + rpx[0] * Math.cos(b), yy = cy - rpx[0] * Math.sin(b); dot(s, yx, yy, 4.5); s.label(yx - 8, yy + 18, 'Y', { bold: true, anchor: 'end' });
+  return s;
+}
+const EQS = [[400, 200, 100], [600, 300, 150], [900, 450, 225], [800, 400, 200]];
+T.EP5 = R => {
+  const vs = R.pick(EQS), r1 = R.pick([3.0, 4.0, 5.0, 6.0]), q = R.pick([1.0, 2.0, 5.0]);
+  const Q = 4 * Math.PI * EPS0 * (r1 / 100) * vs[0], r3c = r1 * vs[0] / vs[2], W = q * 1e-9 * (vs[0] - vs[2]), EX = vs[2] / (r3c / 100);
+  return { sf: 2, scenes: [eqCircles(vs, [40, 80, 160])], data: { vs, r1, q },
+    stem: `<b>Figure 1</b> shows equipotentials around a positive point charge <i>Q</i>. The diagram is not to scale. The ${vs[0]} V equipotential has a radius of ${V(r1, 'cm')}. X is on the ${vs[2]} V equipotential and Y is on the ${vs[0]} V equipotential.`,
+    parts: [
+      calc('Calculate <i>Q</i>.', 2, Q, 'C', `${eq(`<i>V</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>r</i>, so <i>Q</i> = ${K4} × ${N(r1 / 100)} × ${vs[0]}`)} ✓<br>${eq(`<i>Q</i> = ${AV(Q, 'C')}`)} ✓`),
+      calc(`Calculate the radius of the ${vs[2]} V equipotential.`, 1, r3c, 'cm', `<i>V</i> ∝ 1/<i>r</i>, so ${eq(`<i>r</i> = ${N(r1)} × ${vs[0]} / ${vs[2]} = ${A(r3c)}`)} cm ✓`, { noSkill: true }),
+      calc(`Calculate the work done when a charge of +${V(q, 'nC')} is moved from X to Y.`, 1, W, 'J', `${eq(`<i>W</i> = <i>Q</i>Δ<i>V</i> = ${N(q)} × 10<sup>−9</sup> × (${vs[0]} − ${vs[2]}) = ${AV(W, 'J')}`)} ✓`),
+      opt(`State the work done when the charge is moved once around the ${vs[0]} V equipotential.`, 1, ['zero', `${N(q)} × 10<sup>−9</sup> × ${vs[0]} J`, 'it depends on the radius'], 0, 'Zero: the potential does not change along an equipotential ✓'),
+      text('Explain why the equipotentials for equal steps of potential get further apart with increasing distance from <i>Q</i>.', 1, 'The field strength (potential gradient) decreases with distance, so a larger distance is needed for the same change in potential ✓'),
+      calc('Calculate the electric field strength at X.', 1, EX, VM, `${eq(`<i>E</i> = <i>Q</i> / 4π<i>ε</i><sub>0</sub><i>r</i><sup>2</sup> = <i>V</i> / <i>r</i> = ${vs[2]} / ${I(r3c / 100)} = ${AV(EX, VM)}`)} ✓`, { guide: ['Allow ecf from their answer to (b).'] })
+    ] };
+};
+
+T.EP6 = R => {
+  const r = R.pick([10, 15, 20, 25]), Q = R.pick([20, 30, 40, 50, 60]), C = 4 * Math.PI * EPS0 * r / 1000, Vs = Q * 1e-9 / C, n = Q * 1e-9 / QE, En = .5 * Q * 1e-9 * Vs;
+  return NOFIG(2, { r, Q }, `An isolated conducting sphere of radius ${V(r, 'mm')} is charged to +${V(Q, 'nC')} by connecting it briefly to a high-voltage supply. The capacitance of an isolated sphere of radius <i>r</i> is 4π<i>ε</i><sub>0</sub><i>r</i>.`, [
+    calc('Calculate the capacitance of the sphere.', 1, C, 'F', `${eq(`<i>C</i> = ${K4} × ${N(r / 1000)} = ${AV(C, 'F')}`)} ✓`),
+    calc('Calculate the potential of the sphere.', 2, Vs, 'V', `${eq(`<i>V</i> = <i>Q</i> / <i>C</i> = ${N(Q)} × 10<sup>−9</sup> / ${I(C)}`)} ✓<br>${eq(`<i>V</i> = ${AV(Vs, 'V')}`)} ✓`),
+    calc('Calculate the number of electrons removed from the sphere.', 1, n, '', `${eq(`${N(Q)} × 10<sup>−9</sup> / ${SE} = ${A(n)}`)} ✓`, { noSkill: true }),
+    opt('State which particles moved when the sphere was charged.', 1, ['electrons moved from the sphere to the supply', 'protons moved from the supply to the sphere', 'electrons moved from the supply to the sphere'], 0, 'Electrons moved from the sphere to the (positive terminal of the) supply ✓'),
+    calc('Calculate the energy stored by the charged sphere.', 1, En, 'J', `${eq(`<i>E</i> = ½<i>QV</i> = 0.5 × ${N(Q)} × 10<sup>−9</sup> × ${I(Vs)} = ${AV(En, 'J')}`)} ✓`),
+    text('Explain why all the charge is found on the outer surface of the sphere.', 1, 'The like charges repel each other and move as far apart as possible, to the outer surface (so the field inside the conductor is zero) ✓')
+  ]);
+};
+
+T.EP7 = R => {
+  const r = R.pick([5.3e-11, 2.1e-10, 4.8e-10]), U = -KC * QE * QE / r, K = -U / 2;
+  return NOFIG(2, { r }, `In a simple model of the hydrogen atom, the electron moves in a circular orbit of radius ${V(r, 'm')} around the proton.`, [
+    calc('Calculate the electric potential energy of the electron.', 2, U, 'J', `${eq(`<i>E</i><sub>p</sub> = −<i>e</i><sup>2</sup> / 4π<i>ε</i><sub>0</sub><i>r</i> = −((${SE})<sup>2</sup> / (${K4} × ${N(r)}))`)} ✓<br>${eq(`<i>E</i><sub>p</sub> = ${AV(U, 'J')}`)} ✓`, NEG),
+    calc('Calculate this energy in eV.', 1, U / QE, 'eV', `${eq(`${I(U)} / ${SE} = ${A(U / QE)}`)} eV ✓`, { neg: true, noSkill: true }),
+    calc('Calculate the kinetic energy of the electron, in J.', 2, K, 'J', `<i>mv</i><sup>2</sup> / <i>r</i> = <i>e</i><sup>2</sup> / 4π<i>ε</i><sub>0</sub><i>r</i><sup>2</sup>, so <i>E</i><sub>k</sub> = ½<i>mv</i><sup>2</sup> = <i>e</i><sup>2</sup> / 8π<i>ε</i><sub>0</sub><i>r</i> ✓<br>${eq(`<i>E</i><sub>k</sub> = ${I(-U)} / 2 = ${AV(K, 'J')}`)} ✓`),
+    calc('Calculate the energy, in eV, needed to remove the electron from the atom.', 1, K / QE, 'eV', `Total energy = <i>E</i><sub>k</sub> + <i>E</i><sub>p</sub> = −${I(K)} J, so ${eq(`ionisation energy = ${I(K)} / ${SE} = ${A(K / QE)}`)} eV ✓`, { noSkill: true }),
+    text('Explain why the electric potential energy of the electron is negative.', 1, 'The force is attractive, so work must be done to move the electron to infinity, where the potential energy is zero ✓')
+  ]);
+};
+
+T.EP8 = R => {
+  const v = find(() => { const Q = R.pick([10, 15, 20, 30]), rs = pickN(R, [0.050, 0.060, 0.080, 0.100, 0.120, 0.150], 5).sort((x, y) => x - y), Vs = rs.map(r => r3(KC * Q * 1e-9 / r * (1 + (R() * 2 - 1) * .02))); return { rs, Vs, miss: Math.floor(R() * 5) }; },
+    o => new Set(o.rs.map((r, i) => r3(o.Vs[i] * r))).size >= 3);
+  const { rs, Vs, miss } = v, P = rs.map((r, i) => r3(Vs[i] * r)), mean = meanOf(P), Q = mean * 4 * Math.PI * EPS0, rn = R.pick([0.20, 0.25, 0.30]), q = R.pick([2.0, 5.0]), [i1, i2] = pickN(R, [0, 1, 2, 3, 4], 2).sort();
+  const tab = tableH('Table 1', ['<i>r</i> / m', '<i>V</i> / V', '<i>Vr</i> / V m'], rs.map((r, i) => [N(r, 2), N(Vs[i], 3), i === miss ? '' : N(P[i], 3)]));
+  return NOFIG(3, { rs, Vs, miss, rn, q, i1, i2 }, `A student measures the electric potential <i>V</i> at distances <i>r</i> from the centre of a small charged sphere. Table 1 shows the results.<br>${tab}`, [
+    calc('Calculate the missing value of <i>Vr</i>.', 1, Vs[miss] * rs[miss], 'V m', `${eq(`${N(Vs[miss], 3)} × ${N(rs[miss], 2)} = ${A(Vs[miss] * rs[miss])}`)} V m ✓`, { noSkill: true }),
+    text('Explain how the results show that <i>V</i> is inversely proportional to <i>r</i>.', 1, 'The product <i>Vr</i> is (approximately) constant ✓'),
+    calc('Calculate the mean value of <i>Vr</i>. Use the values to 3 significant figures.', 1, mean, 'V m', `${eq(`(${P.map(x => N(x, 3)).join(' + ')}) / 5 = ${A(mean)}`)} V m ✓`, { noSkill: true }),
+    calc('Calculate the charge on the sphere.', 1, Q, 'C', `${eq(`<i>Q</i> = 4π<i>ε</i><sub>0</sub><i>Vr</i> = ${K4} × ${I(mean)} = ${AV(Q, 'C')}`)} ✓`),
+    calc(`Calculate the electric field strength at a distance of ${V(rn, 'm')} from the centre.`, 1, mean / (rn * rn), VM, `${eq(`<i>E</i> = <i>Vr</i> / <i>r</i><sup>2</sup> = ${I(mean)} / ${N(rn)}<sup>2</sup> = ${AV(mean / (rn * rn), VM)}`)} ✓`),
+    calc(`Use Table 1 to calculate the work done when a charge of +${V(q, 'nC')} is moved from <i>r</i> = ${N(rs[i2], 2)} m to <i>r</i> = ${N(rs[i1], 2)} m.`, 1, q * 1e-9 * (Vs[i1] - Vs[i2]), 'J', `${eq(`<i>W</i> = ${N(q)} × 10<sup>−9</sup> × (${N(Vs[i1], 3)} − ${N(Vs[i2], 3)}) = ${AV(q * 1e-9 * (Vs[i1] - Vs[i2]), 'J')}`)} ✓`),
+    text('Suggest why the potential very close to the sphere may not fit the pattern.', 1, 'The charge on the sphere is redistributed by the nearby probe, so the sphere no longer behaves as a point charge / the probe disturbs the field ✓')
+  ]);
+};
+
+T.EP9 = R => {
+  const Q = R.pick([5.0, 8.0, 10, 12]), r1 = R.pick([10, 12, 15, 20]), dr = R.pick([0.5, 1.0]), r2 = r1 + dr;
+  const V1 = KC * Q * 1e-9 / (r1 / 100), V2 = KC * Q * 1e-9 / (r2 / 100), Eav = (V1 - V2) / (dr / 100), E1 = KC * Q * 1e-9 / Math.pow(r1 / 100, 2);
+  return NOFIG(3, { Q, r1, dr }, `A small sphere carries a charge of +${V(Q, 'nC')}. Points J and K are on the same radial line, ${V(r1, 'cm')} and ${V(r2, 'cm', 3)} from the centre of the sphere.`, [
+    calc('Calculate the potential at J.', 1, V1, 'V', `${eq(`<i>V</i> = ${N(Q)} × 10<sup>−9</sup> / (${K4} × ${N(r1 / 100)}) = ${AV(V1, 'V')}`)} ✓`),
+    calc('Calculate the potential at K.', 1, V2, 'V', `${eq(`<i>V</i> = ${N(Q)} × 10<sup>−9</sup> / (${K4} × ${I(r2 / 100)}) = ${AV(V2, 'V')}`)} ✓`),
+    calc('Use your answers to estimate the electric field strength between J and K.', 2, Eav, VM, `${eq(`Δ<i>V</i> = ${N(V1, 5)} − ${N(V2, 5)} = ${I(V1 - V2)}`)} V ✓<br>${eq(`<i>E</i> = Δ<i>V</i> / Δ<i>r</i> = ${I(V1 - V2)} / ${N(dr / 100)} = ${AV(Eav, VM)}`)} ✓`, { tol: .03, noSkill: true, guide: ['Working shown to 4 significant figures, because Δ<i>V</i> is the difference of two similar values.'] }),
+    calc('Calculate the electric field strength at J.', 1, E1, VM, `${eq(`<i>E</i> = ${N(Q)} × 10<sup>−9</sup> / (${K4} × ${N(r1 / 100)}<sup>2</sup>) = ${AV(E1, VM)}`)} ✓`),
+    opt('State the direction of the electric field at J.', 1, ['towards lower potential, away from the sphere', 'towards higher potential, towards the sphere'], 0, 'Away from the sphere, towards lower potential ✓'),
+    text('Explain why the estimate in (c) is smaller than the value in (d).', 1, 'The field is not uniform: it decreases between J and K, so Δ<i>V</i>/Δ<i>r</i> gives an average value that is less than the field at J ✓')
+  ]);
+};
+
+/* ===== Field and potential graphs ===== */
+T.FG1 = R => {
+  const Rc = R.pick([5.0, 10]), VR = R.pick([60, 80, 100, 120]), [ym, yM] = axisFor(VR), q = R.pick([2.0, 5.0, 10]), Vr = r => r <= Rc ? VR : VR * Rc / r;
+  const Q = 4 * Math.PI * EPS0 * (Rc / 100) * VR * 1e3, W = q * 1e-9 * (Vr(2 * Rc) - Vr(4 * Rc)) * 1e3;
+  const fig = graph({ x: [0, 5 * Rc, Rc], y: [0, ym, yM], xdiv: 5, ydiv: 10, h: 320, xl: 'r / cm', yl: 'V / kV', curves: [{ f: () => VR, from: 0, to: Rc }, { f: r => VR * Rc / r, from: Rc, to: 5 * Rc }], reads: [[Rc, VR], [2 * Rc, VR / 2], [4 * Rc, VR / 4]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Rc, VR, q },
+    stem: `<b>Figure 1</b> shows how the electric potential <i>V</i> varies with distance <i>r</i> from the centre of a charged conducting sphere of radius ${V(Rc, 'cm')}.`,
+    parts: [
+      calc('Calculate the charge on the sphere.', 2, Q, 'C', `Reads <i>V</i> = ${VR} kV at <i>r</i> = ${N(Rc)} cm ✓<br>${eq(`<i>Q</i> = ${K4} × ${N(Rc / 100)} × ${VR} × 10<sup>3</sup> = ${AV(Q, 'C')}`)} ✓`, { tol: .03 }),
+      calc(`Use <b>Figure 1</b> to determine the potential at <i>r</i> = ${N(2 * Rc, 2)} cm, in kV.`, 1, VR / 2, 'kV', `${N(VR / 2, 2)} kV ✓`, { abs: yM / 20, noSkill: true }),
+      calc(`Calculate the work done when a charge of +${V(q, 'nC')} is moved from <i>r</i> = ${N(4 * Rc, 2)} cm to <i>r</i> = ${N(2 * Rc, 2)} cm.`, 2, W, 'J', `Reads ${N(VR / 4, 3)} kV and ${N(VR / 2, 3)} kV, so Δ<i>V</i> = ${N(VR / 4, 3)} kV ✓<br>${eq(`<i>W</i> = ${N(q)} × 10<sup>−9</sup> × ${N(VR / 4, 3)} × 10<sup>3</sup> = ${AV(W, 'J')}`)} ✓`, { tol: .04 }),
+      opt('State the potential inside the sphere.', 1, ['the same as at the surface', 'zero', 'it increases towards the centre'], 0, 'The same as at the surface: the field inside is zero ✓'),
+      text('Explain how <b>Figure 1</b> shows that <i>V</i> ∝ 1/<i>r</i> outside the sphere.', 1, `When <i>r</i> doubles from ${N(Rc, 2)} cm to ${N(2 * Rc, 2)} cm, <i>V</i> halves from ${VR} kV to ${N(VR / 2, 2)} kV (the product <i>Vr</i> is constant) ✓`)
+    ] };
+};
+
+T.FG2 = R => {
+  const Rc = R.pick([5.0, 10]), VR = R.pick([60, 80, 100, 120]), [ym, yM] = axisFor(VR), r0 = 2 * Rc, V0 = VR / 2, E = V0 * 1e3 / (r0 / 100), Q = 4 * Math.PI * EPS0 * V0 * 1e3 * r0 / 100, qx = R.pick([2.0, 5.0]);
+  const fig = graph({ x: [0, 5 * Rc, Rc], y: [0, ym, yM], xdiv: 5, ydiv: 10, h: 320, xl: 'r / cm', yl: 'V / kV', curves: [{ f: () => VR, from: 0, to: Rc }, { f: r => VR * Rc / r, from: Rc, to: 5 * Rc }, { f: r => V0 * (2 - r / r0), from: 0, to: 2 * r0, dash: '7 5', w: 1.3 }], reads: [[0, VR], [2 * r0, 0], [r0, V0]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Rc, VR, qx },
+    stem: `<b>Figure 1</b> shows how the electric potential <i>V</i> varies with distance <i>r</i> from the centre of a positively charged sphere. The dashed line is the tangent to the curve at <i>r</i> = ${N(r0, 2)} cm.`,
+    parts: [
+      calc(`Use the tangent to determine the electric field strength at <i>r</i> = ${N(r0, 2)} cm.`, 2, E, VM, `Gradient of the tangent = −${VR} kV / ${N(2 * r0 / 100)} m ✓<br>${eq(`<i>E</i> = −gradient = ${VR} × 10<sup>3</sup> / ${N(2 * r0 / 100)} = ${AV(E, VM)}`)} ✓`, { tol: .04 }),
+      calc('Calculate the charge on the sphere.', 2, Q, 'C', `Reads <i>V</i> = ${N(V0, 2)} kV at <i>r</i> = ${N(r0, 2)} cm ✓<br>${eq(`<i>Q</i> = ${K4} × ${N(r0 / 100)} × ${N(V0, 2)} × 10<sup>3</sup> = ${AV(Q, 'C')}`)} ✓`, { tol: .03 }),
+      opt(`State the direction of the field at <i>r</i> = ${N(r0, 2)} cm.`, 1, ['away from the sphere', 'towards the sphere'], 0, 'Away from the sphere: the potential decreases with distance ✓'),
+      text('State the relationship between the electric field strength and the potential gradient.', 1, 'The field strength equals the negative of the potential gradient: <i>E</i> = −Δ<i>V</i>/Δ<i>r</i> ✓'),
+      calc(`Calculate the force on a charge of +${V(qx, 'nC')} at <i>r</i> = ${N(r0, 2)} cm.`, 1, qx * 1e-9 * E, 'N', `${eq(`<i>F</i> = ${N(qx)} × 10<sup>−9</sup> × ${I(E)} = ${AV(qx * 1e-9 * E, 'N')}`)} ✓`, { tol: .04, noSkill: true })
+    ] };
+};
+
+T.FG3 = R => {
+  const Rc = R.pick([5.0, 10]), Es = R.pick([200, 240, 300, 400]), [ym, yM] = axisFor(Es), r1 = 2 * Rc, r2 = 4 * Rc, E1 = Es / 4, q = R.pick([2.0, 5.0]);
+  const kQ = Es * 1e3 * Math.pow(Rc / 100, 2), Q = kQ / KC, dV = kQ * (1 / (r1 / 100) - 1 / (r2 / 100));
+  const fig = graph({ x: [0, 5 * Rc, Rc], y: [0, ym, yM], xdiv: 5, ydiv: 10, h: 320, xl: 'r / cm', yl: 'E / kV m^{−1}', shade: [{ f: r => Es * Rc * Rc / (r * r), from: r1, to: r2 }], curves: [{ f: () => 0, from: 0, to: Rc }, { f: r => Es * Rc * Rc / (r * r), from: Rc, to: 5 * Rc }], reads: [[r1, E1]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Rc, Es, q },
+    stem: `<b>Figure 1</b> shows how the electric field strength <i>E</i> varies with distance <i>r</i> from the centre of a charged sphere of radius ${V(Rc, 'cm')}. The area between <i>r</i> = ${N(r1, 2)} cm and <i>r</i> = ${N(r2, 2)} cm is shaded.`,
+    parts: [
+      calc(`Use <b>Figure 1</b> to determine <i>E</i> at <i>r</i> = ${N(r1, 2)} cm, in kV m<sup>−1</sup>.`, 1, E1, 'kV m<sup>−1</sup>', `${N(E1, 2)} kV m<sup>−1</sup> ✓`, { abs: yM / 20, noSkill: true }),
+      calc('Calculate the charge on the sphere.', 2, Q, 'C', `${eq(`<i>Q</i> = 4π<i>ε</i><sub>0</sub><i>r</i><sup>2</sup><i>E</i> = ${K4} × ${N(r1 / 100)}<sup>2</sup> × ${N(E1, 2)} × 10<sup>3</sup>`)} ✓<br>${eq(`<i>Q</i> = ${AV(Q, 'C')}`)} ✓`, { tol: .03 }),
+      opt('What does the shaded area represent?', 1, [`the potential difference between <i>r</i> = ${N(r1, 2)} cm and <i>r</i> = ${N(r2, 2)} cm`, 'the work done on a charge of 1 nC between these points', 'the change in field strength between these points', 'the charge between these points'], 0, 'The potential difference between the two distances ✓'),
+      calc('Calculate the potential difference between these two distances.', 2, dV, 'V', `Δ<i>V</i> = (<i>Q</i> / 4π<i>ε</i><sub>0</sub>)(1/<i>r</i><sub>1</sub> − 1/<i>r</i><sub>2</sub>), where ${eq(`<i>Q</i> / 4π<i>ε</i><sub>0</sub> = <i>Er</i><sup>2</sup> = ${N(E1, 2)} × 10<sup>3</sup> × ${N(r1 / 100)}<sup>2</sup> = ${I(kQ)}`)} V m ✓<br>${eq(`Δ<i>V</i> = ${I(kQ)} × (1/${N(r1 / 100)} − 1/${N(r2 / 100)}) = ${AV(dV, 'V')}`)} ✓`, { tol: .03 }),
+      calc(`Calculate the work done when a charge of +${V(q, 'nC')} is moved from <i>r</i> = ${N(r2, 2)} cm to <i>r</i> = ${N(r1, 2)} cm.`, 1, q * 1e-9 * dV, 'J', `${eq(`<i>W</i> = ${N(q)} × 10<sup>−9</sup> × ${I(dV)} = ${AV(q * 1e-9 * dV, 'J')}`)} ✓`, { tol: .03 })
+    ] };
+};
+
+const KE2 = QE * QE / (4 * Math.PI * EPS0) / MEVJ / 1e-15;          // e²/4πε0 in MeV fm
+T.FG4 = R => {
+  const ti = Math.floor(R() * TGT.length), [nm, Z] = TGT[ti], c = 2 * Z * KE2, [ym, yM] = axisFor(c / 16), K = R.pick([3.0, 4.0, 5.0, 6.0].filter(k => c / k <= 95 && c / k >= 12)), r1 = 40, rmin = c / ym;
+  const fig = graph({ x: [0, 100, 20], y: [0, ym, yM], xdiv: 5, ydiv: 10, h: 320, xl: 'r / fm', yl: 'potential energy / MeV', curves: [{ f: r => c / r, from: rmin, to: 100 }, { f: () => K, from: 0, to: 100, dash: '6 5', w: 1.2 }], reads: [[r1, c / r1], [c / K, K]] });
+  const d = c / K;
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { ti, K },
+    stem: `<b>Figure 1</b> shows how the electric potential energy of an alpha particle varies with its distance <i>r</i> from the centre of a nucleus. The dashed line shows a kinetic energy of ${V(K, 'MeV')}.`,
+    parts: [
+      calc(`Use <b>Figure 1</b> to determine the potential energy at <i>r</i> = ${r1} fm.`, 1, c / r1, 'MeV', `${A(c / r1)} MeV ✓`, { abs: yM / 20, noSkill: true }),
+      calc('Use your answer to calculate the proton number of the nucleus.', 2, Z, '', `${eq(`<i>E</i><sub>p</sub> = 2<i>Ze</i><sup>2</sup> / 4π<i>ε</i><sub>0</sub><i>r</i>, so <i>Z</i> = ${I(c / r1)} × 1.60 × 10<sup>−13</sup> × ${K4} × ${r1} × 10<sup>−15</sup> / (2 × (${SE})<sup>2</sup>)`)} ✓<br><i>Z</i> = ${Z} ✓`, { tol: .05, noSkill: true }),
+      calc(`An alpha particle with a kinetic energy of ${N(K)} MeV travels directly towards the nucleus. Use <b>Figure 1</b> to determine its distance of closest approach.`, 1, d, 'fm', `Reads <i>r</i> where the curve meets the dashed line: ${A(d)} fm ✓`, { abs: 2, noSkill: true }),
+      calc('Calculate the distance of closest approach using the data.', 2, d * 1e-15, 'm', `${eq(`<i>d</i> = 2 × ${Z} × (${SE})<sup>2</sup> / (${K4} × ${N(K)} × 1.60 × 10<sup>−13</sup>)`)} ✓<br>${eq(`<i>d</i> = ${AV(d * 1e-15, 'm')}`)} ✓`),
+      opt('State the kinetic energy of the alpha particle at its point of closest approach.', 1, ['zero', `${N(K)} MeV`, `${N(K / 2)} MeV`], 0, 'Zero: all its kinetic energy has become potential energy ✓')
+    ] };
+};
+
+const SHAPE = ['it is zero', 'it is constant, but not zero', 'it increases linearly with distance', 'it is proportional to 1/<i>r</i>', 'it is proportional to 1/<i>r</i><sup>2</sup>'];
+const FGQ = [['the electric field strength outside a charged sphere varies with distance <i>r</i> from its centre', 4], ['the electric potential outside a charged sphere varies with distance <i>r</i> from its centre', 3], ['the electric field strength inside a charged conducting sphere varies with distance from its centre', 0], ['the electric potential inside a charged conducting sphere varies with distance from its centre', 1], ['the electric field strength between two charged parallel plates varies with distance from one plate', 1], ['the electric potential between two parallel plates, one at 0 V and the other at a positive potential, varies with distance from the 0 V plate', 2]];
+T.FG5 = R => {
+  const qs = pickN(R, [0, 1, 2, 3, 4, 5], 5), Vs = R.pick([20, 50, 80, 120]), Rs = R.pick([0.10, 0.15, 0.20]);
+  return NOFIG(2, { qs, Vs, Rs }, 'This question is about how electric field strength and potential vary with position.', qs.map(i => opt(`State how ${FGQ[i][0]}.`, 1, SHAPE, FGQ[i][1], `${cap(SHAPE[FGQ[i][1]])} ✓`)).concat([
+    text('Explain why the electric field strength inside a charged conductor is zero.', 1, 'If there were a field inside, the free charges would move until it disappeared; in equilibrium the charges sit on the surface so the field inside is zero ✓'),
+    calc(`A sphere of radius ${V(Rs, 'm')} has a potential of ${V(Vs, 'kV')}. Calculate the field strength at its surface.`, 1, Vs * 1e3 / Rs, VM, `${eq(`<i>E</i> = <i>V</i> / <i>r</i> = ${Vs} × 10<sup>3</sup> / ${N(Rs)} = ${AV(Vs * 1e3 / Rs, VM)}`)} ✓`)
+  ]));
+};
+
+T.FG6 = R => {
+  const ratio = R.pick([4, 9, 0.25]), q1 = R.pick([1.0, 2.0, 3.0]), q2 = q1 * ratio, s = 12, x0 = s / (1 + Math.sqrt(ratio)), Vx = x => KC * 1e-9 * (q1 / (x / 100) + q2 / ((s - x) / 100)), Vmin = Vx(x0);
+  const [ym, yM] = axisFor(2.5 * Vmin), cut = (lo, hi) => { for (let i = 0; i < 60; i++){ const m = (lo + hi) / 2; if ((Vx(m) > ym * .98) === (Vx(lo) > ym * .98)) lo = m; else hi = m; } return (lo + hi) / 2; }, xa = cut(0.05, x0), xb = cut(s - 0.05, x0);
+  const fig = graph({ x: [0, 12, 2], y: [0, ym, yM], xdiv: 10, ydiv: 10, h: 320, xl: 'x / cm', yl: 'V / V', curves: [{ f: Vx, from: xa, to: xb }], reads: [[x0, Vmin]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { ratio, q1 },
+    stem: `Two positive point charges are ${s} cm apart. Charge A (+${V(q1, 'nC')}) is at <i>x</i> = 0 and charge B is at <i>x</i> = ${s} cm. <b>Figure 1</b> shows how the electric potential <i>V</i> varies with <i>x</i> between them.`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the value of <i>x</i> at which the electric field strength is zero.', 1, x0, 'cm', `<i>x</i> = ${N(x0, 2)} cm, where the potential is a minimum ✓`, { abs: .2, noSkill: true }),
+      text('Explain why the field strength is zero at this point.', 1, 'The field strength equals minus the potential gradient, and the gradient of the graph is zero at the minimum ✓'),
+      text(`Show that the charge on B is ${N(q2, 2)} nC.`, 2, `At this point the fields of A and B are equal: <i>Q</i><sub>A</sub> / ${N(x0, 2)}<sup>2</sup> = <i>Q</i><sub>B</sub> / ${N(s - x0, 2)}<sup>2</sup> ✓<br><i>Q</i><sub>B</sub> = ${N(q1)} × (${N(s - x0, 2)} / ${N(x0, 2)})<sup>2</sup> = ${N(q2, 2)} nC ✓`),
+      calc('Use <b>Figure 1</b> to determine the minimum potential between the charges.', 1, Vmin, 'V', `${A(Vmin)} V ✓`, { abs: yM / 20, noSkill: true }),
+      calc('Calculate this minimum potential using the charges.', 2, Vmin, 'V', `${eq(`<i>V</i> = (${N(q1)} × 10<sup>−9</sup> / ${N(x0 / 100)} + ${N(q2, 2)} × 10<sup>−9</sup> / ${N((s - x0) / 100)}) / (${K4})`)} ✓<br>${eq(`<i>V</i> = ${AV(Vmin, 'V')}`)} ✓`, { guide: ['Allow ecf from their answer to (a).'] }),
+      opt('A proton is released from rest close to this point. State what happens to it.', 1, ['it moves towards the point and oscillates about it', 'it moves away from the point towards the nearer charge', 'it stays at rest'], 0, 'It is pushed towards the point of minimum potential (zero field) and oscillates about it ✓')
+    ] };
+};
+
+T.FG7 = R => {
+  const Q = R.pick([20, 30, 40, 50]), c = KC * Q * Q * 1e-18, lc = Math.log(c), rs = [0.040, 0.050, 0.060, 0.080, 0.100, 0.120], f = x => lc - 2 * x;
+  const xa = -3.4, xb = -1.8, yb = Math.ceil((f(-3.3)) * 2) / 2, ya = yb - 3.5;
+  const pts = rs.map(r => [Math.log(r), f(Math.log(r)) + (R() * 2 - 1) * .03]), xr = -3.0, lkS = Number(N(f(xr), 3).replace('−', '-')) + 2 * xr, kS = Math.exp(lkS);
+  const fig = graph({ x: [xa, xb, 0.4], y: [ya, yb, 0.5], xdiv: 4, ydiv: 5, h: 330, xl: 'ln (r / m)', yl: 'ln (F / N)', crosses: pts, curves: [{ f, from: -3.3, to: -2.0 }], reads: [[-3.2, f(-3.2)], [-2.0, f(-2.0)], [xr, f(xr)]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Q },
+    stem: `Two small spheres carry equal charges <i>Q</i>. The force <i>F</i> between them is measured for different separations <i>r</i>. The relationship between them is <i>F</i> = <i>kr</i><sup>−<i>n</i></sup>. <b>Figure 1</b> shows a graph of ln (<i>F</i> / N) against ln (<i>r</i> / m).`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine <i>n</i>.', 2, 2, '', `Gradient = (${N(f(-2.0), 3)} − (${N(f(-3.2), 3)})) / (−2.0 − (−3.2)) = −2.0 ✓<br><i>n</i> = −gradient = 2.0 ✓`, { tol: .05, noSkill: true }),
+      text('State what this value of <i>n</i> shows about the force.', 1, 'The force obeys an inverse-square law: <i>F</i> ∝ 1/<i>r</i><sup>2</sup> (Coulomb\'s law) ✓'),
+      calc('Use a point on the line to calculate <i>Q</i>.', 2, Q * 1e-9, 'C', `At ln <i>r</i> = ${N(xr, 2)}, ln <i>F</i> = ${N(f(xr), 3)}, so ${eq(`ln <i>k</i> = ${N(f(xr), 3)} + 2 × (${N(xr, 2)}) = ${N(lkS, 4)}`)} and <i>k</i> = <i>Q</i><sup>2</sup> / 4π<i>ε</i><sub>0</sub> = ${I(kS)} N m<sup>2</sup> ✓<br>${eq(`<i>Q</i> = √(${I(kS)} × ${K4}) = ${AV(Q * 1e-9, 'C')}`)} ✓`, { tol: .03, noSkill: true }),
+      opt('The charge on each sphere is doubled. State the effect on the graph.', 1, ['the line moves up by ln 4 with the same gradient', 'the gradient doubles', 'the line moves up by ln 2 with the same gradient', 'the line is unchanged'], 0, 'The line moves up by ln 4 (the force is four times as large) with the same gradient ✓'),
+      text('Explain why a graph of ln <i>F</i> against ln <i>r</i> is plotted.', 1, 'ln <i>F</i> = ln <i>k</i> − <i>n</i> ln <i>r</i>, so the graph is a straight line whose gradient gives the power <i>n</i> directly ✓')
+    ] };
+};
+
+T.FG8 = R => {
+  const G = R.pick([0.20, 0.25, 0.30, 0.40, 0.50]), [ym, yM] = axisFor(G * 20), xs = [4, 6, 8, 10, 12, 14, 16, 18], pts = xs.map(x => [x, G * x * (1 + (R() * 2 - 1) * .02)]), rn = R.pick([0.025, 0.040, 0.20]), re = R.pick([0.10, 0.20]);
+  const Q = G * 1e3 * 4 * Math.PI * EPS0;
+  const fig = graph({ x: [0, 20, 5], y: [0, ym, yM], xdiv: 5, ydiv: 10, h: 320, xl: '1/r / m^{−1}', yl: 'V / kV', crosses: pts, curves: [{ f: x => G * x, from: 0, to: 20 }], reads: [[0, 0], [20, G * 20]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { G, rn, re },
+    stem: `A student measures the electric potential <i>V</i> at distances <i>r</i> from the centre of a charged sphere. <b>Figure 1</b> shows a graph of <i>V</i> against 1/<i>r</i>.`,
+    parts: [
+      calc('Determine the gradient of the graph, in V m.', 2, G * 1e3, 'V m', `Uses a large triangle, for example (0, 0) and (20, ${N(G * 20, 2)}) ✓<br>${eq(`gradient = ${N(G * 20, 2)} × 10<sup>3</sup> / 20 = ${A(G * 1e3)}`)} V m ✓`, { tol: .03, noSkill: true }),
+      calc('Calculate the charge on the sphere.', 1, Q, 'C', `${eq(`<i>Q</i> = 4π<i>ε</i><sub>0</sub> × gradient = ${K4} × ${A(G * 1e3)} = ${AV(Q, 'C')}`)} ✓`, { tol: .03 }),
+      calc(`Calculate the potential at a distance of ${V(rn, 'm')} from the centre.`, 1, G * 1e3 / rn, 'V', `${eq(`<i>V</i> = ${A(G * 1e3)} / ${N(rn)} = ${AV(G * 1e3 / rn, 'V')}`)} ✓`, { tol: .03 }),
+      text('Explain how <b>Figure 1</b> shows that <i>V</i> ∝ 1/<i>r</i>.', 1, 'It is a straight line through the origin ✓'),
+      opt('The sphere is given a negative charge of the same size. State how the graph changes.', 1, ['it becomes a straight line through the origin with a negative gradient', 'the gradient doubles', 'it is unchanged', 'it becomes a curve'], 0, 'A straight line through the origin with negative gradient: the potentials are negative ✓'),
+      calc(`Calculate the electric field strength at a distance of ${V(re, 'm')} from the centre.`, 1, G * 1e3 / (re * re), VM, `${eq(`<i>E</i> = gradient / <i>r</i><sup>2</sup> = ${A(G * 1e3)} / ${N(re)}<sup>2</sup> = ${AV(G * 1e3 / (re * re), VM)}`)} ✓`, { tol: .03 })
+    ] };
+};
+
+// ecf links fixed by hand for types where repeated or coincident numbers would mislead the automatic search ('' = no ecf note)
+const extremeAt = (vals, i) => vals[i] === Math.max(...vals) || vals[i] === Math.min(...vals);
+const ECF = {
+  CL4: { b: '', c: 'ab', e: '' }, CL5: { b: '', c: 'ab', d: 'ab' }, CL6: { c: 'a', d: 'c' },
+  UF6: d => ({ b: 'a', c: extremeAt(d.Vs.map((x, i) => r3(x / d.ds[i])), d.miss) ? 'a' : '', d: 'b' }),
+  RF3: { e: 'b' }, RF4: { b: '', c: 'ab', e: 'c' }, RF5: { b: 'a', c: 'ab' }, RF6: { c: '', f: 'c' },
+  RF7: d => ({ c: 'a', d: extremeAt(d.rs.map((r, i) => r3(d.Es[i] * 1e3 * r * r)), d.miss) ? 'ac' : 'c', e: 'c', f: 'c' }),
+  CP3: { c: 'ab', d: 'b', f: 'a' }, CP6: { b: 'a', c: 'b', e: 'cd', f: 'cde' },
+  EP1: { d: 'bc' }, EP2: { c: 'a', d: 'a' }, EP3: { b: 'a', c: '', d: 'bc' }, EP8: { c: 'a', d: 'c', e: 'c' }, EP9: { c: 'ab' }, FG1: { c: 'b' }
+};
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number(a.toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  const E0 = typeof ECF !== 'undefined' && ECF[q.id], ECFX = E0 ? (typeof E0 === 'function' ? E0(q.data) : E0) : {};   // ecf links set by hand where numbers alone mislead
+  const ecfNote = l => 'Allow ecf from their answer' + (l.length > 1 ? 's' : '') + ' to ' + (l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0]) + '.';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(p.ans < 0 ? lo : Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    const fixed = ECFX[L[i]];
+    if (fixed !== undefined){ if (fixed && !g.some(x => /ecf/.test(x))) g.push(ecfNote([...fixed].map(c => '(' + c + ')'))); }
+    else if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      const findNum = (m, a) => { for (let k = m.indexOf(a); k >= 0; k = m.indexOf(a, k + 1)){ const b = m[k - 1] || '', b2 = m[k - 2] || '', c = m[k + a.length] || '';
+          if (/[\d.^]/.test(b) || (b === '−' && b2 === '^')) continue;                       // inside another number or an exponent
+          if (c === '^' && a === '10') continue;                                              // a power of ten, not a value
+          if (a.includes('×')){ if (/\d/.test(c)) continue; return [k, a.length]; }          // a different power of ten
+          const full = m.slice(k).match(/^\d*\.?\d+/)[0].replace(/\.$/, ''), dp = a.includes('.') ? a.split('.')[1].length : 0;
+          if (full === a || Number(full).toFixed(dp) === a) return [k, full.length];          // the same value, perhaps shown to more figures
+        } return null; };
+      const hasNum = (m, a) => !!findNum(m, a);
+      let own = plain(p.ms);                                                                  // the part's own result is not a carried value
+      for (const a of [plain(I(Math.abs(p.ans))), plain(A(Math.abs(p.ans)))]) for (let f = findNum(own, a); f; f = findNum(own, a)) own = own.slice(0, f[0]) + '#' + own.slice(f[0] + f[1]);
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0 || pj.int) continue; const a = plain(A(Math.abs(pj.ans))), a4 = plain(I(Math.abs(pj.ans))), m = own; if ((hasNum(m, a) || hasNum(m, a4)) && !hasNum(given, a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length && !g.some(x => /ecf/.test(x))) g.push(ecfNote(ecf));
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], ''], ['Bq', ['bq', 'becquerel', 'becquerels', 's-1'], 'Accept s<sup>−1</sup>.'], ['s<sup>−1</sup>', ['s-1', '/s', 'persecond'], ''], ['T', ['t', 'tesla'], ''], ['N kg<sup>−1</sup>', ['nkg-1', 'n/kg', 'ms-2', 'm/s2'], 'Accept m s<sup>−2</sup>.'], ['J kg<sup>−1</sup>', ['jkg-1', 'j/kg'], ''], ['N m<sup>2</sup> kg<sup>−2</sup>', ['nm2kg-2', 'nm^2kg^-2'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  ASF = 2; ASF = T[tpl](makeRand(seedFor(tpl, seed))).sf || 2;      // a first pass finds the significant figures of the data
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : p.s3 ? N(p.ans, 3) : A(p.ans); });      // s3: shown to 3 sf, like the table it completes
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+// a drop-down option can only hold plain text, so superscripts and subscripts are written with Unicode characters
+const SUPC = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '−': '⁻', '-': '⁻', '+': '⁺' }, SUBC = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', e: 'ₑ' };
+const uni = (s, map, mark) => [...s].every(c => map[c]) ? [...s].map(c => map[c]).join('') : mark + '(' + s + ')';
+const optText = h => String(h).replace(/<sup>(.*?)<\/sup>/g, (m, s) => uni(s, SUPC, '^')).replace(/<sub>(.*?)<\/sub>/g, (m, s) => uni(s, SUBC, '_')).replace(/<[^>]+>/g, '');
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${optText(o)}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like UF3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>

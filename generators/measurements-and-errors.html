@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Measurements and Errors Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Measurements and Errors Question Generator</h1>
+    <p>AQA-style practice on section 3.1 (Measurements and their errors). 50 question types and many thousands of different questions with mark schemes: instrument readings, tables of results and graphs with error bars, plus calculation, estimation and description questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="CU3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number(x.toPrecision(n));
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    let e = Math.floor(Math.log10(a) + 1e-12), m = Number((x / Math.pow(10, e)).toPrecision(n));
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+const A = x => isNice(x, 2) ? N(x, 2) : N(x, 3);      // answers: 2 sf when exact, otherwise 3 sf
+const AV = (x, unit) => A(x) + ' ' + unit;
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? .9 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = 52, mt = 16, mr = 22;
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(m) + 1e-9));
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(Math.max(xa, Math.min(0, xb))), ay0 = Y(Math.max(ya, Math.min(0, yb)));
+  let marks = '';
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= ya - 1e-9 && y <= yb + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(g.yl)} against ${esc(g.xl)}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${th - 8}" text-anchor="middle">${esc(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${esc(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [ya, yb] = g.y, inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+
+/* ---------- measurements and errors: shared helpers ---------- */
+const TOPICS = { SI: 'SI units and prefixes', ER: 'Errors, accuracy and precision', UN: 'Uncertainty in readings', CU: 'Combining uncertainties', GR: 'Graphs and uncertainty', ES: 'Estimation and orders of magnitude' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const INT = { int: true, noSkill: true };
+const UNC = { u: true, noSkill: true };                 // an uncertainty: shown to 1 or 2 sf, 1 or 2 sf accepted
+const r3 = x => Number(x.toPrecision(3));
+const I = x => isNice(x, 2) ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);      // intermediate values in working, to 4 significant figures
+const PC = x => U(x) + '%';
+const ORD = ['zeroth', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+const th = (a, b) => `<i>${a}</i>` + (b ? `<sub>${b}</sub>` : '');
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+// a multiple-choice part with the correct option placed at random among the distractors
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</table>`;
+const sup = (b, e) => e === 1 ? b : `${b}<sup>${String(e).replace('-', '−')}</sup>`;
+const bu = ex => [['kg', ex[0]], ['m', ex[1]], ['s', ex[2]], ['A', ex[3]], ['K', ex[4] || 0]].filter(p => p[1]).map(p => sup(p[0], p[1])).join(' ');
+const pow10 = e => `10<sup>${String(e).replace('-', '−')}</sup>`;
+const spreadOf = a => Math.max(...a) - Math.min(...a);
+const meanOf = a => a.reduce((s, x) => s + x, 0) / a.length;
+// three wrong sets of base-unit powers, each one step away from the right set
+function nearUnits(R, ex){
+  const out = [], seen = new Set([bu(ex)]);
+  for (const k of shuffleR(R, [0, 1, 2, 3, 0, 1, 2])) for (const d of shuffleR(R, [1, -1])){
+    const e = ex.slice(); e[k] += d; const s = bu(e);
+    if (s && !seen.has(s) && out.length < 3){ seen.add(s); out.push(s); }
+  }
+  return out;
+}
+const dot = (s, x, y, r = 3.2) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+function eye(s, x, y){ s.poly([[x - 15, y], [x - 8, y - 6], [x, y - 7.5], [x + 8, y - 6], [x + 15, y], [x + 8, y + 6], [x, y + 7.5], [x - 8, y + 6]], { close: true, fill: '#fff', w: 1.3 }); dot(s, x - 3, y, 3.6); }
+// a digital display with a caption above it
+function lcd(s, x, y, w, reading, unit, caption){
+  s.rect(x, y, w, 64, { fill: '#eef1ea', w: 2 }); s.label(x + w / 2 - 12, y + 44, reading, { size: 30, bold: true, inside: true }); s.label(x + w - 10, y + 44, unit, { size: 14, anchor: 'end', inside: true });
+  if (caption) s.label(x + w / 2, y - 12, caption, { size: 14 });
+}
+
+/* ===== SI units and prefixes ===== */
+const DERIVED = [
+  { q: 'force', u: 'N', name: 'newton', ex: [1, 1, -2, 0], rel: 'force = mass × acceleration', sub: 'kg × m s<sup>−2</sup>' },
+  { q: 'energy', u: 'J', name: 'joule', ex: [1, 2, -2, 0], rel: 'work done = force × distance moved', sub: '(kg m s<sup>−2</sup>) × m' },
+  { q: 'power', u: 'W', name: 'watt', ex: [1, 2, -3, 0], rel: 'power = work done ÷ time', sub: '(kg m<sup>2</sup> s<sup>−2</sup>) ÷ s' },
+  { q: 'pressure', u: 'Pa', name: 'pascal', ex: [1, -1, -2, 0], rel: 'pressure = force ÷ area', sub: '(kg m s<sup>−2</sup>) ÷ m<sup>2</sup>' },
+  { q: 'charge', u: 'C', name: 'coulomb', ex: [0, 0, 1, 1], rel: 'charge = current × time', sub: 'A × s' },
+  { q: 'potential difference', u: 'V', name: 'volt', ex: [1, 2, -3, -1], rel: 'potential difference = energy transferred ÷ charge', sub: '(kg m<sup>2</sup> s<sup>−2</sup>) ÷ (A s)' },
+  { q: 'resistance', u: 'Ω', name: 'ohm', ex: [1, 2, -3, -2], rel: 'resistance = potential difference ÷ current', sub: '(kg m<sup>2</sup> s<sup>−3</sup> A<sup>−1</sup>) ÷ A' },
+  { q: 'momentum', u: 'N s', name: 'newton second', ex: [1, 1, -1, 0], rel: 'momentum = mass × velocity', sub: 'kg × m s<sup>−1</sup>' },
+  { q: 'frequency', u: 'Hz', name: 'hertz', ex: [0, 0, -1, 0], rel: 'frequency = 1 ÷ period', sub: '1 ÷ s' }
+];
+const BASES = [['ampere', 'electric current'], ['kelvin', 'temperature'], ['mole', 'amount of substance'], ['kilogram', 'mass'], ['second', 'time'], ['metre', 'length']];
+const NONBASE = ['newton', 'volt', 'coulomb', 'joule', 'watt', 'ohm', 'pascal', 'hertz'];
+
+T.SI1 = R => {
+  const [ia, ib] = pickN(R, [0, 1, 2, 3, 4, 5], 2), [d1, d2] = pickN(R, [0, 1, 2, 3, 4, 5, 6, 7, 8].filter(i => i !== 8), 2), D1 = DERIVED[d1], D2 = DERIVED[d2];
+  return NOFIG(2, { ia, ib, d1, d2 }, 'The SI system is built on a small number of base units. All other units are derived from these.', [
+    choose(R, 'Which one of the following is an SI base unit?', 1, BASES[ia][0], pickN(R, NONBASE, 3), `The ${BASES[ia][0]}, the base unit of ${BASES[ia][1]} ✓`),
+    text(`Show that the ${D1.name} (${D1.u}), the unit of ${D1.q}, can be written in SI base units as ${bu(D1.ex)}.`, 2, `Uses ${D1.rel} ✓<br>so 1 ${D1.u} = ${D1.sub} = ${bu(D1.ex)} ✓`),
+    choose(R, `Which of the following is equivalent to the ${D2.name} (${D2.u}), the unit of ${D2.q}?`, 1, bu(D2.ex), nearUnits(R, D2.ex), `${D2.rel}, so 1 ${D2.u} = ${D2.sub} = ${bu(D2.ex)} ✓`),
+    choose(R, `State the SI base quantity whose unit is the ${BASES[ib][0]}.`, 1, BASES[ib][1], pickN(R, BASES.filter((b, i) => i !== ib).map(b => b[1]), 3), `The ${BASES[ib][0]} is the unit of ${BASES[ib][1]} ✓`)
+  ]);
+};
+
+const PFX = { G: [1e9, 9], M: [1e6, 6], k: [1e3, 3], m: [1e-3, -3], μ: [1e-6, -6], n: [1e-9, -9], p: [1e-12, -12] };
+const PX = [['The wavelength of the light from a laser is', [405, 532, 633, 650], 'n', 'm', 3], ['The capacitance of a capacitor is', [22, 47, 68, 220, 470], 'μ', 'F', 2], ['The capacitance of a small capacitor is', [15, 33, 68, 82], 'p', 'F', 2],
+  ['The frequency of a radio wave is', [88, 96, 102], 'M', 'Hz', 3], ['The current in an LED is', [15, 20, 25, 40], 'm', 'A', 2], ['The resistance of a resistor is', [4.7, 6.8, 22, 47], 'k', 'Ω', 2], ['The frequency of a wireless signal is', [2.4, 5.8], 'G', 'Hz', 2]];
+T.SI2 = R => {
+  const [lead, vals, pf, un, sf] = R.pick(PX), v = R.pick(vals), a1 = v * PFX[pf][0];
+  const Amm = R.pick([0.20, 0.50, 1.5, 2.5, 4.0, 6.0]), Vc = R.pick([25, 40, 75, 120, 250, 500]);
+  const sc = R.pick([0, 1]), I = R.pick([20, 40, 80, 120, 250]), P = R.pick([1.2, 1.5, 2.0, 2.4, 3.0]), tm = R.pick([1.5, 2.0, 3.0, 4.5, 5.0]);
+  const d = sc ? P * 1e3 * tm * 60 : I * 1e-3 * tm * 60;
+  const m = R.pick([1.5, 2.4, 3.2, 4.7, 6.8]), [eu, ew] = R.pick([[-9, 's'], [-6, 's'], [-3, 'm'], [3, 'm'], [6, 'Hz'], [9, 'Hz'], [-6, 'm'], [6, 'J']].filter(([e1, w1]) => !(w1 === un && PFX[pf][1] === e1)));
+  const pre = e => Object.keys(PFX).find(k => PFX[k][1] === e), right = `${N(m)} ${pre(eu)}${ew}`, wrongs = [eu - 3, eu + 3].filter(e => pre(e)).map(e => `${N(m)} ${pre(e)}${ew}`).concat([`${N(m * 10)} ${pre(eu)}${ew}`, `${N(m / 10)} ${pre(eu)}${ew}`]).slice(0, 3);
+  return NOFIG(2, { v, pf, Amm, Vc, sc, I, P, tm }, 'This question is about prefixes and converting between units.', [
+    calc(`${lead} ${V(v, pf + un, sf)}.<br>Calculate this value in ${un}.`, 1, a1, un, `1 ${pf}${un} = ${pow10(PFX[pf][1])} ${un}, so ${N(v, sf)} ${pf}${un} = ${AV(a1, un)} ✓`, { noSkill: true }),
+    calc(`The cross-sectional area of a copper wire is ${V(Amm, 'mm<sup>2</sup>')}.<br>Calculate this area in m<sup>2</sup>.`, 1, Amm * 1e-6, 'm<sup>2</sup>', `1 mm<sup>2</sup> = (10<sup>−3</sup> m)<sup>2</sup> = 10<sup>−6</sup> m<sup>2</sup>, so ${eq(`<i>A</i> = ${N(Amm)} × 10<sup>−6</sup> = ${AV(Amm * 1e-6, 'm<sup>2</sup>')}`)} ✓`, { noSkill: true }),
+    calc(`The volume of a stone is ${V(Vc, 'cm<sup>3</sup>')}.<br>Calculate this volume in m<sup>3</sup>.`, 1, Vc * 1e-6, 'm<sup>3</sup>', `1 cm<sup>3</sup> = (10<sup>−2</sup> m)<sup>3</sup> = 10<sup>−6</sup> m<sup>3</sup>, so ${eq(`<i>V</i> = ${N(Vc)} × 10<sup>−6</sup> = ${AV(Vc * 1e-6, 'm<sup>3</sup>')}`)} ✓`, { noSkill: true }),
+    sc ? calc(`A kettle of power ${V(P, 'kW')} is switched on for ${V(tm, 'minutes')}.<br>Calculate the energy transferred, in J.`, 2, d, 'J', `Converts to SI units: ${N(P * 1e3)} W and ${N(tm * 60)} s ✓<br>${eq(`<i>E</i> = <i>Pt</i> = ${N(P * 1e3)} × ${N(tm * 60)} = ${AV(d, 'J')}`)} ✓`)
+       : calc(`A current of ${V(I, 'mA')} passes through a resistor for ${V(tm, 'minutes')}.<br>Calculate the charge that flows, in C.`, 2, d, 'C', `Converts to SI units: ${N(I * 1e-3)} A and ${N(tm * 60)} s ✓<br>${eq(`<i>Q</i> = <i>It</i> = ${N(I * 1e-3)} × ${N(tm * 60)} = ${AV(d, 'C')}`)} ✓`),
+    choose(R, `Which of the following is equal to ${N(m)} × ${pow10(eu)} ${ew}?`, 1, right, wrongs, `The prefix ${pre(eu)} means ${pow10(eu)}, so ${N(m)} × ${pow10(eu)} ${ew} = ${right} ✓`)
+  ]);
+};
+
+const HOMO = [
+  { e: '<i>v</i><sup>2</sup> = <i>u</i><sup>2</sup> + 2<i>as</i>', l: 'Units of <i>v</i><sup>2</sup> and of <i>u</i><sup>2</sup>: (m s<sup>−1</sup>)<sup>2</sup> = m<sup>2</sup> s<sup>−2</sup>', r: 'Units of 2<i>as</i>: m s<sup>−2</sup> × m = m<sup>2</sup> s<sup>−2</sup>, the same as the other terms (2 has no unit)' },
+  { e: '<i>s</i> = <i>ut</i> + ½<i>at</i><sup>2</sup>', l: 'Units of <i>s</i>: m', r: 'Units of <i>ut</i>: m s<sup>−1</sup> × s = m, and of ½<i>at</i><sup>2</sup>: m s<sup>−2</sup> × s<sup>2</sup> = m (½ has no unit)' },
+  { e: '<i>T</i> = 2π√(<i>l</i> / <i>g</i>)', l: 'Units of <i>T</i>: s', r: 'Units of √(<i>l</i> / <i>g</i>): √(m ÷ m s<sup>−2</sup>) = √(s<sup>2</sup>) = s (2π has no unit)' },
+  { e: '<i>E</i><sub>k</sub> = ½<i>mv</i><sup>2</sup>', l: 'Units of <i>E</i><sub>k</sub>: J = kg m<sup>2</sup> s<sup>−2</sup>', r: 'Units of <i>mv</i><sup>2</sup>: kg × (m s<sup>−1</sup>)<sup>2</sup> = kg m<sup>2</sup> s<sup>−2</sup> (½ has no unit)' },
+  { e: '<i>p</i> = <i>ρgh</i>', l: 'Units of <i>p</i>: Pa = N m<sup>−2</sup> = kg m<sup>−1</sup> s<sup>−2</sup>', r: 'Units of <i>ρgh</i>: kg m<sup>−3</sup> × m s<sup>−2</sup> × m = kg m<sup>−1</sup> s<sup>−2</sup>' },
+  { e: '<i>F</i> = <i>mv</i><sup>2</sup> / <i>r</i>', l: 'Units of <i>F</i>: N = kg m s<sup>−2</sup>', r: 'Units of <i>mv</i><sup>2</sup> / <i>r</i>: kg × (m s<sup>−1</sup>)<sup>2</sup> ÷ m = kg m s<sup>−2</sup>' },
+  { e: '<i>c</i> = √(<i>T</i> / <i>μ</i>)', l: 'Units of <i>c</i>: m s<sup>−1</sup>', r: 'Units of √(<i>T</i> / <i>μ</i>): √(kg m s<sup>−2</sup> ÷ kg m<sup>−1</sup>) = √(m<sup>2</sup> s<sup>−2</sup>) = m s<sup>−1</sup>' }
+];
+const NOTHOMO = ['<i>v</i> = <i>u</i> + <i>at</i><sup>2</sup>', '<i>s</i> = <i>ut</i> + ½<i>at</i>', '<i>E</i><sub>k</sub> = ½<i>mv</i>', '<i>p</i> = <i>ρg</i>', '<i>T</i> = 2π√(<i>g</i> / <i>l</i>)', '<i>F</i> = <i>mv</i> / <i>r</i>'];
+const KCON = [
+  { e: '<i>F</i> = <i>kv</i><sup>2</sup>', ctx: 'the drag force <i>F</i> on a car moving at speed <i>v</i>', ex: [1, -1, 0, 0], xs: [12, 15, 20, 25, 30], ks: [0.30, 0.35, 0.40, 0.45], p: 2, xu: MS1, yu: 'N', xn: 'speed', yn: 'drag force', kx: '<i>F</i> / <i>v</i><sup>2</sup>', ku: 'N ÷ (m s<sup>−1</sup>)<sup>2</sup> = kg m s<sup>−2</sup> × m<sup>−2</sup> s<sup>2</sup>' },
+  { e: '<i>F</i> = <i>kv</i>', ctx: 'the drag force <i>F</i> on a small sphere falling slowly at speed <i>v</i>', ex: [1, 0, -1, 0], xs: [0.020, 0.025, 0.040, 0.050], ks: [0.0015, 0.0024, 0.0030, 0.0045], p: 1, xu: MS1, yu: 'N', xn: 'speed', yn: 'drag force', kx: '<i>F</i> / <i>v</i>', ku: 'N ÷ m s<sup>−1</sup> = kg m s<sup>−2</sup> × m<sup>−1</sup> s' },
+  { e: '<i>E</i> = <i>kx</i><sup>2</sup>', ctx: 'the energy <i>E</i> stored in a spring stretched by an extension <i>x</i>', ex: [1, 0, -2, 0], xs: [0.020, 0.040, 0.050, 0.060, 0.080], ks: [12, 20, 25, 40], p: 2, xu: 'm', yu: 'J', xn: 'extension', yn: 'energy stored', kx: '<i>E</i> / <i>x</i><sup>2</sup>', ku: 'J ÷ m<sup>2</sup> = kg m<sup>2</sup> s<sup>−2</sup> × m<sup>−2</sup>' },
+  { e: '<i>s</i> = <i>kt</i><sup>2</sup>', ctx: 'the distance <i>s</i> fallen from rest by a ball in time <i>t</i>', ex: [0, 1, -2, 0], xs: [0.30, 0.40, 0.50, 0.60], ks: [4.9], p: 2, xu: 's', yu: 'm', xn: 'time', yn: 'distance fallen', kx: '<i>s</i> / <i>t</i><sup>2</sup>', ku: 'm ÷ s<sup>2</sup>' }
+];
+T.SI3 = R => {
+  const [h1] = pickN(R, [0, 1, 2, 3, 4, 5, 6], 1), wrong = R.pick(NOTHOMO), others = pickN(R, HOMO.filter((x, i) => i !== h1).map(x => x.e), 3), kc = R.pick(KCON);
+  const { x, k } = find(() => ({ x: R.pick(kc.xs), k: R.pick(kc.ks) }), o => isNice(o.k * Math.pow(o.x, kc.p), 3)), y = k * Math.pow(x, kc.p), H = HOMO[h1];
+  return NOFIG(2, { h1, x, y, p: kc.p, kc: KCON.indexOf(kc) }, `An equation is homogeneous with respect to units when every term in it has the same units.`, [
+    text(`Show that the equation ${H.e} is homogeneous with respect to units.`, 2, `${H.l} ✓<br>${H.r} ✓`),
+    choose(R, 'Which one of these equations is <b>not</b> homogeneous with respect to units?', 1, wrong, others, `${wrong}: the terms do not all have the same units ✓`),
+    text('Explain why an equation that is homogeneous with respect to units may still be incorrect.', 1, 'Pure numbers (dimensionless constants such as ½ or 2π) have no units, so a wrong numerical factor cannot be detected / a term could be missing ✓'),
+    choose(R, `The equation ${kc.e} describes ${kc.ctx}. <i>k</i> is a constant.<br>Which of the following is the unit of <i>k</i> in SI base units?`, 1, bu(kc.ex), nearUnits(R, kc.ex), `<i>k</i> = ${kc.kx}, so its unit is ${kc.ku} = ${bu(kc.ex)} ✓`),
+    calc(`When the ${kc.xn} is ${V(x, kc.xu)}, the ${kc.yn} is ${V(y, kc.yu, 3)}.<br>Calculate <i>k</i>.`, 1, k, bu(kc.ex), `${eq(`<i>k</i> = ${N(y, 3)} / ${N(x)}${kc.p === 2 ? '<sup>2</sup>' : ''} = ${AV(k, bu(kc.ex))}`)} ✓`, { noSkill: true })
+  ]);
+};
+
+const CONSTS = [
+  { name: 'coefficient of viscosity', sym: 'η', eqn: '<i>F</i> = 6π<i>ηrv</i>', ctx: 'the drag force <i>F</i> on a small sphere of radius <i>r</i> moving at a low speed <i>v</i> through a liquid', ex: [1, -1, -1, 0, 0],
+    s1: '<i>η</i> = <i>F</i> / (6π<i>rv</i>), so the unit of <i>η</i> is N ÷ (m × m s<sup>−1</sup>) = N s m<sup>−2</sup>', s2: '= kg m s<sup>−2</sup> × s × m<sup>−2</sup>', alt: 'Pa s', wrong: ['N s m<sup>−1</sup>', 'N m<sup>−2</sup> s<sup>−1</sup>', 'Pa s<sup>−1</sup>'] },
+  { name: 'spring constant', sym: 'k', eqn: '<i>F</i> = <i>k</i>Δ<i>L</i>', ctx: 'the force <i>F</i> needed to stretch a spring by an extension Δ<i>L</i>', ex: [1, 0, -2, 0, 0],
+    s1: '<i>k</i> = <i>F</i> / Δ<i>L</i>, so the unit of <i>k</i> is N m<sup>−1</sup>', s2: '= kg m s<sup>−2</sup> × m<sup>−1</sup>', alt: 'N m<sup>−1</sup>', wrong: ['N m', 'J m<sup>−1</sup>', 'N m<sup>−2</sup>'] },
+  { name: 'gravitational constant', sym: 'G', eqn: '<i>F</i> = <i>Gm</i><sub>1</sub><i>m</i><sub>2</sub> / <i>r</i><sup>2</sup>', ctx: 'the gravitational force <i>F</i> between two masses <i>m</i><sub>1</sub> and <i>m</i><sub>2</sub> whose centres are a distance <i>r</i> apart', ex: [-1, 3, -2, 0, 0],
+    s1: '<i>G</i> = <i>Fr</i><sup>2</sup> / (<i>m</i><sub>1</sub><i>m</i><sub>2</sub>), so the unit of <i>G</i> is N m<sup>2</sup> kg<sup>−2</sup>', s2: '= kg m s<sup>−2</sup> × m<sup>2</sup> × kg<sup>−2</sup>', alt: 'N m<sup>2</sup> kg<sup>−2</sup>', wrong: ['N m<sup>−2</sup> kg<sup>2</sup>', 'N m<sup>2</sup> kg<sup>−1</sup>', 'N kg<sup>−2</sup>'] },
+  { name: 'Stefan constant', sym: 'σ', eqn: '<i>P</i> = <i>σAT</i><sup>4</sup>', ctx: 'the power <i>P</i> radiated by a black body of surface area <i>A</i> at absolute temperature <i>T</i>', ex: [1, 0, -3, 0, -4],
+    s1: '<i>σ</i> = <i>P</i> / (<i>AT</i><sup>4</sup>), so the unit of <i>σ</i> is W m<sup>−2</sup> K<sup>−4</sup>', s2: '= kg m<sup>2</sup> s<sup>−3</sup> × m<sup>−2</sup> × K<sup>−4</sup>', alt: 'W m<sup>−2</sup> K<sup>−4</sup>', wrong: ['W m<sup>2</sup> K<sup>−4</sup>', 'W m<sup>−2</sup> K<sup>4</sup>', 'J m<sup>−2</sup> K<sup>−4</sup>'] }
+];
+T.SI4 = R => {
+  const ci = Math.floor(R() * CONSTS.length), C = CONSTS[ci]; let d, ans, q, ms;
+  if (ci === 0){ const r = R.pick([1.0, 1.5, 2.0, 2.5]), v = R.pick([1.2, 1.5, 2.0, 2.5, 3.0]), eta = R.pick([0.80, 1.0, 1.2, 1.5]), F = Number((6 * Math.PI * eta * r * 1e-3 * v * 1e-2).toPrecision(2)); ans = F / (6 * Math.PI * r * 1e-3 * v * 1e-2); d = { r, v, F };
+    q = `A steel ball of radius ${V(r, 'mm')} falls through oil at a steady speed of ${V(v, 'cm s<sup>−1</sup>')}. The drag force on the ball is ${V(F, 'N')}.<br>Calculate <i>η</i> for the oil.`;
+    ms = `Converts to SI units: ${N(r * 1e-3)} m and ${N(v * 1e-2)} ${MS1} ✓<br>${eq(`<i>η</i> = ${N(F)} / (6π × ${N(r * 1e-3)} × ${N(v * 1e-2)}) = ${AV(ans, 'Pa s')}`)} ✓`; }
+  else if (ci === 1){ const F = R.pick([2.0, 2.5, 3.0, 4.0, 5.0, 6.0]), L = R.pick([4.0, 5.0, 6.0, 8.0, 12]); ans = F / (L * 1e-2); d = { F, L };
+    q = `A force of ${V(F, 'N')} stretches a spring by ${V(L, 'cm')}.<br>Calculate <i>k</i> for the spring.`; ms = `Converts the extension to ${N(L * 1e-2)} m ✓<br>${eq(`<i>k</i> = ${N(F)} / ${N(L * 1e-2)} = ${AV(ans, 'N m<sup>−1</sup>')}`)} ✓`; }
+  else if (ci === 2){ const m = R.pick([2.0, 5.0, 8.0, 10]), r = R.pick([0.050, 0.080, 0.10, 0.12]), F = Number((6.67e-11 * m * m / (r * r)).toPrecision(2)); ans = F * r * r / (m * m); d = { m, r, F };
+    q = `Two lead spheres, each of mass ${V(m, 'kg')}, have their centres ${V(r, 'm')} apart. The gravitational force between them is ${V(F, 'N')}.<br>Calculate <i>G</i>.`; ms = `${eq(`<i>G</i> = <i>Fr</i><sup>2</sup> / (<i>m</i><sub>1</sub><i>m</i><sub>2</sub>)`)} ✓<br>${eq(`<i>G</i> = ${N(F)} × ${N(r)}<sup>2</sup> / (${N(m)} × ${N(m)}) = ${AV(ans, 'N m<sup>2</sup> kg<sup>−2</sup>')}`)} ✓`; }
+  else { const A = R.pick([2.0, 4.0, 5.0, 8.0]) * 1e-4, Tk = R.pick([800, 1000, 1200, 1500]), P = Number((5.67e-8 * A * Math.pow(Tk, 4)).toPrecision(2)); ans = P / (A * Math.pow(Tk, 4)); d = { A, Tk, P };
+    q = `A small black body of surface area ${V(A, 'm<sup>2</sup>')} at a temperature of ${V(Tk, 'K')} radiates a power of ${V(P, 'W')}.<br>Calculate <i>σ</i>.`; ms = `${eq(`<i>σ</i> = <i>P</i> / (<i>AT</i><sup>4</sup>)`)} ✓<br>${eq(`<i>σ</i> = ${N(P)} / (${N(A)} × ${N(Tk)}<sup>4</sup>) = ${AV(ans, 'W m<sup>−2</sup> K<sup>−4</sup>')}`)} ✓`; }
+  d.ci = ci;
+  return NOFIG(2, d, `The equation ${C.eqn} gives ${C.ctx}. <i>${C.sym}</i> is the ${C.name}.`, [
+    text(`Show that the unit of <i>${C.sym}</i>, in SI base units, is ${bu(C.ex)}.`, 2, `${C.s1} ✓<br>${C.s2} = ${bu(C.ex)} ✓`),
+    choose(R, `Which of the following is also a correct unit for <i>${C.sym}</i>?`, 1, C.alt, C.wrong, `${C.alt} ✓`),
+    calc(q, 2, ans, C.alt, ms, { noSkill: true }),
+    ci === 0 ? text('Explain why the factor 6π does not affect the unit of <i>η</i>.', 1, '6π is a pure number (it is dimensionless), so it has no unit ✓')
+      : text(`Explain why the unit of <i>${C.sym}</i> can be found from the equation without knowing the value of <i>${C.sym}</i>.`, 1, `A correct equation is homogeneous: both sides must have the same units, so <i>${C.sym}</i> must have the unit that makes the units of the right-hand side equal those of the left-hand side ✓`)
+  ]);
+};
+
+T.SI5 = R => {
+  const Vk = R.pick([150, 200, 250, 500, 1200, 2500]), Ej = R.pick([2.6, 3.0, 3.2, 3.6, 4.2]) * 1e-19, P = R.pick([1.8, 2.0, 2.2, 2.4, 3.0]), tm = R.pick([2.5, 3.0, 3.5, 4.0]), X = R.pick([2.5, 3.0, 4.0, 5.0]);
+  const E1 = Vk * 1.60e-19, E2 = Ej / 1.60e-19, E3 = P * 1e3 * tm * 60, E4 = P * tm / 60, big = X > 3.6;
+  return NOFIG(2, { Vk, Ej, P, tm, X }, `This question is about units of energy. One electronvolt (1 eV) is the energy gained by an electron accelerated through a potential difference of 1 V.<br>charge of electron = 1.60 × 10<sup>−19</sup> C`, [
+    calc(`An electron is accelerated from rest through a potential difference of ${V(Vk, 'V')}.<br>Calculate its kinetic energy in J.`, 1, E1, 'J', `${eq(`<i>E</i> = <i>QV</i> = 1.60 × 10<sup>−19</sup> × ${N(Vk)} = ${AV(E1, 'J')}`)} ✓`),
+    calc(`A photon of visible light has an energy of ${V(Ej, 'J')}.<br>Calculate this energy in eV.`, 1, E2, 'eV', `${eq(`<i>E</i> = ${N(Ej)} / 1.60 × 10<sup>−19</sup> = ${AV(E2, 'eV')}`)} ✓`, { noSkill: true }),
+    calc(`A kettle of power ${V(P, 'kW')} is switched on for ${V(tm, 'minutes')}.<br>Calculate the energy transferred, in J.`, 2, E3, 'J', `Converts to SI units: ${N(P * 1e3)} W and ${N(tm * 60)} s ✓<br>${eq(`<i>E</i> = <i>Pt</i> = ${N(P * 1e3)} × ${N(tm * 60)} = ${AV(E3, 'J')}`)} ✓`),
+    calc('Calculate this energy in kilowatt-hours (kWh).', 1, E4, 'kWh', `${eq(`<i>E</i> = ${N(P)} kW × (${N(tm)} / 60) h = ${AV(E4, 'kWh')}`)} ✓`, { noSkill: true }),
+    choose(R, `Which is the larger amount of energy: 1 kWh or ${N(X)} MJ?`, 1, big ? `${N(X)} MJ` : '1 kWh', [big ? '1 kWh' : `${N(X)} MJ`, 'they are equal'], `1 kWh = 1000 W × 3600 s = 3.6 MJ, so ${big ? N(X) + ' MJ' : '1 kWh'} is larger ✓`)
+  ]);
+};
+
+T.SI6 = R => {
+  const [mat, rho0] = R.pick([['constantan', 4.9e-7], ['nichrome', 1.1e-6]]);
+  const { d, L, Rw } = find(() => { const d = R.pick([0.20, 0.25, 0.28, 0.32, 0.38, 0.46]), L = R.pick([50.0, 60.0, 75.0, 80.0, 90.0]); return { d, L, Rw: Number((rho0 * L * 1e-2 / (Math.PI * Math.pow(d * 1e-3, 2) / 4)).toPrecision(2)) }; }, o => o.Rw >= 2 && o.Rw <= 30);
+  const A = Math.PI * Math.pow(d * 1e-3, 2) / 4, rho = Rw * A / (L * 1e-2), [fl, fd] = R.pick([[2, 2], [2, 0.5], [3, 2], [0.5, 2], [3, 0.5], [0.5, 0.5]]), R2 = Rw * fl / (fd * fd);
+  const wordL = fl === 2 ? 'twice' : fl === 3 ? 'three times' : 'half', wordD = fd === 2 ? 'twice' : 'half';
+  return NOFIG(2, { d, L, Rw, fl, fd }, `A ${mat} wire has a length of ${V(L, 'cm', 3)} and a diameter of ${V(d, 'mm')}. Its resistance is ${V(Rw, 'Ω')}.`, [
+    calc('Calculate the cross-sectional area of the wire in m<sup>2</sup>.', 2, A, 'm<sup>2</sup>', `Converts the diameter to ${N(d * 1e-3)} m ✓<br>${eq(`<i>A</i> = π<i>d</i><sup>2</sup> / 4 = π × (${N(d * 1e-3)})<sup>2</sup> / 4 = ${AV(A, 'm<sup>2</sup>')}`)} ✓`),
+    calc('Calculate the resistivity of the wire.', 2, rho, OHMM, `${eq(`<i>ρ</i> = <i>RA</i> / <i>L</i> = ${N(Rw)} × ${I(A)} / ${N(L * 1e-2, 3)}`)} ✓<br>${eq(`<i>ρ</i> = ${AV(rho, OHMM)}`)} ✓`),
+    choose(R, 'Which of the following is the unit of resistivity in SI base units?', 1, bu([1, 3, -3, -2]), nearUnits(R, [1, 3, -3, -2]), `Ω m = (kg m<sup>2</sup> s<sup>−3</sup> A<sup>−2</sup>) × m = ${bu([1, 3, -3, -2])} ✓`),
+    calc(`A second wire is made of the same material. Its length is ${wordL} the length of the first wire and its diameter is ${wordD} the diameter of the first wire.<br>Calculate the resistance of the second wire.`, 2, R2, 'Ω', `${eq('<i>R</i> = <i>ρL</i> / <i>A</i>')}, so ${eq('<i>R</i> ∝ <i>L</i> / <i>d</i><sup>2</sup>')} ✓<br>${eq(`<i>R</i> = ${N(Rw)} × ${fl} / ${fd}<sup>2</sup> = ${AV(R2, 'Ω')}`)} ✓`)
+  ]);
+};
+
+const METALS = [['aluminium', 2700], ['titanium', 4500], ['zinc', 7100], ['iron', 7900], ['copper', 8900], ['lead', 11300]];
+T.SI7 = R => {
+  const mi = Math.floor(R() * METALS.length), [mat, rho] = METALS[mi], cyl = R.chance(.5);
+  const a = R.pick([2.00, 2.50, 3.00, 4.00]), b = R.pick([1.50, 2.00, 2.50, 3.20]), c = R.pick([1.20, 1.60, 2.40, 5.00]);
+  const Vc = cyl ? Math.PI * a * a / 4 * c : a * b * c, m = r3(rho / 1000 * Vc), Vm = Vc * 1e-6, dens = m * 1e-3 / Vm, gcc = m / Vc;
+  const shown = shuffleR(R, [mi].concat(pickN(R, METALS.map((x, i) => i).filter(i => i !== mi), 3))).sort((p, q) => METALS[p][1] - METALS[q][1]);
+  return NOFIG(3, { cyl, a, b, c, m, mi },
+    `${cyl ? `A metal cylinder has a diameter of ${V(a, 'cm', 3)} and a height of ${V(c, 'cm', 3)}.` : `A metal block measures ${V(a, 'cm', 3)} × ${V(b, 'cm', 3)} × ${V(c, 'cm', 3)}.`} Its mass is ${V(m, 'g', 3)}.<br>` + tableH('Table 1', ['metal', `density / ${KGM3}`], shown.map(i => [METALS[i][0], String(METALS[i][1])])), [
+    calc(`Calculate the volume of the ${cyl ? 'cylinder' : 'block'} in m<sup>3</sup>.`, 2, Vm, 'm<sup>3</sup>', `${cyl ? eq(`<i>V</i> = π<i>d</i><sup>2</sup><i>h</i> / 4 = π × ${N(a, 3)}<sup>2</sup> × ${N(c, 3)} / 4 = ${I(Vc)} cm<sup>3</sup>`) : eq(`<i>V</i> = ${N(a, 3)} × ${N(b, 3)} × ${N(c, 3)} = ${I(Vc)} cm<sup>3</sup>`)} ✓<br>${eq(`<i>V</i> = ${I(Vc)} × 10<sup>−6</sup> = ${AV(Vm, 'm<sup>3</sup>')}`)} ✓`),
+    calc(`Calculate the density of the metal in ${KGM3}.`, 2, dens, KGM3, `Converts the mass to ${N(m * 1e-3, 3)} kg ✓<br>${eq(`<i>ρ</i> = <i>m</i> / <i>V</i> = ${N(m * 1e-3, 3)} / ${I(Vm)} = ${AV(dens, KGM3)}`)} ✓`),
+    calc('Calculate the density of the metal in g cm<sup>−3</sup>.', 1, gcc, 'g cm<sup>−3</sup>', `${eq(`<i>ρ</i> = ${N(m, 3)} / ${I(Vc)} = ${AV(gcc, 'g cm<sup>−3</sup>')}`)} ✓`, { noSkill: true }),
+    opt('Use <b>Table 1</b> to identify the metal.', 1, shown.map(i => METALS[i][0]), shown.indexOf(mi), `${mat}: its density, ${METALS[mi][1]} ${KGM3}, is closest to the value calculated ✓`)
+  ]);
+};
+
+T.SI8 = R => {
+  const kmh = R.pick([36, 54, 72, 90, 108, 126]), ly = R.pick([4.2, 8.6, 25, 65]), [dist, where] = R.pick([[3.8e5, 'the Moon'], [7.8e7, 'Mars when it is closest to Earth'], [6.3e8, 'Jupiter'], [1.4e9, 'Saturn']]);
+  const v = kmh / 3.6, yr = 365 * 24 * 3600, L1 = 3.00e8 * yr, dly = ly * L1, t = dist * 1e3 / 3.00e8;
+  return NOFIG(2, { kmh, ly, dist }, `This question is about converting units of distance and time.<br>speed of light in a vacuum = 3.00 × 10<sup>8</sup> ${MS1}`, [
+    calc(`A car travels at ${V(kmh, 'km h<sup>−1</sup>', 3)}.<br>Calculate this speed in ${MS1}.`, 1, v, MS1, `${eq(`<i>v</i> = ${N(kmh, 3)} × 1000 / 3600 = ${AV(v, MS1)}`)} ✓`),
+    calc('A light-year is the distance travelled by light in one year.<br>Calculate one light-year in metres. Take one year to be 365 days.', 2, L1, 'm', `${eq(`one year = 365 × 24 × 3600 = ${I(yr)} s`)} ✓<br>${eq(`distance = 3.00 × 10<sup>8</sup> × ${I(yr)} = ${AV(L1, 'm')}`)} ✓`),
+    calc(`A star is ${V(ly, 'light-years')} from Earth.<br>Calculate this distance in metres.`, 1, dly, 'm', `${eq(`<i>d</i> = ${N(ly)} × ${I(L1)} = ${AV(dly, 'm')}`)} ✓`),
+    calc(`A spacecraft near ${where} is ${V(dist, 'km')} from Earth.<br>Calculate the time taken for a radio signal from the spacecraft to reach Earth.`, 2, t, 's', `Converts the distance to ${N(dist * 1e3)} m ✓<br>${eq(`<i>t</i> = ${N(dist * 1e3)} / 3.00 × 10<sup>8</sup> = ${AV(t, 's')}`)} ✓`)
+  ]);
+};
+
+/* ===== errors, accuracy and precision ===== */
+const SYSX = [
+  ['a metre rule whose end is worn away, so that every length is measured from the end of the rule instead of from the zero mark', 'Measure from a clear mark on the scale, such as the 10.0 cm mark, and subtract this value / use an undamaged rule ✓'],
+  ['an ammeter whose needle points to 0.02 A when there is no current', 'Subtract the zero error (0.02 A) from every reading / adjust the meter to read zero before use ✓'],
+  ['an electronic balance that reads 0.4 g when there is nothing on the pan', 'Zero (tare) the balance before use / subtract 0.4 g from every reading ✓'],
+  ['a thermometer that always reads 1.5 °C higher than the true temperature', 'Calibrate the thermometer against known fixed points, such as melting ice, and correct every reading ✓'],
+  ['a student who always reads the scale of a measuring cylinder from slightly above the level of the liquid', 'Read the scale with the eye level with the bottom of the meniscus ✓'],
+  ['a stopwatch that runs slightly fast', 'Calibrate the stopwatch against an accurate time signal and correct the readings ✓']
+];
+const RANX = ['the reading on a digital voltmeter fluctuating between 2.37 V and 2.42 V', 'judging by eye the moment that a pendulum bob passes a fiducial marker', 'draughts in the room making the reading on a sensitive balance change', 'estimating a reading when the pointer of a meter lies between two scale divisions', 'the count rate from a radioactive source varying from one minute to the next'];
+T.ER1 = R => {
+  const si = Math.floor(R() * SYSX.length), ri = Math.floor(R() * RANX.length), sysFirst = R.chance(.5), items = sysFirst ? [['s', SYSX[si][0]], ['r', RANX[ri]]] : [['r', RANX[ri]], ['s', SYSX[si][0]]];
+  const OPTS = ['a random error', 'a systematic error'], mk = ([k, d]) => opt(`State whether ${d} would cause a random error or a systematic error.`, 1, OPTS, k === 's' ? 1 : 0, k === 's' ? 'A systematic error: every reading is shifted in the same direction ✓' : 'A random error: the readings vary unpredictably ✓');
+  return NOFIG(2, { si, ri, sysFirst }, 'Errors in measurements can be random or systematic.', [
+    mk(items[0]), mk(items[1]),
+    text('State one way of reducing the effect of random errors on a result.', 1, 'Repeat the readings and calculate a mean / plot a graph of many readings and draw a line of best fit ✓'),
+    text('Explain why repeating readings and calculating a mean does not reduce the effect of a systematic error.', 2, 'A systematic error shifts every reading by the same amount (or in the same direction) ✓<br>so the mean is shifted by the same amount and is no closer to the true value ✓'),
+    text(`Suggest how the systematic error caused by ${SYSX[si][0]} could be removed.`, 1, SYSX[si][1])
+  ]);
+};
+
+T.ER2 = R => {
+  const [mat, rho] = R.pick([['brass', 8500], ['steel', 7800], ['aluminium', 2700], ['copper', 8900]]);
+  const d = Math.round((6 + 9 * R()) * 100) / 100, z = R.pick([-0.05, -0.04, -0.03, -0.02, 0.02, 0.03, 0.04, 0.06]), Rd = Math.round((d + z) * 100) / 100;
+  const mu = r3(rho * Math.PI * Math.pow(d * 1e-3, 2) / 4), A = Math.PI * Math.pow(d * 1e-3, 2) / 4, dens = mu / A;
+  const s = new Scene('Two digital calliper displays: the reading with a rod between the jaws and the reading with the jaws closed');
+  lcd(s, 20, 70, 190, fx(Rd, 2), 'mm', 'rod between the jaws'); lcd(s, 250, 70, 190, fx(z, 2), 'mm', 'jaws closed');
+  return { sf: 3, scenes: [s], data: { d, z, mu },
+    stem: `A student uses digital callipers to measure the diameter of ${/^[aeiou]/.test(mat) ? 'an' : 'a'} ${mat} rod. The student places the rod between the jaws and records the reading. Without pressing the zero button, the student then removes the rod and closes the jaws.<br><b>Figure 1</b> shows the two readings.`,
+    parts: [
+      calc('Determine the diameter of the rod.', 1, d, 'mm', `${eq(`<i>d</i> = ${fx(Rd, 2)} − (${fx(z, 2)}) = ${fx(d, 2)} mm`)} ✓`, { fx: 2, abs: .004 }),
+      choose(R, 'State the type of error that the reading with the jaws closed shows.', 1, 'a systematic (zero) error', ['a random error'], 'A systematic error: a zero error that affects every reading by the same amount ✓'),
+      text('Describe procedures the student should follow to reduce the effect of random error on the value of the diameter.', 2, 'Measure the diameter at several points along the rod and in different (perpendicular) directions ✓<br>Calculate the mean of these readings ✓'),
+      calc(`The mass per unit length of the rod is ${V(mu, KGM, 3)}.<br>Calculate the density of the ${mat}.`, 3, dens, KGM3, `${eq(`<i>A</i> = π<i>d</i><sup>2</sup> / 4 = π × (${fx(d * 1e-3, 5)})<sup>2</sup> / 4 = ${I(A)} m<sup>2</sup>`)} ✓<br>${eq(`<i>ρ</i> = mass per unit length / <i>A</i> = ${N(mu, 3)} / ${I(A)}`)} ✓<br>${eq(`<i>ρ</i> = ${AV(dens, KGM3)}`)} ✓`),
+      opt('The student forgets to correct for the reading with the jaws closed.<br>State the effect on the value of the density calculated.', 1, ['it is too large', 'it is too small', 'it is unchanged'], z > 0 ? 1 : 0, z > 0 ? 'The diameter used is too large, so the area is too large and the density calculated is too small ✓' : 'The diameter used is too small, so the area is too small and the density calculated is too large ✓')
+    ] };
+};
+
+T.ER3 = R => {
+  const R0 = R.pick([22.0, 47.0, 68.0, 100.0]), T0 = Math.round(R0 * 10);
+  const v = find(() => {
+    const off = (R.chance(.5) ? 1 : -1) * (10 + Math.floor(R() * 16)), off2 = -Math.sign(off) * (8 + Math.floor(R() * 14));
+    const AP = [0, 1, 2, 3].map(() => T0 + Math.floor(R() * 3) - 1), PNA = [0, 1, 2, 3].map(() => T0 + off + Math.floor(R() * 3) - 1);
+    const ANP = [0, 1, 2].map(() => T0 + Math.floor(R() * 31) - 15); ANP.push(4 * T0 - ANP[0] - ANP[1] - ANP[2] + R.pick([-4, 0, 0, 4]));
+    const NN = [0, 1, 2, 3].map(() => T0 + off2 + Math.floor(R() * 31) - 15);
+    return { AP, PNA, ANP, NN };
+  }, o => spreadOf(o.ANP) >= 15 && spreadOf(o.ANP) <= 30 && spreadOf(o.NN) >= 15 && Math.abs(meanOf(o.NN) - T0) >= 8 && spreadOf(o.AP) <= 2 && spreadOf(o.PNA) <= 2 && (meanOf(o.ANP) * 10) % 1 === 0 && Math.abs(meanOf(o.ANP) - T0) <= 1);
+  const order = shuffleR(R, ['AP', 'PNA', 'ANP', 'NN']), L = ['A', 'B', 'C', 'D'], who = k => L[order.indexOf(k)];
+  const mA = meanOf(v.ANP) / 10, hr = spreadOf(v.ANP) / 20, mP = meanOf(v.PNA) / 10, pd = Math.abs(mP - R0) / R0 * 100;
+  const rows = order.map((k, i) => ['Student ' + L[i]].concat(v[k].map(x => fx(x / 10, 1))));
+  return NOFIG(3, { R0, order, sets: v },
+    `Four students each measure the resistance of the same resistor four times, using different ohmmeters. The true resistance of the resistor is ${V(R0, 'Ω', 3)}.<br>` + tableH('Table 1', ['', 'reading 1 / Ω', 'reading 2 / Ω', 'reading 3 / Ω', 'reading 4 / Ω'], rows), [
+    opt('Which student’s results are precise but <b>not</b> accurate?', 1, L.map(l => 'Student ' + l), order.indexOf('PNA'), `Student ${who('PNA')}: the readings are close together but all differ from the true value by a similar amount ✓`),
+    opt('Which student’s results are both accurate and precise?', 1, L.map(l => 'Student ' + l), order.indexOf('AP'), `Student ${who('AP')}: the readings are close together and close to the true value ✓`),
+    calc(`Calculate the mean of the readings of Student ${who('ANP')}.`, 1, mA, 'Ω', `${eq(`mean = (${v.ANP.map(x => fx(x / 10, 1)).join(' + ')}) / 4 = ${fx(mA, 1)} Ω`)} ✓`, { fx: 1, abs: .04 }),
+    calc(`Calculate the absolute uncertainty in the mean of the readings of Student ${who('ANP')}.`, 1, hr, 'Ω', `Half the range: ${eq(`(${fx(Math.max(...v.ANP) / 10, 1)} − ${fx(Math.min(...v.ANP) / 10, 1)}) / 2 = ${U(hr)} Ω`)} ✓`, UNC),
+    calc(`Calculate the percentage difference between the mean of the readings of Student ${who('PNA')} and the true value.`, 2, pd, '%', `${eq(`mean = ${fx(mP, 2)} Ω`)} ✓<br>${eq(`percentage difference = |${fx(mP, 2)} − ${fx(R0, 1)}| / ${fx(R0, 1)} × 100 = ${A(pd)}%`)} ✓`, { noSkill: true, tol: .03 }),
+    text(`Suggest a cause of the results obtained by Student ${who('PNA')}.`, 1, 'A systematic error, for example a zero error on the ohmmeter / the resistance of the connecting leads / the meter is incorrectly calibrated ✓')
+  ]);
+};
+
+const ANOM = [
+  { what: 'the time <i>t</i> taken for a trolley to roll down a ramp', sym: 't', unit: 's', dp: 2, lo: 120, hi: 280, k: 3, res: 'the stopwatch reads to 0.01 s' },
+  { what: 'the height <i>h</i> of the first bounce of a ball dropped from a fixed height', sym: 'h', unit: 'cm', dp: 1, lo: 400, hi: 800, k: 8, res: 'the metre rule reads to 0.1 cm' },
+  { what: 'the distance <i>d</i> travelled by a toy car after leaving a ramp', sym: 'd', unit: 'm', dp: 3, lo: 600, hi: 950, k: 12, res: 'the tape measure reads to 0.001 m' },
+  { what: 'the time <i>t</i> for ten oscillations of a pendulum', sym: 't', unit: 's', dp: 2, lo: 1200, hi: 2000, k: 20, res: 'the stopwatch reads to 0.01 s' }
+];
+T.ER4 = R => {
+  const C = R.pick(ANOM), sc = Math.pow(10, C.dp);
+  const v = find(() => { const b = C.lo + Math.floor(R() * (C.hi - C.lo)), xs = [0, 1, 2, 3].map(() => b + Math.floor(R() * (2 * C.k + 1)) - C.k); xs.push(5 * b + R.pick([-5, 0, 0, 5]) - xs.reduce((a, x) => a + x, 0)); const sg = R.chance(.5) ? 1 : -1, an = b + sg * (5 + Math.floor(R() * 3)) * C.k, pos = Math.floor(R() * 6); return { xs, an, pos }; },
+    o => Math.max(...o.xs) - Math.min(...o.xs) >= C.k && Math.max(...o.xs) - Math.min(...o.xs) <= 2 * C.k && Math.min(Math.abs(o.an - Math.max(...o.xs)), Math.abs(o.an - Math.min(...o.xs))) >= 2 * spreadOf(o.xs) && o.xs.reduce((a, x) => a + x, 0) % 5 === 0 && spreadOf(o.xs) % 2 === 0);
+  const all = v.xs.slice(); all.splice(v.pos, 0, v.an); const str = all.map(x => fx(x / sc, C.dp)), mean = v.xs.reduce((a, x) => a + x, 0) / 5 / sc, hr = spreadOf(v.xs) / 2 / sc, pc = hr / mean * 100;
+  const opts = [...new Set(str)];
+  return NOFIG(3, { C: ANOM.indexOf(C), all, an: v.an, sc },
+    `A student measures ${C.what} six times. <b>Table 1</b> shows the results.<br>` + tableH('Table 1', ['reading', '1', '2', '3', '4', '5', '6'], [[`<i>${C.sym}</i> / ${C.unit}`].concat(str)]), [
+    opt('Identify the anomalous result.', 1, opts, opts.indexOf(fx(v.an / sc, C.dp)), `${fx(v.an / sc, C.dp)} ${C.unit}: it is much further from the other readings than they are from each other ✓`),
+    calc(`Calculate the mean value of ${C.sym}.`, 1, mean, C.unit, `The anomalous result is ignored: ${eq(`mean = (${v.xs.map(x => fx(x / sc, C.dp)).join(' + ')}) / 5 = ${fx(mean, C.dp)} ${C.unit}`)} ✓`, { fx: C.dp, abs: .4 / sc }),
+    calc(`Calculate the absolute uncertainty in the mean value of ${C.sym}.`, 1, hr, C.unit, `Half the range of the five readings used: ${eq(`(${fx(Math.max(...v.xs) / sc, C.dp)} − ${fx(Math.min(...v.xs) / sc, C.dp)}) / 2 = ${U(hr)} ${C.unit}`)} ✓`, UNC),
+    calc(`Calculate the percentage uncertainty in the mean value of ${C.sym}.`, 1, pc, '%', `${eq(`${U(hr)} / ${fx(mean, C.dp)} × 100 = ${PC(pc)}`)} ✓`, UNC),
+    text('State what the student should do about the anomalous result.', 1, 'Repeat the measurement (if possible) / leave it out when calculating the mean ✓'),
+    text(`The resolution of the instrument is small: ${C.res}. Explain why the absolute uncertainty in ${C.sym} is larger than the resolution.`, 1, 'The repeat readings vary (because of random errors) by more than the resolution, so the spread of the readings sets the uncertainty ✓')
+  ]);
+};
+
+const TERMS = {
+  'accuracy': 'how close a measurement result is to the true value',
+  'precision': 'how close repeated measurements are to each other, so that there is little spread about the mean',
+  'repeatability': 'the same results are obtained when the original experimenter repeats the measurements using the same method and equipment',
+  'reproducibility': 'the same results are obtained when the measurements are repeated by a different person, or by using different techniques or equipment',
+  'resolution': 'the smallest change in the quantity being measured that gives a perceptible change in the reading',
+  'zero error': 'the instrument gives a non-zero reading when the true value of the quantity is zero',
+  'uncertainty': 'the interval within which the true value can be expected to lie',
+  'random error': 'readings vary unpredictably about the true value from one reading to the next',
+  'systematic error': 'every reading differs from the true value by the same amount, or in the same direction'
+};
+const SCEN = [['An electronic balance reads 0.3 g when there is nothing on the pan.', 'zero error'], ['The smallest scale division on a micrometer screw gauge is 0.01 mm.', 'resolution'], ['A student in another school, using a different method, obtains the same results.', 'reproducibility'], ['The same student repeats the experiment with the same apparatus and obtains the same results.', 'repeatability'], ['A thermometer always reads 2 °C higher than the true temperature.', 'systematic error']];
+T.ER5 = R => {
+  const keys = Object.keys(TERMS), use = pickN(R, keys, 4), left = SCEN.filter(sc => !use.includes(sc[1])), sc = left.length ? R.pick(left) : R.pick(SCEN);
+  const part = k => choose(R, `Which term is defined by the statement below?<br><i>‘${TERMS[k][0].toUpperCase() + TERMS[k].slice(1)}.’</i>`, 1, k, pickN(R, keys.filter(x => x !== k), 4), `${k[0].toUpperCase() + k.slice(1)} ✓`);
+  return NOFIG(2, { use, sc: SCEN.indexOf(sc) }, 'This question is about the words used to describe measurements.', use.map(part).concat([
+    choose(R, `${sc[0]}<br>Which term best describes this?`, 1, sc[1], pickN(R, keys.filter(x => x !== sc[1] && !(sc[1] === 'zero error' && x === 'systematic error') && !(sc[1] === 'systematic error' && x === 'zero error')), 3), `${sc[1][0].toUpperCase() + sc[1].slice(1)} ✓`),
+    text('Explain how a set of repeated measurements can be precise but not accurate.', 2, 'The readings are close together (have a small spread) ✓<br>but they are all shifted away from the true value by a systematic error ✓')
+  ]));
+};
+
+T.ER6 = R => {
+  const Sb = R.pick([20, 30, 40, 50, 60]), Vr = Sb + 10 + Math.floor(R() * 21), Vs = R.pick([6, 7, 8, 9, 11, 12, 14, 16]), V2 = Vr + Vs;
+  const L = shuffleR(R, ['P', 'Q', 'R']), askTop = R.chance(.5), pc = 0.5 / Vr * 100;
+  const s = new Scene('A measuring cylinder containing water, with three eye positions at different heights looking at the meniscus');
+  const k = 6, yv = v => 300 - (v - Sb) * k, xl = 160, xr = 232, ym = yv(Vr), cx = (xl + xr) / 2;
+  const curve = []; for (let i = 0; i <= 12; i++){ const x = xl + (xr - xl) * i / 12, u = (x - cx) / ((xr - xl) / 2); curve.push([x, ym - 4.5 * Math.pow(Math.abs(u), 3)]); }
+  s.poly(curve.concat([[xr, 324], [xl, 324]]), { close: true, fill: '#dbe7f0', free: true, w: .01 });
+  s.poly(curve, { w: 1.4 });
+  s.line(xl, 48, xl, 324).line(xr, 48, xr, 324).line(xl - 26, 324, xr + 26, 324).line(xl - 26, 330, xr + 26, 330).line(xl - 26, 324, xl - 26, 330).line(xr + 26, 324, xr + 26, 330);
+  for (let v = Sb; v <= Sb + 40; v++){ const y = yv(v), Lt = v % 10 === 0 ? 30 : v % 5 === 0 ? 20 : 11; s.line(xl, y, xl + Lt, y, { w: 1 }); if (v % 10 === 0) s.label(xl - 8, y + 5, String(v), { anchor: 'end', size: 14 }); }
+  s.label(xl - 8, 34, 'cm^{3}', { anchor: 'end', size: 14 });
+  const ys = [ym - 48, ym, ym + 48]; ys.forEach((y, i) => { s.line(cx + 4, ym, 322, y, { dash: '5 4', w: 1, free: true }); eye(s, 340, y); s.label(366, y + 5, L[i], { bold: true, anchor: 'start' }); });
+  const ask = askTop ? 0 : 2;
+  return { sf: 2, scenes: [s], data: { Sb, Vr, Vs, L, askTop },
+    stem: `<b>Figure 1</b> shows water in a measuring cylinder. ${L[0]}, ${L[1]} and ${L[2]} are three positions from which a student could read the scale.`,
+    parts: [
+      calc('Determine the volume of water in the cylinder.', 1, Vr, CM3, `Reads the scale at the bottom of the meniscus: ${Vr} cm<sup>3</sup> ✓`, { fx: 0, abs: .4 }),
+      opt('State the position from which the scale should be read.', 1, ['P', 'Q', 'R'], ['P', 'Q', 'R'].indexOf(L[1]), `${L[1]}: the eye is level with the bottom of the meniscus, so there is no parallax error ✓`),
+      opt(`A student reads the scale from position ${L[ask]}.<br>State whether the reading is too high or too low.`, 1, ['too high', 'too low'], askTop ? 0 : 1, askTop ? 'Too high: the line of sight from above meets the scale above the level of the meniscus ✓' : 'Too low: the line of sight from below meets the scale below the level of the meniscus ✓'),
+      choose(R, `State the type of error caused by always reading the scale from position ${L[ask]}.`, 1, 'a systematic error', ['a random error'], 'A systematic error (parallax error): every reading is shifted in the same direction ✓'),
+      calc('The uncertainty in the reading is ±0.5 cm<sup>3</sup>.<br>Calculate the percentage uncertainty in the volume of water.', 1, pc, '%', `${eq(`0.5 / ${Vr} × 100 = ${PC(pc)}`)} ✓`, UNC),
+      calc(`A small stone is lowered into the water. The reading rises to ${V2} cm<sup>3</sup>.<br>Calculate the volume of the stone.`, 1, Vs, CM3, `${eq(`${V2} − ${Vr} = ${Vs} cm<sup>3</sup>`)} ✓`, { fx: 0, abs: .4 }),
+      calc('Calculate the absolute uncertainty in the volume of the stone.', 1, 1, CM3, 'The volume is the difference of two readings, so the absolute uncertainties add: 0.5 + 0.5 = 1 cm<sup>3</sup> ✓', UNC)
+    ] };
+};
+
+T.ER7 = R => {
+  const r0 = R.pick([-1.0, -0.5, 0.5, 1.0, 1.5, 2.0]), r100 = R.pick([97.0, 97.5, 98.0, 98.5, 101.0, 101.5, 102.0]), rd = R.pick([24.0, 36.5, 42.0, 55.5, 63.0, 75.5]), t2 = R.pick([20.0, 37.0, 50.0, 60.0, 80.0]);
+  const tr = (rd - r0) * 100 / (r100 - r0), rr = r0 + t2 * (r100 - r0) / 100;
+  return NOFIG(3, { r0, r100, rd, t2 }, `A student checks a mercury thermometer. When it is placed in melting ice (0.0 °C) it reads ${fx(r0, 1)} °C. When it is placed in boiling water at standard atmospheric pressure (100.0 °C) it reads ${fx(r100, 1)} °C.<br>Assume that the scale of the thermometer is uniform.`, [
+    choose(R, 'State the type of error shown by these readings.', 1, 'a systematic error', ['a random error'], 'A systematic error: the readings differ from the true temperatures in a consistent way ✓'),
+    calc(`The thermometer reads ${fx(rd, 1)} °C when it is placed in a beaker of water.<br>Calculate the true temperature of the water.`, 2, tr, '°C', `${eq(`true temperature = (reading − ${fx(r0, 1)}) × 100 / (${fx(r100, 1)} − ${fx(r0, 1)})`)} ✓<br>${eq(`= (${fx(rd, 1)} − ${fx(r0, 1)}) × 100 / ${fx(r100 - r0, 1)} = ${A(tr)} °C`)} ✓`, { noSkill: true }),
+    calc(`Calculate the reading on the thermometer when the true temperature is ${fx(t2, 1)} °C.`, 2, rr, '°C', `${eq(`reading = ${fx(r0, 1)} + ${fx(t2, 1)} × (${fx(r100, 1)} − ${fx(r0, 1)}) / 100`)} ✓<br>${eq(`reading = ${A(rr)} °C`)} ✓`, { noSkill: true }),
+    text('State the assumption made about the thermometer in these calculations, and explain why the correction is valid only if this assumption is true.', 2, 'The thermometer reading changes linearly with temperature (the scale is uniform) ✓<br>The correction is a straight-line interpolation between the two fixed points, so it is valid only if each degree on the scale corresponds to the same change in temperature ✓')
+  ]);
+};
+
+const INSTR = ['metre rule (resolution 1 mm)', 'vernier callipers (resolution 0.1 mm)', 'micrometer screw gauge (resolution 0.01 mm)'];
+const OBJ = [['the internal diameter of a copper pipe', 1, 'Vernier callipers: the internal jaws can measure an inside diameter of a few centimetres ✓'], ['the depth of a hole drilled in a block', 1, 'Vernier callipers: the depth gauge can measure the depth of the hole ✓'], ['the thickness of a microscope slide', 2, 'A micrometer screw gauge: the slide is about 1 mm thick, so the smallest resolution is needed ✓'], ['the height of a laboratory bench', 0, 'A metre rule: the height is about 1 m, too large for callipers or a micrometer ✓'], ['the length of a pendulum string', 0, 'A metre rule: the length is tens of centimetres, too large for callipers or a micrometer ✓']];
+T.ER8 = R => {
+  const ob = R.pick(OBJ), Nn = R.pick([20, 25, 30, 40, 50]), W = R.pick([8, 9, 10, 11, 12, 13, 14, 15, 16]), dm = Math.round(W / Nn * 100) / 100, p1 = 0.01 / dm * 100, p2 = 0.1 / dm * 100, dc = W / Nn, p3 = 1 / W * 100;
+  return NOFIG(2, { ob: OBJ.indexOf(ob), Nn, W, dm }, `A student measures the diameter of a thin copper wire with a micrometer screw gauge. The reading is ${fx(dm, 2)} mm and the uncertainty in the reading is ±0.01 mm.`, [
+    calc('Calculate the percentage uncertainty in the diameter.', 1, p1, '%', `${eq(`0.01 / ${fx(dm, 2)} × 100 = ${PC(p1)}`)} ✓`, UNC),
+    calc('Vernier callipers have an uncertainty of ±0.1 mm.<br>Calculate the percentage uncertainty if the same diameter were measured with vernier callipers.', 1, p2, '%', `${eq(`0.1 / ${fx(dm, 2)} × 100 = ${PC(p2)}`)} ✓`, UNC),
+    text('Explain why the micrometer is the more suitable instrument for this measurement.', 1, 'It has a smaller resolution (uncertainty), so the percentage uncertainty in the small diameter is much smaller ✓'),
+    calc(`The student then winds ${Nn} turns of the wire closely side by side around a pencil and measures the total width of the turns with a ruler. The width is ${W} mm with an uncertainty of ±1 mm.<br>Calculate the diameter of the wire given by this method.`, 1, dc, 'mm', `${eq(`<i>d</i> = ${W} / ${Nn} = ${A(dc)} mm`)} ✓`, { noSkill: true }),
+    calc('Calculate the percentage uncertainty in the diameter found by this method.', 1, p3, '%', `${eq(`1 / ${W} × 100 = ${PC(p3)}`)} ✓ (the percentage uncertainty is the same for one turn as for all the turns)`, UNC),
+    opt(`Which instrument is most suitable for measuring ${ob[0]}?`, 1, INSTR, ob[1], ob[2])
+  ]);
+};
+
+function pendulumFig(s){
+  s.rect(20, 334, 120, 12, { fill: '#e4e7ea' }); s.line(50, 52, 50, 334, { w: 3 }); s.rect(42, 64, 16, 18, { fill: '#e4e7ea' }); s.line(58, 73, 212, 73, { w: 3 });
+  s.rect(212, 60, 8, 26, { fill: '#e4e7ea' }); s.rect(228, 60, 8, 26, { fill: '#e4e7ea' });
+  s.line(224, 86, 224, 250); s.circle(224, 262, 12, { fill: '#c9ced3' });
+  const a = 13 * Math.PI / 180, bx = 224 + 176 * Math.sin(a), by = 86 + 176 * Math.cos(a);
+  s.line(224, 86, 224 + 164 * Math.sin(a), 86 + 164 * Math.cos(a), { dash: '5 4', w: 1.1, free: true }); s.body.push(`<circle cx="${n2(bx)}" cy="${n2(by)}" r="12" stroke-dasharray="4 3" stroke-width="1.1"/>`); s.ext(bx + 12, by + 12);
+  s.arc(224, 86, 176, 270 - 17, 270 + 17, { dash: '4 4', w: 1 });
+  s.line(224, 296, 224, 334, { w: 2.5 }); s.rect(206, 334, 36, 8, { fill: '#e4e7ea' });
+  s.label(248, 322, 'fiducial marker', { anchor: 'start', size: 14 }); s.label(204, 294, 'bob', { anchor: 'end', size: 14 }); s.line(196, 282, 214, 270, { w: .8 });
+  s.dim(330, 86, 330, 262, '*l*'); s.line(300, 86, 340, 86, { w: .8, free: true }); s.line(300, 262, 340, 262, { w: .8, free: true });
+}
+T.ER9 = R => {
+  const n = R.pick([10, 20]), l = R.pick([0.400, 0.500, 0.600, 0.750, 0.800, 0.900]), tu = R.pick([0.1, 0.2, 0.3]);
+  const t = Math.round(n * 2 * Math.PI * Math.sqrt(l / 9.81) * 100 + (R() < .5 ? -1 : 1) * Math.floor(R() * 4)) / 100, Tp = t / n, pc = tu / t * 100, g = 4 * Math.PI * Math.PI * l / (Tp * Tp);
+  const s = new Scene('A simple pendulum hanging from a clamp, with a fiducial marker below the bob at its lowest point'); pendulumFig(s);
+  return { sf: 3, scenes: [s], data: { n, l, tu, t },
+    stem: `<b>Figure 1</b> shows a simple pendulum of length <i>l</i> = ${V(l, 'm', 3)}. A fiducial marker is placed directly below the bob at its lowest point.<br>A student displaces the bob slightly and uses a stopwatch to time ${n} complete oscillations. The time recorded is ${fx(t, 2)} s. The uncertainty in this time, caused mainly by the student’s reaction time, is ±${N(tu, 1)} s.`,
+    parts: [
+      calc('Calculate the period of the pendulum.', 1, Tp, 's', `${eq(`<i>T</i> = ${fx(t, 2)} / ${n} = ${AV(Tp, 's')}`)} ✓`),
+      calc('Calculate the percentage uncertainty in the period.', 1, pc, '%', `${eq(`${N(tu, 1)} / ${fx(t, 2)} × 100 = ${PC(pc)}`)} ✓ (the same as the percentage uncertainty in the time for ${n} oscillations)`, UNC),
+      text(`Explain why the student timed ${n} oscillations instead of one.`, 1, `The uncertainty in the timing is the same, but the time measured is ${n} times larger, so the percentage uncertainty in the period is ${n} times smaller ✓`),
+      text('Explain the purpose of the fiducial marker and why it is placed at the lowest point of the swing.', 2, 'It gives a fixed reference point, so that the start and end of each oscillation are judged at the same position ✓<br>The bob moves fastest at the lowest point, so the moment it passes the marker can be judged most precisely ✓'),
+      calc(`Use ${eq('<i>T</i> = 2π√(<i>l</i> / <i>g</i>)')} to calculate a value for the acceleration of free fall <i>g</i>.`, 2, g, MS2, `${eq('<i>g</i> = 4π<sup>2</sup><i>l</i> / <i>T</i><sup>2</sup>')} ✓<br>${eq(`<i>g</i> = 4π<sup>2</sup> × ${N(l, 3)} / ${I(Tp)}<sup>2</sup> = ${AV(g, MS2)}`)} ✓`)
+    ] };
+};
+
+/* ===== uncertainty in readings ===== */
+// a block resting against a centimetre ruler marked in millimetres; a and b are the positions of the ends in mm
+function rulerFig(s, a, b){
+  const k = 4.2, S = Math.floor((a - 6) / 10) * 10, E = Math.ceil((b + 6) / 10) * 10, x = v => 30 + (v - S) * k, top = 120;
+  s.rect(x(S) - 10, top, (E - S) * k + 50, 48, { fill: '#f3ead7' });
+  for (let v = S; v <= E; v++){ const L = v % 10 === 0 ? 18 : v % 5 === 0 ? 13 : 8; s.line(x(v), top, x(v), top + L, { w: v % 10 ? .9 : 1.3 }); if (v % 10 === 0) s.label(x(v), top + 38, String(v / 10), { size: 13 }); }
+  s.label(x(E) + 24, top + 38, 'cm', { size: 13 });
+  s.rect(x(a), top - 46, x(b) - x(a), 46, { fill: '#c9ced3' });
+}
+// micrometer scales: S is the sleeve reading (a multiple of 0.5 mm), k the thimble division on the datum line
+function microFig(s, S, k){
+  const px = 16, x0 = 70, y = 150, xS = v => x0 + v * px, xe = xS(S) + 6;
+  s.rect(x0 - 40, y - 34, xe - x0 + 40, 68, { fill: '#eef0f2' }); s.line(x0 - 40, y, xe, y, { w: 1.2 });
+  for (let v = 0; v <= Math.floor(S + 1e-9); v++){ s.line(xS(v), y, xS(v), y - (v % 5 === 0 ? 14 : 9), { w: 1 }); if (v % 5 === 0) s.label(xS(v), y - 19, String(v), { size: 13 }); }
+  for (let v = 0.5; v <= S + 1e-9; v += 1) s.line(xS(v), y, xS(v), y + 9, { w: 1 });
+  s.rect(xe, y - 62, 86, 124, { fill: '#dfe3e7' });
+  for (let j = k - 6; j <= k + 6; j++){ const yy = y - (j - k) * 9, m = ((j % 50) + 50) % 50; s.line(xe, yy, xe + (m % 5 === 0 ? 20 : 12), yy, { w: 1 }); if (m % 5 === 0) s.label(xe + 28, yy + 5, String(m), { size: 13, anchor: 'start' }); }
+  s.label(x0 - 8, y + 26, 'mm', { size: 13, anchor: 'start' });
+}
+// vernier callipers scales: reading Rd in mm to 0.1 mm
+function vernierFig(s, Rd){
+  const M = Math.floor(Rd + 1e-9), kk = Math.round((Rd - M) * 10), px = 20, S0 = M - 4, S1 = M + 16, x = v => 40 + (v - S0) * px, yb = 150, xv = x(M) + kk * 2;
+  s.rect(x(S0) - 12, yb - 52, (S1 - S0) * px + 24, 52, { fill: '#eef0f2' });
+  for (let v = S0; v <= S1; v++){ s.line(x(v), yb, x(v), yb - (v % 10 === 0 ? 22 : v % 5 === 0 ? 16 : 10), { w: 1 }); if (v % 10 === 0) s.label(x(v), yb - 30, String(v / 10), { size: 14 }); }
+  s.label(x(S1) + 18, yb - 30, 'cm', { size: 13, anchor: 'start' });
+  s.rect(xv - 16, yb, 9 * 0.9 * px * 10 / 9 + 32, 46, { fill: '#dfe3e7' });
+  for (let j = 0; j <= 10; j++){ const xx = xv + j * 0.9 * px; s.line(xx, yb, xx, yb + (j % 5 === 0 ? 18 : 11), { w: 1 }); if (j % 5 === 0) s.label(xx, yb + 36, String(j), { size: 13 }); }
+  return kk;
+}
+const DIALS = [{ fs: 50, maj: 10, min: 1, u: 'mA', dp: 0, k: 1e-3 }, { fs: 100, maj: 20, min: 2, u: 'mA', dp: 0, k: 1e-3 }, { fs: 1.0, maj: 0.2, min: 0.02, u: 'A', dp: 2, k: 1 }, { fs: 5, maj: 1, min: 0.1, u: 'A', dp: 1, k: 1 }, { fs: 2.0, maj: 0.5, min: 0.05, u: 'A', dp: 2, k: 1 }];
+function dialFig(s, D, reading){
+  const cx = 240, cy = 236, r = 150, ang = v => (150 - 120 * v / D.fs) * Math.PI / 180, n = Math.round(D.fs / D.min), lab = v => v === 0 ? '0' : fx(v, D.maj < 1 ? 1 : 0);
+  s.rect(cx - 205, cy - 205, 410, 236, { fill: '#fff', w: 2 });
+  s.arc(cx, cy, r, 30, 150, { w: 1.4 });
+  for (let i = 0; i <= n; i++){ const v = i * D.min, a = ang(v), maj = Math.abs(v / D.maj - Math.round(v / D.maj)) < 1e-6, half = !maj && Math.abs(v / (D.maj / 2) - Math.round(v / (D.maj / 2))) < 1e-6, L = maj ? 17 : half ? 12 : 8;
+    s.line(cx + r * Math.cos(a), cy - r * Math.sin(a), cx + (r - L) * Math.cos(a), cy - (r - L) * Math.sin(a), { w: maj ? 1.4 : .9 });
+    if (maj) s.label(cx + (r + 22) * Math.cos(a), cy - (r + 22) * Math.sin(a) + 5, lab(v), { size: 14 }); }
+  const a = ang(reading); s.line(cx, cy, cx + (r - 4) * Math.cos(a), cy - (r - 4) * Math.sin(a), { w: 2.2 }); dot(s, cx, cy, 6);
+  s.label(cx - 150, cy + 4, D.u, { size: 18, bold: true, anchor: 'start' });
+}
+
+T.UN1 = R => {
+  const Lmm = 25 + Math.floor(R() * 46), a = 12 + Math.floor(R() * 19), b = a + Lmm, L = Lmm / 10, W = R.pick([1.8, 2.0, 2.4, 2.5, 3.0, 3.2]), pL = 0.1 / L * 100, pA = pL + 0.1 / W * 100;
+  const s = new Scene('A block lying along a centimetre ruler marked in millimetres'); rulerFig(s, a, b);
+  return { sf: 2, scenes: [s], data: { a, b, W },
+    stem: '<b>Figure 1</b> shows a block placed along a ruler marked in millimetres. The left-hand end of the block is not at the zero mark of the ruler.',
+    parts: [
+      calc('Determine the length of the block in cm.', 1, L, 'cm', `${eq(`length = ${fx(b / 10, 1)} − ${fx(a / 10, 1)} = ${fx(L, 1)} cm`)} ✓`, { fx: 1, abs: .04 }),
+      calc('The uncertainty in the position of each end of the block is ±0.05 cm.<br>Determine the absolute uncertainty in the length of the block.', 1, 0.1, 'cm', 'The length is the difference between two readings, so the uncertainties add: 0.05 + 0.05 = 0.1 cm ✓', UNC),
+      calc('Calculate the percentage uncertainty in the length of the block.', 1, pL, '%', `${eq(`0.1 / ${fx(L, 1)} × 100 = ${PC(pL)}`)} ✓`, UNC),
+      calc(`The width of the block is ${fx(W, 1)} cm with an uncertainty of ±0.1 cm.<br>Calculate the percentage uncertainty in the area of the top face of the block.`, 1, pA, '%', `${eq(`${I(pL)} + (0.1 / ${fx(W, 1)} × 100) = ${I(pL)} + ${I(0.1 / W * 100)} = ${PC(pA)}`)} ✓`, UNC),
+      text('Suggest how the student could reduce the percentage uncertainty in the length of one block.', 1, 'Place several identical blocks end to end, measure the total length and divide by the number of blocks / use vernier callipers, which have a smaller resolution ✓'),
+      text('Suggest why the student did not place the end of the block at the end of the ruler.', 1, 'The end of the ruler may be worn or damaged, which would cause a zero error ✓')
+    ] };
+};
+
+T.UN2 = R => {
+  const [obj, kind] = R.pick([['a steel ball bearing', 'ball'], ['a glass marble', 'ball'], ['a length of copper wire', 'wire'], ['a length of steel wire', 'wire']]);
+  const S = kind === 'ball' ? R.pick([3.5, 4.0, 5.0, 5.5, 6.0, 7.5, 8.0]) : R.pick([0.5, 1.0, 1.5]), k = 6 + Math.floor(R() * 40), Rd = Math.round((S + k / 100) * 100) / 100;
+  const z = R.pick([0.02, 0.03, -0.01, -0.02, 0.01]), d = Math.round((Rd - z) * 100) / 100, pc = 0.01 / d * 100, dm = d * 1e-3;
+  const geo = kind === 'ball' ? Math.PI * dm * dm * dm / 6 : Math.PI * dm * dm / 4, pg = (kind === 'ball' ? 3 : 2) * pc;
+  const s = new Scene('The sleeve and thimble scales of a micrometer screw gauge'); microFig(s, S, k);
+  return { sf: 3, scenes: [s], data: { S, k, z, kind },
+    stem: `A student uses a micrometer screw gauge to measure the diameter of ${obj}. <b>Figure 1</b> shows the scales of the micrometer. Each division on the thimble is 0.01 mm.`,
+    parts: [
+      calc('Determine the reading on the micrometer.', 1, Rd, 'mm', `Sleeve reading ${fx(S, 1)} mm plus thimble reading ${k} × 0.01 = ${fx(k / 100, 2)} mm, so the reading is ${fx(Rd, 2)} mm ✓`, { fx: 2, abs: .004 }),
+      choose(R, 'State the resolution of the micrometer.', 1, '0.01 mm', ['0.1 mm', '0.5 mm', '1 mm'], '0.01 mm ✓'),
+      calc(`With the jaws closed and nothing between them, the micrometer reads ${z > 0 ? '+' : ''}${fx(z, 2)} mm.<br>Determine the diameter of ${obj.replace('a length of ', 'the ').replace(/^an? /, 'the ')}.`, 1, d, 'mm', `Corrects for the zero error: ${eq(`${fx(Rd, 2)} − (${fx(z, 2)}) = ${fx(d, 2)} mm`)} ✓`, { fx: 2, abs: .004 }),
+      calc('The uncertainty in the diameter is ±0.01 mm.<br>Calculate the percentage uncertainty in the diameter.', 1, pc, '%', `${eq(`0.01 / ${fx(d, 2)} × 100 = ${PC(pc)}`)} ✓`, UNC),
+      kind === 'ball' ? calc('Calculate the volume of the ball in m<sup>3</sup>.', 2, geo, 'm<sup>3</sup>', `Converts the diameter to ${fx(dm * 1e3, 2)} × 10<sup>−3</sup> m ✓<br>${eq(`<i>V</i> = π<i>d</i><sup>3</sup> / 6 = π × (${fx(d, 2)} × 10<sup>−3</sup>)<sup>3</sup> / 6 = ${AV(geo, 'm<sup>3</sup>')}`)} ✓`)
+        : calc('Calculate the cross-sectional area of the wire in m<sup>2</sup>.', 2, geo, 'm<sup>2</sup>', `Converts the diameter to ${fx(dm * 1e3, 2)} × 10<sup>−3</sup> m ✓<br>${eq(`<i>A</i> = π<i>d</i><sup>2</sup> / 4 = π × (${fx(d, 2)} × 10<sup>−3</sup>)<sup>2</sup> / 4 = ${AV(geo, 'm<sup>2</sup>')}`)} ✓`),
+      calc(`Calculate the percentage uncertainty in the ${kind === 'ball' ? 'volume' : 'area'}.`, 1, pg, '%', `The diameter is ${kind === 'ball' ? 'cubed' : 'squared'}: ${eq(`${kind === 'ball' ? 3 : 2} × ${I(pc)} = ${PC(pg)}`)} ✓`, UNC)
+    ] };
+};
+
+T.UN3 = R => {
+  const [obj, what] = R.pick([['a brass cylinder', 'diameter'], ['an aluminium rod', 'diameter'], ['a wooden dowel', 'diameter']]);
+  const Rd = Math.round((12 + 30 * R()) * 10) / 10, Lc = R.pick([40.0, 45.0, 50.0, 60.0, 75.0]), uL = R.pick([0.5, 1.0]), pd = 0.1 / Rd * 100, Vv = Math.PI * Rd * Rd / 4 * Lc * 1e-9, pV = 2 * pd + uL / Lc * 100;
+  const s = new Scene('The main scale and vernier scale of a pair of vernier callipers'); vernierFig(s, Rd);
+  return { sf: 3, scenes: [s], data: { Rd, Lc, uL },
+    stem: `<b>Figure 1</b> shows the scales of a pair of vernier callipers used to measure the ${what} of ${obj}. The main scale is marked in millimetres and the vernier scale has 10 divisions.`,
+    parts: [
+      calc(`Determine the ${what} in mm.`, 1, Rd, 'mm', `Main scale reading before the vernier zero: ${Math.floor(Rd + 1e-9)} mm; vernier mark ${Math.round((Rd - Math.floor(Rd + 1e-9)) * 10)} is in line with a main scale mark, adding ${fx(Rd - Math.floor(Rd + 1e-9), 1)} mm. Reading = ${fx(Rd, 1)} mm ✓`, { fx: 1, abs: .04 }),
+      choose(R, 'State the resolution of the vernier callipers.', 1, '0.1 mm', ['0.01 mm', '0.5 mm', '1 mm'], '0.1 mm ✓'),
+      calc(`The uncertainty in the ${what} is ±0.1 mm.<br>Calculate the percentage uncertainty in the ${what}.`, 1, pd, '%', `${eq(`0.1 / ${fx(Rd, 1)} × 100 = ${PC(pd)}`)} ✓`, UNC),
+      calc(`The length of the ${obj.split(' ').pop()} is ${fx(Lc, 1)} mm.<br>Calculate its volume in m<sup>3</sup>.`, 2, Vv, 'm<sup>3</sup>', `${eq(`<i>V</i> = π<i>d</i><sup>2</sup><i>L</i> / 4 = π × ${fx(Rd, 1)}<sup>2</sup> × ${fx(Lc, 1)} / 4 = ${I(Vv * 1e9)} mm<sup>3</sup>`)} ✓<br>${eq(`<i>V</i> = ${I(Vv * 1e9)} × 10<sup>−9</sup> = ${AV(Vv, 'm<sup>3</sup>')}`)} ✓`),
+      calc(`The uncertainty in the length is ±${N(uL, 1)} mm.<br>Calculate the percentage uncertainty in the volume.`, 2, pV, '%', `${eq(`percentage uncertainty in <i>L</i> = ${N(uL, 1)} / ${fx(Lc, 1)} × 100 = ${I(uL / Lc * 100)}%`)} ✓<br>${eq(`2 × ${I(pd)} + ${I(uL / Lc * 100)} = ${PC(pV)}`)} ✓`, UNC)
+    ] };
+};
+
+T.UN4 = R => {
+  const D = R.pick(DIALS), n = Math.round(D.fs / D.min), i = Math.round(n * (0.35 + 0.55 * R())), Ir = i * D.min, hd = D.min / 2, pI = hd / Ir * 100;
+  const mp = R.pick([1, 2]), { Vv } = find(() => ({ Vv: Math.round((1 + 10 * R()) * 100) / 100 }), o => o.Vv / (Ir * D.k) >= 2 && o.Vv / (Ir * D.k) <= 5000), uV = Vv * mp / 100, Rr = Vv / (Ir * D.k), pR = pI + mp;
+  const s = new Scene(`An analogue ammeter with a scale from 0 to ${N(D.fs)} ${D.u}`); dialFig(s, D, Ir);
+  return { sf: 2, scenes: [s], data: { D: DIALS.indexOf(D), i, Vv, mp },
+    stem: `A student measures the current in a resistor with the analogue ammeter shown in <b>Figure 1</b>, and the potential difference across it with a digital voltmeter. The voltmeter reads ${fx(Vv, 2)} V.`,
+    parts: [
+      calc('Determine the reading on the ammeter.', 1, Ir, D.u, `${fx(Ir, D.dp)} ${D.u} ✓`, { fx: D.dp, abs: D.min * .4 }),
+      calc('The uncertainty in the ammeter reading is half of the smallest scale division.<br>State the absolute uncertainty in the ammeter reading.', 1, hd, D.u, `Smallest division = ${fx(D.min, D.dp)} ${D.u}, so the uncertainty is ±${U(hd)} ${D.u} ✓`, UNC),
+      calc('Calculate the percentage uncertainty in the current.', 1, pI, '%', `${eq(`${U(hd)} / ${fx(Ir, D.dp)} × 100 = ${PC(pI)}`)} ✓`, UNC),
+      calc(`The manufacturer states that the uncertainty in a voltmeter reading is ±${mp}% of the reading.<br>Calculate the absolute uncertainty in the voltmeter reading.`, 1, uV, 'V', `${eq(`${mp} / 100 × ${fx(Vv, 2)} = ${U(uV)} V`)} ✓`, UNC),
+      calc('Calculate the resistance of the resistor.', 2, Rr, 'Ω', `${D.k === 1 ? 'Uses' : 'Converts the current to'} <i>I</i> = ${N(Ir * D.k, 3)} A ✓<br>${eq(`<i>R</i> = <i>V</i> / <i>I</i> = ${fx(Vv, 2)} / ${N(Ir * D.k, 3)} = ${AV(Rr, 'Ω')}`)} ✓`),
+      calc('Calculate the percentage uncertainty in the resistance.', 1, pR, '%', `Percentage uncertainties add for a quotient: ${eq(`${I(pI)} + ${mp} = ${PC(pR)}`)} ✓`, UNC)
+    ] };
+};
+
+T.UN5 = R => {
+  const [what, unit, dp, lo, hi, sp, res] = R.pick([['the potential difference across a thermistor', 'V', 2, 150, 900, 6, '0.01 V'], ['the current in an LED', 'mA', 1, 120, 400, 6, '0.1 mA'], ['the temperature of a beaker of water', '°C', 1, 250, 800, 6, '0.1 °C']]);
+  const sc = Math.pow(10, dp), v = find(() => { const b = lo + Math.floor(R() * (hi - lo)), xs = [0, 1, 2, 3].map(() => b + Math.floor(R() * (2 * sp + 1)) - sp); xs.push(5 * b - xs.reduce((a, x) => a + x, 0)); return { xs }; }, o => spreadOf(o.xs) >= 4 && spreadOf(o.xs) <= 2 * sp && spreadOf(o.xs) % 2 === 0 && Math.abs(o.xs[4] - meanOf(o.xs)) <= sp);
+  const mean = meanOf(v.xs) / sc, hr = spreadOf(v.xs) / 2 / sc, mp = find(() => ({ mp: R.pick([0.5, 1.0, 1.5, 2.0]) }), o => Math.abs(hr - mean * o.mp / 100) > .2 * Math.max(hr, mean * o.mp / 100)).mp, um = mean * mp / 100, bigger = hr > um;
+  return NOFIG(3, { xs: v.xs, sc, mp }, `A student measures ${what} with a digital meter. The reading fluctuates, so the student records five readings at intervals.<br>` + tableH('Table 1', ['reading number', '1', '2', '3', '4', '5'], [[`reading / ${unit}`].concat(v.xs.map(x => fx(x / sc, dp)))]), [
+    choose(R, 'State the resolution of the meter.', 1, res, [fx(10 / sc, dp - 1 < 0 ? 0 : dp - 1) + ' ' + unit, (1 / (sc * 10)).toFixed(dp + 1) + ' ' + unit, fx(5 / sc, dp) + ' ' + unit], `${res}: the readings are recorded to ${dp} decimal place${dp > 1 ? 's' : ''} ✓`),
+    calc('Calculate the mean reading.', 1, mean, unit, `${eq(`mean = (${v.xs.map(x => fx(x / sc, dp)).join(' + ')}) / 5 = ${fx(mean, dp)} ${unit}`)} ✓`, { fx: dp, abs: .4 / sc }),
+    calc('Calculate the absolute uncertainty in the mean reading.', 1, hr, unit, `Half the range: ${eq(`(${fx(Math.max(...v.xs) / sc, dp)} − ${fx(Math.min(...v.xs) / sc, dp)}) / 2 = ${U(hr)} ${unit}`)} ✓`, UNC),
+    text('Explain why this uncertainty is larger than the resolution of the meter.', 1, 'The reading fluctuates (random variation) over a range that is several times larger than the resolution, so the spread of readings sets the uncertainty ✓'),
+    calc(`The manufacturer states that the uncertainty in a reading is ±${N(mp, 2)}% of the reading.<br>Calculate this uncertainty for the mean reading.`, 1, um, unit, `${eq(`${N(mp, 2)} / 100 × ${fx(mean, dp)} = ${U(um)} ${unit}`)} ✓`, UNC),
+    opt('State which of the two uncertainties should be quoted with the mean reading.', 1, ['the uncertainty from the spread of the readings', 'the manufacturer’s uncertainty'], bigger ? 0 : 1, `The larger uncertainty is quoted: ${bigger ? 'the spread of the readings' : 'the manufacturer’s uncertainty'} (${U(Math.max(hr, um))} ${unit}) ✓`)
+  ]);
+};
+
+T.UN6 = R => {
+  const m = R.pick([0.200, 0.250, 0.300, 0.400, 0.500]), kk = R.pick([12, 15, 20, 25, 30, 40]), Tt = 2 * Math.PI * Math.sqrt(m / kk), t5 = Math.round(5 * Tt * 100 + Math.floor(R() * 5) - 2) / 100;
+  const Tp = t5 / 5, p5 = 0.2 / t5 * 100, p20 = 0.2 / (20 * Tp) * 100, k = 4 * Math.PI * Math.PI * m / (Tp * Tp), pm = 1 / (m * 1000) * 100, pk = pm + 2 * p5;
+  return NOFIG(3, { m, t5 }, `A mass of ${V(m, 'kg', 3)} hangs from a spring and oscillates vertically. A student uses a stopwatch with a resolution of 0.01 s and records the time for 5 oscillations as ${fx(t5, 2)} s. The uncertainty in the timing, caused by the student’s reaction time, is ±0.2 s.`, [
+    calc('Calculate the period of the oscillations.', 1, Tp, 's', `${eq(`<i>T</i> = ${fx(t5, 2)} / 5 = ${AV(Tp, 's')}`)} ✓`),
+    calc('Calculate the percentage uncertainty in the period.', 1, p5, '%', `${eq(`0.2 / ${fx(t5, 2)} × 100 = ${PC(p5)}`)} ✓`, UNC),
+    calc('The student instead times 20 oscillations, with the same uncertainty of ±0.2 s.<br>Calculate the new percentage uncertainty in the period.', 1, p20, '%', `${eq(`time for 20 oscillations ≈ 20 × ${I(Tp)} = ${I(20 * Tp)} s`)}, so ${eq(`0.2 / ${I(20 * Tp)} × 100 = ${PC(p20)}`)} ✓`, UNC),
+    text('Explain why the uncertainty in the timing is ±0.2 s and not ±0.01 s.', 1, 'The reaction time of the student in starting and stopping the stopwatch is much larger than the resolution of the stopwatch ✓'),
+    calc(`Use ${eq('<i>T</i> = 2π√(<i>m</i> / <i>k</i>)')} and the period from 5 oscillations to calculate the spring constant <i>k</i>.`, 2, k, NM1, `${eq('<i>k</i> = 4π<sup>2</sup><i>m</i> / <i>T</i><sup>2</sup>')} ✓<br>${eq(`<i>k</i> = 4π<sup>2</sup> × ${N(m, 3)} / ${I(Tp)}<sup>2</sup> = ${AV(k, NM1)}`)} ✓`),
+    calc('The uncertainty in the mass is ±1 g.<br>Calculate the percentage uncertainty in <i>k</i>, using the period from 5 oscillations.', 1, pk, '%', `${eq(`% in <i>m</i> = 1 / ${N(m * 1000, 3)} × 100 = ${I(pm)}%`)}; ${eq(`% in <i>k</i> = ${I(pm)} + 2 × ${I(p5)} = ${PC(pk)}`)} ✓`, UNC)
+  ]);
+};
+
+T.UN7 = R => {
+  const Nn = R.pick([100, 200, 250, 400, 500]), gsm = R.pick([70, 80, 90, 100]), H = find(() => ({ H: Math.round(Nn * (0.085 + 0.035 * R())) }), o => o.H >= 10).H, t = H / Nn, ut = 1 / Nn, pc = 1 / H * 100;
+  const ms = Number((gsm * 0.210 * 0.297).toPrecision(2)), rho = ms * 1e-3 / (0.210 * 0.297 * t * 1e-3);
+  return NOFIG(2, { Nn, H, ms }, `A student wants to find the thickness of one sheet of paper. The student measures the height of a stack of ${Nn} sheets with a ruler and records ${H} mm. The uncertainty in this measurement is ±1 mm.`, [
+    calc('Calculate the thickness of one sheet.', 1, t, 'mm', `${eq(`<i>t</i> = ${H} / ${Nn} = ${AV(t, 'mm')}`)} ✓`, { noSkill: true }),
+    calc('Calculate the absolute uncertainty in the thickness of one sheet.', 1, ut, 'mm', `${eq(`1 / ${Nn} = ${U(ut)} mm`)} ✓`, UNC),
+    calc('Calculate the percentage uncertainty in the thickness of one sheet.', 1, pc, '%', `${eq(`1 / ${H} × 100 = ${PC(pc)}`)} ✓ (the same as for the whole stack)`, UNC),
+    text('Explain why the student measured a stack of sheets instead of one sheet.', 1, 'One sheet is thinner than the resolution of the ruler; the stack gives a much larger reading with the same absolute uncertainty, so the percentage uncertainty is much smaller ✓'),
+    calc(`Each sheet measures 210 mm × 297 mm and has a mass of ${V(ms, 'g')}.<br>Calculate the density of the paper.`, 2, rho, KGM3, `${eq(`<i>V</i> = 0.210 × 0.297 × ${I(t * 1e-3)} = ${I(0.210 * 0.297 * t * 1e-3)} m<sup>3</sup>`)} ✓<br>${eq(`<i>ρ</i> = ${N(ms * 1e-3)} / ${I(0.210 * 0.297 * t * 1e-3)} = ${AV(rho, KGM3)}`)} ✓`)
+  ]);
+};
+
+T.UN8 = R => {
+  const Rn = R.pick([100, 120, 150, 220, 330, 470, 680, 820]), tol = R.pick([1, 2, 5, 10]), ab = Rn * tol / 100, Rmin = Rn - ab, Rmax = Rn + ab;
+  const { Rm } = find(() => ({ Rm: r3(Rn * (1 + (R() * 2 - 1) * tol * 1.8 / 100)) }), o => Math.abs(Math.abs(o.Rm - Rn) - ab) > .15 * ab), um = R.pick([1, 2, 5]) * (Rn >= 300 ? 2 : 1), pm = um / Rm * 100, inside = Math.abs(Rm - Rn) <= ab;
+  return NOFIG(3, { Rn, tol, Rm, um }, `A resistor is labelled ${Rn} Ω ± ${tol}%. The ${tol}% is the manufacturer’s tolerance.`, [
+    calc('Calculate the absolute uncertainty in the resistance given by the label.', 1, ab, 'Ω', `${eq(`${tol} / 100 × ${Rn} = ${U(ab)} Ω`)} ✓`, UNC),
+    calc('Calculate the minimum resistance that the resistor could have.', 1, Rmin, 'Ω', `${eq(`${Rn} − ${U(ab)} = ${fx(Rmin, Rmin % 1 ? 1 : 0)} Ω`)} ✓`, { noSkill: true, fx: Rmin % 1 ? 1 : 0 }),
+    calc('State the fractional uncertainty in the resistance given by the label.', 1, tol / 100, '', `${eq(`${tol} / 100 = ${U(tol / 100)}`)} ✓`, UNC),
+    calc(`A student measures the resistance with an ohmmeter and obtains ${N(Rm, 3)} Ω with an uncertainty of ±${um} Ω.<br>Calculate the percentage uncertainty in the student’s measurement.`, 1, pm, '%', `${eq(`${um} / ${N(Rm, 3)} × 100 = ${PC(pm)}`)} ✓`, UNC),
+    opt('Deduce whether the student’s measured value lies within the manufacturer’s tolerance.', 1, ['yes, it lies within the tolerance', 'no, it lies outside the tolerance'], inside ? 0 : 1, `The tolerance range is ${fx(Rmin, Rmin % 1 ? 1 : 0)} Ω to ${fx(Rmax, Rmax % 1 ? 1 : 0)} Ω; ${N(Rm, 3)} Ω lies ${inside ? 'inside' : 'outside'} this range ✓`),
+    text('Suggest why manufacturers quote a tolerance instead of an exact value of resistance.', 1, 'Mass-produced resistors vary slightly from one to the next, so the manufacturer can only guarantee that the resistance lies within a range ✓')
+  ]);
+};
+
+const RECS = [['a digital thermometer', '°C', 1, 200, 800, 'the temperature of some water'], ['a stopwatch', 's', 2, 300, 900, 'the time for a ball to roll down a slope'], ['a micrometer screw gauge', 'mm', 2, 40, 120, 'the diameter of a wire at different points'], ['a ruler marked in millimetres', 'cm', 1, 120, 600, 'the length of a spring at different times']];
+T.UN9 = R => {
+  const [inst, unit, dp, lo, hi, what] = R.pick(RECS), sc = Math.pow(10, dp);
+  const v = find(() => { const b = lo + Math.floor(R() * (hi - lo)), xs = [0, 1, 2, 3].map(() => b + Math.floor(R() * 7) - 3); xs.push(5 * b - xs.reduce((a, x) => a + x, 0)); return { xs, bad: Math.floor(R() * 5), more: R.chance(.5) }; }, o => spreadOf(o.xs) >= 2 && spreadOf(o.xs) % 2 === 0 && Math.abs(o.xs[4] - meanOf(o.xs)) <= 4 && (o.more || o.xs[o.bad] % 10 === 0) && new Set(o.xs).size === 5);
+  const shown = v.xs.map((x, i) => i === v.bad ? (v.more ? fx(x / sc + 3 / (sc * 10), dp + 1) : fx(x / sc, dp - 1)) : fx(x / sc, dp));
+  const val = v.xs.map((x, i) => i === v.bad && v.more ? x / sc + 3 / (sc * 10) : x / sc);
+  const xs2 = v.xs.slice(); if (v.more) xs2[v.bad] = v.xs[v.bad];
+  const mean = meanOf(v.xs) / sc, hr = spreadOf(v.xs) / 2 / sc, right = `${fx(mean, dp)} ± ${fx(hr, dp)} ${unit}`, wrong = [`${fx(mean, dp + 2)} ± ${fx(hr, dp)} ${unit}`, `${fx(mean, dp)} ± ${fx(hr, dp + 2)} ${unit}`, `${fx(mean, 0)} ± ${fx(hr, dp)} ${unit}`].filter(w => w !== right);
+  return NOFIG(3, { xs: v.xs, sc, dp, bad: v.bad, more: v.more }, `A student uses ${inst} to measure ${what} and records the results in <b>Table 1</b>. The resolution of ${inst.replace(/^an? /, 'the ')} is ${fx(1 / sc, dp)} ${unit}.<br>` + tableH('Table 1', ['reading number', '1', '2', '3', '4', '5'], [[`reading / ${unit}`].concat(shown)]), [
+    opt('Identify the reading that has been recorded incorrectly.', 1, shown, v.bad, `${shown[v.bad]} ${unit} ✓`),
+    text('Explain why this reading has been recorded incorrectly.', 1, v.more ? `It is recorded to ${dp + 1} decimal places, which suggests a precision that the instrument cannot give: every reading should be recorded to the resolution of the instrument, ${dp} decimal place${dp > 1 ? 's' : ''} ✓` : `It is recorded to ${dp - 1 === 0 ? 'no' : dp - 1} decimal place${dp - 1 === 1 ? '' : 's'}; every reading should be recorded to the resolution of the instrument (${dp} decimal place${dp > 1 ? 's' : ''}), for example ${fx(v.xs[v.bad] / sc, dp)} ✓`),
+    calc(`The incorrectly recorded reading should have been ${fx(v.xs[v.bad] / sc, dp)} ${unit}.<br>Calculate the mean of the five readings.`, 1, mean, unit, `${eq(`mean = (${v.xs.map(x => fx(x / sc, dp)).join(' + ')}) / 5 = ${fx(mean, dp)} ${unit}`)} ✓`, { fx: dp, abs: .4 / sc }),
+    calc('Calculate the absolute uncertainty in the mean.', 1, hr, unit, `Half the range: ${eq(`(${fx(Math.max(...v.xs) / sc, dp)} − ${fx(Math.min(...v.xs) / sc, dp)}) / 2 = ${U(hr)} ${unit}`)} ✓`, UNC),
+    choose(R, 'Which of the following is the best way to record the result?', 1, right, wrong, `${right}: the mean is given to the same number of decimal places as its uncertainty ✓`)
+  ]);
+};
+
+/* ===== combining uncertainties ===== */
+const SHAPES = [['a rectangular block', 'block'], ['a cylinder', 'cyl'], ['a ball', 'ball']];
+T.CU1 = R => {
+  const [name, sh] = R.pick(SHAPES), [mat, rho] = R.pick([['aluminium', 2700], ['steel', 7800], ['brass', 8500], ['copper', 8900]]);
+  let dims, Vmm, ms, pV, vline, pline;
+  if (sh === 'block'){ const a = R.pick([25.0, 30.0, 40.0, 45.0]), b = R.pick([15.0, 18.0, 20.0, 24.0]), c = R.pick([8.0, 10.0, 12.0, 16.0]); dims = { a, b, c }; Vmm = a * b * c; pV = (0.1 / a + 0.1 / b + 0.1 / c) * 100;
+    ms = `The block measures ${fx(a, 1)} mm × ${fx(b, 1)} mm × ${fx(c, 1)} mm. The uncertainty in each length is ±0.1 mm.`; vline = eq(`<i>V</i> = ${fx(a, 1)} × ${fx(b, 1)} × ${fx(c, 1)} = ${I(Vmm)} mm<sup>3</sup>`);
+    pline = `${eq(`${I(10 / a)} + ${I(10 / b)} + ${I(10 / c)}`)} (percentage uncertainties in the three lengths) ✓<br>${eq(`= ${PC(pV)}`)} ✓`; }
+  else if (sh === 'cyl'){ const d = R.pick([12.0, 15.0, 20.0, 25.0]), h = R.pick([30.0, 40.0, 50.0, 60.0]); dims = { d, h }; Vmm = Math.PI * d * d / 4 * h; pV = (2 * 0.1 / d + 0.1 / h) * 100;
+    ms = `The cylinder has a diameter of ${fx(d, 1)} mm and a height of ${fx(h, 1)} mm. The uncertainty in each length is ±0.1 mm.`; vline = eq(`<i>V</i> = π<i>d</i><sup>2</sup><i>h</i> / 4 = π × ${fx(d, 1)}<sup>2</sup> × ${fx(h, 1)} / 4 = ${I(Vmm)} mm<sup>3</sup>`);
+    pline = `${eq(`2 × ${I(10 / d)} + ${I(10 / h)}`)} (the diameter is squared) ✓<br>${eq(`= ${PC(pV)}`)} ✓`; }
+  else { const d = R.pick([15.00, 18.00, 20.00, 22.00, 25.00]); dims = { d }; Vmm = Math.PI * d * d * d / 6; pV = 3 * 0.01 / d * 100;
+    ms = `The ball has a diameter of ${fx(d, 2)} mm, measured with a micrometer. The uncertainty in the diameter is ±0.01 mm.`; vline = eq(`<i>V</i> = π<i>d</i><sup>3</sup> / 6 = π × ${fx(d, 2)}<sup>3</sup> / 6 = ${I(Vmm)} mm<sup>3</sup>`);
+    pline = `${eq(`3 × (0.01 / ${fx(d, 2)} × 100)`)} (the diameter is cubed) ✓<br>${eq(`= ${PC(pV)}`)} ✓`; }
+  const m = Math.round(rho * Vmm * 1e-9 * 1000 * 100) / 100, Vm = Vmm * 1e-9, dens = m * 1e-3 / Vm, pm = 0.01 / m * 100, pD = pV + pm, aD = dens * pD / 100;
+  return NOFIG(3, { sh, dims, m }, `A student determines the density of ${name} made of ${mat}. ${ms} The mass is ${fx(m, 2)} g, with an uncertainty of ±0.01 g.`, [
+    calc(`Calculate the volume of ${name.replace(/^an? /, 'the ')} in m<sup>3</sup>.`, 2, Vm, 'm<sup>3</sup>', `${vline} ✓<br>${eq(`<i>V</i> = ${I(Vmm)} × 10<sup>−9</sup> = ${AV(Vm, 'm<sup>3</sup>')}`)} ✓`),
+    calc(`Calculate the density of the ${mat}.`, 1, dens, KGM3, `${eq(`<i>ρ</i> = ${I(m * 1e-3)} / ${I(Vm)} = ${AV(dens, KGM3)}`)} ✓`),
+    calc('Calculate the percentage uncertainty in the volume.', 2, pV, '%', pline, UNC),
+    calc('Calculate the percentage uncertainty in the density.', 1, pD, '%', `${eq(`% in <i>m</i> = 0.01 / ${fx(m, 2)} × 100 = ${I(pm)}%`)}; ${eq(`% in <i>ρ</i> = ${I(pV)} + ${I(pm)} = ${PC(pD)}`)} ✓`, UNC),
+    calc('Calculate the absolute uncertainty in the density.', 1, aD, KGM3, `${eq(`${I(pD)} / 100 × ${I(dens)} = ${U(aD)} ${KGM3}`)} ✓`, UNC)
+  ]);
+};
+
+T.CU2 = R => {
+  const v = find(() => { const d = R.pick([0.25, 0.28, 0.32, 0.38, 0.46]), L = R.pick([50.0, 60.0, 75.0, 80.0, 100.0]), uL = R.pick([0.2, 0.5]), Rw = R.pick([2.4, 3.2, 4.8, 6.4, 8.0, 12]), uR = R.pick([0.05, 0.1, 0.2, 0.5]);
+    const pR = uR / Rw * 100, pL = uL / L * 100, pd = 0.01 / d * 100, c = [pR, pL, 2 * pd], srt = c.slice().sort((a, b) => b - a); return { d, L, uL, Rw, uR, pR, pL, pd, c, srt }; }, o => o.srt[0] >= 1.3 * o.srt[1]);
+  const { d, L, uL, Rw, uR, pR, pL, pd, c } = v, pr = pR + pL + 2 * pd, big = c.indexOf(Math.max(...c)), NM = ['the resistance', 'the length', 'the diameter'];
+  const FIX = ['Use meters with a smaller resolution / repeat the readings of <i>R</i> and use the mean / use a longer wire so that <i>R</i> is larger ✓', 'Use a longer length of wire, so the same absolute uncertainty is a smaller percentage ✓', 'Use a wire of larger diameter, so the same absolute uncertainty of 0.01 mm is a smaller percentage ✓'];
+  return NOFIG(2, { d, L, uL, Rw, uR }, `A student determines the resistivity <i>ρ</i> of the metal in a wire using ${eq('<i>ρ</i> = <i>R</i>π<i>d</i><sup>2</sup> / 4<i>L</i>')}. The measurements are:<br>resistance <i>R</i> = ${V(Rw, 'Ω')} ± ${N(uR, 1)} Ω<br>length <i>L</i> = ${fx(L, 1)} cm ± ${fx(uL, 1)} cm<br>diameter <i>d</i> = ${fx(d, 2)} mm ± 0.01 mm`, [
+    calc('Calculate the percentage uncertainty in <i>R</i>.', 1, pR, '%', `${eq(`${N(uR, 1)} / ${N(Rw)} × 100 = ${PC(pR)}`)} ✓`, UNC),
+    calc('Calculate the percentage uncertainty in <i>L</i>.', 1, pL, '%', `${eq(`${fx(uL, 1)} / ${fx(L, 1)} × 100 = ${PC(pL)}`)} ✓`, UNC),
+    calc('Calculate the percentage uncertainty in <i>d</i>.', 1, pd, '%', `${eq(`0.01 / ${fx(d, 2)} × 100 = ${PC(pd)}`)} ✓`, UNC),
+    calc('Calculate the percentage uncertainty in <i>ρ</i>.', 2, pr, '%', `${eq('% in <i>ρ</i> = % in <i>R</i> + % in <i>L</i> + 2 × % in <i>d</i>')} ✓<br>${eq(`= ${I(pR)} + ${I(pL)} + 2 × ${I(pd)} = ${PC(pr)}`)} ✓`, UNC),
+    opt('State which measurement makes the largest contribution to the uncertainty in <i>ρ</i>.', 1, NM, big, `${NM[big][0].toUpperCase() + NM[big].slice(1)}: its contribution is ${PC(c[big])}${big === 2 ? ' (2 × the percentage uncertainty in <i>d</i>)' : ''} ✓`),
+    text('Suggest one way of reducing the percentage uncertainty in the measurement you identified.', 1, FIX[big])
+  ]);
+};
+
+T.CU3 = R => {
+  const L0 = Math.round((20 + 12 * R()) * 10) / 10, x = Math.round((1.5 + 5 * R()) * 10) / 10, L1 = Math.round((L0 + x) * 10) / 10, m = R.pick([0.100, 0.200, 0.300, 0.400]), F = m * 9.81, k = F / (x * 1e-2), px = 0.2 / x * 100;
+  return NOFIG(3, { L0, L1, m }, `A student measures the length of a spring with a metre rule. The unstretched length is ${fx(L0, 1)} cm. When a mass of ${V(m, 'kg', 3)} hangs from the spring, its length is ${fx(L1, 1)} cm. The uncertainty in each length is ±0.1 cm, and the uncertainty in the mass is negligible.`, [
+    calc('Calculate the extension of the spring.', 1, x, 'cm', `${eq(`<i>x</i> = ${fx(L1, 1)} − ${fx(L0, 1)} = ${fx(x, 1)} cm`)} ✓`, { fx: 1, abs: .04 }),
+    calc('Determine the absolute uncertainty in the extension.', 1, 0.2, 'cm', 'The extension is the difference of two lengths, so the absolute uncertainties add: 0.1 + 0.1 = 0.2 cm ✓', UNC),
+    calc('Calculate the percentage uncertainty in the extension.', 1, px, '%', `${eq(`0.2 / ${fx(x, 1)} × 100 = ${PC(px)}`)} ✓`, UNC),
+    calc('Calculate the spring constant of the spring.', 2, k, NM1, `${eq(`<i>F</i> = <i>mg</i> = ${N(m, 3)} × 9.81 = ${I(F)} N`)} ✓<br>${eq(`<i>k</i> = <i>F</i> / <i>x</i> = ${I(F)} / ${fx(x * 1e-2, 3)} = ${AV(k, NM1)}`)} ✓`),
+    calc('Calculate the percentage uncertainty in the spring constant.', 1, px, '%', `The uncertainty in <i>F</i> is negligible, so the percentage uncertainty in <i>k</i> equals that in <i>x</i>: ${PC(px)} ✓`, UNC),
+    text('Suggest how the student could reduce the percentage uncertainty in the spring constant.', 1, 'Use a larger mass so that the extension is larger: the same absolute uncertainty of 0.2 cm is then a smaller percentage ✓')
+  ]);
+};
+
+T.CU4 = R => {
+  const n = 20, l = R.pick([0.452, 0.538, 0.615, 0.702, 0.846, 0.950]), ul = R.pick([0.001, 0.002]), ut = R.pick([0.1, 0.2]);
+  const v = find(() => { const t = Math.round(n * 2 * Math.PI * Math.sqrt(l / 9.81) * (1 + (R() * 2 - 1) * .02) * 100) / 100, T = t / n, g = 4 * Math.PI * Math.PI * l / (T * T), pg = (ul / l + 2 * ut / t) * 100, dg = g * pg / 100; return { t, T, g, pg, dg }; }, o => Math.abs(Math.abs(o.g - 9.81) - o.dg) > .15 * o.dg);
+  const { t, T, g, pg, dg } = v, inside = Math.abs(g - 9.81) <= dg;
+  return NOFIG(3, { l, ul, ut, t }, `A student measures the length of a simple pendulum as ${fx(l, 3)} m ± ${fx(ul, 3)} m, and the time for ${n} oscillations as ${fx(t, 2)} s ± ${N(ut, 1)} s.<br>The student uses ${eq('<i>T</i> = 2π√(<i>l</i> / <i>g</i>)')} to find the acceleration of free fall <i>g</i>.`, [
+    calc('Calculate the period of the pendulum.', 1, T, 's', `${eq(`<i>T</i> = ${fx(t, 2)} / ${n} = ${AV(T, 's')}`)} ✓`),
+    calc('Calculate <i>g</i>.', 2, g, MS2, `${eq('<i>g</i> = 4π<sup>2</sup><i>l</i> / <i>T</i><sup>2</sup>')} ✓<br>${eq(`<i>g</i> = 4π<sup>2</sup> × ${fx(l, 3)} / ${I(T)}<sup>2</sup> = ${AV(g, MS2)}`)} ✓`),
+    calc('Calculate the percentage uncertainty in <i>l</i>.', 1, ul / l * 100, '%', `${eq(`${fx(ul, 3)} / ${fx(l, 3)} × 100 = ${PC(ul / l * 100)}`)} ✓`, UNC),
+    calc('Calculate the percentage uncertainty in <i>T</i>.', 1, ut / t * 100, '%', `${eq(`${N(ut, 1)} / ${fx(t, 2)} × 100 = ${PC(ut / t * 100)}`)} ✓`, UNC),
+    calc('Calculate the percentage uncertainty in <i>g</i>.', 1, pg, '%', `<i>T</i> is squared: ${eq(`${I(ul / l * 100)} + 2 × ${I(ut / t * 100)} = ${PC(pg)}`)} ✓`, UNC),
+    calc('Calculate the absolute uncertainty in <i>g</i>.', 1, dg, MS2, `${eq(`${I(pg)} / 100 × ${I(g)} = ${U(dg)} ${MS2}`)} ✓`, UNC),
+    opt('Deduce whether the accepted value of 9.81 m s<sup>−2</sup> lies within the uncertainty in the student’s value of <i>g</i>.', 1, ['yes', 'no'], inside ? 0 : 1, `The student’s range is ${I(g - dg)} to ${I(g + dg)} ${MS2}, so 9.81 ${MS2} lies ${inside ? 'inside' : 'outside'} it ✓`)
+  ]);
+};
+
+T.CU5 = R => {
+  const Lc = R.pick([4.0, 5.0, 6.0, 8.0, 10.0]), tms = Math.round((25 + 55 * R()) * 10) / 10, mg = R.pick([250, 400, 500, 750]), v = Lc * 1e-2 / (tms * 1e-3), pv = (0.1 / Lc + 0.1 / tms) * 100, Ek = 0.5 * mg * 1e-3 * v * v, pE = 1 / mg * 100 + 2 * pv, aE = Ek * pE / 100;
+  return NOFIG(3, { Lc, tms, mg }, `A card of length ${fx(Lc, 1)} cm ± 0.1 cm is fixed to a trolley of mass ${mg} g ± 1 g. The card passes through a light gate, which records a time of ${fx(tms, 1)} ms ± 0.1 ms.`, [
+    calc('Calculate the speed of the trolley.', 1, v, MS1, `${eq(`<i>v</i> = ${fx(Lc * 1e-2, 3)} / ${I(tms * 1e-3)} = ${AV(v, MS1)}`)} ✓`),
+    calc('Calculate the percentage uncertainty in the speed.', 1, pv, '%', `Percentage uncertainties in the length and the time add: ${eq(`(0.1 / ${fx(Lc, 1)} × 100) + (0.1 / ${fx(tms, 1)} × 100) = ${I(10 / Lc)} + ${I(10 / tms)} = ${PC(pv)}`)} ✓`, UNC),
+    calc('Calculate the kinetic energy of the trolley.', 2, Ek, 'J', `${eq(`<i>E</i><sub>k</sub> = ½<i>mv</i><sup>2</sup> = 0.5 × ${N(mg * 1e-3, 3)} × ${I(v)}<sup>2</sup>`)} ✓<br>${eq(`<i>E</i><sub>k</sub> = ${AV(Ek, 'J')}`)} ✓`),
+    calc('Calculate the percentage uncertainty in the kinetic energy.', 1, pE, '%', `<i>v</i> is squared: ${eq(`${I(100 / mg)} + 2 × ${I(pv)} = ${PC(pE)}`)} ✓`, UNC),
+    calc('Calculate the absolute uncertainty in the kinetic energy.', 1, aE, 'J', `${eq(`${I(pE)} / 100 × ${I(Ek)} = ${U(aE)} J`)} ✓`, UNC)
+  ]);
+};
+
+const POWERS = [
+  { f: '<i>c</i> = √(<i>T</i> / <i>μ</i>)', ctx: 'the speed <i>c</i> of a wave on a string with tension <i>T</i> and mass per unit length <i>μ</i>', a: ['tension <i>T</i>', 'N', [20, 40, 60, 80], [1, 2, 3, 4]], b: ['mass per unit length <i>μ</i>', KGM, [0.0010, 0.0020, 0.0025, 0.0040], [2, 4, 5, 6]], w: [.5, .5], calc: (a, b) => Math.sqrt(a / b), sub: (a, b) => `<i>c</i> = √(${N(a)} / ${N(b)})`, u: MS1, wa: '½ ×', wb: '½ ×', what: 'the speed' },
+  { f: '<i>T</i> = 2π√(<i>m</i> / <i>k</i>)', ctx: 'the period <i>T</i> of a mass <i>m</i> oscillating on a spring of spring constant <i>k</i>', a: ['mass <i>m</i>', 'kg', [0.20, 0.25, 0.40, 0.50], [1, 2, 3]], b: ['spring constant <i>k</i>', NM1, [15, 20, 25, 40], [2, 4, 6, 8]], w: [.5, .5], calc: (a, b) => 2 * Math.PI * Math.sqrt(a / b), sub: (a, b) => `<i>T</i> = 2π√(${N(a)} / ${N(b)})`, u: 's', wa: '½ ×', wb: '½ ×', what: 'the period' },
+  { f: '<i>I</i> = <i>P</i> / 4π<i>r</i><sup>2</sup>', ctx: 'the intensity <i>I</i> at a distance <i>r</i> from a lamp that emits a power <i>P</i>', a: ['power <i>P</i>', 'W', [40, 60, 100], [2, 3, 5, 8]], b: ['distance <i>r</i>', 'm', [1.5, 2.0, 2.5, 3.0], [1, 2, 3, 4]], w: [1, 2], calc: (a, b) => a / (4 * Math.PI * b * b), sub: (a, b) => `<i>I</i> = ${N(a)} / (4π × ${N(b)}<sup>2</sup>)`, u: 'W m<sup>−2</sup>', wa: '1 ×', wb: '2 ×', what: 'the intensity' },
+  { f: '<i>E</i><sub>k</sub> = ½<i>mv</i><sup>2</sup>', ctx: 'the kinetic energy <i>E</i><sub>k</sub> of a ball of mass <i>m</i> moving at speed <i>v</i>', a: ['mass <i>m</i>', 'kg', [0.057, 0.16, 0.43, 0.60], [1, 2, 3]], b: ['speed <i>v</i>', MS1, [8.0, 12, 15, 20], [1, 2, 3, 4]], w: [1, 2], calc: (a, b) => 0.5 * a * b * b, sub: (a, b) => `<i>E</i><sub>k</sub> = 0.5 × ${N(a)} × ${N(b)}<sup>2</sup>`, u: 'J', wa: '1 ×', wb: '2 ×', what: 'the kinetic energy' }
+];
+T.CU6 = R => {
+  const P = R.pick(POWERS), v = find(() => ({ a: R.pick(P.a[2]), b: R.pick(P.b[2]), pa: R.pick(P.a[3]), pb: R.pick(P.b[3]) }), o => Math.max(P.w[0] * o.pa, P.w[1] * o.pb) >= 1.3 * Math.min(P.w[0] * o.pa, P.w[1] * o.pb));
+  const { a, b, pa, pb } = v, val = P.calc(a, b), pt = P.w[0] * pa + P.w[1] * pb, ab = val * pt / 100, big = P.w[0] * pa > P.w[1] * pb ? 0 : 1;
+  const nm = x => x.replace(/ <i>.*<\/i>.*$/, '').replace(/ <i>.*$/, '');
+  return NOFIG(2, { P: POWERS.indexOf(P), a, b, pa, pb }, `The equation ${P.f} gives ${P.ctx}.<br>The ${P.a[0]} is ${V(a, P.a[1])} ± ${pa}%.<br>The ${P.b[0]} is ${V(b, P.b[1])} ± ${pb}%.`, [
+    calc(`Calculate ${P.what}.`, 2, val, P.u, `${eq(P.sub(a, b))} ✓<br>${eq(`${P.f.split(' = ')[0]} = ${AV(val, P.u)}`)} ✓`),
+    calc(`Calculate the percentage uncertainty in ${P.what}.`, 2, pt, '%', `${eq(`${P.wa} ${pa} + ${P.wb} ${pb}`)} (${P.w[0] === .5 ? 'the square root halves each percentage uncertainty' : 'the squared quantity contributes twice its percentage uncertainty'}) ✓<br>${eq(`= ${PC(pt)}`)} ✓`, UNC),
+    calc(`Calculate the absolute uncertainty in ${P.what}.`, 1, ab, P.u, `${eq(`${I(pt)} / 100 × ${I(val)} = ${U(ab)} ${P.u}`)} ✓`, UNC),
+    opt(`State which measurement contributes more to the uncertainty in ${P.what}.`, 1, [nm(P.a[0]), nm(P.b[0])], big, `The ${nm([P.a[0], P.b[0]][big])}: it contributes ${PC([P.w[0] * pa, P.w[1] * pb][big])} compared with ${PC([P.w[0] * pa, P.w[1] * pb][1 - big])} ✓`)
+  ]);
+};
+
+T.CU7 = R => {
+  const s = R.pick([0.800, 0.900, 1.000, 1.200, 1.500]), us = 0.002;
+  const v = find(() => { const tt = Math.sqrt(2 * s / 9.81) * (1 + (R() * 2 - 1) * .012), b = Math.round(tt * 1000), xs = [0, 1, 2, 3].map(() => b + Math.floor(R() * 13) - 6); xs.push(5 * b - xs.reduce((a, x) => a + x, 0)); return { xs }; },
+    o => spreadOf(o.xs) >= 4 && spreadOf(o.xs) <= 14 && spreadOf(o.xs) % 2 === 0 && (() => { const t = meanOf(o.xs) / 1000, g = 2 * s / (t * t), pg = (us / s + 2 * spreadOf(o.xs) / 2000 / t) * 100, dg = g * pg / 100; return Math.abs(Math.abs(g - 9.81) - dg) > .15 * dg; })());
+  const t = meanOf(v.xs) / 1000, ht = spreadOf(v.xs) / 2000, pt = ht / t * 100, g = 2 * s / (t * t), ps = us / s * 100, pg = ps + 2 * pt, dg = g * pg / 100, inside = Math.abs(g - 9.81) <= dg;
+  return NOFIG(3, { s, xs: v.xs }, `A student drops a steel ball from rest through a measured height <i>s</i> = ${fx(s, 3)} m ± 0.002 m. An electronic timer records the time <i>t</i> taken to fall. The student repeats the measurement five times.<br>` + tableH('Table 1', ['reading', '1', '2', '3', '4', '5'], [['<i>t</i> / s'].concat(v.xs.map(x => fx(x / 1000, 3)))]), [
+    calc('Calculate the mean value of <i>t</i>.', 1, t, 's', `${eq(`mean = (${v.xs.map(x => fx(x / 1000, 3)).join(' + ')}) / 5 = ${fx(t, 3)} s`)} ✓`, { fx: 3, abs: .0004 }),
+    calc('Calculate the absolute uncertainty in the mean value of <i>t</i>.', 1, ht, 's', `Half the range: ${eq(`(${fx(Math.max(...v.xs) / 1000, 3)} − ${fx(Math.min(...v.xs) / 1000, 3)}) / 2 = ${U(ht)} s`)} ✓`, UNC),
+    calc('Calculate the percentage uncertainty in <i>t</i>.', 1, pt, '%', `${eq(`${U(ht)} / ${fx(t, 3)} × 100 = ${PC(pt)}`)} ✓`, UNC),
+    calc(`Use ${eq('<i>s</i> = ½<i>gt</i><sup>2</sup>')} to calculate <i>g</i>.`, 2, g, MS2, `${eq('<i>g</i> = 2<i>s</i> / <i>t</i><sup>2</sup>')} ✓<br>${eq(`<i>g</i> = 2 × ${fx(s, 3)} / ${fx(t, 3)}<sup>2</sup> = ${AV(g, MS2)}`)} ✓`),
+    calc('Calculate the percentage uncertainty in <i>g</i>.', 1, pg, '%', `${eq(`% in <i>s</i> = 0.002 / ${fx(s, 3)} × 100 = ${I(ps)}%`)}; ${eq(`% in <i>g</i> = ${I(ps)} + 2 × ${I(pt)} = ${PC(pg)}`)} ✓`, UNC),
+    calc('Calculate the absolute uncertainty in <i>g</i>.', 1, dg, MS2, `${eq(`${I(pg)} / 100 × ${I(g)} = ${U(dg)} ${MS2}`)} ✓`, UNC),
+    opt('Deduce whether the accepted value of 9.81 m s<sup>−2</sup> lies within the uncertainty in the student’s value of <i>g</i>.', 1, ['yes', 'no'], inside ? 0 : 1, `The student’s range is ${I(g - dg)} to ${I(g + dg)} ${MS2}, so 9.81 ${MS2} lies ${inside ? 'inside' : 'outside'} it ✓`)
+  ]);
+};
+
+T.CU8 = R => {
+  const kind = R.pick([0, 1, 2]), Rr = R.pick([4.7, 6.8, 10, 12, 15, 22]), Ia = R.pick([0.40, 0.50, 0.60, 0.80]), Vv = R.pick([3.0, 4.5, 6.0, 9.0, 12]), uI = 0.01, uV = 0.1, uRp = R.pick([1, 2, 5]), ts = R.pick([120, 180, 240, 300, 600]), uts = 1;
+  let P, pP, line1, stem, mk;
+  if (kind === 0){ P = Vv * Ia; pP = (uV / Vv + uI / Ia) * 100; stem = `The potential difference across a lamp is ${V(Vv, 'V')} ± 0.1 V and the current in it is ${V(Ia, 'A')} ± 0.01 A.`; line1 = `${eq(`<i>P</i> = <i>VI</i> = ${N(Vv)} × ${N(Ia)} = ${AV(P, 'W')}`)} ✓`;
+    mk = `${eq(`% in <i>V</i> = ${I(uV / Vv * 100)}%`)} and ${eq(`% in <i>I</i> = ${I(uI / Ia * 100)}%`)} ✓<br>${eq(`% in <i>P</i> = ${I(uV / Vv * 100)} + ${I(uI / Ia * 100)} = ${PC(pP)}`)} ✓`; }
+  else if (kind === 1){ P = Ia * Ia * Rr; pP = (2 * uI / Ia) * 100 + uRp; stem = `The current in a resistor is ${V(Ia, 'A')} ± 0.01 A. The resistance is ${V(Rr, 'Ω')} ± ${uRp}%.`; line1 = `${eq(`<i>P</i> = <i>I</i><sup>2</sup><i>R</i> = ${N(Ia)}<sup>2</sup> × ${N(Rr)} = ${AV(P, 'W')}`)} ✓`;
+    mk = `${eq(`% in <i>I</i> = ${I(uI / Ia * 100)}%`)}, doubled because <i>I</i> is squared ✓<br>${eq(`% in <i>P</i> = 2 × ${I(uI / Ia * 100)} + ${uRp} = ${PC(pP)}`)} ✓`; }
+  else { P = Vv * Vv / Rr; pP = (2 * uV / Vv) * 100 + uRp; stem = `The potential difference across a resistor is ${V(Vv, 'V')} ± 0.1 V. The resistance is ${V(Rr, 'Ω')} ± ${uRp}%.`; line1 = `${eq(`<i>P</i> = <i>V</i><sup>2</sup> / <i>R</i> = ${N(Vv)}<sup>2</sup> / ${N(Rr)} = ${AV(P, 'W')}`)} ✓`;
+    mk = `${eq(`% in <i>V</i> = ${I(uV / Vv * 100)}%`)}, doubled because <i>V</i> is squared ✓<br>${eq(`% in <i>P</i> = 2 × ${I(uV / Vv * 100)} + ${uRp} = ${PC(pP)}`)} ✓`; }
+  const aP = P * pP / 100, E = P * ts, pE = pP + uts / ts * 100;
+  return NOFIG(2, { kind, Rr, Ia, Vv, uRp, ts }, stem, [
+    calc('Calculate the power.', 1, P, 'W', line1),
+    calc('Calculate the percentage uncertainty in the power.', 2, pP, '%', mk, UNC),
+    calc('Calculate the absolute uncertainty in the power.', 1, aP, 'W', `${eq(`${I(pP)} / 100 × ${I(P)} = ${U(aP)} W`)} ✓`, UNC),
+    calc(`The power is supplied for ${ts} s ± 1 s.<br>Calculate the energy transferred.`, 1, E, 'J', `${eq(`<i>E</i> = <i>Pt</i> = ${I(P)} × ${ts} = ${AV(E, 'J')}`)} ✓`),
+    calc('Calculate the percentage uncertainty in the energy transferred.', 1, pE, '%', `${eq(`${I(pP)} + (1 / ${ts} × 100) = ${I(pP)} + ${I(100 / ts)} = ${PC(pE)}`)} ✓`, UNC)
+  ]);
+};
+
+const ACCEPTED = [['the acceleration of free fall', 9.81, MS2, 'using a pendulum'], ['the speed of sound in air', 343, MS1, 'using a resonance tube'], ['the specific heat capacity of water', 4180, 'J kg<sup>−1</sup> K<sup>−1</sup>', 'using an electrical heater']];
+const roundRes = (x, u) => { const u1 = Number(u.toPrecision(1)), pl = Math.floor(Math.log10(u1) + 1e-9), dp = Math.max(0, -pl), f = Math.pow(10, pl); return [(Math.round(x / f) * f).toFixed(dp), u1.toFixed(dp)]; };
+T.CU9 = R => {
+  const [what, acc, unit, how] = R.pick(ACCEPTED);
+  const v = find(() => { const X = acc * (1 + (R.chance(.5) ? 1 : -1) * (0.01 + 0.07 * R())), dX = acc * (0.012 + 0.05 * R()); return { X: Number(X.toPrecision(5)), dX: Number(dX.toPrecision(4)) }; },
+    o => { const lead = Number(o.dX.toPrecision(1)) / Math.pow(10, Math.floor(Math.log10(Number(o.dX.toPrecision(1))) + 1e-9)); const [rx, ru] = roundRes(o.X, o.dX); return lead >= 2 && lead <= 9 && Math.abs(Math.abs(o.X - acc) - o.dX) > .15 * o.dX && String(o.X) !== rx && String(o.dX) !== ru; });
+  const { X, dX } = v, [rx, ru] = roundRes(X, dX), right = `${rx} ± ${ru} ${unit}`, pd = Math.abs(X - acc) / acc * 100, pu = dX / X * 100, inside = Math.abs(X - acc) <= dX;
+  const wrong = [`${X} ± ${dX} ${unit}`, `${rx} ± ${dX} ${unit}`, `${X} ± ${ru} ${unit}`].filter(w => w !== right);
+  return NOFIG(3, { acc, X, dX }, `A student determines ${what} ${how}. The student’s calculator gives a value of ${X} ${unit} and an absolute uncertainty of ${dX} ${unit}.<br>The accepted value is ${acc} ${unit}.`, [
+    choose(R, 'Which is the best way for the student to record the result?', 1, right, wrong, `${right}: the uncertainty is given to 1 significant figure and the value to the same number of decimal places ✓`),
+    calc('Calculate the percentage uncertainty in the student’s value.', 1, pu, '%', `${eq(`${dX} / ${X} × 100 = ${PC(pu)}`)} ✓`, UNC),
+    calc('Calculate the percentage difference between the student’s value and the accepted value.', 1, pd, '%', `${eq(`|${X} − ${acc}| / ${acc} × 100 = ${A(pd)}%`)} ✓`, { noSkill: true, tol: .03 }),
+    opt('Deduce whether the student’s result is consistent with the accepted value.', 1, ['yes', 'no'], inside ? 0 : 1, `The difference, ${I(Math.abs(X - acc))} ${unit}, is ${inside ? 'less' : 'more'} than the absolute uncertainty, ${dX} ${unit}, so the result is ${inside ? '' : 'not '}consistent ✓`),
+    text('State what this suggests about the student’s experiment.', 1, inside ? 'There is no evidence of a significant systematic error: the difference can be explained by the uncertainty in the measurements ✓' : 'There is probably a systematic error (or the uncertainty has been underestimated), because the difference is larger than the uncertainty ✓')
+  ]);
+};
+
+/* ===== graphs and uncertainty ===== */
+const GR1C = [
+  { ctx: 'A student hangs masses from a spring and measures the extension <i>x</i> produced by each force <i>F</i>.', xl: 'x / cm', yl: 'F / N', xs: 1.0, ms: [0.20, 0.25, 0.30, 0.40, 0.50], gu: 'N cm<sup>−1</sup>', qn: 'the spring constant <i>k</i> of the spring', qs: '<i>k</i>', qu: NM1, conv: G => G * 100, show: G => `<i>k</i> = ${I(G)} N cm<sup>−1</sup> × 100 = ${AV(G * 100, NM1)}` },
+  { ctx: 'A student measures the potential difference <i>V</i> across a resistor for different currents <i>I</i>.', xl: 'I / A', yl: 'V / V', xs: 0.10, ms: [5, 8, 12, 15, 20], gu: 'Ω', qn: 'the resistance <i>R</i> of the resistor', qs: '<i>R</i>', qu: 'Ω', conv: G => G, show: G => `<i>R</i> = mean gradient = ${AV(G, 'Ω')}` },
+  { ctx: 'A student measures the period <i>T</i> of a simple pendulum for different lengths <i>l</i> and plots <i>T</i><sup>2</sup> against <i>l</i>.', xl: 'l / m', yl: 'T² / s²', xs: 0.20, ms: [4.03], gu: 's<sup>2</sup> m<sup>−1</sup>', qn: 'the acceleration of free fall <i>g</i>', qs: '<i>g</i>', qu: MS2, conv: G => 4 * Math.PI * Math.PI / G, show: G => `${eq('<i>T</i><sup>2</sup> = (4π<sup>2</sup> / <i>g</i>) <i>l</i>')}, so <i>g</i> = 4π<sup>2</sup> / ${I(G)} = ${AV(4 * Math.PI * Math.PI / G, MS2)}` }
+];
+T.GR1 = R => {
+  const C = R.pick(GR1C);
+  const v = find(() => {
+    const m = R.pick(C.ms) * (1 + (R() * 2 - 1) * .03), xs = [1, 2, 3, 4, 5, 6].map(i => i * C.xs), [yb, yM] = axisFor(m * 6 * C.xs * 1.18), h = yM / 10;
+    const dl = Math.max(1, Math.round(.05 * m * 6 * C.xs / h)) * h, ys = xs.map(x => Math.round((m * x + (R() * 2 - 1) * .45 * dl) / h) * h);
+    const Gmax = (ys[5] + dl - ys[0] + dl) / (xs[5] - xs[0]), Gmin = (ys[5] - dl - ys[0] - dl) / (xs[5] - xs[0]);
+    return { m, xs, ys, yb, yM, h, dl, Gmax, Gmin };
+  }, o => {
+    const okA = o.xs.every((x, i) => Math.abs(o.ys[0] - o.dl + o.Gmax * (x - o.xs[0]) - o.ys[i]) <= o.dl + 1e-9), okB = o.xs.every((x, i) => Math.abs(o.ys[0] + o.dl + o.Gmin * (x - o.xs[0]) - o.ys[i]) <= o.dl + 1e-9);
+    const pg = (o.Gmax - o.Gmin) / (o.Gmax + o.Gmin) * 100;
+    return okA && okB && o.ys[0] - o.dl > 0 && o.ys[5] + o.dl < o.yb - o.yM * .25 && pg > 3 && pg < 20;
+  });
+  const { xs, ys, yb, yM, dl, Gmax, Gmin } = v, Gm = (Gmax + Gmin) / 2, pg = (Gmax - Gmin) / (Gmax + Gmin) * 100, Q = C.conv(Gm), dQ = Q * pg / 100;
+  const xb_ = meanOf(xs), yb_ = meanOf(ys), bf = x => yb_ + Gm * (x - xb_), x0 = Math.max(0, xb_ - yb_ / Gm), xe = 6.6 * C.xs;
+  const A = x => ys[0] - dl + Gmax * (x - xs[0]), B = x => ys[0] + dl + Gmin * (x - xs[0]);
+  const fig = graph({ x: [0, 7 * C.xs, C.xs], y: [0, yb, yM], xdiv: 5, ydiv: 10, h: 340, xl: C.xl, yl: C.yl, crosses: xs.map((x, i) => [x, ys[i]]), ebars: xs.map((x, i) => [x, ys[i], dl]),
+    curves: [{ f: bf, from: x0, to: xe, w: 1.4 }, { f: A, from: xs[0], to: xs[5], dash: '8 5', w: 1.5, name: 'A', at: [xs[5] + .32 * C.xs, ys[5] + dl + .03 * yb] }, { f: B, from: xs[0], to: xs[5], dash: '8 5', w: 1.5, name: 'B', at: [xs[5] + .32 * C.xs, ys[5] - dl - .07 * yb] }],
+    reads: [[xs[0], ys[0] - dl], [xs[5], ys[5] + dl], [xs[0], ys[0] + dl], [xs[5], ys[5] - dl]] });
+  const hu = C.gu, P1 = `(${I(xs[0])}, ${I(ys[0] - dl)})`, P2 = `(${I(xs[5])}, ${I(ys[5] + dl)})`;
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { C: GR1C.indexOf(C), xs, ys, dl },
+    stem: `${C.ctx} <b>Figure 1</b> shows the results with error bars. The solid line is the line of best fit. Line A is the steepest line and line B is the least steep line that pass through all the error bars.`,
+    parts: [
+      calc('Determine the gradient of line A.', 2, Gmax, hu, `Uses two points on line A that are far apart, for example ${P1} and ${P2} ✓<br>${eq(`gradient = (${I(ys[5] + dl)} − ${I(ys[0] - dl)}) / (${I(xs[5])} − ${I(xs[0])}) = ${A_(Gmax)} ${hu}`)} ✓`, { tol: .025 }),
+      calc('Determine the gradient of line B.', 1, Gmin, hu, `${eq(`gradient = (${I(ys[5] - dl)} − ${I(ys[0] + dl)}) / (${I(xs[5])} − ${I(xs[0])}) = ${A_(Gmin)} ${hu}`)} ✓`, { tol: .025 }),
+      calc('Determine the percentage uncertainty in the gradient of the line of best fit.', 2, pg, '%', `${eq(`absolute uncertainty = (${A_(Gmax)} − ${A_(Gmin)}) / 2 = ${I((Gmax - Gmin) / 2)}`)} and ${eq(`mean gradient = (${A_(Gmax)} + ${A_(Gmin)}) / 2 = ${I(Gm)}`)} ✓<br>${eq(`${I((Gmax - Gmin) / 2)} / ${I(Gm)} × 100 = ${PC(pg)}`)} ✓`, { u: true, noSkill: true, tol: .12 }),
+      calc(`Use the mean of the gradients of lines A and B to determine ${C.qn}.`, 2, Q, C.qu, `${eq(`mean gradient = ${I(Gm)} ${hu}`)} ✓<br>${eq(C.show(Gm))} ✓`, { tol: .03 }),
+      calc(`Determine the absolute uncertainty in ${C.qs}.`, 1, dQ, C.qu, `The percentage uncertainty in ${C.qs} equals that in the gradient: ${eq(`${I(pg)} / 100 × ${I(Q)} = ${U(dQ)} ${C.qu}`)} ✓`, { u: true, noSkill: true, tol: .14 })
+    ] };
+};
+const A_ = A;
+
+const GR2C = [
+  { ctx: 'A student drops a ball from rest from different heights <i>s</i> and measures the time <i>t</i> taken to fall. The student plots <i>s</i> against <i>t</i><sup>2</sup>.', rel: '<i>s</i> = ½<i>gt</i><sup>2</sup>', xl: 't² / s²', yl: 's / m', xr: [0, 0.40, 0.1], gs: [4.80, 4.85, 4.90, 4.95, 5.00], gu: MS2, qn: 'the acceleration of free fall <i>g</i>', qs: '<i>g</i>', qu: MS2, conv: G => 2 * G, why: 'The equation <i>s</i> = ½<i>gt</i><sup>2</sup> has the form <i>y</i> = <i>mx</i>, so the graph is a straight line through the origin with gradient <i>g</i> / 2 ✓', show: G => `<i>g</i> = 2 × gradient = 2 × ${I(G)} = ${AV(2 * G, MS2)}` },
+  { ctx: 'A student measures the period <i>T</i> of a mass <i>m</i> oscillating on a spring, for different masses. The student plots <i>T</i><sup>2</sup> against <i>m</i>.', rel: '<i>T</i> = 2π√(<i>m</i> / <i>k</i>)', xl: 'm / kg', yl: 'T² / s²', xr: [0, 0.60, 0.1], gs: [1.6, 2.0, 2.4, 3.2, 4.0], gu: 's<sup>2</sup> kg<sup>−1</sup>', qn: 'the spring constant <i>k</i>', qs: '<i>k</i>', qu: NM1, conv: G => 4 * Math.PI * Math.PI / G, why: '<i>T</i><sup>2</sup> = (4π<sup>2</sup> / <i>k</i>) <i>m</i> has the form <i>y</i> = <i>mx</i>, so the graph is a straight line through the origin with gradient 4π<sup>2</sup> / <i>k</i> ✓', show: G => `<i>k</i> = 4π<sup>2</sup> / gradient = 4π<sup>2</sup> / ${I(G)} = ${AV(4 * Math.PI * Math.PI / G, NM1)}` },
+  { ctx: 'A student measures the current <i>I</i> in a wire for different potential differences <i>V</i> across it and plots <i>V</i> against <i>I</i>.', rel: '<i>V</i> = <i>IR</i>', xl: 'I / A', yl: 'V / V', xr: [0, 0.60, 0.1], gs: [4.0, 5.0, 6.0, 8.0, 10], gu: 'Ω', qn: 'the resistance <i>R</i> of the wire', qs: '<i>R</i>', qu: 'Ω', conv: G => G, why: '<i>V</i> = <i>RI</i> has the form <i>y</i> = <i>mx</i>, so a straight line through the origin shows that <i>R</i> is constant, and the gradient is <i>R</i> ✓', show: G => `<i>R</i> = gradient = ${AV(G, 'Ω')}` }
+];
+T.GR2 = R => {
+  const C = R.pick(GR2C), G = R.pick(C.gs) * (1 + (R() * 2 - 1) * .015), [xa, xb, xM] = C.xr, [yb, yM] = axisFor(G * xb * 1.02), p = R.pick([3, 4, 5, 6, 8]), Q = C.conv(G), dQ = Q * p / 100;
+  const xs = [1, 2, 3, 4, 5].map(i => i * xb / 5.5 + xb * .01 * (R() * 2 - 1));
+  const fig = graph({ x: [0, xb, xM], y: [0, yb, yM], xl: C.xl, yl: C.yl, crosses: xs.map(x => [x, G * x * (1 + (R() * 2 - 1) * .008)]), curves: [{ f: x => G * x, from: 0, to: xb }], reads: [[0, 0], [xb, G * xb]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { C: GR2C.indexOf(C), G, p },
+    stem: `${C.ctx} <b>Figure 1</b> shows the results and the line of best fit.`,
+    parts: [
+      calc('Determine the gradient of the line in <b>Figure 1</b>.', 2, G, C.gu, `Uses a triangle whose hypotenuse is at least half the length of the line ✓<br>${eq(`gradient = ${I(G * xb)} / ${I(xb)} = ${AV(G, C.gu)}`)} ✓`, { tol: .03 }),
+      calc(`Use your gradient to determine ${C.qn}.`, 2, Q, C.qu, `Uses ${C.rel} ✓<br>${eq(C.show(G))} ✓`, { tol: .03 }),
+      text(`Explain why the student plotted the graph in this way.`, 1, C.why),
+      calc(`The student draws the steepest and least steep lines through the data and finds that the percentage uncertainty in the gradient is ${p}%.<br>State the percentage uncertainty in ${C.qs}.`, 1, p, '%', `${p}%: ${C.qs} depends on the gradient alone (multiplying by a constant or taking the reciprocal does not change the percentage uncertainty) ✓`, UNC),
+      calc(`Calculate the absolute uncertainty in ${C.qs}.`, 1, dQ, C.qu, `${eq(`${p} / 100 × ${I(Q)} = ${U(dQ)} ${C.qu}`)} ✓`, { u: true, noSkill: true, tol: .05 })
+    ] };
+};
+
+T.GR3 = R => {
+  const G = R.pick([3.95, 4.00, 4.05]), c = R.pick([0.10, 0.15, 0.20]), r = c / G, g = 4 * Math.PI * Math.PI / G, ls = [0.20, 0.35, 0.50, 0.65, 0.80, 0.95];
+  const fig = graph({ x: [0, 1.0, 0.2], y: [0, 5, 0.5], xdiv: 5, ydiv: 5, h: 340, xl: 'l / m', yl: 'T² / s²', crosses: ls.map(l => [l, G * l + c + (R() * 2 - 1) * .015]), curves: [{ f: l => G * l + c, from: 0, to: 1.0 }], reads: [[0, c], [1.0, G + c]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { G, c },
+    stem: `A student measures the period <i>T</i> of a simple pendulum with a large bob for different lengths <i>l</i>. The student measures each length from the point of suspension to the <b>top</b> of the bob. <b>Figure 1</b> shows a graph of <i>T</i><sup>2</sup> against <i>l</i>.<br>The period is given by ${eq('<i>T</i> = 2π√(<i>L</i> / <i>g</i>)')}, where <i>L</i> is the distance from the point of suspension to the centre of the bob.`,
+    parts: [
+      calc('Determine the gradient of the line.', 2, G, 's<sup>2</sup> m<sup>−1</sup>', `Uses a large triangle, for example from (0, ${A(c)}) to (1.0, ${A(G + c)}) ✓<br>${eq(`gradient = (${I(G + c)} − ${A(c)}) / 1.0 = ${A(G)} s<sup>2</sup> m<sup>−1</sup>`)} ✓`, { tol: .03 }),
+      calc('Use the gradient to determine the acceleration of free fall <i>g</i>.', 1, g, MS2, `${eq(`<i>T</i><sup>2</sup> = (4π<sup>2</sup> / <i>g</i>)<i>L</i>`)}, so ${eq(`<i>g</i> = 4π<sup>2</sup> / ${A(G)} = ${AV(g, MS2)}`)} ✓`, { tol: .03 }),
+      calc('Determine the intercept of the line on the <i>T</i><sup>2</sup> axis.', 1, c, 's<sup>2</sup>', `${A(c)} s<sup>2</sup> ✓`, { abs: .03, read: 'value read from Figure 1' }),
+      calc('<i>L</i> = <i>l</i> + <i>r</i>, where <i>r</i> is the radius of the bob.<br>Use your answers to determine <i>r</i>.', 2, r, 'm', `${eq('<i>T</i><sup>2</sup> = (4π<sup>2</sup> / <i>g</i>)(<i>l</i> + <i>r</i>)')}, so intercept = gradient × <i>r</i> ✓<br>${eq(`<i>r</i> = ${A(c)} / ${A(G)} = ${AV(r, 'm')}`)} ✓`, { tol: .2 }),
+      choose(R, 'State the type of error caused by measuring each length to the top of the bob.', 1, 'a systematic error', ['a random error'], 'A systematic error: every length is too short by the same amount, <i>r</i> ✓'),
+      text('Explain why this error does not affect the value of <i>g</i> found from the gradient.', 1, 'Every value of <i>l</i> is shifted by the same amount, so the line moves sideways but its gradient is unchanged ✓')
+    ] };
+};
+
+const LIN = [
+  { rel: '<i>T</i> = 2π√(<i>l</i> / <i>g</i>)', ctx: 'the period <i>T</i> of a simple pendulum of length <i>l</i>', ax: '<i>T</i><sup>2</sup> against <i>l</i>', wax: ['<i>T</i> against <i>l</i>', '<i>T</i> against <i>l</i><sup>2</sup>', '<i>T</i><sup>2</sup> against 1 / <i>l</i>'], gr: '4π<sup>2</sup> / <i>g</i>', wgr: ['<i>g</i> / 4π<sup>2</sup>', '2π / √<i>g</i>', '4π<sup>2</sup><i>g</i>'], it: 'zero: the line passes through the origin', gs: [3.95, 4.00, 4.05, 4.10], gu: 's<sup>2</sup> m<sup>−1</sup>', qn: 'the acceleration of free fall <i>g</i>', qu: MS2, q: G => 4 * Math.PI * Math.PI / G, show: G => `<i>g</i> = 4π<sup>2</sup> / ${N(G, 3)}` },
+  { rel: '<i>T</i> = 2π√(<i>m</i> / <i>k</i>)', ctx: 'the period <i>T</i> of a mass <i>m</i> oscillating on a spring of spring constant <i>k</i>', ax: '<i>T</i><sup>2</sup> against <i>m</i>', wax: ['<i>T</i> against <i>m</i>', '<i>T</i> against <i>m</i><sup>2</sup>', '<i>T</i><sup>2</sup> against 1 / <i>m</i>'], gr: '4π<sup>2</sup> / <i>k</i>', wgr: ['<i>k</i> / 4π<sup>2</sup>', '2π / √<i>k</i>', '4π<sup>2</sup><i>k</i>'], it: 'zero: the line passes through the origin', gs: [1.6, 2.0, 2.6, 3.2], gu: 's<sup>2</sup> kg<sup>−1</sup>', qn: 'the spring constant <i>k</i>', qu: NM1, q: G => 4 * Math.PI * Math.PI / G, show: G => `<i>k</i> = 4π<sup>2</sup> / ${N(G, 2)}` },
+  { rel: '<i>s</i> = ½<i>at</i><sup>2</sup>', ctx: 'the distance <i>s</i> travelled from rest in time <i>t</i> by a trolley with constant acceleration <i>a</i>', ax: '<i>s</i> against <i>t</i><sup>2</sup>', wax: ['<i>s</i> against <i>t</i>', '<i>s</i><sup>2</sup> against <i>t</i>', '<i>s</i> against 1 / <i>t</i><sup>2</sup>'], gr: '<i>a</i> / 2', wgr: ['<i>a</i>', '2<i>a</i>', '√<i>a</i>'], it: 'zero: the line passes through the origin', gs: [0.60, 0.75, 0.90, 1.2], gu: MS2, qn: 'the acceleration <i>a</i>', qu: MS2, q: G => 2 * G, show: G => `<i>a</i> = 2 × ${N(G, 2)}` },
+  { rel: '<i>N</i> = <i>N</i><sub>0</sub>e<sup>−<i>λt</i></sup>', ctx: 'the number <i>N</i> of undecayed nuclei in a radioactive sample after time <i>t</i>', ax: 'ln <i>N</i> against <i>t</i>', wax: ['<i>N</i> against <i>t</i>', '<i>N</i> against ln <i>t</i>', 'ln <i>N</i> against ln <i>t</i>'], gr: '−<i>λ</i>', wgr: ['<i>λ</i>', '−1 / <i>λ</i>', 'ln <i>λ</i>'], it: 'ln <i>N</i><sub>0</sub>', gs: [-0.0116, -0.0231, -0.0347, -0.0462], gu: 's<sup>−1</sup>', qn: 'the half-life of the sample', qu: 's', q: G => Math.LN2 / -G, show: G => `<i>λ</i> = ${N(-G, 3)} s<sup>−1</sup>, so half-life = ln 2 / ${N(-G, 3)}` },
+  { rel: '<i>y</i> = <i>Ax</i><sup><i>n</i></sup>', ctx: 'how a quantity <i>y</i> depends on a quantity <i>x</i>, where <i>A</i> and <i>n</i> are constants', ax: 'ln <i>y</i> against ln <i>x</i>', wax: ['<i>y</i> against <i>x</i>', 'ln <i>y</i> against <i>x</i>', '<i>y</i> against <i>x</i><sup><i>n</i></sup>'], gr: '<i>n</i>', wgr: ['<i>A</i>', 'ln <i>A</i>', '<i>An</i>'], it: 'ln <i>A</i>', gs: [0.85, 1.10, 1.40, 1.75], gu: '', qn: '<i>A</i>, given that the intercept on the ln <i>y</i> axis is the value shown', qu: '', q: c => Math.exp(c), show: c => `<i>A</i> = e<sup>${N(c, 3)}</sup>`, isInt: true },
+  { rel: '<i>I</i> = <i>P</i> / 4π<i>d</i><sup>2</sup>', ctx: 'the intensity <i>I</i> of the light at a distance <i>d</i> from a small lamp that emits a power <i>P</i>', ax: '<i>I</i> against 1 / <i>d</i><sup>2</sup>', wax: ['<i>I</i> against <i>d</i>', '<i>I</i> against <i>d</i><sup>2</sup>', '<i>I</i> against 1 / <i>d</i>'], gr: '<i>P</i> / 4π', wgr: ['4π<i>P</i>', '<i>P</i>', '1 / 4π<i>P</i>'], it: 'zero: the line passes through the origin', gs: [3.2, 4.8, 8.0, 12], gu: 'W', qn: 'the power <i>P</i> emitted by the lamp', qu: 'W', q: G => 4 * Math.PI * G, show: G => `<i>P</i> = 4π × ${N(G, 2)}` }
+];
+const INTS = ['zero: the line passes through the origin', 'ln <i>N</i><sub>0</sub>', 'ln <i>A</i>', '<i>g</i>', '1', '<i>N</i><sub>0</sub>', '<i>A</i>'];
+T.GR4 = R => {
+  const C = R.pick(LIN), G = R.pick(C.gs), Q = C.q(G), sf = C === LIN[1] || C === LIN[2] || C === LIN[5] ? 2 : 3;
+  return NOFIG(sf, { L: LIN.indexOf(C), G }, `The equation ${C.rel} describes ${C.ctx}. A student wants to plot a straight-line graph to test this relationship.`, [
+    choose(R, 'Which graph should the student plot to obtain a straight line?', 1, C.ax, C.wax, `${C.ax} ✓`),
+    choose(R, 'What does the gradient of this graph represent?', 1, C.gr, C.wgr, `The gradient is ${C.gr} ✓`),
+    C.isInt ? calc(`The student’s line meets the ln <i>y</i> axis at ${N(G, 3)}.<br>Calculate <i>A</i>.`, 2, Q, '', `${eq('ln <i>y</i> = ln <i>A</i> + <i>n</i> ln <i>x</i>')}, so the intercept is ln <i>A</i> ✓<br>${eq(`${C.show(G)} = ${A(Q)}`)} ✓`, { noSkill: true })
+      : calc(`The gradient of the student’s line is ${C.gu ? V(G, C.gu, sf) : N(G, sf)}.<br>Calculate ${C.qn}.`, 2, Q, C.qu, `Gradient = ${C.gr} ✓<br>${eq(`${C.show(G)} = ${AV(Q, C.qu)}`)} ✓`),
+    choose(R, 'What does the intercept on the vertical axis represent?', 1, C.it, pickN(R, INTS.filter(x => x !== C.it), 3), `${/^ln/.test(C.it) ? C.it : C.it[0].toUpperCase() + C.it.slice(1)} ✓`),
+    text('Explain why plotting a straight-line graph is a useful way to test a relationship.', 1, 'It is easy to see whether the data fit a straight line (and to spot anomalous points), and the constants can be found from the gradient and intercept ✓')
+  ]);
+};
+
+const LOGC = [
+  { ctx: 'the period <i>T</i> of a simple pendulum and its length <i>l</i>', xs: [0.20, 0.30, 0.45, 0.65, 0.90, 1.30], n: 0.5, A: 2 * Math.PI / Math.sqrt(9.81), xl: 'ln (l / m)', yl: 'ln (T / s)', xn: 'l', yn: 'T', nopts: ['0.5', '1', '2', '−0.5'] },
+  { ctx: 'the intensity <i>I</i> of light at a distance <i>d</i> from a lamp', xs: [0.50, 0.70, 1.0, 1.4, 1.9, 2.5], n: -2, A: 60 / (4 * Math.PI), xl: 'ln (d / m)', yl: 'ln (I / W m⁻²)', xn: 'd', yn: 'I', nopts: ['−2', '−1', '2', '−0.5'] },
+  { ctx: 'the power <i>P</i> dissipated in a resistor and the current <i>I</i> in it', xs: [0.50, 0.70, 1.0, 1.5, 2.2, 3.0], n: 2, A: 4.7, xl: 'ln (I / A)', yl: 'ln (P / W)', xn: 'I', yn: 'P', nopts: ['2', '1', '0.5', '3'] },
+  { ctx: 'the distance <i>s</i> fallen from rest by a ball and the time <i>t</i> taken', xs: [0.20, 0.28, 0.36, 0.45, 0.55, 0.65], n: 2, A: 4.905, xl: 'ln (t / s)', yl: 'ln (s / m)', xn: 't', yn: 's', nopts: ['2', '1', '0.5', '3'] }
+];
+const ax5 = (lo, hi, st) => [Math.floor(lo / st - 1e-9) * st, Math.ceil(hi / st + 1e-9) * st];
+T.GR5 = R => {
+  const C = R.pick(LOGC), lx = C.xs.map(Math.log), c = Math.log(C.A), f = x => c + C.n * x, [xa, xb] = ax5(Math.min(lx[0], 0), Math.max(lx[5], 0), 0.5);
+  const ys = [f(xa), f(xb), c], [ya, yb] = ax5(Math.min(...ys), Math.max(...ys), 0.5), nIdx = C.nopts.indexOf(C.n === 0.5 ? '0.5' : C.n < 0 ? '−' + Math.abs(C.n) : String(C.n));
+  const fig = graph({ x: [xa, xb, 0.5], y: [ya, yb, 0.5], xdiv: 5, ydiv: 5, h: 340, xl: C.xl, yl: C.yl, crosses: lx.map(x => [x, f(x)]), curves: [{ f, from: xa, to: xb }], reads: [[xa, f(xa)], [xb, f(xb)], [0, c]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { C: LOGC.indexOf(C) },
+    stem: `A student investigates the relationship between ${C.ctx}. The student suggests that ${eq(`<i>${C.yn}</i> = <i>A${C.xn}</i><sup><i>n</i></sup>`)}, where <i>A</i> and <i>n</i> are constants. <b>Figure 1</b> shows the student’s graph of ${C.yl.split(' (')[0]}(<i>${C.yn}</i>) against ${C.xl.split(' (')[0]}(<i>${C.xn}</i>).`,
+    parts: [
+      calc('Determine the gradient of the line.', 2, C.n, '', `Uses a large triangle, for example between (${I(xa)}, ${I(f(xa))}) and (${I(xb)}, ${I(f(xb))}) ✓<br>${eq(`gradient = (${I(f(xb))} − (${I(f(xa))})) / (${I(xb)} − (${I(xa)})) = ${A(C.n)}`)} ✓`, { tol: .04, noSkill: true, neg: C.n < 0 }),
+      opt('Hence state the value of <i>n</i>.', 1, C.nopts, nIdx, `${eq('ln <i>y</i> = ln <i>A</i> + <i>n</i> ln <i>x</i>')}, so <i>n</i> is the gradient: <i>n</i> = ${C.nopts[nIdx]} ✓`),
+      calc(`Determine the intercept of the line on the vertical axis, where ln(<i>${C.xn}</i>) = 0.`, 1, c, '', `${A(c)} ✓`, { abs: .05, read: 'value read from Figure 1', noSkill: true }),
+      calc('Use your answer to determine <i>A</i>.', 2, C.A, '', `The intercept is ln <i>A</i> ✓<br>${eq(`<i>A</i> = e<sup>${A(c)}</sup> = ${A(C.A)}`)} ✓`, { tol: .06, noSkill: true }),
+      text('Explain why a graph of ln <i>y</i> against ln <i>x</i> is a straight line if the relationship is correct.', 1, `Taking natural logs gives ${eq('ln <i>y</i> = <i>n</i> ln <i>x</i> + ln <i>A</i>')}, which has the form <i>y</i> = <i>mx</i> + <i>c</i>, with gradient <i>n</i> and intercept ln <i>A</i> ✓`)
+    ] };
+};
+
+T.GR6 = R => {
+  const v = find(() => {
+    const big = R.chance(.4), eps = big ? R.pick([3.00, 4.50]) : R.pick([1.50, 1.55, 1.60]), r = big ? R.pick([1.0, 1.6, 2.0, 2.4]) : R.pick([0.50, 0.60, 0.80, 1.0]), Is = [0.10, 0.20, 0.30, 0.40, 0.50, 0.60];
+    const dl = big ? R.pick([0.10, 0.15]) : R.pick([0.04, 0.05, 0.06]), Vs = Is.map(I => Math.round((eps - I * r + (R() * 2 - 1) * .35 * dl) * 100) / 100);
+    const gA = (Vs[5] - dl - Vs[0] - dl) / 0.5, gB = (Vs[5] + dl - Vs[0] + dl) / 0.5, eA = Vs[0] + dl - gA * 0.10, eB = Vs[0] - dl - gB * 0.10;
+    const lo = Vs[5] - dl, span = eA - lo, yst = [0.1, 0.2, 0.5].find(s => span / s <= 5.2), ya = Math.floor((lo - yst * .3) / yst) * yst, yb = Math.ceil((eA + yst * .3) / yst) * yst;
+    return { eps, r, Is, dl, Vs, gA, gB, eA, eB, yst, ya, yb };
+  }, o => o.yst && o.Is.every((I, i) => Math.abs(o.Vs[0] + o.dl + o.gA * (I - .1) - o.Vs[i]) <= o.dl + 1e-9 && Math.abs(o.Vs[0] - o.dl + o.gB * (I - .1) - o.Vs[i]) <= o.dl + 1e-9) && o.gB < 0 && (o.eA - o.eB) / 2 >= 4 * o.yst / 10 && o.ya >= 0);
+  const { Is, dl, Vs, gA, gB, eA, eB, yst, ya, yb } = v, gm = (gA + gB) / 2, em = (eA + eB) / 2, ue = (eA - eB) / 2, pe = ue / em * 100, rr = -gm, mn = yst / 10;
+  const fA = I => eA + gA * I, fB = I => eB + gB * I, fm = I => em + gm * I, sp = yb - ya;
+  const fig = graph({ x: [0, 0.7, 0.1], y: [ya, yb, yst], xdiv: 5, ydiv: 10, h: 360, xl: 'I / A', yl: 'V / V', crosses: Is.map((I, i) => [I, Vs[i]]), ebars: Is.map((I, i) => [I, Vs[i], dl]),
+    curves: [{ f: fm, from: 0, to: 0.6, w: 1.4 }, { f: fA, from: 0, to: 0.6, dash: '8 5', w: 1.5, name: 'A', at: [0.645, fA(0.6) - .03 * sp] }, { f: fB, from: 0, to: 0.6, dash: '8 5', w: 1.5, name: 'B', at: [0.645, fB(0.6) + .01 * sp] }], reads: [[0, eA], [0, eB], [0, em], [0.6, fm(0.6)]] });
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Vs, dl, Is },
+    stem: `A student measures the terminal potential difference <i>V</i> of a cell for different currents <i>I</i>. The uncertainty in each value of <i>V</i> is ±${N(dl, 1)} V. <b>Figure 1</b> shows the results with error bars, the line of best fit, and lines A and B, the steepest and least steep lines that pass through all the error bars.<br>The cell obeys ${eq('<i>V</i> = <i>ε</i> − <i>Ir</i>')}.`,
+    parts: [
+      calc('Use the line of best fit to determine the emf <i>ε</i> of the cell.', 1, em, 'V', `<i>ε</i> is the intercept on the <i>V</i> axis: ${fx(em, 2)} V ✓`, { abs: mn + 1e-9, fx: 2, read: 'value read from Figure 1' }),
+      calc('Use the line of best fit to determine the internal resistance <i>r</i> of the cell.', 2, rr, 'Ω', `<i>r</i> = −gradient ✓<br>${eq(`<i>r</i> = (${I(em)} − ${I(fm(0.6))}) / 0.60 = ${AV(rr, 'Ω')}`)} ✓`, { tol: .05 }),
+      calc('Use lines A and B to determine the absolute uncertainty in <i>ε</i>.', 2, ue, 'V', `Intercepts: line A ${I(eA)} V and line B ${I(eB)} V ✓<br>${eq(`uncertainty = (${I(eA)} − ${I(eB)}) / 2 = ${U(ue)} V`)} ✓`, { u: true, noSkill: true, abs: mn + 1e-9 }),
+      calc('Calculate the percentage uncertainty in <i>ε</i>.', 1, pe, '%', `${eq(`${U(ue)} / ${fx(em, 2)} × 100 = ${PC(pe)}`)} ✓`, { u: true, noSkill: true, tol: .15 }),
+      choose(R, 'The student repeats the experiment with a voltmeter that has a larger uncertainty in each reading. State the effect on the uncertainty in <i>r</i>.', 1, 'it increases', ['it decreases', 'it is unchanged'], 'It increases: the error bars are longer, so the steepest and least steep lines differ more ✓')
+    ] };
+};
+
+T.GR7 = R => {
+  const V0 = R.pick([6.0, 9.0, 12.0]), Rk = R.pick([10, 22, 47]), Cu = R.pick([470, 1000, 2200]), tau = Rk * 1e3 * Cu * 1e-6, st = [2, 5, 10, 20, 30, 50, 100].find(s => s * 5 >= tau * 1.2) || 100;
+  const ts = [0, 1, 2, 3, 4, 5].map(i => i * st), Vs = ts.map(t => Math.round(V0 * Math.exp(-t / tau) * 100) / 100), rows = [1, 2, 3, 4, 5].filter(i => Vs[i] >= 1.2), row = rows.length ? R.pick(rows) : 1, lnV = Math.log(Vs[row]), slope = 1 / tau;
+  const f = t => Math.log(V0) - t / tau, xb = 6 * st, [ya] = [Math.floor((f(xb)) / 0.5) * 0.5];
+  const fig = graph({ x: [0, xb, st], y: [Math.min(0, ya), Math.ceil((Math.log(V0) + .1) / 0.5) * 0.5, 0.5], xdiv: 5, ydiv: 5, h: 330, xl: 't / s', yl: 'ln (V / V)', crosses: ts.map((t, i) => [t, Math.log(Vs[i])]).filter(p => p[1] >= Math.min(0, ya)), curves: [{ f, from: 0, to: xb }], reads: [[0, f(0)], [xb, f(xb)]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { V0, Rk, Cu, row, Vs },
+    stem: `A capacitor is charged to ${V(V0, 'V')} and then discharged through a ${V(Rk, 'kΩ')} resistor. A student records the potential difference <i>V</i> across the capacitor at regular times <i>t</i>.<br>` + tableH('Table 1', ['<i>t</i> / s'].concat(ts.map(String)), [['<i>V</i> / V'].concat(Vs.map(x => fx(x, 2)))]) + '<br><b>Figure 1</b> shows the student’s graph of ln(<i>V</i>) against <i>t</i>, with the line of best fit.',
+    parts: [
+      calc(`Calculate ln(<i>V</i> / V) for <i>t</i> = ${ts[row]} s.`, 1, lnV, '', `${eq(`ln ${fx(Vs[row], 2)} = ${A(lnV)}`)} ✓`, { noSkill: true }),
+      calc('Determine the magnitude of the gradient of the line in <b>Figure 1</b>.', 2, slope, 's<sup>−1</sup>', `Uses a large triangle, for example from (0, ${I(f(0))}) to (${xb}, ${I(f(xb))}) ✓<br>${eq(`|gradient| = (${I(f(0))} − ${I(f(xb))}) / ${xb} = ${AV(slope, 's<sup>−1</sup>')}`)} ✓`, { tol: .04 }),
+      calc('Use your answer to determine the time constant of the circuit.', 1, tau, 's', `${eq('ln <i>V</i> = ln <i>V</i><sub>0</sub> − <i>t</i> / <i>RC</i>')}, so time constant = 1 / |gradient| ${eq(`= 1 / ${I(slope)} = ${AV(tau, 's')}`)} ✓`, { tol: .04 }),
+      calc('Calculate the capacitance of the capacitor.', 2, Cu * 1e-6, 'F', `${eq(`<i>C</i> = time constant / <i>R</i> = ${I(tau)} / ${N(Rk * 1e3)}`)} ✓<br>${eq(`<i>C</i> = ${AV(Cu * 1e-6, 'F')}`)} ✓`, { tol: .04 }),
+      text('Explain why the student plotted ln(<i>V</i>) against <i>t</i> instead of <i>V</i> against <i>t</i>.', 1, `${eq('<i>V</i> = <i>V</i><sub>0</sub>e<sup>−<i>t</i>/<i>RC</i></sup>')} gives ${eq('ln <i>V</i> = ln <i>V</i><sub>0</sub> − <i>t</i> / <i>RC</i>')}: a straight line with gradient −1 / <i>RC</i>, which is easier to analyse than a curve ✓`)
+    ] };
+};
+
+T.GR8 = R => {
+  const th0 = 20, D = R.pick([50, 60, 70]), tau = R.pick([300, 400, 500, 600]), t0 = R.pick([200, 300, 400, 500]), t1 = R.pick([600, 800, 1000]), th = t => th0 + D * Math.exp(-t / tau), sl = D / tau * Math.exp(-t0 / tau);
+  const tg = t => th(t0) - sl * (t - t0), ta = Math.ceil(Math.max(0, t0 - 260, t0 - (98 - th(t0)) / sl)), tb = Math.floor(Math.min(1200, t0 + 260, t0 + (th(t0) - 2) / sl)), mw = R.pick([0.20, 0.25, 0.30, 0.40]), Pw = mw * 4180 * sl, early = R.chance(.5), t2 = early ? Math.max(0, t0 - 150) : t0 + 300;
+  const fig = graph({ x: [0, 1200, 200], y: [0, 100, 20], xdiv: 4, ydiv: 4, h: 330, xl: 't / s', yl: 'θ / °C', curves: [{ f: th, from: 0, to: 1200 }, { f: tg, from: ta, to: tb, w: 1.5 }], reads: [[ta, tg(ta)], [tb, tg(tb)], [t1, th(t1)]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { D, tau, t0, t1, mw },
+    stem: `A beaker containing ${V(mw, 'kg')} of hot water is left to cool. <b>Figure 1</b> shows how the temperature <i>θ</i> of the water varies with time <i>t</i>. A tangent to the curve has been drawn at <i>t</i> = ${t0} s.<br>specific heat capacity of water = 4180 J kg<sup>−1</sup> K<sup>−1</sup>`,
+    parts: [
+      calc(`Determine the rate of fall of temperature at <i>t</i> = ${t0} s.`, 2, sl, 'K s<sup>−1</sup>', `Uses two points far apart on the tangent, for example (${ta}, ${I(tg(ta))}) and (${tb}, ${I(tg(tb))}) ✓<br>${eq(`rate = (${I(tg(ta))} − ${I(tg(tb))}) / (${tb} − ${ta}) = ${AV(sl, 'K s<sup>−1</sup>')}`)} ✓`, { tol: .06 }),
+      calc(`Determine the temperature of the water at <i>t</i> = ${t1} s.`, 1, th(t1), '°C', `${A(th(t1))} °C ✓`, { abs: 2, read: 'value read from Figure 1', noSkill: true }),
+      calc(`Calculate the rate at which the water loses energy at <i>t</i> = ${t0} s.`, 2, Pw, 'W', `${eq('power = <i>mc</i> × rate of fall of temperature')} ✓<br>${eq(`= ${N(mw)} × 4180 × ${I(sl)} = ${AV(Pw, 'W')}`)} ✓`, { tol: .06 }),
+      opt(`State whether the rate of fall of temperature at <i>t</i> = ${t2} s is greater than or less than the value at <i>t</i> = ${t0} s.`, 1, ['greater', 'less'], early ? 0 : 1, `The curve is ${early ? 'steeper' : 'less steep'} at ${t2} s, so the rate is ${early ? 'greater' : 'less'} ✓`),
+      text('Describe how the student can draw an accurate tangent to the curve.', 1, 'Use a long ruler placed so that it touches the curve at only the one point, with equal angles between the ruler and the curve on each side (or use a plane mirror to draw the normal first) ✓')
+    ] };
+};
+
+/* ===== estimation and orders of magnitude ===== */
+const OOM = [['the diameter of an atom', -10], ['the diameter of a nucleus', -15], ['the wavelength of visible light, in m', -7], ['the mass of an adult person, in kg', 2], ['the mass of a family car, in kg', 3], ['the mass of an electron, in kg', -30], ['the mass of a proton, in kg', -27], ['the speed of sound in air, in m s<sup>−1</sup>', 2], ['the speed of light in a vacuum, in m s<sup>−1</sup>', 8.48], ['the radius of the Earth, in m', 6.8], ['the energy of a photon of visible light, in J', -18.6], ['the frequency of a typical sound we can hear, in Hz', 3], ['the distance from the Earth to the Sun, in m', 11.2], ['the power of an electric kettle, in W', 3.3]];
+const oomPart = (R, item) => { const e0 = Math.round(item[1]), p = Math.floor(R() * 4), ex = [0, 1, 2, 3].map(j => e0 + 3 * (j - p)), nm = item[0].includes(', in') ? item[0] : item[0] + ', in m';
+  return opt(`Which is the order of magnitude of ${nm}?`, 1, ex.map(pow10), p, `${pow10(e0)} ✓`); };
+T.ES1 = R => {
+  const items = pickN(R, OOM, 4), hair = R.pick([50, 60, 70, 80, 90, 100]), at = R.pick([2.0, 2.5, 3.0]), Nn = hair * 1e-6 / (at * 1e-10), e = Math.round(Math.log10(Nn));
+  return NOFIG(2, { items: items.map(i => OOM.indexOf(i)), hair, at }, 'The order of magnitude of a quantity is the power of ten that is closest to its value. The options in each part are three powers of ten apart.', items.map(it => oomPart(R, it)).concat([
+    calc(`A human hair has a diameter of ${V(hair, 'μm')}. The diameter of an atom is about ${V(at * 1e-10, 'm')}.<br>Calculate the number of atoms that would fit side by side across the diameter of the hair.`, 1, Nn, '', `${eq(`${N(hair * 1e-6)} / ${N(at * 1e-10)} = ${A(Nn)}`)} ✓`, { noSkill: true }),
+    choose(R, 'State the order of magnitude of your answer.', 1, pow10(e), [e - 6, e - 3, e + 3].map(pow10), `${pow10(e)} ✓`)
+  ]));
+};
+
+const MOVERS = [['a car travelling on a motorway', [800, 2000], [25, 35], 1200, 30], ['a sprinter at top speed', [55, 90], [9, 11], 70, 10], ['a cyclist and bicycle on a level road', [60, 110], [4, 10], 80, 7], ['a football just after it is kicked hard', [0.40, 0.45], [20, 35], 0.43, 25], ['a tennis ball just after a fast serve', [0.056, 0.059], [40, 65], 0.057, 50], ['a loaded lorry on a motorway', [2e4, 4.4e4], [22, 27], 3e4, 25]];
+T.ES2 = R => {
+  const M = R.pick(MOVERS), [name, mr, vr, m0, v0] = M, E0 = 0.5 * m0 * v0 * v0, Elo = 0.5 * mr[0] * vr[0] * vr[0], Ehi = 0.5 * mr[1] * vr[1] * vr[1];
+  return NOFIG(2, { M: MOVERS.indexOf(M) }, `This question asks you to make estimates. State any values you estimate.`, [
+    calc(`Estimate the kinetic energy of ${name}.`, 3, E0, 'J', `Sensible estimate of mass, ${N(mr[0])} kg to ${N(mr[1])} kg (for example ${N(m0)} kg) ✓<br>Sensible estimate of speed, ${N(vr[0])} ${MS1} to ${N(vr[1])} ${MS1} (for example ${N(v0)} ${MS1}) ✓<br>${eq(`<i>E</i><sub>k</sub> = ½<i>mv</i><sup>2</sup> = 0.5 × ${N(m0)} × ${N(v0)}<sup>2</sup> = ${AV(E0, 'J')}`)} ✓`, { range: [Elo, Ehi], noSkill: true }),
+    calc('Estimate the momentum of the same object.', 1, m0 * v0, 'kg m s<sup>−1</sup>', `${eq(`<i>p</i> = <i>mv</i> = ${N(m0)} × ${N(v0)} = ${A(m0 * v0)} kg m s<sup>−1</sup>`)} ✓ (consistent with the estimates used above)`, { range: [mr[0] * vr[0], mr[1] * vr[1]], noSkill: true }),
+    text('State one reason why an estimate like this is useful even though it is not exact.', 1, 'It gives the order of magnitude, which can be used to check whether a calculated or measured value is sensible / to compare quantities ✓')
+  ]);
+};
+
+const WATERS = [['a glass of water', [0.15, 0.40], 0.25, 'Sensible volume of a glass, 150 cm<sup>3</sup> to 400 cm<sup>3</sup> (mass 0.15 kg to 0.40 kg)'], ['a full bucket of water', [5, 12], 8, 'Sensible volume of a bucket, 5 litres to 12 litres (mass 5 kg to 12 kg)'], ['a full bath', [100, 250], 150, 'Sensible volume of water in a bath, 100 litres to 250 litres (mass 100 kg to 250 kg)']];
+T.ES3 = R => {
+  const W = R.pick(WATERS), [name, mr, m0, ms] = W, NA = 6.02e23, n = m => m * 1000 / 18 * NA, side = R.pick([1.0, 2.0, 5.0]), sp = R.pick([2.3, 2.6, 2.9]), na = side * 1e-2 / (sp * 1e-10);
+  return NOFIG(2, { W: WATERS.indexOf(W), side, sp }, `molar mass of water = 18 g mol<sup>−1</sup><br>Avogadro constant = 6.02 × 10<sup>23</sup> mol<sup>−1</sup>`, [
+    calc(`Estimate the number of water molecules in ${name}.`, 3, n(m0), '', `${ms} ✓<br>${eq(`number of moles = ${N(m0 * 1000)} / 18 = ${I(m0 * 1000 / 18)}`)} ✓<br>${eq(`number of molecules = ${I(m0 * 1000 / 18)} × 6.02 × 10<sup>23</sup> = ${A(n(m0))}`)} ✓`, { range: [n(mr[0]), n(mr[1])], noSkill: true }),
+    text('State one assumption you made.', 1, 'Any one: the density of water is 1000 kg m<sup>−3</sup> (1 g per cm<sup>3</sup>) / the volume estimated is typical / the water is pure ✓'),
+    calc(`The atoms in a copper cube are ${V(sp * 1e-10, 'm')} apart. The cube has sides of length ${V(side, 'cm')}.<br>Calculate the number of atoms along one edge of the cube.`, 1, na, '', `${eq(`${N(side * 1e-2)} / ${N(sp * 1e-10)} = ${A(na)}`)} ✓`, { noSkill: true })
+  ]);
+};
+
+const HEATS = [['to heat the water for a bath', [100, 200], [25, 35], 150, 30, 'mass of water in a bath, 100 kg to 200 kg', 'temperature rise, 25 K to 35 K (cold tap about 10 °C to a bath at about 40 °C)'], ['to boil a full kettle of water, starting from cold tap water', [1.0, 1.8], [80, 90], 1.5, 85, 'mass of water in a full kettle, 1.0 kg to 1.8 kg', 'temperature rise, 80 K to 90 K (from about 15 °C to 100 °C)']];
+T.ES4 = R => {
+  const H = R.pick(HEATS), [what, mr, dr, m0, d0, mt, dt] = H, c = 4180, Q = m => d => m * c * d, Q0 = Q(m0)(d0), Plist = H === HEATS[0] ? [3.0, 6.0, 8.5, 9.5] : [2.2, 2.4, 3.0], P = R.pick(Plist), t0 = Q0 / (P * 1e3);
+  return NOFIG(2, { H: HEATS.indexOf(H), P }, `specific heat capacity of water = 4180 J kg<sup>−1</sup> K<sup>−1</sup>`, [
+    calc(`Estimate the energy needed ${what}.`, 3, Q0, 'J', `Sensible ${mt} ✓<br>Sensible ${dt} ✓<br>${eq(`<i>Q</i> = <i>mc</i>Δ<i>θ</i> = ${N(m0)} × 4180 × ${N(d0)} = ${AV(Q0, 'J')}`)} ✓`, { range: [Q(mr[0])(dr[0]), Q(mr[1])(dr[1])], noSkill: true }),
+    calc(`The water is heated by a heater of power ${V(P, 'kW')}.<br>Estimate the time taken.`, 2, t0, 's', `${eq('<i>t</i> = <i>Q</i> / <i>P</i>')} ✓<br>${eq(`<i>t</i> = ${I(Q0)} / ${N(P * 1e3)} = ${AV(t0, 's')}`)} ✓`, { range: [Q(mr[0])(dr[0]) / (P * 1e3), Q(mr[1])(dr[1]) / (P * 1e3)], noSkill: true }),
+    text('Suggest why the actual time is longer than your estimate.', 1, 'Some energy is transferred to the surroundings and to the container, so not all the energy supplied heats the water ✓')
+  ]);
+};
+
+T.ES5 = R => {
+  const hA = R.pick([1.0, 1.5, 2.0]), mlo = 50, mhi = 100, m0 = 70, Alo = 0.03, Ahi = 0.06, A0 = 0.04, p0 = m0 * 9.81 / A0, ph0 = m0 * 9.81 / (hA * 1e-4);
+  return NOFIG(2, { hA }, 'This question asks you to make estimates. State any values you estimate.', [
+    calc('Estimate the pressure exerted on the floor by an adult standing on both feet.', 3, p0, 'Pa', `Sensible mass, ${mlo} kg to ${mhi} kg, and weight = <i>mg</i> ✓<br>Sensible total area of contact, ${N(Alo)} m<sup>2</sup> to ${N(Ahi)} m<sup>2</sup> (two shoes) ✓<br>${eq(`<i>p</i> = <i>F</i> / <i>A</i> = ${m0} × 9.81 / ${N(A0)} = ${AV(p0, 'Pa')}`)} ✓`, { range: [mlo * 9.81 / Ahi, mhi * 9.81 / Alo], noSkill: true }),
+    calc(`The same person puts all their weight on the heel of one shoe. The area of the heel in contact with the floor is ${V(hA, 'cm<sup>2</sup>')}.<br>Estimate the pressure on the floor under the heel.`, 2, ph0, 'Pa', `Converts the area to ${N(hA * 1e-4)} m<sup>2</sup> ✓<br>${eq(`<i>p</i> = ${m0} × 9.81 / ${N(hA * 1e-4)} = ${AV(ph0, 'Pa')}`)} ✓ (using the same mass as above)`, { range: [mlo * 9.81 / (hA * 1e-4), mhi * 9.81 / (hA * 1e-4)], noSkill: true }),
+    text('Explain why a person is less likely to sink into soft snow when wearing snowshoes.', 1, 'The snowshoes have a much larger area, so the same weight produces a much smaller pressure on the snow ✓')
+  ]);
+};
+
+const COUNTS = [['the number of times your heart beats in a lifetime', [60, 80], 70, 'heart rate, 60 to 80 beats per minute'], ['the number of breaths you take in a lifetime', [12, 20], 15, 'breathing rate, 12 to 20 breaths per minute'], ['the number of times you blink in a lifetime', [10, 20], 15, 'blink rate, 10 to 20 blinks per minute while awake (take 16 hours awake each day)']];
+T.ES6 = R => {
+  const Cn = R.pick(COUNTS), [what, rr, r0, ms] = Cn, blink = Cn === COUNTS[2], yr = 365 * 24 * 3600, perMin = (r, y) => r * 60 * (blink ? 16 : 24) * 365 * y, n0 = perMin(r0, 80), lo = perMin(rr[0], 70), hi = perMin(rr[1], 90);
+  const e = Math.round(Math.log10(n0)), ex = [e - 6, e - 3, e, e + 3], ly = 3.00e8 * yr;
+  return NOFIG(3, { Cn: COUNTS.indexOf(Cn) }, `This question asks you to make estimates. State any values you estimate.<br>speed of light in a vacuum = 3.00 × 10<sup>8</sup> ${MS1}`, [
+    calc('Calculate the number of seconds in one year. Take one year to be 365 days.', 1, yr, 's', `${eq(`365 × 24 × 3600 = ${A(yr)} s`)} ✓`, { noSkill: true }),
+    calc('Calculate the distance travelled by light in one year.', 1, ly, 'm', `${eq(`3.00 × 10<sup>8</sup> × ${I(yr)} = ${AV(ly, 'm')}`)} ✓`, { noSkill: true }),
+    calc(`Estimate ${what}.`, 2, n0, '', `Sensible ${ms}, and a lifetime of 70 to 90 years ✓<br>${eq(`${r0} × 60 × ${blink ? 16 : 24} × 365 × 80 = ${A(n0)}`)} ✓`, { range: [lo, hi], noSkill: true }),
+    choose(R, 'State the order of magnitude of your estimate.', 1, pow10(e), [e - 6, e - 3, e + 3].map(pow10), `${pow10(e)} ✓`)
+  ]);
+};
+
+const ROOMS = [['a school classroom', [6, 12], [5, 10], [2.4, 3.5], [8, 7, 3]], ['a school sports hall', [20, 40], [15, 25], [6, 10], [30, 20, 8]], ['a living room at home', [3, 6], [3, 5], [2.2, 2.8], [5, 4, 2.5]]];
+T.ES7 = R => {
+  const Rm = R.pick(ROOMS), [name, a, b, c, [a0, b0, c0]] = Rm, rho = 1.2, m0 = a0 * b0 * c0 * rho, lo = a[0] * b[0] * c[0] * rho, hi = a[1] * b[1] * c[1] * rho, e = Math.round(Math.log10(m0));
+  return NOFIG(2, { Rm: ROOMS.indexOf(Rm) }, `This question asks you to make estimates. State any values you estimate.<br>density of air = 1.2 kg m<sup>−3</sup>`, [
+    calc(`Estimate the mass of the air in ${name}.`, 3, m0, 'kg', `Sensible estimates of length, width and height, for example ${a0} m × ${b0} m × ${c0} m ✓<br>${eq(`volume = ${a0} × ${b0} × ${c0} = ${A(a0 * b0 * c0)} m<sup>3</sup>`)} ✓<br>${eq(`mass = 1.2 × ${A(a0 * b0 * c0)} = ${AV(m0, 'kg')}`)} ✓`, { range: [lo, hi], noSkill: true }),
+    calc('Estimate the weight of this air.', 1, m0 * 9.81, 'N', `${eq(`<i>W</i> = <i>mg</i> = ${A(m0)} × 9.81 = ${AV(m0 * 9.81, 'N')}`)} ✓`, { range: [lo * 9.81, hi * 9.81], noSkill: true }),
+    choose(R, 'State the order of magnitude of the mass of the air, in kg.', 1, pow10(e), [e - 3, e + 3, e + 6].map(pow10), `${pow10(e)} kg ✓`),
+    text('Suggest why the estimate could be quite different from the true mass even if the dimensions are measured accurately.', 1, 'The density of air depends on its temperature and pressure / furniture and people take up some of the volume ✓')
+  ]);
+};
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number(a.toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0) continue; const a = plain(A(pj.ans)), a4 = plain(I(pj.ans)), m = plain(p.ms); if ((m.includes(a) || m.includes(a4)) && !given.includes(a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length) g.push('Allow ecf from their answer' + (ecf.length > 1 ? 's' : '') + ' to ' + ecf.join(' and ') + '.');
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : A(p.ans); });
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${o}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like CU3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>

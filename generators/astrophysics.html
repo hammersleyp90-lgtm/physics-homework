@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Astrophysics Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+.nuc{display:inline-flex;flex-direction:column;vertical-align:-0.42em;font-size:.68em;line-height:1.02;text-align:right;margin-right:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Astrophysics Question Generator</h1>
+    <p>AQA-style practice on option section 3.9 (Astrophysics). 56 question types and many thousands of different questions with mark schemes: telescope ray diagrams, HR diagrams, black-body curves, light curves for supernovae, eclipsing binaries and transits, radial-velocity and Hubble graphs, data tables, plus calculation and description questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="PE3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number(x.toPrecision(n));
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    const r = Number(x.toPrecision(n));      // round the value itself first: dividing by a power of ten can turn 1.95 into 1.9499…
+    let e = Math.floor(Math.log10(Math.abs(r)) + 1e-12), m = r / Math.pow(10, e);
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+let ASF = 2;                                          // significant figures of the data in the question being built
+const A = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : N(x, 3);      // answers: 3 sf (2 sf when exact and the data are given to 2 sf)
+const AV = (x, unit) => A(x) + ' ' + unit;
+const I3 = x => isNice(x, 3) ? N(x, 3) : N(x, 4);      // a working value from data given to 3 sf
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? .9 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside, halo: !!o.halo });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}${l.halo ? ' stroke="#fff" stroke-width="4" paint-order="stroke"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+// axis label: ^{..} superscript, _{..} subscript
+const axl = s => esc(s).replace(/\^\{([^}]*)\}/g, '<tspan dy="-6" font-size="10">$1</tspan><tspan dy="6">\u200b</tspan>').replace(/_\{([^}]*)\}/g, '<tspan dy="4" font-size="10">$1</tspan><tspan dy="-4">\u200b</tspan>');
+const axp = s => String(s).replace(/[\^_]\{([^}]*)\}/g, '$1');
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = g.top ? 16 : 52, mt = g.top ? 52 : 16, mr = 22;      // top: the r axis is at the top (all values negative)
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(Math.abs(m)) + 1e-9));      // y may run downwards (magnitude scales): then yM is negative
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${g.top ? mt - 10 : mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(xa <= 0 && xb >= 0 ? 0 : xa), ay0 = Y(ya <= 0 && yb >= 0 ? 0 : ya);
+  let marks = '';
+  (g.shade || []).forEach(c => { const pts = []; for (let i = 0; i <= 120; i++){ const x = c.from + (c.to - c.from) * i / 120; pts.push(n2(X(x)) + ',' + n2(Y(Math.min(c.f(x), yb)))); } pts.push(n2(X(c.to)) + ',' + n2(Y(Math.max(ya, 0))), n2(X(c.from)) + ',' + n2(Y(Math.max(ya, 0)))); marks += `<polygon points="${pts.join(' ')}" fill="#c9cfd4" fill-opacity="0.65" stroke="none"/>`; });
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= Math.min(ya, yb) - 1e-9 && y <= Math.max(ya, yb) + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.dots || []).forEach(d => { marks += `<circle cx="${n2(X(d.x))}" cy="${n2(Y(d.y))}" r="4.2" fill="#000"/><text x="${n2(X(d.x) + (d.dx || 9))}" y="${n2(Y(d.y) + (d.dy || 5))}" font-weight="700" font-size="15" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(d.t)}</text>`; });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(axp(g.yl))} against ${esc(axp(g.xl))}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${g.top ? 20 : th - 8}" text-anchor="middle">${axl(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${axl(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [y1, y2] = g.y, ya = Math.min(y1, y2), yb = Math.max(y1, y2), inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.dots || []).forEach(p => { if (!inX(p.x) || !inY(p.y)) e.push('marked nuclide outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+/* ---------- astrophysics: shared helpers ---------- */
+const TOPICS = { TL: 'Optical telescopes', RS: 'Resolution and non-optical telescopes', MG: 'Magnitude and distance', BB: 'Black-body radiation', SC: 'Spectral classes and the HR diagram', SN: 'Supernovae, neutron stars and black holes', DO: 'Doppler effect and binary stars', HU: 'Hubble’s law, the Big Bang and quasars', EX: 'Exoplanets' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const INT = { int: true, noSkill: true };
+const NS = { noSkill: true };
+const GV = (x, sf) => V(x, '', sf).trim();      // a given value, written exactly as the stem prints it
+const I = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join(' ')}</tr> ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join(' ')}</tr>`).join(' ')}</table>`;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const an = w => /^[aeiou]/i.test(w) ? 'an' : 'a';
+const dot = (s, x, y, r = 3.2) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+const lg = Math.log10;
+const fM = x => fx(x, 2);                       // a magnitude to 2 decimal places
+const fM1 = x => fx(x, 1);
+const brk = s => /^−/.test(s) ? '(' + s + ')' : s;
+// AQA data-booklet values
+const AU = 1.50e11, LY = 9.46e15, PC = 3.08e16, MPC = 3.08e22, WIEN = 2.9e-3, SIG = 5.67e-8, MSUN = 1.99e30, RSUN = 6.96e8, GN = 6.67e-11, C = 3.00e8, HP = 6.63e-34, YR = 3.15e7;
+const SAU = '1.50 × 10<sup>11</sup>', SLY = '9.46 × 10<sup>15</sup>', SPC = '3.08 × 10<sup>16</sup>', SWIEN = '2.9 × 10<sup>−3</sup>', SSIG = '5.67 × 10<sup>−8</sup>', SMSUN = '1.99 × 10<sup>30</sup>', SG = '6.67 × 10<sup>−11</sup>', SC0 = '3.00 × 10<sup>8</sup>', SH = '6.63 × 10<sup>−34</sup>', SYR = '3.15 × 10<sup>7</sup>';
+const D_PC = `1 pc = ${SPC} m`, D_LY = `1 ly = ${SLY} m`, D_AU = `1 AU = ${SAU} m`, D_YR = `1 year = ${SYR} s`, D_MPC = '1 Mpc = 3.08 × 10<sup>22</sup> m';
+const WM = 'W m<sup>−2</sup>', KMS = 'km s<sup>−1</sup>', HU_U = 'km s<sup>−1</sup> Mpc<sup>−1</sup>', S1 = 's<sup>−1</sup>';
+const NORMAL = 'The final image is at infinity ✓';
+const RAYLEIGH = ['Two sources are just resolved when the central maximum of the diffraction pattern of one ✓', 'coincides with the first minimum of the diffraction pattern of the other ✓'];
+const STD_CANDLE = 'An object of known luminosity (power output / absolute magnitude) ✓';
+const DEF_M = 'The apparent magnitude the object would have if it were 10 pc from the Earth ✓';
+const DEF_PC = 'The distance at which 1 AU subtends an angle of 1 arcsecond ✓';
+const sym = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+
+/* ===== Optical telescopes ===== */
+// a converging lens: a vertical line with outward arrowheads
+const cLens = (s, x, y, h, tag) => { s.line(x, y - h, x, y + h, { tag }); s.head(x, y - h - 1, 0, -1, 9); s.head(x, y + h + 1, 0, 1, 9); s.ext(x, y - h - 10); s.ext(x, y + h + 10); };
+
+T.TL1 = R => {
+  const OBJ = [['the Moon', 9.0e-3, 60], ['Jupiter', 2.2e-4, 999], ['Saturn', 9.0e-5, 999], ['Mars', 1.2e-4, 999], ['Venus', 2.8e-4, 999]];
+  const v = find(() => ({ fo: R.pick([0.60, 0.75, 0.80, 0.90, 1.0, 1.2, 1.5, 1.8, 2.0]), fe: R.pick([10, 12, 15, 20, 25, 30, 40, 50]), oi: Math.floor(R() * OBJ.length) }), o => o.fo / (o.fe / 1000) <= OBJ[o.oi][2] && o.fo / (o.fe / 1000) >= 20);
+  const { fo, fe, oi } = v, [obj, th] = OBJ[oi], fem = fe / 1000, M = fo / fem, L = fo + fem, tho = M * th;
+  return NOFIG(2, { fo, fe, oi, th }, `An astronomical refracting telescope has an objective lens of focal length ${V(fo, 'm')} and an eyepiece lens of focal length ${V(fe, 'mm')}. The telescope is used in normal adjustment.`, [
+    calc('Calculate the angular magnification of the telescope.', 1, M, '', `${eq(`<i>M</i> = ${sym('f', 'o')} / ${sym('f', 'e')} = ${N(fo)} / ${N(fem)} = ${A(M)}`)} ✓`, NS),
+    calc('Calculate the distance between the two lenses.', 1, L, 'm', `${eq(`${sym('f', 'o')} + ${sym('f', 'e')} = ${N(fo)} + ${N(fem)} = ${AV(L, 'm')}`)} ✓`),
+    calc(`${cap(obj)} subtends an angle of ${V(th, 'rad')} at the unaided eye. Calculate the angle subtended at the eye by the final image of ${obj}.`, 1, tho, 'rad', `${eq(`θ<sub>out</sub> = <i>M</i>θ<sub>in</sub> = ${I(M)} × ${N(th)} = ${AV(tho, 'rad')}`)} ✓`),
+    text('State what is meant by normal adjustment.', 1, NORMAL + '<br>(Allow: the principal foci of the two lenses coincide, or the lenses are <i>f</i><sub>o</sub> + <i>f</i><sub>e</sub> apart.)'),
+    choose(R, 'Which describes the final image?', 1, 'virtual and inverted', ['real and inverted', 'virtual and upright', 'real and upright'], 'Virtual and inverted ✓'),
+    text('Explain why the objective lens has a much longer focal length than the eyepiece lens.', 1, 'The angular magnification is <i>f</i><sub>o</sub> / <i>f</i><sub>e</sub>, so a long objective and a short eyepiece focal length give a large magnification ✓')
+  ]);
+};
+
+T.TL2 = R => {
+  const v = find(() => ({ fo: R.pick([600, 750, 800, 900, 1000, 1200]), fe: R.pick([15, 20, 25, 30, 40, 50]), th: R.pick([0.20, 0.25, 0.30, 0.40, 0.50]) }), o => o.fo / o.fe * o.th <= 30 && o.fo / o.fe >= 15);
+  const { fo, fe, th } = v, sep = fo + fe, M = fo / fe, tho = M * th;
+  // ray diagram, not to scale: objective at x = 0, common focus P at x = Fo, eyepiece at x = Fo + Fe
+  const s = new Scene('Ray diagram for an astronomical refracting telescope'), Fo = 330, Fe = 95, ta = .085, yP = Fo * ta, ax = 0;
+  s.line(-150, ax, Fo + Fe + 150, ax, { dash: '8 5', w: 1, tag: 'axis' });
+  cLens(s, 0, ax, 78, 'objective'); cLens(s, Fo + Fe, ax, 78, 'eyepiece');
+  const mo = -yP / Fe;
+  [-48, 0, 48].forEach((h, i) => {
+    const y0 = h - 150 * ta, ye = yP + (yP - h) / Fo * Fe, x3 = Fo + Fe + 125, y3 = ye + mo * 125;
+    s.line(-150, y0, 0, h, { tag: 'ray' }); s.mid(-150, y0, 0, h, .45, 8);
+    s.line(0, h, Fo + Fe, ye, { tag: 'ray' }); s.line(Fo + Fe, ye, x3, y3, { tag: 'ray' }); s.mid(Fo + Fe, ye, x3, y3, .6, 8);
+  });
+  dot(s, Fo, yP, 2.6);
+  s.label(Fo - 8, yP + 26, 'P');
+  s.label(0, -100, 'objective lens'); s.label(Fo + Fe, -100, 'eyepiece lens');
+  s.label(-150, ax + 22, 'principal axis', { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { fo, fe, th },
+    stem: `<b>Figure 1</b> shows the paths of three rays from a distant star through an astronomical refracting telescope in normal adjustment. The diagram is not to scale.<br>The objective lens has a focal length of ${V(fo, 'mm', 3)}. The lenses are ${V(sep, 'mm', sep >= 1000 ? 4 : 3)} apart.`,
+    parts: [
+      choose(R, 'What is at point P?', 1, 'the image formed by the objective lens', ['the final image', 'the principal focus of the objective lens only', 'the optical centre of the eyepiece lens'], 'The image formed by the objective lens (at the principal focus of both lenses) ✓'),
+      calc('Calculate the focal length of the eyepiece lens.', 1, fe, 'mm', `${eq(`${sym('f', 'e')} = ${GV(sep, sep >= 1000 ? 4 : 3)} − ${GV(fo, 3)} = ${AV(fe, 'mm')}`)} ✓`),
+      calc('Calculate the angular magnification of the telescope.', 1, M, '', `${eq(`<i>M</i> = ${sym('f', 'o')} / ${sym('f', 'e')} = ${N(fo, 3)} / ${N(fe)} = ${A(M)}`)} ✓`, NS),
+      calc(`The star’s light reaches the objective at an angle of ${fx(th, 2)}° to the principal axis. Calculate the angle to the principal axis of the rays leaving the eyepiece.`, 1, tho, '°', `${eq(`θ<sub>out</sub> = <i>M</i>θ<sub>in</sub> = ${I(M)} × ${fx(th, 2)} = ${A(tho)}`)}° ✓`),
+      text('Explain why the rays leaving the eyepiece lens are parallel to each other.', 2, 'The image formed by the objective is at the principal focus of the eyepiece ✓<br>so the rays from each point of it leave the eyepiece parallel and the final image is at infinity ✓')
+    ] };
+};
+
+const PLANETS = [['Jupiter', 1.4e8, 6.3e11], ['Saturn', 1.2e8, 1.3e12], ['Mars', 6.8e6, 7.8e10], ['Venus', 1.2e7, 4.2e10], ['Uranus', 5.1e7, 2.7e12], ['Neptune', 4.9e7, 4.3e12]];
+T.TL3 = R => {
+  const ER = 3.0e-4;
+  const v = find(() => ({ pi: Math.floor(R() * PLANETS.length), fo: R.pick([0.80, 0.90, 1.0, 1.2, 1.5, 2.0]), fe: R.pick([8.0, 10, 12, 15, 20, 25, 40]) }), o => { const [, D, d] = PLANETS[o.pi], a = D / d, M = o.fo / (o.fe / 1000); return a < .8 * ER && (M * a > 1.3 * ER || M * a < .75 * ER) && M >= 20; });
+  const { pi, fo, fe } = v, [pn, D, d] = PLANETS[pi], a = D / d, fem = fe / 1000, M = fo / fem, ao = M * a, disc = ao > ER;
+  return NOFIG(2, { pi, fo, fe }, `${pn} has a diameter of ${V(D, 'm')}. At a particular time it is ${V(d, 'm')} from the Earth.<br>An astronomer views ${pn} through a refracting telescope in normal adjustment. The objective lens has a focal length of ${V(fo, 'm')} and the eyepiece lens has a focal length of ${V(fe, 'mm')}.`, [
+    calc(`Calculate the angle, in radians, subtended by ${pn} at the unaided eye.`, 1, a, 'rad', `${eq(`θ = ${N(D)} / ${N(d)} = ${AV(a, 'rad')}`)} ✓`),
+    calc('Calculate the angular magnification of the telescope.', 1, M, '', `${eq(`<i>M</i> = ${N(fo)} / ${N(fem)} = ${A(M)}`)} ✓`, NS),
+    calc(`Calculate the angle subtended at the eye by the final image of ${pn}.`, 1, ao, 'rad', `${eq(`${I(M)} × ${I(a)} = ${AV(ao, 'rad')}`)} ✓`),
+    choose(R, `The unaided eye can resolve angles down to about 3 × 10<sup>−4</sup> rad. How does ${pn} appear to the astronomer?`, 1, disc ? 'as a point without the telescope and as a disc through the telescope' : 'as a point both without the telescope and through the telescope', [disc ? 'as a point both without the telescope and through the telescope' : 'as a point without the telescope and as a disc through the telescope', 'as a disc both without the telescope and through the telescope'], `${disc ? 'A point without, a disc through the telescope' : 'A point in both cases'}: the angle without the telescope is less than 3 × 10<sup>−4</sup> rad and through the telescope it is ${disc ? 'greater' : 'less'} ✓`),
+    text('Explain why astronomers prefer telescopes with objective lenses or mirrors of large diameter.', 2, 'The collecting power is proportional to the diameter squared, so fainter objects can be seen ✓<br>The minimum angle that can be resolved, θ ≈ λ/<i>D</i>, is smaller, so finer detail is seen ✓')
+  ]);
+};
+
+T.TL4 = R => {
+  const D = R.pick([0.20, 0.25, 0.30, 0.35, 0.40]), ds = R.pick([50, 60, 70, 80]), dr = R.pick([70, 80, 90, 100, 120]), ratio = (D * 1000 / dr) ** 2, frac = (ds / (D * 1000)) ** 2;
+  const s = new Scene('Ray diagram for a Cassegrain telescope'), xp = 400, fP = 300, xs = 150, xf = 470, xe = 520;
+  const px = y => xp - y * y / (4 * fP);
+  const pts1 = [], pts2 = []; for (let y = -84; y <= -12; y += 4) pts1.push([px(y), y]); for (let y = 12; y <= 84; y += 4) pts2.push([px(y), y]);
+  s.poly(pts1, { w: 3, tag: 'primary' }); s.poly(pts2, { w: 3, tag: 'primary' });
+  s.arc(xs - 60, 0, 62, -21, 21, { w: 3, tag: 'secondary' });
+  cLens(s, xe, 0, 26, 'eyepiece');
+  [-56, 56].forEach(h => {
+    const x1 = px(h), ys = h * (xs - (xp - fP)) / fP, yf = 0;
+    s.line(-20, h, x1, h, { tag: 'ray' }); s.mid(-20, h, x1, h, .35, 8);
+    s.line(x1, h, xs + 1, ys, { tag: 'ray' }); s.mid(x1, h, xs + 1, ys, .5, 8);
+    const ye = ys + (yf - ys) * (xe - xs) / (xf - xs);
+    s.line(xs + 1, ys, xe, ye, { tag: 'ray' }); s.mid(xs + 1, ys, xf, yf, .45, 8);
+  });
+  s.label(xp, -100, 'primary mirror'); s.label(xs + 2, -40, 'secondary mirror'); s.label(xe + 4, 52, 'eyepiece', { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { D, ds, dr },
+    stem: `<b>Figure 1</b> shows the paths of two rays through a Cassegrain reflecting telescope.<br>The primary mirror has a diameter of ${V(D, 'm')}. The secondary mirror has a diameter of ${V(ds, 'mm')}.`,
+    parts: [
+      choose(R, 'What are the shapes of the two mirrors?', 1, 'primary concave, secondary convex', ['primary concave, secondary concave', 'primary convex, secondary concave', 'primary convex, secondary convex'], 'Primary concave and secondary convex ✓'),
+      calc(`Calculate the ratio collecting power of this telescope / collecting power of a refracting telescope with an objective lens of diameter ${V(dr, 'mm')}. Ignore the secondary mirror.`, 2, ratio, '', `Collecting power is proportional to (diameter)<sup>2</sup> ✓<br>${eq(`ratio = (${N(D * 1000, 3)} / ${N(dr)})<sup>2</sup> = ${A(ratio)}`)} ✓`, NS),
+      calc('The secondary mirror blocks some of the incoming light. Calculate the fraction of the light reaching the primary mirror area that is blocked.', 1, frac, '', `${eq(`(${N(ds)} / ${N(D * 1000, 3)})<sup>2</sup> = ${A(frac)}`)} ✓`, NS),
+      choose(R, 'Why is the primary mirror paraboloidal rather than spherical?', 1, 'to remove spherical aberration', ['to remove chromatic aberration', 'to increase the collecting power', 'to make the final image upright'], 'To remove spherical aberration ✓'),
+      text('State <b>two</b> advantages of a reflecting telescope over a refracting telescope.', 2, 'Any two from:<br>no chromatic aberration ✓<br>a mirror can be supported from behind, so it can be made much larger (a large lens sags) ✓<br>only one surface needs to be ground and polished ✓<br>no absorption of light in the glass ✓')
+    ] };
+};
+
+T.TL5 = R => {
+  const blueNear = R.chance(.5), nearL = blueNear ? 'X' : 'Y';
+  const s = new Scene('Chromatic aberration in a converging lens'), F1 = 230, F2 = 290;
+  s.line(-120, 0, 360, 0, { dash: '8 5', w: 1, tag: 'axis' }); cLens(s, 0, 0, 70, 'lens');
+  [-50, 50].forEach(h => { s.line(-120, h, 0, h, { tag: 'ray' }); s.mid(-120, h, 0, h, .5, 8); s.line(0, h, F1, 0, { tag: 'ray1', dash: '6 4', w: 1.4 }); s.line(0, h, F2, 0, { tag: 'ray2', w: 1.4 }); });
+  dot(s, F1, 0, 2.6); dot(s, F2, 0, 2.6);
+  s.label(F1 - 2, 26, blueNear ? 'X' : 'Y'); s.label(F2 + 4, 26, blueNear ? 'Y' : 'X'); s.label(0, -88, 'lens');
+  return { sf: 2, scenes: [s], data: { nearL },
+    stem: `<b>Figure 1</b> shows white light passing through the objective lens of a refracting telescope. Light of different colours is brought to a focus at points X and Y.`,
+    parts: [
+      choose(R, 'Which point is the focus for blue light?', 1, nearL, [nearL === 'X' ? 'Y' : 'X'], `${nearL}, the point nearer the lens: blue light is refracted more than red ✓`),
+      text('Explain why chromatic aberration occurs.', 1, 'The refractive index of glass depends on the wavelength (colour) of the light, so different colours are refracted by different amounts ✓'),
+      choose(R, 'What effect does chromatic aberration have on the image of a star?', 1, 'the image has coloured fringes and is blurred', ['the image is brighter', 'the image is inverted', 'the image is magnified more'], 'Coloured fringes / blurring ✓'),
+      text('Describe what is meant by spherical aberration in a mirror with a spherical surface.', 1, 'Parallel rays that strike the mirror far from the principal axis are brought to a focus at a different point from rays close to the axis ✓'),
+      choose(R, 'Which type of telescope does <b>not</b> suffer from chromatic aberration?', 1, 'a telescope that uses only mirrors', ['a refracting telescope with a longer eyepiece focal length', 'a refracting telescope with a larger objective lens', 'any telescope used in normal adjustment'], 'A reflecting telescope (mirrors only) ✓'),
+      text('Give <b>two</b> reasons why the largest optical telescopes are reflecting telescopes.', 2, 'Any two from:<br>a large lens would sag under its own weight, a mirror can be supported from behind ✓<br>a mirror has only one surface to grind ✓<br>mirrors do not suffer from chromatic aberration ✓<br>no light is absorbed in passing through glass ✓')
+    ] };
+};
+
+/* ===== Resolution and non-optical telescopes ===== */
+T.RS1 = R => {
+  const v = find(() => ({ D: R.pick([0.10, 0.15, 0.20, 0.25, 0.30, 0.50]), lam: R.pick([450, 500, 550, 600, 650]), s: R.pick([10, 20, 30, 40, 50, 80]), d: R.pick([50, 80, 100, 150, 200, 300, 500]) }), o => { const r = (o.s * AU / (o.d * LY)) / (o.lam * 1e-9 / o.D); return r > 1.3 || r < .77; });
+  const { D, lam, s: sa, d } = v, th = lam * 1e-9 / D, al = sa * AU / (d * LY), res = al > th, Dmin = lam * 1e-9 / al;
+  return NOFIG(2, { D, lam, sa, d }, `An optical telescope has an objective of diameter ${V(D, 'm')}. It is used to observe light of wavelength ${V(lam, 'nm')}.<br>Two stars in a binary system are ${V(sa, 'AU')} apart and ${V(d, 'ly')} from the Earth.<br>${D_AU} &nbsp; ${D_LY}`, [
+    text('Explain what is meant by the Rayleigh criterion.', 2, RAYLEIGH.join('<br>')),
+    calc('Calculate the minimum angular resolution of the telescope.', 1, th, 'rad', `${eq(`θ = λ / <i>D</i> = ${N(lam)} × 10<sup>−9</sup> / ${N(D)} = ${AV(th, 'rad')}`)} ✓`),
+    calc('Calculate the angle subtended at the Earth by the separation of the two stars.', 2, al, 'rad', `${eq(`separation = ${N(sa)} × ${SAU} = ${I(sa * AU)}`)} m and ${eq(`distance = ${N(d)} × ${SLY} = ${I(d * LY)}`)} m ✓<br>${eq(`angle = ${I(sa * AU)} / ${I(d * LY)} = ${AV(al, 'rad')}`)} ✓`),
+    choose(R, 'Can the telescope resolve the two stars?', 1, res ? 'yes' : 'no', [res ? 'no' : 'yes'], `${res ? 'Yes' : 'No'}: the angle between the stars is ${res ? 'greater' : 'less'} than the minimum angular resolution ✓`),
+    calc('Calculate the minimum diameter of objective that could resolve the two stars at this wavelength.', 1, Dmin, 'm', `${eq(`<i>D</i> = λ / θ = ${N(lam)} × 10<sup>−9</sup> / ${I(al)} = ${AV(Dmin, 'm')}`)} ✓`)
+  ]);
+};
+
+T.RS2 = R => {
+  const v = find(() => ({ d1: R.pick([60, 70, 80, 90, 100, 120]), d2: R.pick([200, 250, 300, 400, 500]), k: R.pick([0, 1, 2]) }), () => true);
+  const { d1, d2, k } = v, lam = 550e-9, tA = lam / (d1 / 1000), tB = lam / (d2 / 1000), ratio = (d2 / d1) ** 2;
+  const al = k === 0 ? r2(Math.sqrt(tA * tB) * .8 + tB * .2) : k === 1 ? r2(tA * 1.6) : r2(tB * .6);
+  const ans = al > tA ? 'both telescopes' : al > tB ? 'telescope B only' : 'neither telescope';
+  return NOFIG(2, { d1, d2, al }, `${tableH('Table 1', ['Telescope', 'Type', 'Objective diameter / mm'], [['A', 'refractor', N(d1)], ['B', 'reflector', N(d2)]])}Both telescopes are used to observe light of wavelength 550 nm.`, [
+    choose(R, 'Which telescope produces the brighter image of the same star?', 1, 'B', ['A', 'they are equally bright'], 'B: it has the larger diameter, so greater collecting power ✓'),
+    calc('Calculate the ratio collecting power of B / collecting power of A.', 2, ratio, '', `Collecting power ∝ <i>D</i><sup>2</sup> ✓<br>${eq(`ratio = (${N(d2, 3)} / ${N(d1)})<sup>2</sup> = ${A(ratio)}`)} ✓`, NS),
+    calc('Calculate the minimum angular resolution of telescope A.', 1, tA, 'rad', `${eq(`θ = λ / <i>D</i> = 550 × 10<sup>−9</sup> / ${N(d1 / 1000)} = ${AV(tA, 'rad')}`)} ✓`),
+    calc('Calculate the minimum angular resolution of telescope B.', 1, tB, 'rad', `${eq(`θ = 550 × 10<sup>−9</sup> / ${N(d2 / 1000)} = ${AV(tB, 'rad')}`)} ✓`),
+    choose(R, `Two stars have an angular separation of ${V(al, 'rad')}. Which telescopes can resolve them?`, 1, ans, ['both telescopes', 'telescope B only', 'neither telescope', 'telescope A only'].filter(x => x !== ans), `${cap(ans)}: compares ${N(al)} rad with the two resolutions ✓`),
+    text('Suggest why a ground-based telescope often cannot achieve its calculated resolution.', 1, 'Turbulence in the atmosphere (variations in refractive index) blurs the image ✓')
+  ]);
+};
+function r2(x){ return Number(x.toPrecision(2)); }
+
+T.RS3 = R => {
+  const D = R.pick([25, 32, 64, 76, 100, 300, 500]), lam = R.pick([0.21, 0.18, 0.060, 0.030]), th = lam / D, Dopt = 550e-9 / th, cp = (D / 2.4) ** 2;
+  return NOFIG(2, { D, lam }, `A single-dish radio telescope has a dish of diameter ${V(D, 'm')}. It detects radio waves of wavelength ${V(lam * 100, 'cm')}.`, [
+    calc('Calculate the minimum angular resolution of the radio telescope.', 1, th, 'rad', `${eq(`θ = λ / <i>D</i> = ${N(lam)} / ${N(D)} = ${AV(th, 'rad')}`)} ✓`),
+    calc('Calculate the diameter of an optical telescope that has the same minimum angular resolution for light of wavelength 550 nm.', 1, Dopt, 'm', `${eq(`<i>D</i> = 550 × 10<sup>−9</sup> / ${I(th)} = ${AV(Dopt, 'm')}`)} ✓`),
+    calc('The Hubble Space Telescope has a mirror of diameter 2.4 m. Calculate the ratio collecting power of the radio telescope / collecting power of the Hubble telescope.', 1, cp, '', `${eq(`(${GV(D)} / 2.4)<sup>2</sup> = ${A(cp)}`)} ✓`, NS),
+    text('The dish can be made from a wire mesh rather than a continuous metal sheet. Explain why.', 1, 'The holes in the mesh are much smaller than the wavelength, so the radio waves are still reflected ✓'),
+    choose(R, 'Why can radio telescopes be used during the day and in cloudy weather?', 1, 'radio waves pass through clouds and are not swamped by scattered sunlight', ['radio waves travel faster than light', 'radio waves are absorbed by the atmosphere', 'the dish is cooled'], 'Radio waves pass through cloud and the sky is not bright at radio wavelengths ✓'),
+    text('Suggest how astronomers can achieve a much better angular resolution at radio wavelengths.', 1, 'Link several dishes a long distance apart (interferometry), so the effective diameter is the separation of the dishes ✓')
+  ]);
+};
+
+T.RS4 = R => {
+  const lam = R.pick([0.50, 1.0, 2.0, 5.0]), D = R.pick([0.60, 0.80, 1.0, 1.2]), E = HP * C / (lam * 1e-9), EeV = E / 1.60e-19, th = lam * 1e-9 / D;
+  const space = R.chance(.5);
+  return NOFIG(2, { lam, D, space }, `An X-ray telescope on a satellite has an aperture of diameter ${V(D, 'm')}. It detects X-rays of wavelength ${V(lam, 'nm')}.`, [
+    space ? choose(R, 'Which telescope must be placed above the Earth’s atmosphere?', 1, 'an X-ray telescope', ['a radio telescope', 'an optical telescope', 'a telescope detecting visible and radio waves'], 'X-ray: X-rays are absorbed by the atmosphere ✓')
+      : choose(R, 'Which radiation from space reaches the surface of the Earth with little absorption?', 1, 'radio waves', ['X-rays', 'ultraviolet', 'gamma rays'], 'Radio waves ✓'),
+    calc('Calculate the energy of one X-ray photon.', 1, E, 'J', `${eq(`<i>E</i> = <i>hc</i> / λ = ${SH} × ${SC0} / (${N(lam)} × 10<sup>−9</sup>) = ${AV(E, 'J')}`)} ✓`),
+    calc('Calculate this energy in eV.', 1, EeV, 'eV', `${eq(`${I(E)} / 1.60 × 10<sup>−19</sup> = ${AV(EeV, 'eV')}`)} ✓`),
+    calc('Calculate the minimum angular resolution of the X-ray telescope.', 1, th, 'rad', `${eq(`θ = ${N(lam)} × 10<sup>−9</sup> / ${N(D)} = ${AV(th, 'rad')}`)} ✓`),
+    text('Explain why X-ray telescopes use mirrors at grazing incidence.', 1, 'X-rays at larger angles of incidence pass into (are absorbed by) the mirror; they are only reflected at very small (grazing) angles ✓'),
+    text('Explain why infrared telescopes are cooled to a very low temperature.', 1, 'So that the infrared radiation emitted by the telescope itself does not swamp the weak signal from space ✓'),
+    choose(R, 'Why must ultraviolet telescopes be placed in space?', 1, 'ultraviolet is absorbed by ozone in the atmosphere', ['ultraviolet is scattered by clouds only', 'ultraviolet passes straight through mirrors', 'ultraviolet is emitted by the Earth'], 'Ultraviolet is absorbed by the (ozone in the) atmosphere ✓')
+  ]);
+};
+
+T.RS5 = R => {
+  const P = R.pick([2.0, 3.0, 4.0, 5.0, 8.0]) * 1e-15, lam = R.pick([450, 500, 550, 600]), qe = R.pick([70, 75, 80, 85, 90]), Nreq = R.pick([1, 2, 5]) * 1e5;
+  const E = HP * C / (lam * 1e-9), n = P / E, nd = n * qe / 100, t = Nreq / nd;
+  return NOFIG(2, { P, lam, qe, Nreq }, `Light of wavelength ${V(lam, 'nm')} from a faint star delivers a power of ${V(P, 'W')} to a CCD at the focus of a telescope. The quantum efficiency of the CCD is ${qe}%.`, [
+    calc('Calculate the energy of one photon.', 1, E, 'J', `${eq(`<i>E</i> = <i>hc</i> / λ = ${SH} × ${SC0} / (${N(lam)} × 10<sup>−9</sup>) = ${AV(E, 'J')}`)} ✓`),
+    calc('Calculate the number of photons incident on the CCD each second.', 1, n, S1, `${eq(`${N(P)} / ${I(E)} = ${AV(n, S1)}`)} ✓`),
+    calc('Calculate the number of photons detected each second.', 1, nd, S1, `${eq(`${fx(qe / 100, 2)} × ${I(n)} = ${AV(nd, S1)}`)} ✓`),
+    calc(`An image needs ${N(Nreq)} photons to be detected. Calculate the exposure time.`, 1, t, 's', `${eq(`<i>t</i> = ${N(Nreq)} / ${I(nd)} = ${AV(t, 's')}`)} ✓`),
+    text('State what is meant by the quantum efficiency of a detector.', 1, 'The percentage (fraction) of incident photons that are detected ✓'),
+    text('State <b>two</b> other advantages of a CCD over the human eye for observing faint stars.', 2, 'Any two from:<br>it can collect light over a long exposure (images can be added) ✓<br>it detects a wider range of wavelengths (e.g. infrared) ✓<br>the image is stored digitally and can be processed ✓<br>it can be operated remotely, away from light pollution ✓')
+  ]);
+};
+
+T.RS6 = R => {
+  const v = find(() => ({ dp: R.pick([6.0, 7.0, 8.0]), D: R.pick([50, 60, 70, 80, 100, 150, 200]), m0: R.pick([6.0, 6.5]), mx: R.pick([8.5, 9.0, 9.5, 10.0, 10.5, 11.0, 11.5, 12.0, 13.0]) }), o => Math.abs(o.m0 + 5 * lg(o.D / o.dp) - o.mx) > .3);
+  const { dp, D, m0, mx } = v, gain = (D / dp) ** 2, dm = lg(gain) / lg(2.51), ml = m0 + dm, vis = mx < ml;
+  return NOFIG(2, { dp, D, m0, mx }, `The faintest stars visible to an astronomer’s unaided eye have an apparent magnitude of ${fM1(m0)}. Her pupil diameter is ${V(dp, 'mm')}.<br>She uses a telescope with an objective of diameter ${V(D, 'mm')}.`, [
+    calc('Calculate the ratio collecting power of the telescope / collecting power of her eye.', 1, gain, '', `${eq(`(${GV(D)} / ${GV(dp)})<sup>2</sup> = ${A(gain)}`)} ✓`, NS),
+    calc('Calculate the apparent magnitude of the faintest stars she can see through the telescope.', 2, ml, '', `${eq(`2.51<sup>Δ<i>m</i></sup> = ${I(gain)}`)}, so ${eq(`Δ<i>m</i> = log ${I(gain)} / log 2.51 = ${N(dm, 3)}`)} ✓<br>${eq(`<i>m</i> = ${fM1(m0)} + ${N(dm, 3)} = ${fx(ml, 2)}`)} ✓`, { abs: .05, noSkill: true, fx: 2 }),
+    choose(R, `Can she see a star of apparent magnitude ${fM1(mx)} through the telescope?`, 1, vis ? 'yes' : 'no', [vis ? 'no' : 'yes'], `${vis ? 'Yes' : 'No'}: ${fM1(mx)} is ${vis ? 'less' : 'greater'} than the limiting magnitude ✓`),
+    choose(R, 'A star of apparent magnitude 1 is compared with a star of apparent magnitude 6. Which statement is correct?', 1, 'the magnitude 1 star appears about 100 times brighter', ['the magnitude 6 star appears about 100 times brighter', 'the magnitude 1 star appears about 5 times brighter', 'the magnitude 6 star appears about 6 times brighter'], 'Magnitude 1 is brighter by 2.51<sup>5</sup> ≈ 100 ✓'),
+    text('State what is meant by the apparent magnitude of a star.', 1, 'A measure of how bright the star appears from the Earth (on the Hipparcos scale) ✓')
+  ]);
+};
+
+T.RS7 = R => {
+  const v = find(() => ({ cr: R.pick([20, 30, 40, 50, 60, 80, 100]), lam: R.pick([500, 550, 600]), dp: R.pick([3.0, 5.0, 7.0]), D: R.pick([40, 50, 60, 80, 100, 150]) }), o => { const r = (o.cr * 1e3 / 3.84e8) / (o.lam * 1e-9 / (o.dp / 1000)); return r > 1.25 || r < .8; });
+  const { cr, lam, dp, D } = v, a = cr * 1e3 / 3.84e8, te = lam * 1e-9 / (dp / 1000), res = a > te, tt = lam * 1e-9 / (D / 1000), smin = tt * 3.84e8;
+  return NOFIG(2, { cr, lam, dp, D }, `A crater on the Moon has a diameter of ${V(cr, 'km')}. The Moon is ${V(3.84e8, 'm', 3)} from the Earth.<br>Use a wavelength of ${V(lam, 'nm')} for visible light.`, [
+    calc('Calculate the angle subtended by the crater at the Earth.', 1, a, 'rad', `${eq(`${N(cr * 1e3)} / 3.84 × 10<sup>8</sup> = ${AV(a, 'rad')}`)} ✓`),
+    calc(`Calculate the minimum angular resolution of an eye with a pupil diameter of ${V(dp, 'mm')}.`, 1, te, 'rad', `${eq(`θ = ${N(lam)} × 10<sup>−9</sup> / ${N(dp / 1000)} = ${AV(te, 'rad')}`)} ✓`),
+    choose(R, 'Can the crater be seen as a separate feature with the unaided eye?', 1, res ? 'yes' : 'no', [res ? 'no' : 'yes'], `${res ? 'Yes' : 'No'}: the angle subtended is ${res ? 'greater' : 'less'} than the resolution of the eye ✓`),
+    calc(`Calculate the diameter of the smallest crater that could be resolved using a telescope with an objective of diameter ${V(D, 'mm')}.`, 2, smin, 'm', `${eq(`θ = ${N(lam)} × 10<sup>−9</sup> / ${N(D / 1000)} = ${I(tt)}`)} rad ✓<br>${eq(`size = ${I(tt)} × 3.84 × 10<sup>8</sup> = ${AV(smin, 'm')}`)} ✓`),
+    text('Suggest why a telescope in orbit can resolve smaller details than a ground-based telescope of the same diameter.', 1, 'There is no atmospheric turbulence (refraction) to blur the image ✓')
+  ]);
+};
+
+/* ===== Magnitude and distance ===== */
+T.MG1 = R => {
+  const p = R.pick([0.050, 0.080, 0.10, 0.125, 0.20, 0.25, 0.40, 0.50]), d = 1 / p, dm = d * PC, dly = dm / LY, prad = p / 3600 * Math.PI / 180;
+  return NOFIG(2, { p }, `As the Earth orbits the Sun, a nearby star appears to move against the background of distant stars. The angle subtended at the star by 1 AU is ${V(p, 'arcsecond', p === .125 ? 3 : 2)}.<br>${D_PC} &nbsp; ${D_LY}`, [
+    text('Define the parsec.', 1, DEF_PC),
+    calc('Calculate the distance to the star in parsecs.', 1, d, 'pc', `${eq(`<i>d</i> = 1 / ${N(p, p === .125 ? 3 : 2)} = ${AV(d, 'pc')}`)} ✓`),
+    calc('Calculate this distance in metres.', 1, dm, 'm', `${eq(`${I(d)} × ${SPC} = ${AV(dm, 'm')}`)} ✓`),
+    calc('Calculate this distance in light years.', 1, dly, 'ly', `${eq(`${I(dm)} / ${SLY} = ${AV(dly, 'ly')}`)} ✓`),
+    calc('Calculate the angle subtended at the star by 1 AU in radians.', 1, prad, 'rad', `${eq(`${N(p, p === .125 ? 3 : 2)} / 3600 × π / 180 = ${AV(prad, 'rad')}`)} ✓`),
+    text('Define the light year.', 1, 'The distance travelled by light (in a vacuum) in one year ✓')
+  ]);
+};
+
+T.MG2 = R => {
+  const v = find(() => ({ m1: Math.round((1 + R() * 4.6) * 10) / 10, m2: Math.round((1 + R() * 4.6) * 10) / 10, k: R.pick([5, 10, 20, 40, 50, 100]) }), o => Math.abs(o.m1 - o.m2) >= .8 && o.m1 - lg(o.k) / lg(2.51) > -1.5);
+  const { m1, m2, k } = v, bright = m1 < m2 ? 'X' : 'Y', ratio = 2.51 ** Math.abs(m2 - m1), dz = lg(k) / lg(2.51), mz = m1 - dz;
+  return NOFIG(2, { m1, m2, k }, `Star X has an apparent magnitude of ${fM1(m1)}. Star Y has an apparent magnitude of ${fM1(m2)}.`, [
+    choose(R, 'Which star appears brighter from the Earth?', 1, bright, [bright === 'X' ? 'Y' : 'X'], `${bright}: it has the smaller apparent magnitude ✓`),
+    calc('Calculate how many times brighter it appears than the other star.', 2, ratio, '', `${eq(`difference in magnitude = ${fM1(Math.abs(m2 - m1))}`)} ✓<br>${eq(`ratio = 2.51<sup>${fM1(Math.abs(m2 - m1))}</sup> = ${A(ratio)}`)} ✓`, NS),
+    calc(`Star Z appears ${k} times brighter than star X. Calculate the apparent magnitude of star Z.`, 2, mz, '', `${eq(`2.51<sup>Δ<i>m</i></sup> = ${k}`)} so ${eq(`Δ<i>m</i> = log ${k} / log 2.51 = ${N(dz, 3)}`)} ✓<br>${eq(`<i>m</i> = ${fM1(m1)} − ${N(dz, 3)} = ${fx(mz, 2)}`)} ✓`, { abs: .05, noSkill: true, neg: mz < 0, fx: 2 }),
+    choose(R, 'What is the apparent magnitude of the faintest stars that can be seen with the unaided eye?', 1, 'about 6', ['about 1', 'about 0', 'about 20'], 'About 6 ✓'),
+    text('Describe the Hipparcos scale of apparent magnitude.', 1, 'Stars were placed in classes from 1 (brightest) to 6 (faintest visible); on the modern scale a difference of 5 magnitudes is a brightness ratio of 100 (each magnitude 2.51 times) ✓')
+  ]);
+};
+
+const BRIGHT = [['Sirius', -1.46, 1.42], ['Vega', 0.03, 0.58], ['Arcturus', -0.05, -0.31], ['Rigel', 0.13, -7.84], ['Betelgeuse', 0.42, -5.85], ['Deneb', 1.25, -8.38], ['Altair', 0.77, 2.21], ['Aldebaran', 0.86, -0.64], ['Spica', 0.97, -3.55], ['Antares', 1.09, -5.28], ['Procyon', 0.34, 2.65], ['Pollux', 1.14, 1.09]];
+T.MG3 = R => {
+  const si = Math.floor(R() * BRIGHT.length), [nm, m, M] = BRIGHT[si], d = 10 ** ((m - M + 5) / 5), dly = d * PC / LY, m2 = m + 5 * lg(2), brighter = M < 4.83;
+  return NOFIG(3, { si }, `${nm} has an apparent magnitude of ${fM(m)} and an absolute magnitude of ${fM(M)}.<br>${D_PC} &nbsp; ${D_LY}`, [
+    calc(`Calculate the distance from the Earth to ${nm} in parsecs.`, 2, d, 'pc', `${eq(`${fM(m)} − ${brk(fM(M))} = 5 log(<i>d</i> / 10)`)} ✓<br>${eq(`log(<i>d</i>/10) = ${fM(m - M)} / 5 = ${fx((m - M) / 5, 3)}`)}, so ${eq(`<i>d</i> = 10<sup>${fx((m - M) / 5, 3)}</sup> × 10 = ${AV(d, 'pc')}`)} ✓`),
+    calc('Calculate this distance in light years.', 1, dly, 'ly', `${eq(`${I(d)} × ${SPC} / ${SLY} = ${AV(dly, 'ly')}`)} ✓`),
+    text('State what is meant by absolute magnitude.', 1, DEF_M),
+    calc(`Calculate the apparent magnitude ${nm} would have if it were twice as far from the Earth.`, 1, m2, '', `${eq(`<i>m</i> = ${fM(m)} + 5 log 2 = ${fM(m2)}`)} ✓`, { abs: .02, noSkill: true, fx: 2 }),
+    choose(R, `The absolute magnitude of the Sun is 4.83. Which is correct?`, 1, brighter ? `${nm} has a greater power output than the Sun` : `${nm} has a smaller power output than the Sun`, [brighter ? `${nm} has a smaller power output than the Sun` : `${nm} has a greater power output than the Sun`, `${nm} has the same power output as the Sun`], `${brighter ? 'Greater' : 'Smaller'}: its absolute magnitude is ${brighter ? 'less' : 'greater'} than 4.83 ✓`)
+  ]);
+};
+
+const CLS = ['O', 'B', 'A', 'F', 'G', 'K', 'M'];
+T.MG4 = R => {
+  const v = find(() => [0, 1, 2, 3].map(() => ({ d: R.pick([8.0, 11, 15, 23, 35, 43, 60, 80, 110, 150, 230, 400]), m: Math.round((.5 + R() * 4) * 10) / 10, c: R.pick([1, 2, 3, 4, 5, 6]) })), L => {
+    const Ms = L.map(s => s.m - 5 * lg(s.d / 10)), ms = L.map(s => s.m), sorted = Ms.slice().sort((a, b) => a - b), ms2 = ms.slice().sort((a, b) => a - b);
+    return sorted[1] - sorted[0] > .3 && ms2[1] - ms2[0] >= .2 && new Set(L.map(s => s.c)).size === 4 && new Set(L.map(s => s.d)).size === 4; });
+  const names = ['P', 'Q', 'R', 'S'], Ms = v.map(s => s.m - 5 * lg(s.d / 10)), iB = Ms.indexOf(Math.min(...Ms)), iA = v.map(s => s.m).indexOf(Math.min(...v.map(s => s.m))), iH = v.map(s => s.c).indexOf(Math.min(...v.map(s => s.c)));
+  const k = Math.floor(R() * 4), j = (k + 1 + Math.floor(R() * 3)) % 4;
+  return NOFIG(2, { stars: v, k, j }, `${tableH('Table 1', ['Star', 'Distance / pc', 'Spectral class', 'Apparent magnitude'], v.map((s, i) => [names[i], N(s.d), CLS[s.c], fM1(s.m)]))}${D_PC}`, [
+    calc(`Calculate the absolute magnitude of star ${names[k]}.`, 2, Ms[k], '', `${eq(`${fM1(v[k].m)} − <i>M</i> = 5 log(${N(v[k].d)} / 10)`)} ✓<br>${eq(`<i>M</i> = ${fx(Ms[k], 2)}`)} ✓`, { abs: .02, noSkill: true, neg: Ms[k] < 0, fx: 2 }),
+    choose(R, 'Which star has the greatest power output?', 1, names[iB], names.filter((x, i) => i !== iB), `${names[iB]}: it has the most negative absolute magnitude; absolute magnitudes are ${Ms.map((x, i) => names[i] + ' ' + fx(x, 1)).join(', ')} ✓`),
+    choose(R, 'Which star appears brightest from the Earth?', 1, names[iA], names.filter((x, i) => i !== iA), `${names[iA]}: it has the smallest apparent magnitude ✓`),
+    choose(R, 'Which star has the highest surface temperature?', 1, names[iH], names.filter((x, i) => i !== iH), `${names[iH]}: class ${CLS[v[iH].c]} is the hottest of the four classes (O B A F G K M) ✓`),
+    calc(`Calculate the distance of star ${names[j]} from the Earth in metres.`, 1, v[j].d * PC, 'm', `${eq(`${N(v[j].d)} × ${SPC} = ${AV(v[j].d * PC, 'm')}`)} ✓`)
+  ]);
+};
+
+T.MG5 = R => {
+  const v = find(() => ({ c: R.pick([2, 3, 4, 5]), d1: R.pick([11, 15, 23, 30, 43, 60]), d2: R.pick([80, 110, 150, 200, 300]), m1: Math.round((1 + R() * 4) * 10) / 10, m2: Math.round((1 + R() * 4) * 10) / 10 }), o => Math.abs((o.m1 - 5 * lg(o.d1 / 10)) - (o.m2 - 5 * lg(o.d2 / 10))) > 1);
+  const { c, d1, d2, m1, m2 } = v, M1 = m1 - 5 * lg(d1 / 10), M2 = m2 - 5 * lg(d2 / 10), Pr = 2.51 ** (M1 - M2), rr = Math.sqrt(Pr), big = Pr > 1 ? 'B' : 'A';
+  return NOFIG(2, { c, d1, d2, m1, m2 }, `${tableH('Table 1', ['Star', 'Distance / pc', 'Spectral class', 'Apparent magnitude'], [['A', N(d1), CLS[c], fM1(m1)], ['B', N(d2), CLS[c], fM1(m2)]])}`, [
+    calc('Calculate the absolute magnitude of star A.', 1, M1, '', `${eq(`<i>M</i> = ${fM1(m1)} − 5 log(${N(d1)} / 10) = ${fM(M1)}`)} ✓`, { abs: .02, noSkill: true, neg: M1 < 0, fx: 2 }),
+    calc('Calculate the absolute magnitude of star B.', 1, M2, '', `${eq(`<i>M</i> = ${fM1(m2)} − 5 log(${N(d2)} / 10) = ${fM(M2)}`)} ✓`, { abs: .02, noSkill: true, neg: M2 < 0, fx: 2 }),
+    calc('Calculate the ratio power output of B / power output of A.', 2, Pr, '', `${eq(`difference in absolute magnitude = ${fM(M1)} − ${brk(fM(M2))} = ${fM(M1 - M2)}`)} ✓<br>${eq(`ratio = 2.51<sup>${fM(M1 - M2)}</sup> = ${A(Pr)}`)} ✓`, { tol: .03, noSkill: true }),
+    text('Explain why the two stars have the same surface temperature.', 1, `They are in the same spectral class (${CLS[c]}), and spectral class depends on surface temperature ✓`),
+    calc('Calculate the ratio radius of B / radius of A.', 1, rr, '', `<i>P</i> = σ<i>AT</i><sup>4</sup> with the same <i>T</i>, so ${eq(`ratio = √(${I(Pr)}) = ${A(rr)}`)} ✓`, { tol: .03, noSkill: true }),
+    choose(R, 'Which star is larger?', 1, big, [big === 'A' ? 'B' : 'A'], `${big} ✓`)
+  ]);
+};
+
+const SUNVIEW = [['Jupiter', 5.20, 'AU'], ['Saturn', 9.54, 'AU'], ['Neptune', 30.1, 'AU'], ['Alpha Centauri', 1.34, 'pc'], ['Sirius', 2.64, 'pc'], ['Vega', 7.68, 'pc'], ['Arcturus', 11.3, 'pc'], ['Aldebaran', 20.0, 'pc']];
+T.MG6 = R => {
+  const li = Math.floor(R() * SUNVIEW.length), [pl, dd, u] = SUNVIEW[li], d = u === 'AU' ? dd * AU / PC : dd, m = 4.83 + 5 * lg(d / 10), vis = m < 6, m2 = R.pick([1.0, 2.0, 3.0]), br = 2.51 ** (m2 - m);
+  return NOFIG(3, { li, m2 }, `The absolute magnitude of the Sun is 4.83. An observer views the Sun from ${u === 'AU' ? 'the planet ' + pl + ', ' + V(dd, 'AU', 3) + ' from the Sun' : 'a planet orbiting the star ' + pl + ', ' + V(dd, 'pc', 3) + ' from the Sun'}.<br>${D_PC} &nbsp; ${D_AU}`, [
+    u === 'AU' ? calc('Calculate this distance in parsecs.', 1, d, 'pc', `${eq(`${N(dd, 3)} × ${SAU} / ${SPC} = ${AV(d, 'pc')}`)} ✓`) : calc('Calculate this distance in metres.', 1, d * PC, 'm', `${eq(`${N(dd, 3)} × ${SPC} = ${AV(d * PC, 'm')}`)} ✓`),
+    calc('Calculate the apparent magnitude of the Sun seen by the observer.', 2, m, '', `${eq(`<i>m</i> − 4.83 = 5 log(${I(d)} / 10)`)} ✓<br>${eq(`<i>m</i> = ${fM(m)}`)} ✓`, { abs: .02, noSkill: true, neg: m < 0, fx: 2 }),
+    choose(R, 'Would the Sun be visible to the unaided eye of this observer?', 1, vis ? 'yes' : 'no', [vis ? 'no' : 'yes'], `${vis ? 'Yes' : 'No'}: the faintest stars visible have an apparent magnitude of about 6 ✓`),
+    text('State what is meant by absolute magnitude.', 1, DEF_M),
+    calc(`Calculate the ratio brightness of the Sun / brightness of a star of apparent magnitude ${fM1(m2)}, both as seen by this observer.`, 1, br, '', `${eq(`2.51<sup>(${fM1(m2)} − ${brk(fM(m))})</sup> = ${A(br)}`)} ✓`, { tol: .03, noSkill: true })
+  ]);
+};
+/* ===== Black-body radiation ===== */
+const CLASS_T = [[25000, 50000, 'O', 'blue'], [11000, 25000, 'B', 'blue'], [7500, 11000, 'A', 'blue-white'], [6000, 7500, 'F', 'white'], [5000, 6000, 'G', 'yellow-white'], [3500, 5000, 'K', 'orange'], [0, 3500, 'M', 'red']];
+const clsOf = T => CLASS_T.find(c => T >= c[0] && T < c[1]);
+const LINES = { O: 'He<sup>+</sup>, He and H', B: 'He and H', A: 'H (strongest) and ionised metals', F: 'ionised metals', G: 'ionised and neutral metals', K: 'neutral metals', M: 'neutral atoms and TiO' };
+const LINESP = { O: 'He⁺, He and H', B: 'He and H', A: 'H (strongest) and ionised metals', F: 'ionised metals', G: 'ionised and neutral metals', K: 'neutral metals', M: 'neutral atoms and TiO' };
+const region = l => l < 400e-9 ? 'ultraviolet' : l > 700e-9 ? 'infrared' : 'visible';
+const planck = (l, T) => 1 / (l ** 5 * (Math.exp(HP * C / (l * 1.381e-23 * T)) - 1));
+const pb = s => /×/.test(s) ? `(${s})` : s;      // bracket a standard-form base before a power
+const BBDEF = 'A body that absorbs all the electromagnetic radiation that falls on it (and is a perfect emitter) ✓';
+
+T.BB1 = R => {
+  const v = find(() => ({ T: R.pick([3000, 3200, 4000, 4500, 5500, 5800, 6500, 7000, 8500, 9500, 15000, 20000, 30000, 40000]), l2: R.pick([350, 420, 480, 550, 620, 800, 950, 1200]) }), o => { const l = WIEN / o.T; return Math.abs(l - 400e-9) > 30e-9 && Math.abs(l - 700e-9) > 40e-9; });
+  const { T: Ts, l2 } = v, l = WIEN / Ts, rg = region(l), [, , cl, col] = clsOf(Ts), T2 = WIEN / (l2 * 1e-9);
+  return NOFIG(2, { T: Ts, l2 }, `A star has a surface temperature of ${V(Ts, 'K')}. Assume that stars behave as black bodies.`, [
+    calc('Calculate the wavelength at which the star’s black-body radiation curve has its peak.', 1, l, 'm', `${eq(`λ<sub>max</sub> = ${SWIEN} / ${N(Ts)} = ${AV(l, 'm')}`)} ✓`),
+    choose(R, 'In which region of the electromagnetic spectrum is this peak wavelength?', 1, rg, ['ultraviolet', 'visible', 'infrared'].filter(x => x !== rg), `${cap(rg)} ✓`),
+    choose(R, 'What colour does the star appear?', 1, col, ['blue', 'blue-white', 'white', 'yellow-white', 'orange', 'red'].filter(x => x !== col).slice(0, 3), `${cap(col)} (spectral class ${cl}) ✓`),
+    calc(`Another star has its peak at a wavelength of ${V(l2, 'nm')}. Calculate its surface temperature.`, 1, T2, 'K', `${eq(`<i>T</i> = ${SWIEN} / (${N(l2)} × 10<sup>−9</sup>) = ${AV(T2, 'K')}`)} ✓`),
+    choose(R, 'How does the peak wavelength change as a star cools?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases (λ<sub>max</sub> ∝ 1/<i>T</i>) ✓'),
+    text('State what is meant by a black body.', 1, BBDEF)
+  ]);
+};
+
+T.BB2 = R => {
+  const r = R.pick([6.0e8, 8.0e8, 1.2e9, 2.5e9, 4.0e9, 7.0e9, 1.5e10, 3.0e10]), Ts = R.pick([3500, 4000, 5000, 6000, 7500, 9000, 11000]), A_ = 4 * Math.PI * r * r, P = SIG * A_ * Ts ** 4, ratio = P / 3.8e26, l = WIEN / Ts;
+  const a = R.pick([2, 3, 4]), b = R.pick([.5, 2]), f = a * a * b ** 4, fs = x => String(+x.toFixed(4));      // all the factors are exact decimals
+  const wr = [...new Set([a * b ** 4, a * a * b * b, a ** 4 * b, a * a * b].map(fs))].filter(w => w !== fs(f)).slice(0, 3);
+  return NOFIG(2, { r, T: Ts, a, b }, `A star has a radius of ${V(r, 'm')} and a surface temperature of ${V(Ts, 'K')}. Assume that it behaves as a black body.<br>power output of the Sun = 3.8 × 10<sup>26</sup> W`, [
+    calc('Calculate the surface area of the star.', 1, A_, 'm<sup>2</sup>', `${eq(`<i>A</i> = 4π<i>r</i><sup>2</sup> = 4π × (${N(r)})<sup>2</sup> = ${AV(A_, 'm<sup>2</sup>')}`)} ✓`),
+    calc('Calculate the power output of the star.', 1, P, 'W', `${eq(`<i>P</i> = σ<i>AT</i><sup>4</sup> = ${SSIG} × ${I(A_)} × ${pb(N(Ts))}<sup>4</sup> = ${AV(P, 'W')}`)} ✓`),
+    calc('Calculate the ratio power output of the star / power output of the Sun.', 1, ratio, '', `${eq(`${I(P)} / 3.8 × 10<sup>26</sup> = ${A(ratio)}`)} ✓`, NS),
+    calc('Calculate the peak wavelength of the radiation from the star.', 1, l, 'm', `${eq(`${SWIEN} / ${N(Ts)} = ${AV(l, 'm')}`)} ✓`),
+    choose(R, `Another star has ${a} times the radius and ${b === .5 ? 'half' : 'twice'} the surface temperature of this star. What is the ratio power output of the other star / power output of this star?`, 1, fs(f), wr, `${eq(`${a}<sup>2</sup> × ${b === .5 ? '0.5' : '2'}<sup>4</sup> = ${fs(f)}`)} ✓`),
+    text('State <b>one</b> assumption made in calculating the power output.', 1, 'The star behaves as a black body (and is spherical, with a uniform surface temperature) ✓')
+  ]);
+};
+
+T.BB3 = R => {
+  const v = find(() => ({ la: R.pick([300, 350, 450, 500]), lb: R.pick([600, 700, 750, 800, 900, 1000]) }), () => true);
+  const { la, lb } = v, TA = WIEN / (la * 1e-9), TB = WIEN / (lb * 1e-9), pa = planck(la * 1e-9, TA), pb = planck(lb * 1e-9, TB);
+  const fA = x => 10 * planck(x * 1e-9, TA) / pa, fB = x => 7 * planck(x * 1e-9, TB) / pb;
+  const fig = graph({ x: [0, 2000, 500], y: [0, 12, 2], xdiv: 10, ydiv: 4, h: 300, w: 440, xl: 'wavelength / nm', yl: 'intensity / arbitrary units', curves: [{ f: fA, from: 60, to: 2000, name: 'A', at: [la - 40, 10.9] }, { f: fB, from: 120, to: 2000, name: 'B', at: [lb + 60, 7.9] }], reads: [[la, fA(la)], [lb, fB(lb)]] });
+  const rg = region(la * 1e-9), ratio = (TA / TB) ** 4, tolA = 25 / la, tolB = 25 / lb;
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { la, lb },
+    stem: `<b>Figure 1</b> shows the black-body radiation curves for two stars, A and B. The curves are not drawn to the same intensity scale.`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the peak wavelength for star A.', 1, la, 'nm', `${la} nm ✓`, { abs: 25, noSkill: true }),
+      calc('Calculate the surface temperature of star A.', 1, TA, 'K', `${eq(`<i>T</i> = ${SWIEN} / (${la} × 10<sup>−9</sup>) = ${AV(TA, 'K')}`)} ✓`, { tol: tolA }),
+      calc('Determine the surface temperature of star B.', 2, TB, 'K', `Reads λ<sub>max</sub> = ${lb} nm ✓<br>${eq(`<i>T</i> = ${SWIEN} / (${lb} × 10<sup>−9</sup>) = ${AV(TB, 'K')}`)} ✓`, { tol: tolB }),
+      choose(R, 'Which star appears more blue?', 1, 'A', ['B'], 'A: it is hotter, its peak is at a shorter wavelength ✓'),
+      choose(R, 'In which region of the spectrum is the peak for star A?', 1, rg, ['ultraviolet', 'visible', 'infrared'].filter(x => x !== rg), `${cap(rg)} ✓`),
+      calc('Calculate the ratio power emitted per unit area of A / power emitted per unit area of B.', 1, ratio, '', `${eq(`(${I(TA)} / ${I(TB)})<sup>4</sup> = ${A(ratio)}`)} ✓`, { tol: .1, noSkill: true })
+    ] };
+};
+
+T.BB4 = R => {
+  const P = R.pick([2.0e25, 5.0e26, 1.2e27, 4.0e28, 3.0e29, 8.0e30]), Ts = R.pick([3500, 4500, 5800, 8000, 12000, 25000]), d = R.pick([10, 25, 50, 120, 300]);
+  const r = Math.sqrt(P / (4 * Math.PI * SIG * Ts ** 4)), rr = r / RSUN, dm = d * PC, In = P / (4 * Math.PI * dm * dm);
+  return NOFIG(2, { P, T: Ts, d }, `A star has a power output of ${V(P, 'W')} and a surface temperature of ${V(Ts, 'K')}. It is ${V(d, 'pc')} from the Earth.<br>radius of the Sun = 6.96 × 10<sup>8</sup> m &nbsp; ${D_PC}`, [
+    calc('Calculate the radius of the star.', 2, r, 'm', `${eq(`<i>P</i> = σ4π<i>r</i><sup>2</sup><i>T</i><sup>4</sup>`)} ✓<br>${eq(`<i>r</i> = √(${N(P)} / (4π × ${SSIG} × ${pb(N(Ts))}<sup>4</sup>)) = ${AV(r, 'm')}`)} ✓`),
+    calc('Calculate the ratio radius of the star / radius of the Sun.', 1, rr, '', `${eq(`${I(r)} / 6.96 × 10<sup>8</sup> = ${A(rr)}`)} ✓`, NS),
+    calc('Calculate the intensity of the star’s radiation at the Earth.', 2, In, WM, `${eq(`<i>d</i> = ${N(d)} × ${SPC} = ${I(dm)}`)} m ✓<br>${eq(`<i>I</i> = <i>P</i> / 4π<i>d</i><sup>2</sup> = ${N(P)} / (4π × (${I(dm)})<sup>2</sup>) = ${AV(In, WM)}`)} ✓`),
+    choose(R, 'A second star has the same power output but a higher surface temperature. How does its radius compare with this star’s?', 1, 'it is smaller', ['it is larger', 'it is the same'], 'Smaller: <i>r</i><sup>2</sup> ∝ 1/<i>T</i><sup>4</sup> for the same power ✓'),
+    text('Suggest why the intensity measured at the Earth is less than the value calculated.', 1, 'Some radiation is absorbed (or scattered) by interstellar dust and gas, or by the Earth’s atmosphere ✓')
+  ]);
+};
+
+T.BB5 = R => {
+  const r1 = R.pick([1.4e10, 2.0e10, 5.0e10, 8.0e10]), T1 = R.pick([20000, 30000, 40000, 53000]), r2 = 6.96e8, T2 = 5800;
+  const ratio = (r1 / r2) ** 2 * (T1 / T2) ** 4, l1 = WIEN / T1, l2 = WIEN / T2;
+  return NOFIG(2, { r1, T1 }, `${tableH('Table 1', ['Star', 'Radius / m', 'Surface temperature / K'], [['supergiant S', N(r1), N(T1)], ['Sun', N(r2, 3), N(T2)]])}`, [
+    calc('Calculate the ratio power output of S / power output of the Sun.', 2, ratio, '', `<i>P</i> ∝ <i>r</i><sup>2</sup><i>T</i><sup>4</sup> ✓<br>${eq(`ratio = (${N(r1)} / ${N(r2, 3)})<sup>2</sup> × (${N(T1)} / ${N(T2)})<sup>4</sup> = ${A(ratio)}`)} ✓`, NS),
+    calc('Calculate the peak wavelength of the radiation from S.', 1, l1, 'm', `${eq(`${SWIEN} / ${N(T1)} = ${AV(l1, 'm')}`)} ✓`),
+    calc('Calculate the peak wavelength of the radiation from the Sun.', 1, l2, 'm', `${eq(`${SWIEN} / ${N(T2)} = ${AV(l2, 'm')}`)} ✓`),
+    choose(R, 'What colour does S appear?', 1, 'blue', ['red', 'orange', 'yellow-white'], 'Blue: its temperature is over 20 000 K (class O or B) ✓'),
+    text('A supergiant may eventually explode as a supernova. Suggest why a supernova in the local part of our galaxy could be dangerous for life on Earth.', 1, 'It emits a huge amount of ionising radiation (gamma rays, X-rays) that could damage living cells or destroy the ozone layer ✓')
+  ]);
+};
+
+T.BB6 = R => {
+  const lm = R.pick([400, 500, 600, 800, 1000, 1200]), Ts = WIEN / (lm * 1e-9), p0 = planck(lm * 1e-9, Ts), f = x => 10 * planck(x * 1e-9, Ts) / p0, r = R.pick([2.0e8, 5.0e8, 7.0e8, 1.0e9, 3.0e9]), F = SIG * Ts ** 4, P = F * 4 * Math.PI * r * r;
+  const fig = graph({ x: [0, 3000, 500], y: [0, 12, 2], xdiv: 10, ydiv: 4, h: 280, w: 440, xl: 'wavelength / nm', yl: 'intensity / arbitrary units', curves: [{ f, from: 80, to: 3000 }], reads: [[lm, 10]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { lm, r },
+    stem: `<b>Figure 1</b> shows the black-body radiation curve for a star of radius ${V(r, 'm')}.`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the peak wavelength.', 1, lm, 'nm', `${lm} nm ✓`, { abs: 30, noSkill: true }),
+      calc('Calculate the surface temperature of the star.', 1, Ts, 'K', `${eq(`<i>T</i> = ${SWIEN} / (${lm} × 10<sup>−9</sup>) = ${AV(Ts, 'K')}`)} ✓`, { tol: 30 / lm }),
+      calc('Calculate the power emitted per square metre of the star’s surface.', 1, F, WM, `${eq(`σ<i>T</i><sup>4</sup> = ${SSIG} × (${I(Ts)})<sup>4</sup> = ${AV(F, WM)}`)} ✓`, { tol: 120 / lm }),
+      calc('Calculate the total power output of the star.', 1, P, 'W', `${eq(`<i>P</i> = ${I(F)} × 4π × (${N(r)})<sup>2</sup> = ${AV(P, 'W')}`)} ✓`, { tol: 120 / lm }),
+      choose(R, 'How would the curve for a hotter star of the same size differ?', 1, 'higher, with its peak at a shorter wavelength', ['higher, with its peak at a longer wavelength', 'lower, with its peak at a shorter wavelength', 'the same height, with its peak at a shorter wavelength'], 'Higher at every wavelength and the peak moves to a shorter wavelength ✓'),
+      choose(R, 'What does the area under the curve represent?', 1, 'the total power emitted (per unit area)', ['the peak wavelength', 'the surface temperature', 'the distance to the star'], 'The total power emitted ✓')
+    ] };
+};
+
+T.BB7 = R => {
+  const In = R.pick([1.0e-8, 2.5e-9, 6.0e-10, 4.0e-11, 8.0e-12]), d = R.pick([8.6, 25, 43, 120, 310, 640]), Ts = R.pick([3500, 4500, 6000, 9500, 15000]);
+  const dm = d * LY, P = 4 * Math.PI * dm * dm * In, r = Math.sqrt(P / (4 * Math.PI * SIG * Ts ** 4)), rr = r / RSUN;
+  return NOFIG(2, { In, d, T: Ts }, `The intensity of the radiation from a star measured above the Earth’s atmosphere is ${V(In, WM)}. The star is ${V(d, 'ly')} from the Earth and its surface temperature is ${V(Ts, 'K')}.<br>${D_LY} &nbsp; radius of the Sun = 6.96 × 10<sup>8</sup> m`, [
+    calc('Calculate the distance to the star in metres.', 1, dm, 'm', `${eq(`${N(d)} × ${SLY} = ${AV(dm, 'm')}`)} ✓`),
+    calc('Calculate the power output of the star.', 2, P, 'W', `<i>P</i> = 4π<i>d</i><sup>2</sup><i>I</i> ✓<br>${eq(`<i>P</i> = 4π × (${I(dm)})<sup>2</sup> × ${N(In)} = ${AV(P, 'W')}`)} ✓`),
+    calc('Calculate the radius of the star.', 2, r, 'm', `${eq(`<i>r</i><sup>2</sup> = <i>P</i> / (4πσ<i>T</i><sup>4</sup>)`)} ✓<br>${eq(`<i>r</i> = √(${I(P)} / (4π × ${SSIG} × ${pb(N(Ts))}<sup>4</sup>)) = ${AV(r, 'm')}`)} ✓`),
+    calc('Express the radius as a multiple of the radius of the Sun.', 1, rr, '', `${eq(`${I(r)} / 6.96 × 10<sup>8</sup> = ${A(rr)}`)} ✓`, NS)
+  ]);
+};
+
+/* ===== Spectral classes and the HR diagram ===== */
+T.SC1 = R => {
+  const Ts = R.pick([3000, 4000, 4500, 5500, 6500, 7000, 8500, 9500, 15000, 20000, 30000, 40000]), [, , cl, col] = clsOf(Ts), l = WIEN / Ts;
+  const all = ['O', 'B', 'A', 'F', 'G', 'K', 'M'], wl = pickN(R, all.filter(c => c !== cl), 3);
+  return NOFIG(2, { T: Ts }, `A star has a surface temperature of ${V(Ts, 'K')}.`, [
+    choose(R, 'What is the spectral class of the star?', 1, cl, wl, `${cl} ✓`),
+    choose(R, 'What colour is the star?', 1, col, ['blue', 'blue-white', 'white', 'yellow-white', 'orange', 'red'].filter(x => x !== col).slice(1, 4), `${cap(col)} ✓`),
+    choose(R, 'Which absorption lines are most prominent in its spectrum?', 1, LINESP[cl], pickN(R, all.filter(c => c !== cl && LINESP[c] !== LINESP[cl]), 3).map(c => LINESP[c]), `${cap(LINES[cl])} ✓`),
+    calc('Calculate the peak wavelength of its black-body radiation.', 1, l, 'm', `${eq(`${SWIEN} / ${N(Ts)} = ${AV(l, 'm')}`)} ✓`),
+    choose(R, 'Which list shows the spectral classes from hottest to coolest?', 1, 'O B A F G K M', ['M K G F A B O', 'A B F G K M O', 'O B F A G K M'], 'O B A F G K M ✓'),
+    text('Explain why hydrogen Balmer absorption lines are weak in the spectra of class O stars.', 1, 'At such high temperatures most hydrogen atoms are ionised, so few have an electron in the <i>n</i> = 2 level ✓')
+  ]);
+};
+
+const HLEV = { 2: -3.40, 3: -1.51, 4: -0.85, 5: -0.54, 6: -0.38 };
+T.SC2 = R => {
+  const k = R.pick([3, 4, 5, 6]), dE = HLEV[k] - HLEV[2], EJ = dE * 1.60e-19, l = HP * C / EJ, rg = region(l);
+  return NOFIG(2, { k }, `Hydrogen Balmer absorption lines are produced when hydrogen atoms in the <i>n</i> = 2 level absorb photons.<br>energy of the <i>n</i> = 2 level = −3.40 eV &nbsp; energy of the <i>n</i> = ${k} level = ${fx(HLEV[k], 2)} eV`, [
+    calc(`Calculate the energy, in J, of a photon absorbed when an electron moves from <i>n</i> = 2 to <i>n</i> = ${k}.`, 2, EJ, 'J', `${eq(`Δ<i>E</i> = ${fx(HLEV[k], 2)} − (−3.40) = ${fx(dE, 2)}`)} eV ✓<br>${eq(`${fx(dE, 2)} × 1.60 × 10<sup>−19</sup> = ${AV(EJ, 'J')}`)} ✓`),
+    calc('Calculate the wavelength of this absorption line.', 1, l, 'm', `${eq(`λ = <i>hc</i> / <i>E</i> = ${SH} × ${SC0} / ${I(EJ)} = ${AV(l, 'm')}`)} ✓`),
+    choose(R, 'In which region of the spectrum is this line?', 1, rg, ['ultraviolet', 'visible', 'infrared'].filter(x => x !== rg), `${cap(rg)} ✓`),
+    choose(R, 'Which spectral class of star shows the most prominent Balmer lines?', 1, 'A', ['O', 'G', 'M'], 'A ✓'),
+    text('Explain why Balmer lines are weak in the spectra of class M stars.', 1, 'The temperature is too low for many hydrogen atoms to be excited to the <i>n</i> = 2 level ✓'),
+    text('Explain why Balmer lines are weak in the spectra of class O stars.', 1, 'Most of the hydrogen is ionised ✓')
+  ]);
+};
+
+// Hertzsprung–Russell diagram: absolute magnitude −10 (top) to +15, temperature 50 000 K (left) to 2500 K, log scale
+const hrX = T => 40 + (lg(50000) - lg(T)) / (lg(50000) - lg(2500)) * 400, hrY = M => 20 + (M + 10) / 25 * 330;
+function hrDiagram(stars){
+  const s = new Scene('Hertzsprung–Russell diagram');
+  s.body.push(`<polyline points="${[[40000, -5.5], [20000, -2.5], [10000, 0.8], [7000, 2.6], [5800, 4.6], [4500, 7], [3500, 10], [2800, 14]].map(([t, m]) => n2(hrX(t)) + ',' + n2(hrY(m))).join(' ')}" stroke="#d9dde1" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`);
+  s.rect(40, 20, 400, 330, { tag: 'axes' });
+  [50000, 25000, 10000, 5000, 2500].forEach(t => { s.line(hrX(t), 350, hrX(t), 356, { tag: 'tick' }); s.label(hrX(t), 375, t >= 10000 ? (t / 1000) + ' 000' : String(t), { size: 13 }); });
+  [-10, -5, 0, 5, 10, 15].forEach(m => { s.line(34, hrY(m), 40, hrY(m), { tag: 'tick' }); s.label(30, hrY(m) + 5, (m > 0 ? '+' : m < 0 ? '−' : '') + Math.abs(m), { size: 13, anchor: 'end' }); });
+  s.label(240, 400, 'surface temperature / K'); s.label(40, 8, 'absolute magnitude', { anchor: 'start' });
+  stars.forEach(([t, m, L]) => { dot(s, hrX(t), hrY(m), 4); s.label(hrX(t) + 9, hrY(m) - 7, L, { bold: true, anchor: 'start' }); });
+  return s;
+}
+T.SC3 = R => {
+  const ty = [['white dwarf', R.pick([10000, 12000, 15000]), R.pick([11, 12, 13])], ['red supergiant', R.pick([3500, 4000]), R.pick([-7, -8])], ['hot main-sequence star', R.pick([20000, 25000, 30000]), R.pick([-3, -4])], ['star like the Sun', 5800, 4.8], ['red giant', R.pick([3800, 4200, 4500]), R.pick([-1, 0, 1])]];
+  const letters = shuffleR(R, ['A', 'B', 'C', 'D', 'E']), L = i => letters[i], s = hrDiagram(ty.map((t, i) => [t[1], t[2], L(i)]));
+  const Pr = 2.51 ** (ty[0][2] - ty[4][2]), rr = Math.sqrt(Pr) * (ty[0][1] / ty[4][1]) ** 2;
+  return { sf: 2, scenes: [s], data: { ty: ty.map(t => [t[1], t[2]]), letters },
+    stem: `<b>Figure 1</b> is a Hertzsprung–Russell (HR) diagram showing five stars, A to E.`,
+    parts: [
+      choose(R, 'Which star is a white dwarf?', 1, L(0), letters.filter(x => x !== L(0)), `${L(0)} ✓`),
+      choose(R, 'Which star has the largest radius?', 1, L(1), letters.filter(x => x !== L(1)), `${L(1)}: very luminous but cool, so it must have a very large surface area ✓`),
+      choose(R, 'Which star has the highest surface temperature?', 1, L(2), letters.filter(x => x !== L(2)), `${L(2)} ✓`),
+      choose(R, 'Which star is most like the Sun?', 1, L(3), letters.filter(x => x !== L(3)), `${L(3)} ✓`),
+      calc(`Star ${L(4)} has an absolute magnitude of ${fx(ty[4][2], 1)} and a surface temperature of ${V(ty[4][1], 'K')}. Star ${L(0)} has an absolute magnitude of ${fx(ty[0][2], 1)} and a surface temperature of ${V(ty[0][1], 'K')}. Calculate the ratio radius of ${L(4)} / radius of ${L(0)}.`, 2, rr, '', `${eq(`power ratio = 2.51<sup>(${fx(ty[0][2], 1)} − ${brk(fx(ty[4][2], 1))})</sup> = ${I(Pr)}`)} ✓<br>${eq(`<i>r</i> ratio = √(${I(Pr)}) × (${N(ty[0][1])} / ${N(ty[4][1])})<sup>2</sup> = ${A(rr)}`)} ✓`, { tol: .03, noSkill: true }),
+      text('Describe what happens to a star like the Sun after it leaves the main sequence.', 1, 'It becomes a red giant, then loses its outer layers (planetary nebula) and its core becomes a white dwarf ✓')
+    ] };
+};
+
+T.SC4 = R => {
+  const Mw = R.pick([10.5, 11.0, 11.5, 12.0, 12.5, 13.0]), Tw = R.pick([8000, 10000, 12000, 15000, 20000]), Pr = 2.51 ** (4.83 - Mw), rr = Math.sqrt(Pr) * (5800 / Tw) ** 2, r = rr * RSUN;
+  return NOFIG(2, { Mw, Tw }, `A white dwarf has an absolute magnitude of ${fx(Mw, 1)} and a surface temperature of ${V(Tw, 'K')}.<br>The Sun has an absolute magnitude of 4.83, a surface temperature of 5800 K and a radius of 6.96 × 10<sup>8</sup> m.`, [
+    calc('Calculate the ratio power output of the white dwarf / power output of the Sun.', 2, Pr, '', `${eq(`difference in absolute magnitude = ${fx(Mw, 1)} − 4.83 = ${fM(Mw - 4.83)}`)} ✓<br>${eq(`ratio = 1 / 2.51<sup>${fM(Mw - 4.83)}</sup> = ${A(Pr)}`)} ✓`, { tol: .03, noSkill: true }),
+    calc('Calculate the ratio radius of the white dwarf / radius of the Sun.', 2, rr, '', `<i>P</i> ∝ <i>r</i><sup>2</sup><i>T</i><sup>4</sup> ✓<br>${eq(`ratio = √(${I(Pr)}) × (5800 / ${N(Tw)})<sup>2</sup> = ${A(rr)}`)} ✓`, { tol: .03, noSkill: true }),
+    calc('Calculate the radius of the white dwarf.', 1, r, 'm', `${eq(`${I(rr)} × 6.96 × 10<sup>8</sup> = ${AV(r, 'm')}`)} ✓`, { tol: .03 }),
+    choose(R, 'Where are white dwarfs found on an HR diagram?', 1, 'bottom left', ['top left', 'top right', 'bottom right'], 'Bottom left (hot but dim) ✓'),
+    text('Explain why a white dwarf is dim even though it is hot.', 1, 'Its surface area is very small, so its total power output is small (<i>P</i> = σ<i>AT</i><sup>4</sup>) ✓')
+  ]);
+};
+
+T.SC5 = R => {
+  const Tg = R.pick([3500, 4000, 4500]), Mg = R.pick([-1.0, -0.5, 0.0, 0.5]), lS = WIEN / 5800, lG = WIEN / Tg, Pr = 2.51 ** (4.83 - Mg);
+  const order = 'protostar → main sequence → red giant → white dwarf';
+  return NOFIG(2, { Tg, Mg }, `The Sun has a surface temperature of 5800 K and an absolute magnitude of 4.83. Late in its life it is expected to become a red giant with a surface temperature of about ${V(Tg, 'K')} and an absolute magnitude of about ${fx(Mg, 1)}.`, [
+    choose(R, 'Which sequence describes the evolution of a star like the Sun?', 1, order, ['protostar → main sequence → supergiant → neutron star', 'main sequence → white dwarf → red giant', 'protostar → red giant → main sequence → white dwarf'], `${order} ✓`),
+    calc('Calculate the peak wavelength of the Sun’s radiation now.', 1, lS, 'm', `${eq(`${SWIEN} / 5800 = ${AV(lS, 'm')}`)} ✓`),
+    calc('Calculate the peak wavelength when the Sun is a red giant.', 1, lG, 'm', `${eq(`${SWIEN} / ${N(Tg)} = ${AV(lG, 'm')}`)} ✓`),
+    calc('Calculate the ratio power output as a red giant / power output now.', 1, Pr, '', `${eq(`2.51<sup>(4.83 − ${brk(fx(Mg, 1))})</sup> = ${A(Pr)}`)} ✓`, { tol: .03, noSkill: true }),
+    text('Explain why the Sun leaves the main sequence.', 1, 'The hydrogen in its core is used up, so fusion of hydrogen in the core stops ✓'),
+    text('Describe what happens to the Sun after the red giant stage.', 2, 'The outer layers are ejected (planetary nebula) ✓<br>the remaining core becomes a (hot, dense) white dwarf ✓')
+  ]);
+};
+
+T.SC6 = R => {
+  const orb = [['Earth', 1.00], ['Mars', 1.52], ['Jupiter', 5.20]], rad = o => Math.sqrt(2.51 ** (4.83 - o.Mg)) * (5800 / o.Tg) ** 2 * RSUN / AU;
+  const v = find(() => ({ Mg: R.pick([-6.0, -5.5, -5.0, -4.5, -3.0, -2.0]), Tg: R.pick([3200, 3500, 3800, 4000]), oi: Math.floor(R() * orb.length) }), o => Math.abs(rad(o) / orb[o.oi][1] - 1) > .15);      // radius not close to the orbit
+  const { Mg, Tg, oi } = v, Pr = 2.51 ** (4.83 - Mg), rr = Math.sqrt(Pr) * (5800 / Tg) ** 2, r = rr * RSUN, rAU = r / AU, [on, oa] = orb[oi], engulf = rAU > oa;
+  return NOFIG(2, { Mg, Tg, oi }, `A red supergiant has an absolute magnitude of ${fx(Mg, 1)} and a surface temperature of ${V(Tg, 'K')}.<br>The Sun has an absolute magnitude of 4.83, a surface temperature of 5800 K and a radius of 6.96 × 10<sup>8</sup> m. ${D_AU}`, [
+    calc('Calculate the ratio power output of the supergiant / power output of the Sun.', 2, Pr, '', `${eq(`difference in absolute magnitude = 4.83 − ${brk(fx(Mg, 1))} = ${fM(4.83 - Mg)}`)} ✓<br>${eq(`ratio = 2.51<sup>${fM(4.83 - Mg)}</sup> = ${A(Pr)}`)} ✓`, { tol: .03, noSkill: true }),
+    calc('Calculate the radius of the supergiant.', 2, r, 'm', `${eq(`<i>r</i>/<i>r</i><sub>Sun</sub> = √(${I(Pr)}) × (5800 / ${N(Tg)})<sup>2</sup> = ${I(rr)}`)} ✓<br>${eq(`<i>r</i> = ${I(rr)} × 6.96 × 10<sup>8</sup> = ${AV(r, 'm')}`)} ✓`, { tol: .03 }),
+    calc('Calculate this radius in AU.', 1, rAU, 'AU', `${eq(`${I(r)} / ${SAU} = ${AV(rAU, 'AU')}`)} ✓`, { tol: .03 }),
+    choose(R, `${on} orbits the Sun at ${fx(oa, 2)} AU. If the supergiant were placed where the Sun is, would ${on}’s orbit be inside the star?`, 1, engulf ? 'yes' : 'no', [engulf ? 'no' : 'yes'], `${engulf ? 'Yes' : 'No'}: the radius is ${N(rAU, 2)} AU ✓`),
+    choose(R, 'Where are red supergiants found on an HR diagram?', 1, 'top right', ['top left', 'bottom left', 'bottom right'], 'Top right (cool but very luminous) ✓')
+  ]);
+};
+
+T.SC7 = R => {
+  const v = find(() => { const cls = pickN(R, ['B', 'A', 'F', 'G', 'K', 'M'], 3); cls.push(cls[R.pick([0, 1, 2])] === 'A' ? cls[1] : cls[R.pick([0, 1, 2])]); return { cls, ms: [0, 1, 2, 3].map(() => Math.round((R() * 5) * 100) / 100), Ms: [0, 1, 2, 3].map(() => Math.round((-5 + R() * 10) * 100) / 100) }; },
+    o => o.cls.includes('A') && o.cls.filter(c => c === 'A').length === 1 && new Set(o.cls).size === 3 && Math.min(...o.ms) < [...o.ms].sort((a, b) => a - b)[1] - .2 && o.ms.every((m, i) => m - o.Ms[i] > 0) && (() => { const c = o.cls.find((x, i) => o.cls.indexOf(x) !== i), ii = o.cls.map((x, i) => x === c ? i : -1).filter(i => i >= 0); return Math.abs(o.Ms[ii[0]] - o.Ms[ii[1]]) > .5; })());
+  const names = ['W', 'X', 'Y', 'Z'], { cls, ms, Ms } = v, iA = cls.indexOf('A'), iB = ms.indexOf(Math.min(...ms)), dup = cls.find((x, i) => cls.indexOf(x) !== i), pair = cls.map((x, i) => x === dup ? i : -1).filter(i => i >= 0), big = Ms[pair[0]] < Ms[pair[1]] ? pair[0] : pair[1];
+  const k = Math.floor(R() * 4), d = 10 * 10 ** ((ms[k] - Ms[k]) / 5);
+  return NOFIG(3, { cls, ms, Ms, k }, `${tableH('Table 1', ['Star', 'Apparent magnitude', 'Absolute magnitude', 'Spectral class'], names.map((n, i) => [n, fM(ms[i]), fM(Ms[i]), cls[i]]))}`, [
+    choose(R, 'Which star has the most prominent hydrogen Balmer absorption lines?', 1, names[iA], names.filter((x, i) => i !== iA), `${names[iA]}: it is class A ✓`),
+    choose(R, 'Which star appears brightest from the Earth?', 1, names[iB], names.filter((x, i) => i !== iB), `${names[iB]}: the smallest apparent magnitude ✓`),
+    calc(`Calculate the distance from the Earth to star ${names[k]}.`, 2, d, 'pc', `${eq(`${fM(ms[k])} − ${brk(fM(Ms[k]))} = 5 log(<i>d</i> / 10)`)} ✓<br>${eq(`<i>d</i> = ${AV(d, 'pc')}`)} ✓`),
+    choose(R, `Stars ${names[pair[0]]} and ${names[pair[1]]} are both class ${dup}. Which has the larger radius?`, 1, names[big], [names[big === pair[0] ? pair[1] : pair[0]]], `${names[big]}: same temperature but brighter absolute magnitude, so greater power output and greater surface area ✓`),
+    text('State what is meant by the spectral class of a star.', 1, 'A classification of stars by the absorption lines in their spectra, which depends on surface temperature ✓')
+  ]);
+};
+
+/* ===== Supernovae, neutron stars and black holes ===== */
+T.SN1 = R => {
+  const k = R.pick([3.0, 5.0, 8.0, 10, 15, 20, 30]), M = k * MSUN, Rs = 2 * GN * M / (C * C), rho = M / (4 / 3 * Math.PI * Rs ** 3), RsE = 2 * GN * 5.97e24 / (C * C);
+  return NOFIG(2, { k }, `The core of a massive star collapses to form a black hole of mass ${N(k)} times the mass of the Sun.<br>mass of the Sun = ${SMSUN} kg &nbsp; mass of the Earth = 5.97 × 10<sup>24</sup> kg`, [
+    text('State what is meant by the event horizon of a black hole.', 1, 'The boundary within which the escape velocity is greater than the speed of light (nothing, not even light, can escape) ✓'),
+    calc('Calculate the radius of the event horizon.', 2, Rs, 'm', `${eq(`<i>M</i> = ${N(k)} × ${SMSUN} = ${I(M)}`)} kg ✓<br>${eq(`<i>R</i><sub>s</sub> = 2<i>GM</i> / <i>c</i><sup>2</sup> = 2 × ${SG} × ${I(M)} / (${SC0})<sup>2</sup> = ${AV(Rs, 'm')}`)} ✓`),
+    calc('Calculate the mean density of the black hole within its event horizon.', 1, rho, KGM3, `${eq(`ρ = ${I(M)} / (4π/3 × (${I(Rs)})<sup>3</sup>) = ${AV(rho, KGM3)}`)} ✓`),
+    choose(R, 'How does the radius of the event horizon change if the mass of the black hole doubles?', 1, 'it doubles', ['it stays the same', 'it increases by a factor of √2', 'it increases by a factor of 4'], 'It doubles (<i>R</i><sub>s</sub> ∝ <i>M</i>) ✓'),
+    calc('Calculate the radius of the event horizon of a black hole with the mass of the Earth.', 1, RsE, 'm', `${eq(`2 × ${SG} × 5.97 × 10<sup>24</sup> / (${SC0})<sup>2</sup> = ${AV(RsE, 'm')}`)} ✓`),
+    text('State the defining property of a black hole.', 1, 'Its escape velocity is greater than the speed of light ✓')
+  ]);
+};
+
+const sn1a = (t, tp) => { const x = t - tp; return x <= 0 ? -19.3 + 4 * (x / tp) ** 2 : -19.3 + 3 * (1 - Math.exp(-x * x / 400)) + .02 * x * x / (x + 10); };      // smooth peak, then a fast and a slow decline
+T.SN2 = R => {
+  const tp = R.pick([16, 18, 20, 22]), m = Math.round((12 + R() * 7) * 10) / 10, d = 10 ** ((m + 19.3 + 5) / 5), dm = d * PC, f = t => sn1a(t, tp);
+  let lo = tp, hi = 100; for (let i = 0; i < 60; i++){ const mid = (lo + hi) / 2; if (f(mid) < -17.3) lo = mid; else hi = mid; } const t2 = (lo + hi) / 2;
+  const fig = graph({ x: [0, 80, 10], y: [-14, -20, -1], xdiv: 5, ydiv: 5, h: 300, w: 420, xl: 'time / days', yl: 'absolute magnitude', curves: [{ f, from: 0, to: 80 }], reads: [[tp, -19.3], [t2, -17.3]] });
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: { tp, m },
+    stem: `<b>Figure 1</b> shows the light curve of a type 1a supernova.<br>${D_PC}`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the peak absolute magnitude of the supernova.', 1, -19.3, '', '−19.3 ✓', { abs: .1, noSkill: true, neg: true, fx: 1 }),
+      text('Explain why type 1a supernovae can be used as standard candles.', 1, 'They all have the same peak absolute magnitude (known power output), so their distance can be found from their apparent magnitude ✓'),
+      calc(`The peak apparent magnitude of this supernova was ${fM1(m)}. Calculate its distance from the Earth in parsecs.`, 2, d, 'pc', `${eq(`${fM1(m)} − (−19.3) = 5 log(<i>d</i> / 10)`)} ✓<br>${eq(`log(<i>d</i>/10) = ${fM1(m + 19.3)} / 5 = ${fx((m + 19.3) / 5, 3)}`)}, so ${eq(`<i>d</i> = 10<sup>${fx((m + 19.3) / 5, 3)}</sup> × 10 = ${AV(d, 'pc')}`)} ✓`),
+      calc('Calculate this distance in metres.', 1, dm, 'm', `${eq(`${I(d)} × ${SPC} = ${AV(dm, 'm')}`)} ✓`),
+      calc('Use <b>Figure 1</b> to determine how long after the peak the supernova is 2 magnitudes dimmer than at its peak.', 1, t2 - tp, 'days', `Reads time at −17.3 as ${fx(t2, 0)} days, so ${fx(t2 - tp, 0)} days ✓`, { abs: 3, noSkill: true, fx: 0 }),
+      calc('Calculate how many times brighter the supernova is at its peak than when it is 2 magnitudes dimmer.', 1, 2.51 ** 2, '', `${eq(`2.51<sup>2</sup> = ${A(2.51 ** 2)}`)} ✓`, NS)
+    ] };
+};
+
+T.SN3 = R => {
+  const v = find(() => ({ m: Math.round((15 + R() * 3.5) * 10) / 10, H0: R.pick([60, 62, 65, 68, 70, 72, 75]) }), () => true);
+  const { m, H0 } = v, d = 10 ** ((m + 19.3 + 5) / 5), dM = d / 1e6, z = r2(H0 * dM / 3.0e5), vk = z * 3.0e5, H = vk / dM, Hs = H / 3.08e19, age = 1 / Hs, ageY = age / YR;
+  return NOFIG(2, { m, z }, `A type 1a supernova in a distant galaxy has a peak apparent magnitude of ${fM1(m)}. The peak absolute magnitude of a type 1a supernova is −19.3.<br>The red shift of the galaxy is ${V(z, '').trim()}.<br>1 Mpc = 3.08 × 10<sup>19</sup> km &nbsp; ${D_YR}`, [
+    calc('Calculate the distance to the galaxy in parsecs.', 2, d, 'pc', `${eq(`${fM1(m)} + 19.3 = 5 log(<i>d</i> / 10)`)} ✓<br>${eq(`<i>d</i> = ${AV(d, 'pc')}`)} ✓`),
+    calc('Calculate the recession velocity of the galaxy.', 1, vk, KMS, `${eq(`<i>v</i> = <i>zc</i> = ${N(z)} × 3.00 × 10<sup>5</sup> = ${AV(vk, KMS)}`)} ✓`),
+    calc('Calculate a value for the Hubble constant in km s<sup>−1</sup> Mpc<sup>−1</sup>.', 1, H, HU_U, `${eq(`<i>H</i> = <i>v</i> / <i>d</i> = ${I(vk)} / ${I(dM)} = ${AV(H, HU_U)}`)} ✓`),
+    calc('Calculate the Hubble constant in s<sup>−1</sup>.', 1, Hs, S1, `${eq(`${I(H)} / 3.08 × 10<sup>19</sup> = ${AV(Hs, S1)}`)} ✓`),
+    calc('Estimate the age of the Universe in years.', 2, ageY, 'years', `${eq(`age = 1/<i>H</i> = 1 / ${I(Hs)} = ${I(age)}`)} s ✓<br>${eq(`${I(age)} / ${SYR} = ${AV(ageY, 'years')}`)} ✓`)
+  ]);
+};
+
+T.SN4 = R => {
+  const k = R.pick([1.4, 1.6, 1.8, 2.0]), rk = R.pick([10, 11, 12, 13, 15]), M = k * MSUN, r = rk * 1e3, rho = M / (4 / 3 * Math.PI * r ** 3), ve = Math.sqrt(2 * GN * M / r), fr = ve / C, Rs = 2 * GN * M / (C * C);
+  return NOFIG(2, { k, rk }, `A neutron star has a mass of ${N(k)} times the mass of the Sun and a radius of ${V(rk, 'km')}.<br>mass of the Sun = ${SMSUN} kg`, [
+    calc('Calculate the mean density of the neutron star.', 2, rho, KGM3, `${eq(`<i>M</i> = ${N(k)} × ${SMSUN} = ${I(M)}`)} kg ✓<br>${eq(`ρ = ${I(M)} / (4π/3 × (${N(r)})<sup>3</sup>) = ${AV(rho, KGM3)}`)} ✓`),
+    calc('Calculate the escape velocity from the surface of the neutron star.', 1, ve, MS1, `${eq(`<i>v</i> = √(2<i>GM</i>/<i>r</i>) = √(2 × ${SG} × ${I(M)} / ${N(r)}) = ${AV(ve, MS1)}`)} ✓`),
+    calc('Express this escape velocity as a fraction of the speed of light.', 1, fr, '', `${eq(`${I(ve)} / ${SC0} = ${A(fr)}`)} ✓`, NS),
+    calc('Calculate the radius of the event horizon for a black hole of the same mass.', 1, Rs, 'm', `${eq(`2 × ${SG} × ${I(M)} / (${SC0})<sup>2</sup> = ${AV(Rs, 'm')}`)} ✓`),
+    choose(R, 'Is the neutron star a black hole?', 1, 'no, because its radius is greater than the radius of the event horizon', ['yes, because its density is very high', 'yes, because its escape velocity is greater than the speed of light', 'no, because it has no mass'], 'No: its radius is larger than its Schwarzschild radius (escape velocity is less than <i>c</i>) ✓'),
+    text('Describe how a neutron star forms.', 1, 'The core of a massive star (supergiant) collapses in a supernova; protons and electrons combine to form neutrons ✓')
+  ]);
+};
+
+T.SN5 = R => {
+  const v = find(() => ({ rA: R.pick([500, 800, 1000, 1200, 1500]), Ty: R.pick([8.0, 12, 16, 20, 25, 30]), dly: R.pick([2.6e4, 2.6e6, 5.3e7, 1.0e8]) }), o => { const M = 4 * Math.PI ** 2 * (o.rA * AU) ** 3 / (GN * (o.Ty * YR) ** 2), a = 2 * (2 * GN * M / (C * C)) / (o.dly * LY); return M / MSUN > 1e5 && (a / 1e-10 > 1.3 || a / 1e-10 < .77); });
+  const { rA, Ty, dly } = v, r = rA * AU, Tsec = Ty * YR, M = 4 * Math.PI ** 2 * r ** 3 / (GN * Tsec ** 2), Mk = M / MSUN, Rs = 2 * GN * M / (C * C), ang = 2 * Rs / (dly * LY), res = ang > 1.0e-10;
+  return NOFIG(2, { rA, Ty, dly }, `A star orbits the supermassive black hole at the centre of a galaxy in a circular orbit of radius ${V(rA, 'AU')} with a period of ${V(Ty, 'years')}. The galaxy is ${V(dly, 'ly')} from the Earth.<br>${D_AU} &nbsp; ${D_YR} &nbsp; ${D_LY} &nbsp; mass of the Sun = ${SMSUN} kg`, [
+    calc('Calculate the mass of the black hole.', 2, M, 'kg', `<i>GMm</i>/<i>r</i><sup>2</sup> = <i>m</i>ω<sup>2</sup><i>r</i> with ω = 2π/<i>T</i> ✓<br>${eq(`<i>M</i> = 4π<sup>2</sup> × (${I(r)})<sup>3</sup> / (${SG} × (${I(Tsec)})<sup>2</sup>) = ${AV(M, 'kg')}`)} ✓`),
+    calc('Express this mass in solar masses.', 1, Mk, '', `${eq(`${I(M)} / ${SMSUN} = ${A(Mk)}`)} ✓`, NS),
+    calc('Calculate the radius of the event horizon.', 1, Rs, 'm', `${eq(`2 × ${SG} × ${I(M)} / (${SC0})<sup>2</sup> = ${AV(Rs, 'm')}`)} ✓`),
+    calc('Calculate the angle subtended at the Earth by the diameter of the event horizon.', 1, ang, 'rad', `${eq(`2 × ${I(Rs)} / (${N(dly)} × ${SLY}) = ${AV(ang, 'rad')}`)} ✓`),
+    choose(R, 'A network of radio telescopes has a minimum angular resolution of 1.0 × 10<sup>−10</sup> rad. Can it resolve the event horizon?', 1, res ? 'yes' : 'no', [res ? 'no' : 'yes'], `${res ? 'Yes' : 'No'}: the angle is ${res ? 'greater' : 'less'} than 1.0 × 10<sup>−10</sup> rad ✓`),
+    text('State where supermassive black holes are found.', 1, 'At the centres of (most) galaxies ✓')
+  ]);
+};
+
+T.SN6 = R => {
+  const P = R.pick([1.0e43, 3.0e43, 5.0e43, 1.0e44, 2.0e44]), t = R.pick([2.0, 5.0, 10, 20, 30]), E = P * t, Es = 3.8e26 * 1.0e10 * YR, ratio = E / Es;
+  return NOFIG(2, { P, t }, `A gamma ray burst (GRB) emits gamma radiation at a power of ${V(P, 'W')} for ${V(t, 's')}.<br>The Sun has a power output of 3.8 × 10<sup>26</sup> W and a lifetime of about 1.0 × 10<sup>10</sup> years. ${D_YR}`, [
+    calc('Calculate the energy emitted by the GRB.', 1, E, 'J', `${eq(`<i>E</i> = <i>Pt</i> = ${N(P)} × ${N(t)} = ${AV(E, 'J')}`)} ✓`),
+    calc('Calculate the energy emitted by the Sun during its lifetime.', 1, Es, 'J', `${eq(`3.8 × 10<sup>26</sup> × 1.0 × 10<sup>10</sup> × ${SYR} = ${AV(Es, 'J')}`)} ✓`),
+    calc('Calculate the ratio energy emitted by the GRB / energy emitted by the Sun in its lifetime.', 1, ratio, '', `${eq(`${I(E)} / ${I(Es)} = ${A(ratio)}`)} ✓`, NS),
+    text('Outline the circumstances in which a long gamma ray burst is emitted.', 2, 'The core of a supergiant (very massive star) collapses ✓<br>to form a neutron star or a black hole (in a hypernova) ✓'),
+    choose(R, 'Observations of type 1a supernovae suggest that the expansion of the Universe is accelerating. What has been proposed to explain this?', 1, 'dark energy', ['dark matter', 'the cosmic microwave background', 'black holes'], 'Dark energy ✓')
+  ]);
+};
+/* ===== Doppler effect and binary stars ===== */
+const RESTL = [['hydrogen-alpha', 656.28], ['hydrogen-beta', 486.13], ['calcium K', 393.37], ['sodium D', 589.00]];
+const CKM = 3.00e5;
+T.DO1 = R => {
+  const li = Math.floor(R() * RESTL.length), [ln, l0] = RESTL[li], dl = Math.round((3 + R() * 45) * 10) / 10, lo = Math.round((l0 + dl) * 100) / 100, z = (lo - l0) / l0, vk = z * CKM, d = vk / 65, dm = d * 3.08e22;
+  return NOFIG(3, { li, lo }, `The ${ln} line has a wavelength of ${fx(l0, 2)} nm when measured in a laboratory. In the spectrum of a distant galaxy the same line has a wavelength of ${fx(lo, 2)} nm.<br>Hubble constant = 65 km s<sup>−1</sup> Mpc<sup>−1</sup> &nbsp; ${D_MPC}`, [
+    calc('Calculate the red shift <i>z</i> of the galaxy.', 1, z, '', `${eq(`<i>z</i> = Δλ / λ = (${fx(lo, 2)} − ${fx(l0, 2)}) / ${fx(l0, 2)} = ${A(z)}`)} ✓`, NS),
+    calc('Calculate the recession velocity of the galaxy.', 1, vk, KMS, `${eq(`<i>v</i> = <i>zc</i> = ${I(z)} × 3.00 × 10<sup>5</sup> = ${AV(vk, KMS)}`)} ✓`),
+    calc('Calculate the distance to the galaxy in Mpc.', 1, d, 'Mpc', `${eq(`<i>d</i> = <i>v</i> / <i>H</i> = ${I(vk)} / 65 = ${AV(d, 'Mpc')}`)} ✓`),
+    calc('Calculate this distance in metres.', 1, dm, 'm', `${eq(`${I(d)} × 3.08 × 10<sup>22</sup> = ${AV(dm, 'm')}`)} ✓`),
+    choose(R, 'What does the red shift show about the galaxy?', 1, 'it is moving away from the Earth', ['it is moving towards the Earth', 'it is not moving relative to the Earth', 'it is a black hole'], 'Moving away (receding) ✓'),
+    text('State the condition for <i>z</i> = <i>v</i>/<i>c</i> to be valid.', 1, 'The speed is much less than the speed of light ✓')
+  ]);
+};
+
+T.DO2 = R => {
+  const li = Math.floor(R() * RESTL.length), [, l0] = RESTL[li], vt = R.pick([40, 60, 80, 100, 150, 200, 250, 300]), Pd = R.pick([2.0, 3.5, 5.0, 8.0, 12, 20]);
+  const dl = l0 * vt / CKM, lmax = Math.round((l0 + dl) * 100) / 100, lmin = Math.round((l0 - dl) * 100) / 100, half = (lmax - lmin) / 2, avg = (lmax + lmin) / 2, v = half / avg * C, r = v * Pd * 86400 / (2 * Math.PI);
+  return NOFIG(3, { lmax, lmin, Pd }, `A star in a binary system is observed in the plane of its orbit. The wavelength of a line in its spectrum varies between a maximum of ${fx(lmax, 2)} nm and a minimum of ${fx(lmin, 2)} nm. The wavelength varies with a period of ${V(Pd, 'days')}.`, [
+    calc('Calculate the maximum change in wavelength from the mean value, in nm.', 1, half, 'nm', `${eq(`Δλ = (${fx(lmax, 2)} − ${fx(lmin, 2)}) / 2 = ${fx(half, 3)}`)} nm ✓`, { fx: 3, noSkill: true }),
+    calc('Calculate the orbital speed of the star.', 2, v, MS1, `${eq(`mean wavelength = (${fx(lmax, 2)} + ${fx(lmin, 2)}) / 2 = ${fx(avg, Math.abs(avg * 100 - Math.round(avg * 100)) < 1e-6 ? 2 : 3)}`)} nm ✓<br>${eq(`<i>v</i> = <i>c</i>Δλ/λ = ${SC0} × ${fx(half, 3)} / ${fx(avg, Math.abs(avg * 100 - Math.round(avg * 100)) < 1e-6 ? 2 : 3)} = ${AV(v, MS1)}`)} ✓`, { tol: .02 }),
+    calc('Calculate the radius of the star’s orbit.', 2, r, 'm', `${eq(`<i>T</i> = ${N(Pd)} × 24 × 3600 = ${I(Pd * 86400)}`)} s ✓<br>${eq(`<i>r</i> = <i>vT</i> / (2π) = ${I(v)} × ${I(Pd * 86400)} / (2π) = ${AV(r, 'm')}`)} ✓`, { tol: .02 }),
+    text('Explain why the wavelength of the line varies.', 1, 'As the star orbits it moves alternately towards and away from the Earth, so the light is alternately blue-shifted and red-shifted ✓'),
+    choose(R, 'Why must the system be observed in the plane of its orbit to find the orbital speed in this way?', 1, 'only the component of velocity along the line of sight causes a Doppler shift', ['the star would otherwise be eclipsed', 'light from the star is otherwise absorbed', 'the period would otherwise change'], 'Only the line-of-sight (radial) component of velocity causes a shift ✓')
+  ]);
+};
+
+T.DO3 = R => {
+  const K = R.pick([20, 30, 40, 50, 60, 80]), P = R.pick([2, 3, 4, 5, 6, 8]), ym = axisFor(K * 1.15), f = t => K * Math.sin(2 * Math.PI * t / P), l0 = 656.28, dl = l0 * K / CKM, r = K * 1e3 * P * 86400 / (2 * Math.PI);
+  const xmax = 2 * P, xa = axisFor(xmax);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [-ym[0], ym[0], ym[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'time / days', yl: 'radial velocity / km s^{−1}', curves: [{ f, from: 0, to: xa[0] }], reads: [[P / 4, K], [P, 0], [3 * P / 4, -K]] });      // the trace runs the full width of the grid
+  const tq = R.pick([1, 3]), away = tq === 1;
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { K, P, tq },
+    stem: `<b>Figure 1</b> shows how the radial velocity of a star in a binary system varies with time. A positive velocity means the star is moving away from the Earth.`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the orbital period.', 1, P, 'days', `${A(P)} days ✓`, { abs: xa[1] / 10, noSkill: true }),
+      calc('Use <b>Figure 1</b> to determine the orbital speed.', 1, K, KMS, `${A(K)} km s<sup>−1</sup> ✓`, { abs: ym[1] / 10, noSkill: true }),
+      calc(`Calculate the maximum shift in wavelength of the hydrogen-alpha line, which has a wavelength of 656.28 nm in the laboratory.`, 1, dl * 1e-9, 'm', `${eq(`Δλ = λ<i>v</i>/<i>c</i> = 656.28 × 10<sup>−9</sup> × ${K} / 3.00 × 10<sup>5</sup> = ${AV(dl * 1e-9, 'm')}`)} ✓`),
+      calc('Calculate the radius of the star’s orbit.', 2, r, 'm', `${eq(`<i>T</i> = ${P} × 24 × 3600 = ${I(P * 86400)}`)} s ✓<br>${eq(`<i>r</i> = <i>vT</i>/(2π) = ${N(K * 1e3)} × ${I(P * 86400)} / (2π) = ${AV(r, 'm')}`)} ✓`),
+      choose(R, `At ${+(tq * P / 4).toFixed(2)} days, how does the observed wavelength of the line compare with its laboratory value?`, 1, away ? 'longer (red-shifted)' : 'shorter (blue-shifted)', [away ? 'shorter (blue-shifted)' : 'longer (red-shifted)', 'the same'], `${away ? 'Longer: the star is moving away' : 'Shorter: the star is moving towards the Earth'} ✓`),
+      text('Explain why a planet orbiting a star can be detected using the same method.', 1, 'The star and planet orbit their common centre of mass, so the star’s radial velocity varies periodically ✓')
+    ] };
+};
+
+T.DO4 = R => {
+  const P = R.pick([2.0, 2.5, 3.0, 4.0, 5.0]), d1 = R.pick([.30, .40, .50]), d2 = R.pick([.10, .15, .20]), w = .08 * P, rr = R.pick([1.0e9, 2.0e9, 5.0e9, 1.0e10]);
+  const dip = (t, c, d) => { const x = Math.abs(t - c); return x >= w / 2 ? 0 : x <= w / 4 ? d : d * (w / 2 - x) / (w / 4); };
+  const f = t => 1 - dip(t, .25 * P, d1) - dip(t, 1.25 * P, d1) - dip(t, .75 * P, d2) - dip(t, 1.75 * P, d2);
+  const xa = axisFor(2 * P), v = 2 * Math.PI * rr / (P * 86400);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, 1.2, .2], xdiv: 5, ydiv: 4, h: 280, w: 440, xl: 'time / days', yl: 'relative brightness', curves: [{ f, from: 0, to: 2 * P, w: 1.7 }], reads: [[.25 * P, 1 - d1], [1.25 * P, 1 - d1], [.75 * P, 1 - d2]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { P, d1, d2, rr },
+    stem: `<b>Figure 1</b> shows how the brightness of an eclipsing binary star system varies with time.`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the orbital period of the system.', 1, P, 'days', `Time between alternate (equal) dips = ${fx(P, 1)} days ✓`, { abs: xa[1] / 10, noSkill: true }),
+      calc('Use <b>Figure 1</b> to determine the fraction of the total light that is blocked during the deeper dip.', 1, d1, '', `${fx(d1, 2)} ✓`, { abs: .025, noSkill: true }),
+      text('Explain why the brightness of the system falls at regular intervals.', 1, 'Each star passes in front of the other (as seen from the Earth) and blocks some of its light ✓'),
+      choose(R, 'During the deeper dip, which star is being eclipsed?', 1, 'the hotter star', ['the cooler star', 'the larger star', 'either star'], 'The hotter star: it emits more power per unit area, so blocking it removes more light ✓'),
+      calc(`One star moves in a circular orbit of radius ${V(rr, 'm')}. Calculate its orbital speed.`, 2, v, MS1, `${eq(`<i>T</i> = ${fx(P, 1)} × 24 × 3600 = ${I(P * 86400)}`)} s ✓<br>${eq(`<i>v</i> = 2π<i>r</i>/<i>T</i> = 2π × ${N(rr)} / ${I(P * 86400)} = ${AV(v, MS1)}`)} ✓`)
+    ] };
+};
+
+T.DO5 = R => {
+  const l0 = 656.28, vr = R.pick([1200, 1800, 2500, 3200, 4000, 5500]), vt = R.pick([150, 180, 200, 220, 250, 300]);
+  const l1 = Math.round(l0 * (1 + (vr - vt) / CKM) * 100) / 100, l2 = Math.round(l0 * (1 + (vr + vt) / CKM) * 100) / 100, avg = (l1 + l2) / 2, vrec = (avg - l0) / l0 * CKM, vrot = (l2 - l1) / 2 / l0 * CKM, d = vrec / 65;
+  const side = R.chance(.5) ? ['A', 'B'] : ['B', 'A'];
+  return NOFIG(3, { l1, l2 }, `A spiral galaxy is viewed edge-on. The hydrogen-alpha line, which has a laboratory wavelength of 656.28 nm, is measured at opposite edges A and B of the galaxy.<br>wavelength at edge ${side[0]} = ${fx(l1, 2)} nm &nbsp; wavelength at edge ${side[1]} = ${fx(l2, 2)} nm<br>Hubble constant = 65 km s<sup>−1</sup> Mpc<sup>−1</sup>`, [
+    calc('Calculate the recession velocity of the galaxy as a whole.', 2, vrec, KMS, `${eq(`mean wavelength = (${fx(l1, 2)} + ${fx(l2, 2)}) / 2 = ${fx(avg, Math.abs(avg * 100 - Math.round(avg * 100)) < 1e-6 ? 2 : 3)}`)} nm ✓<br>${eq(`<i>v</i> = (${fx(avg, Math.abs(avg * 100 - Math.round(avg * 100)) < 1e-6 ? 2 : 3)} − 656.28) / 656.28 × 3.00 × 10<sup>5</sup> = ${AV(vrec, KMS)}`)} ✓`, { tol: .02 }),
+    calc('Calculate the speed at which the edges of the galaxy rotate.', 2, vrot, KMS, `${eq(`Δλ = (${fx(l2, 2)} − ${fx(l1, 2)}) / 2 = ${N((l2 - l1) / 2, 3)}`)} nm ✓<br>${eq(`<i>v</i> = ${N((l2 - l1) / 2, 3)} / 656.28 × 3.00 × 10<sup>5</sup> = ${AV(vrot, KMS)}`)} ✓`, { tol: .03 }),
+    choose(R, 'Which edge of the galaxy is moving towards the Earth relative to the centre of the galaxy?', 1, side[0], [side[1]], `${side[0]}: its wavelength is shorter than the mean ✓`),
+    calc('Calculate the distance to the galaxy.', 1, d, 'Mpc', `${eq(`<i>d</i> = <i>v</i>/<i>H</i> = ${I(vrec)} / 65 = ${AV(d, 'Mpc')}`)} ✓`, { tol: .02 })
+  ]);
+};
+
+T.DO6 = R => {
+  const f0 = 1420.4, df = R.pick([2.4, 3.6, 5.1, 7.8, 9.5, 12.6, 18.2]), fo = Math.round((f0 - df) * 10) / 10, vk = (f0 - fo) / f0 * CKM, l0 = C / (f0 * 1e6), d = vk / 65;
+  return NOFIG(3, { fo }, `Neutral hydrogen emits radio waves of frequency 1420.4 MHz. A radio telescope detects this emission from a distant galaxy at a frequency of ${fx(fo, 1)} MHz.<br>Hubble constant = 65 km s<sup>−1</sup> Mpc<sup>−1</sup>`, [
+    calc('Calculate the wavelength of the emitted radio waves.', 1, l0, 'm', `${eq(`λ = <i>c</i>/<i>f</i> = ${SC0} / 1420.4 × 10<sup>6</sup> = ${AV(l0, 'm')}`)} ✓`),
+    calc('Calculate the speed of the galaxy relative to the Earth.', 2, vk, KMS, `${eq(`Δ<i>f</i>/<i>f</i> = (1420.4 − ${fx(fo, 1)}) / 1420.4 = ${N((f0 - fo) / f0, 3)}`)} ✓<br>${eq(`<i>v</i> = ${N((f0 - fo) / f0, 3)} × 3.00 × 10<sup>5</sup> = ${AV(vk, KMS)}`)} ✓`),
+    choose(R, 'Is the galaxy moving towards or away from the Earth?', 1, 'away', ['towards'], 'Away: the frequency received is lower ✓'),
+    calc('Calculate the distance to the galaxy.', 1, d, 'Mpc', `${eq(`${I(vk)} / 65 = ${AV(d, 'Mpc')}`)} ✓`),
+    text('Suggest why radio waves are useful for mapping hydrogen in galaxies.', 1, 'Radio waves pass through interstellar dust that absorbs visible light ✓')
+  ]);
+};
+
+/* ===== Hubble’s law, the Big Bang and quasars ===== */
+T.HU1 = R => {
+  const H0 = R.pick([55, 60, 65, 70, 75]), ds = [40, 80, 120, 160, 200, 240].map(x => x + R.pick([-10, 0, 10])), sc = ds.map(() => 1 + R.pick([-.06, -.03, 0, .03, .06]));
+  const pts = ds.map((d, i) => [d, Math.round(H0 * d * sc[i] / 100) * 100 / 1000]), vmax = axisFor(H0 * 260 * 1.1 / 1000);
+  const fig = graph({ x: [0, 300, 50], y: [0, vmax[0], vmax[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'distance / Mpc', yl: 'recession velocity / 10^{3} km s^{−1}', curves: [{ f: x => H0 * x / 1000, from: 0, to: 300 * Math.min(1, vmax[0] / (H0 * .3)) }], crosses: pts, reads: [[200, H0 * .2]] });
+  const Hs = H0 / 3.08e19, age = 1 / Hs, ageY = age / YR;
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { H0 },
+    stem: `<b>Figure 1</b> shows the recession velocities and distances of some galaxies, with a line of best fit.<br>1 Mpc = 3.08 × 10<sup>19</sup> km &nbsp; ${D_YR}`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the Hubble constant in km s<sup>−1</sup> Mpc<sup>−1</sup>.', 2, H0, HU_U, `Uses a large triangle, for example (0, 0) and (200, ${N(H0 * .2, 3)}) ✓<br>${eq(`<i>H</i> = ${N(H0 * 200, 3)} / 200 = ${H0}`)} km s<sup>−1</sup> Mpc<sup>−1</sup> ✓`, { tol: .04, noSkill: true }),
+      calc('Convert your value to s<sup>−1</sup>.', 1, Hs, S1, `${eq(`${H0} / 3.08 × 10<sup>19</sup> = ${AV(Hs, S1)}`)} ✓`, { tol: .04 }),
+      calc('Estimate the age of the Universe in seconds.', 1, age, 's', `${eq(`1 / ${I(Hs)} = ${AV(age, 's')}`)} ✓`, { tol: .04 }),
+      calc('Express this age in years.', 1, ageY, 'years', `${eq(`${I(age)} / ${SYR} = ${AV(ageY, 'years')}`)} ✓`, { tol: .04 }),
+      text('State the assumption made in estimating the age of the Universe in this way.', 1, 'The Universe has expanded at a constant rate (since the Big Bang) ✓'),
+      choose(R, 'Measurements of distant type 1a supernovae have changed this assumption. What do they suggest?', 1, 'the expansion of the Universe is accelerating', ['the expansion of the Universe is slowing down', 'the Universe is contracting', 'the Universe is not expanding'], 'The expansion is accelerating (attributed to dark energy) ✓')
+    ] };
+};
+
+T.HU2 = R => {
+  const d = R.pick([20, 35, 50, 80, 120, 150, 200, 300]), li = Math.floor(R() * RESTL.length), [ln, l0] = RESTL[li], vk = 65 * d, z = vk / CKM, lo = l0 * (1 + z), dm = d * 3.08e22;
+  return NOFIG(2, { d, li }, `A galaxy is ${V(d, 'Mpc')} from the Earth.<br>Hubble constant = 65 km s<sup>−1</sup> Mpc<sup>−1</sup> &nbsp; ${D_MPC}`, [
+    calc('Calculate the recession velocity of the galaxy.', 1, vk, KMS, `${eq(`<i>v</i> = <i>Hd</i> = 65 × ${GV(d)} = ${AV(vk, KMS)}`)} ✓`),
+    calc('Calculate the red shift <i>z</i> of the galaxy.', 1, z, '', `${eq(`<i>z</i> = <i>v</i>/<i>c</i> = ${I(vk)} / 3.00 × 10<sup>5</sup> = ${A(z)}`)} ✓`, NS),
+    calc(`The ${ln} line has a laboratory wavelength of ${fx(l0, 2)} nm. Calculate its wavelength in the spectrum of the galaxy.`, 1, lo, 'nm', `${eq(`λ = ${fx(l0, 2)} × (1 + ${I(z)}) = ${fx(lo, 1)}`)} nm ✓`, { abs: .3, noSkill: true, fx: 1 }),
+    calc('Calculate the distance to the galaxy in metres.', 1, dm, 'm', `${eq(`${GV(d)} × 3.08 × 10<sup>22</sup> = ${AV(dm, 'm')}`)} ✓`),
+    text('State Hubble’s law.', 1, 'The recession velocity of a galaxy is proportional to its distance from the Earth ✓'),
+    choose(R, 'Which observation is evidence for the Big Bang theory?', 1, 'galaxies are receding, with speed proportional to distance', ['all stars are moving towards the Earth', 'the Sun is a main-sequence star', 'stars have different spectral classes'], 'The Hubble red shift of galaxies (the Universe is expanding) ✓')
+  ]);
+};
+
+T.HU3 = R => {
+  const Hof = (z, d) => z * CKM / (d * LY / 3.08e22), DL = [1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0].map(x => x * 1e8);
+  const v = find(() => ({ z1: Math.round(10 + R() * 35) / 1000, z2: Math.round(10 + R() * 35) / 1000, d1: R.pick(DL), d2: R.pick(DL) }), o => { const H1 = Hof(o.z1, o.d1), H2 = Hof(o.z2, o.d2), rel = Math.abs(H1 - H2) / Math.min(H1, H2);
+    return o.d1 !== o.d2 && [H1, H2].every(h => h > 50 && h < 95) && (rel < .06 || rel > .25); });      // realistic values that clearly agree or clearly disagree
+  const { z1, z2, d1, d2 } = v, H1 = z1 * CKM / (d1 * LY / 3.08e22), H2 = z2 * CKM / (d2 * LY / 3.08e22), cons = Math.abs(H1 - H2) / Math.min(H1, H2) < .07;
+  return NOFIG(2, { z1, z2, d1, d2 }, `${tableH('Table 1', ['Galaxy', 'Red shift <i>z</i>', 'Distance from Earth / ly'], [['P', N(z1), N(d1)], ['Q', N(z2), N(d2)]])}${D_LY} &nbsp; ${D_MPC}`, [
+    calc('Calculate the Hubble constant, in km s<sup>−1</sup> Mpc<sup>−1</sup>, given by the data for galaxy P.', 3, H1, HU_U, `${eq(`<i>v</i> = <i>zc</i> = ${N(z1)} × 3.00 × 10<sup>5</sup> = ${I(z1 * CKM)}`)} km s<sup>−1</sup> ✓<br>${eq(`<i>d</i> = ${N(d1)} × ${SLY} / 3.08 × 10<sup>22</sup> = ${I(d1 * LY / 3.08e22)}`)} Mpc ✓<br>${eq(`<i>H</i> = ${I(z1 * CKM)} / ${I(d1 * LY / 3.08e22)} = ${AV(H1, HU_U)}`)} ✓`),
+    calc('Calculate the Hubble constant given by the data for galaxy Q.', 1, H2, HU_U, `${eq(`<i>H</i> = ${I(z2 * CKM)} / ${I(d2 * LY / 3.08e22)} = ${AV(H2, HU_U)}`)} ✓`),
+    choose(R, 'Are these data consistent with Hubble’s law?', 1, cons ? 'yes, both galaxies give about the same value of <i>H</i>' : 'no, the two galaxies give different values of <i>H</i>', [cons ? 'no, the two galaxies give different values of <i>H</i>' : 'yes, both galaxies give about the same value of <i>H</i>'], `${cons ? 'Yes: the values agree within a few percent' : 'No: the values differ by more than the likely uncertainty'} ✓`),
+    text('Suggest why distances to galaxies are uncertain.', 1, 'Distances depend on standard candles whose power output (absolute magnitude) is not known exactly, or are affected by dust ✓')
+  ]);
+};
+
+T.HU4 = R => {
+  const k = R.pick([10, 100, 1000]), Tc = 2.7, l = WIEN / Tc, Tk = Tc * k, lk = WIEN / Tk;
+  return NOFIG(2, { k }, `The cosmic microwave background radiation (CMBR) has a black-body spectrum corresponding to a temperature of 2.7 K.`, [
+    calc('Calculate the peak wavelength of the CMBR.', 1, l, 'm', `${eq(`${SWIEN} / 2.7 = ${AV(l, 'm')}`)} ✓`),
+    choose(R, 'In which region of the electromagnetic spectrum is this wavelength?', 1, 'microwave', ['infrared', 'visible', 'radio waves of wavelength about 1 km'], 'Microwave ✓'),
+    text('Explain why the CMBR is evidence for the Big Bang.', 2, 'The early Universe was very hot and dense and filled with high-energy radiation ✓<br>as the Universe expanded the radiation was red-shifted (it cooled) to the microwave region, filling all of space uniformly ✓'),
+    calc(`When the Universe was ${k} times smaller than it is now, the temperature of the background radiation was ${k} times higher. Calculate the peak wavelength at that time.`, 1, lk, 'm', `${eq(`${SWIEN} / ${N(Tk, 3)} = ${AV(lk, 'm')}`)} ✓`),
+    choose(R, 'Which observation is also evidence for the Big Bang?', 1, 'the relative abundance of hydrogen and helium in the Universe', ['the colour of the Sun', 'the existence of exoplanets', 'the shape of the type 1a supernova light curve'], 'The relative abundance of hydrogen and helium (about 3 : 1 by mass) ✓'),
+    text('Explain how the relative abundance of hydrogen and helium supports the Big Bang theory.', 1, 'Helium was formed by fusion in the hot early Universe for only a short time, which predicts the observed ratio (more helium than stars alone could make) ✓')
+  ]);
+};
+
+T.HU5 = R => {
+  const z = R.pick([0.10, 0.12, 0.15, 0.16, 0.20, 0.25]), In = R.pick([1.0e-13, 2.0e-13, 5.0e-13, 1.0e-12, 3.0e-12]), vk = z * CKM, d = vk / 65, dm = d * 3.08e22, P = 4 * Math.PI * dm * dm * In, ratio = P / 1.0e37;
+  return NOFIG(2, { z, In }, `A quasar has a red shift of ${N(z)}. The intensity of the radiation from the quasar at the Earth is ${V(In, WM)}.<br>Hubble constant = 65 km s<sup>−1</sup> Mpc<sup>−1</sup> &nbsp; ${D_MPC}<br>The power output of the Milky Way galaxy is about 1 × 10<sup>37</sup> W.`, [
+    calc('Calculate the recession velocity of the quasar.', 1, vk, KMS, `${eq(`<i>v</i> = <i>zc</i> = ${N(z)} × 3.00 × 10<sup>5</sup> = ${AV(vk, KMS)}`)} ✓`),
+    calc('Calculate the distance to the quasar in metres.', 2, dm, 'm', `${eq(`<i>d</i> = ${I(vk)} / 65 = ${I(d)}`)} Mpc ✓<br>${eq(`${I(d)} × 3.08 × 10<sup>22</sup> = ${AV(dm, 'm')}`)} ✓`),
+    calc('Calculate the power output of the quasar.', 2, P, 'W', `<i>P</i> = 4π<i>d</i><sup>2</sup><i>I</i> ✓<br>${eq(`<i>P</i> = 4π × (${I(dm)})<sup>2</sup> × ${N(In)} = ${AV(P, 'W')}`)} ✓`),
+    calc('Compare the power output of the quasar with that of the Milky Way by calculating their ratio.', 1, ratio, '', `${eq(`${I(P)} / 1 × 10<sup>37</sup> = ${A(ratio)}`)} ✓`, NS),
+    text('State how quasars were first discovered.', 1, 'As very bright (point-like) radio sources, which were found to have very large red shifts ✓')
+  ]);
+};
+
+T.HU6 = R => {
+  const td = R.pick([1.0, 2.0, 5.0, 10, 30]), Mk = R.pick([1.0e8, 5.0e8, 1.0e9, 3.0e9]), size = C * td * 86400, sAU = size / AU, nep = sAU < 30, Rs = 2 * GN * Mk * MSUN / (C * C);
+  return NOFIG(2, { td, Mk }, `The brightness of a quasar varies significantly over a time of ${V(td, 'days')}.<br>${D_AU} &nbsp; mass of the Sun = ${SMSUN} kg`, [
+    text('Explain why this variation limits the size of the region emitting the radiation.', 1, 'The region cannot vary in brightness as a whole faster than light can cross it, so its size must be less than <i>c</i> × time ✓'),
+    calc('Calculate the maximum size of the emitting region in metres.', 1, size, 'm', `${eq(`${SC0} × ${N(td)} × 24 × 3600 = ${AV(size, 'm')}`)} ✓`),
+    calc('Express this size in AU.', 1, sAU, 'AU', `${eq(`${I(size)} / ${SAU} = ${AV(sAU, 'AU')}`)} ✓`),
+    choose(R, 'Neptune orbits the Sun at 30 AU. How does the emitting region compare with the size of Neptune’s orbit?', 1, nep ? 'it is smaller than Neptune’s orbit' : 'it is larger than Neptune’s orbit', [nep ? 'it is larger than Neptune’s orbit' : 'it is smaller than Neptune’s orbit'], `${nep ? 'Smaller' : 'Larger'} ✓`),
+    calc(`The quasar is powered by a black hole of mass ${N(Mk)} times the mass of the Sun. Calculate the radius of its event horizon.`, 1, Rs, 'm', `${eq(`2 × ${SG} × ${N(Mk)} × ${SMSUN} / (${SC0})<sup>2</sup> = ${AV(Rs, 'm')}`)} ✓`),
+    text('Describe what is thought to be the source of a quasar’s power.', 1, 'Matter falling (accreting) onto a supermassive black hole at the centre of a galaxy (active galactic nucleus) ✓')
+  ]);
+};
+
+T.HU7 = R => {
+  const z = R.pick([0.050, 0.060, 0.080, 0.10]), fac = R.pick([1.10, 1.15, 1.20, 1.25]), vk = z * CKM, dH = vk / 65, m = Math.round((-19.3 + 5 * lg(dH * fac * 1e6 / 10)) * 100) / 100, dO = 10 ** ((m + 19.3 + 5) / 5) / 1e6;
+  return NOFIG(3, { z, m }, `A type 1a supernova is observed in a galaxy with red shift ${N(z, 2)}. Its peak apparent magnitude is ${fM(m)}. The peak absolute magnitude of a type 1a supernova is −19.3.<br>Hubble constant = 65 km s<sup>−1</sup> Mpc<sup>−1</sup>`, [
+    calc('Calculate the distance to the galaxy predicted by Hubble’s law, in Mpc.', 2, dH, 'Mpc', `${eq(`<i>v</i> = ${N(z, 2)} × 3.00 × 10<sup>5</sup> = ${I(vk)}`)} km s<sup>−1</sup> ✓<br>${eq(`<i>d</i> = ${I(vk)} / 65 = ${AV(dH, 'Mpc')}`)} ✓`),
+    calc('Calculate the distance to the supernova using its magnitudes, in Mpc.', 2, dO, 'Mpc', `${eq(`${fM(m)} + 19.3 = 5 log(<i>d</i> / 10)`)} ✓<br>${eq(`<i>d</i> = ${I(dO * 1e6)}`)} pc ${eq(`= ${AV(dO, 'Mpc')}`)} ✓`),
+    choose(R, 'Compared with the prediction from Hubble’s law, how bright does the supernova appear?', 1, 'dimmer than expected', ['brighter than expected', 'as bright as expected'], 'Dimmer: it is further away than the Hubble-law distance ✓'),
+    text('Explain what astronomers concluded from observations like this and how they explained it.', 2, 'The expansion of the Universe is accelerating ✓<br>this is attributed to dark energy ✓')
+  ]);
+};
+
+/* ===== Exoplanets ===== */
+T.EX1 = R => {
+  const P = R.pick([3.0, 4.0, 5.0, 6.0]), dep = R.pick([.010, .012, .015, .020]), Rsk = R.pick([0.80, 1.0, 1.2]), Ms = R.pick([0.80, 1.0, 1.2]);
+  const w = .25, tr = t => { const x = Math.min(...[.5, .5 + P, .5 + 2 * P].map(c => Math.abs(t - c))); return x >= w ? 0 : x <= .6 * w ? dep : dep * (w - x) / (.4 * w); };      // half-width 0.25 day with a flat bottom
+  const f = t => 1 - tr(t), xa = axisFor(2 * P + 1), ys = [.97, 1.005, .005];
+  const fig = graph({ x: [0, xa[0], xa[1]], y: ys, xdiv: 5, ydiv: 5, h: 280, w: 440, xl: 'time / days', yl: 'relative intensity', curves: [{ f, from: 0, to: xa[0], w: 1.7 }], reads: [[.5, 1 - dep], [.5 + P, 1 - dep]] });
+  const Rs = Rsk * RSUN, Rp = Math.sqrt(dep) * Rs, M = Ms * MSUN, Tsec = P * 86400, r = Math.cbrt(GN * M * Tsec ** 2 / (4 * Math.PI ** 2));
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { P, dep, Rsk, Ms },
+    stem: `<b>Figure 1</b> shows how the intensity of light received from a star varies with time as a planet passes in front of it.<br>The star has a radius of ${N(Rsk)} times the radius of the Sun and a mass of ${N(Ms)} times the mass of the Sun.<br>radius of the Sun = 6.96 × 10<sup>8</sup> m &nbsp; mass of the Sun = ${SMSUN} kg`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the orbital period of the planet.', 1, P, 'days', `${fx(P, 1)} days ✓`, { abs: xa[1] / 10, noSkill: true }),
+      calc('Use <b>Figure 1</b> to determine the fractional decrease in intensity during a transit.', 1, dep, '', `${fx(dep, 3)} ✓`, { abs: .001, noSkill: true }),
+      calc('Calculate the radius of the planet.', 2, Rp, 'm', `fractional decrease = (<i>R</i><sub>planet</sub> / <i>R</i><sub>star</sub>)<sup>2</sup> ✓<br>${eq(`<i>R</i> = √(${fx(dep, 3)}) × ${N(Rsk)} × 6.96 × 10<sup>8</sup> = ${AV(Rp, 'm')}`)} ✓`, { tol: .05 }),
+      calc('Calculate the radius of the planet’s orbit.', 2, r, 'm', `${eq(`<i>r</i><sup>3</sup> = <i>GMT</i><sup>2</sup>/4π<sup>2</sup>`)} with ${eq(`<i>T</i> = ${I(Tsec)}`)} s ✓<br>${eq(`<i>r</i> = (${SG} × ${I(M)} × (${I(Tsec)})<sup>2</sup> / (4π<sup>2</sup>))<sup>1/3</sup> = ${AV(r, 'm')}`)} ✓`, { tol: .02 }),
+      text('State the condition needed for a planet to be detected by the transit method.', 1, 'The plane of the planet’s orbit must be (almost) in line with the Earth, so the planet passes in front of the star as seen from the Earth ✓')
+    ] };
+};
+
+T.EX2 = R => {
+  const Ms = R.pick([0.80, 1.0, 1.2, 1.5]), mpJ = R.pick([0.50, 1.0, 2.0, 5.0]), rA = R.pick([0.050, 0.10, 0.50, 1.0]), M = Ms * MSUN, mp = mpJ * 1.90e27, r = rA * AU;
+  const vp = Math.sqrt(GN * M / r), vs = mp / M * vp, dl = 656.28e-9 * vs / C, Tp = 2 * Math.PI * r / vp / 86400;
+  return NOFIG(2, { Ms, mpJ, rA }, `A planet of mass ${N(mpJ)} times the mass of Jupiter moves in a circular orbit of radius ${V(rA, 'AU')} around a star of mass ${N(Ms)} times the mass of the Sun.<br>mass of Jupiter = 1.90 × 10<sup>27</sup> kg &nbsp; mass of the Sun = ${SMSUN} kg &nbsp; ${D_AU}`, [
+    calc('Calculate the orbital speed of the planet.', 2, vp, MS1, `${eq(`<i>v</i> = √(<i>GM</i>/<i>r</i>)`)} ✓<br>${eq(`<i>v</i> = √(${SG} × ${I(M)} / ${N(r, 3)}) = ${AV(vp, MS1)}`)} ✓`),
+    calc('The star and planet orbit their common centre of mass, so that the momentum of the star is equal in magnitude to that of the planet. Calculate the orbital speed of the star.', 1, vs, MS1, `${eq(`<i>v</i><sub>star</sub> = ${N(mp, 3)} × ${I(vp)} / ${I(M)} = ${AV(vs, MS1)}`)} ✓`),
+    calc('Calculate the maximum Doppler shift of the hydrogen-alpha line (656.28 nm) in the star’s spectrum.', 1, dl, 'm', `${eq(`Δλ = 656.28 × 10<sup>−9</sup> × ${I(vs)} / ${SC0} = ${AV(dl, 'm')}`)} ✓`),
+    calc('Calculate the orbital period of the planet in days.', 1, Tp, 'days', `${eq(`<i>T</i> = 2π<i>r</i>/<i>v</i> = 2π × ${N(r, 3)} / ${I(vp)} / (24 × 3600) = ${AV(Tp, 'days')}`)} ✓`),
+    text('Explain why the radial velocity method most easily detects massive planets close to their stars.', 1, 'A massive planet close to its star makes the star move faster, so the Doppler shift is larger (and the period shorter) ✓')
+  ]);
+};
+
+const PLAN = [['the Earth', 5.97e24, 6.37e6, 1.00], ['Venus', 4.87e24, 6.05e6, 0.723], ['Mars', 6.42e23, 3.39e6, 1.52], ['Jupiter', 1.90e27, 6.99e7, 5.20], ['Saturn', 5.68e26, 5.82e7, 9.54]];
+T.EX3 = R => {
+  const pi = Math.floor(R() * PLAN.length), [pn, mp, rp, aA] = PLAN[pi], r = aA * AU, vp = Math.sqrt(GN * MSUN / r), vs = mp / MSUN * vp, dl = 500e-9 * vs / C, dep = (rp / RSUN) ** 2;
+  return NOFIG(3, { pi }, `Astronomers on a distant planet search for planets orbiting the Sun. Consider ${pn}, of mass ${V(mp, 'kg', 3)} and radius ${V(rp, 'm', 3)}, orbiting at ${V(aA, 'AU', 3)} from the Sun.<br>mass of the Sun = ${SMSUN} kg &nbsp; radius of the Sun = 6.96 × 10<sup>8</sup> m &nbsp; ${D_AU}`, [
+    calc(`Calculate the orbital speed of ${pn}.`, 1, vp, MS1, `${eq(`<i>v</i> = √(${SG} × ${SMSUN} / ${I(r)}) = ${AV(vp, MS1)}`)} ✓`),
+    calc('Calculate the speed of the Sun about the common centre of mass due to this planet.', 1, vs, MS1, `${eq(`${N(mp, 3)} × ${I(vp)} / ${SMSUN} = ${AV(vs, MS1)}`)} ✓`),
+    calc('Calculate the maximum Doppler shift this produces in a line of wavelength 500 nm.', 1, dl, 'm', `${eq(`500 × 10<sup>−9</sup> × ${I(vs)} / ${SC0} = ${AV(dl, 'm')}`)} ✓`),
+    calc(`Calculate the fractional decrease in the Sun’s intensity during a transit of ${pn}.`, 1, dep, '', `${eq(`(${N(rp, 3)} / 6.96 × 10<sup>8</sup>)<sup>2</sup> = ${A(dep)}`)} ✓`, NS),
+    text('Explain why it is very difficult to obtain a direct image of an Earth-like planet orbiting a Sun-like star.', 2, 'The star is very much brighter than the planet, so the planet’s light is swamped ✓<br>the angular separation of the planet and star is very small, at or below the resolution of telescopes ✓')
+  ]);
+};
+
+T.EX4 = R => {
+  const v = find(() => ({ aA: R.pick([5.0, 10, 20, 40, 70]), dp: R.pick([10, 15, 20, 30, 40]), D: R.pick([2.4, 4.0, 8.0, 10]), lam: R.pick([1.6, 2.2, 3.8]) }), o => { const r = (o.aA * AU / (o.dp * PC)) / (o.lam * 1e-6 / o.D); return r > 1.3 || r < .77; });
+  const { aA, dp, D, lam } = v, a = aA * AU / (dp * PC), th = lam * 1e-6 / D, res = a > th, dm = lg(1e8) / lg(2.51);
+  return NOFIG(2, { aA, dp, D, lam }, `A planet orbits a star at ${V(aA, 'AU')}. The star is ${V(dp, 'pc')} from the Earth. Astronomers try to image the planet directly with an infrared telescope of diameter ${V(D, 'm')} at a wavelength of ${V(lam, 'μm')}.<br>${D_AU} &nbsp; ${D_PC}`, [
+    calc('Calculate the angular separation of the planet and star seen from the Earth.', 1, a, 'rad', `${eq(`${N(aA)} × ${SAU} / (${N(dp)} × ${SPC}) = ${AV(a, 'rad')}`)} ✓`),
+    calc('Calculate the minimum angular resolution of the telescope.', 1, th, 'rad', `${eq(`${N(lam)} × 10<sup>−6</sup> / ${N(D)} = ${AV(th, 'rad')}`)} ✓`),
+    choose(R, 'Can the telescope resolve the planet from the star?', 1, res ? 'yes' : 'no', [res ? 'no' : 'yes'], `${res ? 'Yes' : 'No'} ✓`),
+    calc('In the infrared the planet is 10<sup>8</sup> times fainter than its star. Calculate the difference in their apparent magnitudes.', 1, dm, '', `${eq(`log 10<sup>8</sup> / log 2.51 = ${N(dm, 3)}`)} ✓`, NS),
+    text('Suggest why direct imaging of planets is carried out in the infrared.', 1, 'A planet emits mostly infrared, while the star emits less strongly there, so the contrast between planet and star is smaller ✓')
+  ]);
+};
+
+T.EX5 = R => {
+  const Td = R.pick([2.0, 3.5, 5.0, 10, 20, 50]), Ms = R.pick([0.50, 0.80, 1.0, 1.5]), Rsk = R.pick([0.50, 0.80, 1.0, 1.4]);
+  const M = Ms * MSUN, Ts = Td * 86400, r = Math.cbrt(GN * M * Ts * Ts / (4 * Math.PI ** 2)), rA = r / AU, v = 2 * Math.PI * r / Ts, Rs = Rsk * RSUN, td = 2 * Rs / v / 3600;
+  return NOFIG(2, { Td, Ms, Rsk }, `Transits of an exoplanet across its star are observed every ${V(Td, 'days')}. The star has a mass of ${N(Ms)} times the mass of the Sun and a radius of ${N(Rsk)} times the radius of the Sun.<br>mass of the Sun = ${SMSUN} kg &nbsp; radius of the Sun = 6.96 × 10<sup>8</sup> m &nbsp; ${D_AU}`, [
+    calc('Calculate the radius of the planet’s orbit.', 2, r, 'm', `${eq(`<i>T</i> = ${N(Td)} × 24 × 3600 = ${I(Ts)}`)} s ✓<br>${eq(`<i>r</i> = (${SG} × ${I(M)} × (${I(Ts)})<sup>2</sup> / (4π<sup>2</sup>))<sup>1/3</sup> = ${AV(r, 'm')}`)} ✓`),
+    calc('Express this radius in AU.', 1, rA, 'AU', `${eq(`${I(r)} / ${SAU} = ${AV(rA, 'AU')}`)} ✓`),
+    calc('Calculate the orbital speed of the planet.', 1, v, MS1, `${eq(`<i>v</i> = 2π<i>r</i>/<i>T</i> = 2π × ${I(r)} / ${I(Ts)} = ${AV(v, MS1)}`)} ✓`),
+    calc('Estimate the maximum duration of a transit, in hours, assuming the planet crosses the full diameter of the star.', 1, td, 'hours', `${eq(`2 × ${N(Rsk)} × 6.96 × 10<sup>8</sup> / ${I(v)} / 3600 = ${AV(td, 'hours')}`)} ✓`),
+    text('Explain why only a small fraction of planetary systems can be detected by the transit method.', 1, 'The orbit must be aligned edge-on to the Earth, which is true for only a small fraction of randomly orientated orbits ✓')
+  ]);
+};
+
+/* ecf links set by hand where the numbers alone do not show them */
+// working carried from earlier parts where the automatic detection is not reliable (a carried value can coincide with a given value)
+const ECF = { TL1: { c: 'a' }, TL2: { c: 'b', d: 'c' }, MG2: { c: '' }, MG5: { c: 'ab' }, MG6: { e: 'b' }, DO1: { d: 'c' }, DO2: { b: 'a' }, DO3: { c: 'b', d: 'ab' }, DO4: { e: 'a' }, EX1: { d: 'a' } };
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number(a.toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  const E0 = typeof ECF !== 'undefined' && ECF[q.id], ECFX = E0 ? (typeof E0 === 'function' ? E0(q.data) : E0) : {};   // ecf links set by hand where numbers alone mislead
+  const ecfNote = l => 'Allow ecf from their answer' + (l.length > 1 ? 's' : '') + ' to ' + (l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0]) + '.';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(p.ans < 0 ? lo : Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    const fixed = ECFX[L[i]];
+    if (fixed !== undefined){ if (fixed && !g.some(x => /ecf/.test(x))) g.push(ecfNote([...fixed].map(c => '(' + c + ')'))); }
+    else if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      const findNum = (m, a) => { for (let k = m.indexOf(a); k >= 0; k = m.indexOf(a, k + 1)){ const b = m[k - 1] || '', b2 = m[k - 2] || '', c = m[k + a.length] || '';
+          if (/[\d.^]/.test(b) || (b === '−' && b2 === '^')) continue;                       // inside another number or an exponent
+          if (c === '^' && a === '10') continue;                                              // a power of ten, not a value
+          if (a.includes('×')){ if (/\d/.test(c)) continue; return [k, a.length]; }          // a different power of ten
+          const full = m.slice(k).match(/^\d*\.?\d+/)[0].replace(/\.$/, ''), dp = a.includes('.') ? a.split('.')[1].length : 0;
+          if (full === a || Number(full).toFixed(dp) === a) return [k, full.length];          // the same value, perhaps shown to more figures
+        } return null; };
+      const hasNum = (m, a) => !!findNum(m, a);
+      let own = plain(p.ms);                                                                  // the part's own result is not a carried value
+      for (const a of [plain(I(Math.abs(p.ans))), plain(A(Math.abs(p.ans)))]) for (let f = findNum(own, a); f; f = findNum(own, a)) own = own.slice(0, f[0]) + '#' + own.slice(f[0] + f[1]);
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0 || pj.int) continue; const a = plain(A(Math.abs(pj.ans))), a4 = plain(I(Math.abs(pj.ans))), m = own; if ((hasNum(m, a) || hasNum(m, a4)) && !hasNum(given, a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length && !g.some(x => /ecf/.test(x))) g.push(ecfNote(ecf));
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], ''], ['Bq', ['bq', 'becquerel', 'becquerels', 's-1'], 'Accept s<sup>−1</sup>.'], ['s<sup>−1</sup>', ['s-1', '/s', 'persecond'], ''], ['T', ['t', 'tesla'], ''], ['N kg<sup>−1</sup>', ['nkg-1', 'n/kg', 'ms-2', 'm/s2'], 'Accept m s<sup>−2</sup>.'], ['J kg<sup>−1</sup>', ['jkg-1', 'j/kg'], ''], ['N m<sup>2</sup> kg<sup>−2</sup>', ['nm2kg-2', 'nm^2kg^-2'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  ASF = 2; ASF = T[tpl](makeRand(seedFor(tpl, seed))).sf || 2;      // a first pass finds the significant figures of the data
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : p.s3 ? N(p.ans, 3) : A(p.ans); });      // s3: shown to 3 sf, like the table it completes
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+// a drop-down option can only hold plain text, so superscripts and subscripts are written with Unicode characters
+const SUPC = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '−': '⁻', '-': '⁻', '+': '⁺' }, SUBC = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', e: 'ₑ' };
+const uni = (s, map, mark) => [...s].every(c => map[c]) ? [...s].map(c => map[c]).join('') : mark + '(' + s + ')';
+const optText = h => String(h).replace(/<sup>(.*?)<\/sup>/g, (m, s) => uni(s, SUPC, '^')).replace(/<sub>(.*?)<\/sub>/g, (m, s) => uni(s, SUBC, '_')).replace(/<[^>]+>/g, '');
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${optText(o)}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like MG3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>

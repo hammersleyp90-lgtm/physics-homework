@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Waves Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Waves Question Generator</h1>
+    <p>AQA-style practice on section 3.3 (Waves). 42 question types and many thousands of different questions with mark schemes: diagram, graph and oscilloscope questions, plus calculation and description questions without a diagram.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="SW3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number(x.toPrecision(n));
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    let e = Math.floor(Math.log10(a) + 1e-12), m = Number((x / Math.pow(10, e)).toPrecision(n));
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+const A = x => isNice(x, 2) ? N(x, 2) : N(x, 3);      // answers: 2 sf when exact, otherwise 3 sf
+const AV = (x, unit) => A(x) + ' ' + unit;
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? .9 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {};
+function graph(g){
+  LAST.g = g;
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = 52, mt = 16, mr = 22;
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(m) + 1e-9));
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(Math.max(xa, Math.min(0, xb))), ay0 = Y(Math.max(ya, Math.min(0, yb)));
+  let marks = '';
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= ya - 1e-9 && y <= yb + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="1.9" stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle">${esc(c.name)}</text>`;
+  });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(g.yl)} against ${esc(g.xl)}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${th - 8}" text-anchor="middle">${esc(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${esc(g.yl)}</text></g></svg>`;
+}
+
+
+
+/* ---------- waves: shared helpers ---------- */
+const TOPICS = { PW: 'Progressive waves', LT: 'Longitudinal and transverse waves, polarisation', SW: 'Stationary waves', IN: 'Interference', DF: 'Diffraction', RF: 'Refraction and optical fibres' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const INT = { int: true, noSkill: true };
+const CTXT = '3.00 × 10<sup>8</sup>', CLINE = `speed of light in a vacuum = ${CTXT} ${MS1}`;
+const rad = d => d * Math.PI / 180, sind = d => Math.sin(rad(d)), cosd = d => Math.cos(rad(d)), tand = d => Math.tan(rad(d)), asind = x => Math.asin(x) * 180 / Math.PI;
+const r3 = x => Number(x.toPrecision(3));
+const I = x => isNice(x, 2) ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);       // intermediate values in working are carried to 4 significant figures
+const NU = (x, n = 3) => V(x, '', n).trim();                 // a number with no unit, exact at n significant figures
+const ORD = ['zero', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+const th = (a, b) => `<i>${a}</i>` + (b ? `<sub>${b}</sub>` : '');
+const LASERS = [[405, 'violet'], [450, 'blue'], [532, 'green'], [633, 'red'], [650, 'red']];
+const SAFETY = 'Any one: never look directly into the laser beam ✓ / avoid reflections from shiny surfaces ✓ / wear laser safety goggles ✓ / display a warning sign outside the laboratory ✓';
+const dot = (s, x, y, r = 3.2) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+const wavePts = (x0, x1, f) => { const pts = []; for (let x = x0; x <= x1 + 1e-9; x += 2) pts.push([x, f(x)]); return pts; };
+const sine = (a, p) => t => a * Math.sin(2 * Math.PI * t / p);
+// arc and label for the angle between two directions (degrees anticlockwise from "to the right") at a vertex
+function angleMark(s, cx, cy, a0, a1, str, r = 34, adjust){
+  s.arc(cx, cy, r, a0, a1, { w: 1.1, free: true });
+  const half = Math.abs(a1 - a0) / 2, R0 = Math.max(r + 20, 26 / Math.sin(rad(half))), R = adjust ? adjust(R0) : R0, m = rad((a0 + a1) / 2);
+  s.label(cx + R * Math.cos(m), cy - R * Math.sin(m) + 5, str);
+}
+function speaker(s, x, y){ s.rect(x, y - 12, 12, 24, { fill: '#e4e7ea' }); s.poly([[x + 12, y - 12], [x + 28, y - 24], [x + 28, y + 24], [x + 12, y + 12]], { close: true, fill: '#fff' }); }
+
+/* ===== progressive waves ===== */
+const YSETS = [[2, 3, 1, 5], [3, 4, 1, 5], [1.5, 2, 0.5, 5], [0.6, 0.8, 0.2, 4], [4, 6, 2, 4], [5, 6, 2, 4]];                       // amplitude, axis limit, major step, minor divisions
+const XSETS = [[0.8, 2.0, 0.5, 5, 'm', 1], [1.2, 3.0, 0.5, 5, 'm', 1], [0.40, 1.0, 0.2, 4, 'm', 1], [1.6, 4.0, 1, 5, 'm', 1], [2.0, 5.0, 1, 5, 'm', 1], [24, 60, 10, 5, 'cm', .01], [6.0, 15, 5, 5, 'cm', .01], [16, 40, 10, 5, 'cm', .01]];
+const TSETS = [[0.4, 1.0, 0.2, 4, 's', 1], [0.8, 2.0, 0.5, 5, 's', 1], [20, 50, 10, 5, 'ms', 1e-3], [4, 10, 2, 4, 'ms', 1e-3], [2.0, 5.0, 1, 5, 'ms', 1e-3], [0.16, 0.4, 0.1, 5, 's', 1], [8, 20, 5, 5, 'ms', 1e-3]];
+const MEDIA = ['a wave on a rope', 'a water wave', 'a wave on a stretched spring'];
+
+T.PW1 = R => {
+  const [a, Y, yM, yd] = R.pick(YSETS), yu = R.pick(['cm', 'mm']), [lam, xmax, xM, xd, xu, xk] = R.pick(XSETS), f = R.pick([2.0, 2.5, 4.0, 5.0, 8.0, 12, 15, 20, 25, 50]), sgn = R.pick([1, -1]), medium = R.pick(MEDIA);
+  const frac = R.pick([.125, .25, .5, .75]), dx = frac * lam, c = f * lam * xk, phi = 360 * frac;
+  const fig = graph({ x: [0, xmax, xM], y: [-Y, Y, yM], xdiv: xd, ydiv: yd, xl: `distance / ${xu}`, yl: `displacement / ${yu}`, curves: [{ f: x => sgn * a * Math.sin(2 * Math.PI * x / lam), from: 0, to: xmax }] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { a, lam, xk, f, frac },
+    stem: `<b>Figure 1</b> shows how the displacement of the particles of ${medium} varies with distance along the wave at one instant.<br>The frequency of the wave is ${V(f, 'Hz')}.`,
+    parts: [
+      calc('Determine the amplitude of the wave.', 1, a, yu, `Maximum displacement from the equilibrium position = ${AV(a, yu)} ✓`, { abs: yM / yd / 2 }),
+      calc('Determine the wavelength of the wave.', 1, lam, xu, `Distance for one complete cycle (for example between adjacent crests) = ${AV(lam, xu)} ✓`, { abs: xM / xd / 2 }),
+      calc('Calculate the speed of the wave.', 2, c, MS1, `${eq(`<i>c</i> = <i>fλ</i> = ${N(f)} × ${A(lam * xk)}`)} ✓<br>${eq(`<i>c</i> = ${AV(c, MS1)}`)} ✓`, { tol: .05 }),
+      calc(`Two points on the wave are ${V(dx, xu)} apart, measured along the direction in which the wave travels.<br>Calculate the phase difference, in degrees, between the oscillations of these two points.`, 2, phi, '°', `${eq('phase difference = (separation / <i>λ</i>) × 360°')} ✓<br>${eq(`= (${N(dx)} / ${A(lam)}) × 360 = ${A(phi)}°`)} ✓`, { tol: .05 })
+    ] };
+};
+
+T.PW2 = R => {
+  const [a, Y, yM, yd] = R.pick(YSETS), yu = R.pick(['cm', 'mm']), [T0, tmax, tM, td, tu, tk] = R.pick(TSETS), v = R.pick([0.25, 0.40, 0.60, 1.2, 1.5, 2.4, 4.0, 6.0]), medium = R.pick(MEDIA), sgn = R.pick([1, -1]);
+  const k = R.pick([1.5, 2, 2.5, 5, 10]), tt = k * T0, Ts = T0 * tk, f = 1 / Ts, lam = v * Ts, dist = 4 * a * k;
+  const fig = graph({ x: [0, tmax, tM], y: [-Y, Y, yM], xdiv: td, ydiv: yd, xl: `time / ${tu}`, yl: `displacement / ${yu}`, curves: [{ f: t => sgn * a * Math.sin(2 * Math.PI * t / T0), from: 0, to: tmax }] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { a, T0, tk, v, k },
+    stem: `<b>Figure 1</b> shows how the displacement of one particle varies with time as ${medium} passes it.<br>The speed of the wave is ${V(v, MS1)}.`,
+    parts: [
+      calc('Determine the period of the wave.', 1, T0, tu, `Time for one complete oscillation = ${AV(T0, tu)} ✓`, { abs: tM / td / 2 }),
+      calc('Calculate the frequency of the wave.', 1, f, 'Hz', `${eq(`<i>f</i> = 1 / <i>T</i> = 1 / ${A(Ts)} = ${AV(f, 'Hz')}`)} ✓`, { tol: .05 }),
+      calc('Calculate the wavelength of the wave.', 2, lam, 'm', `${eq(`<i>λ</i> = <i>c</i> / <i>f</i> = ${N(v)} / ${A(f)}`)} ✓<br>${eq(`<i>λ</i> = ${AV(lam, 'm')}`)} ✓`, { tol: .05 }),
+      calc(`Calculate the total distance moved by this particle in a time of ${V(tt, tu)}.`, 2, dist, yu, `${eq(`number of oscillations = ${N(tt)} / ${A(T0)} = ${k}`)} ✓<br>In each oscillation the particle moves a distance of 4 × amplitude: ${eq(`distance = ${k} × 4 × ${A(a)} = ${AV(dist, yu)}`)} ✓`, { tol: .05 })
+    ] };
+};
+
+T.PW3 = R => {
+  const a = R.pick([2, 2.5, 3, 3.5]), p = R.pick([2, 2.5, 4, 5]), tb = R.pick([.1, .2, .5, 1, 2]), dbl = R.chance(.5), Tm = p * tb, f = 1000 / Tm, lam = 340 / f, sc = scope(sine(a, p));
+  return { sf: 2, scenes: [], figs: [sc.svg], scopeBad: sc.bad, readFig: 'Figure 1', data: { p, tb, dbl },
+    stem: `A microphone is connected to an oscilloscope. <b>Figure 1</b> shows the trace on the oscilloscope screen when the microphone detects a sound of constant frequency from a loudspeaker.<br>The time-base is set to ${V(tb, 'ms div<sup>−1</sup>')}.<br>speed of sound in air = ${V(340, MS1)}`,
+    parts: [
+      calc('Determine the period of the sound wave.', 1, Tm, 'ms', `One cycle occupies ${N(p)} divisions: ${eq(`<i>T</i> = ${N(p)} × ${N(tb)} = ${AV(Tm, 'ms')}`)} ✓`, { abs: .12 * tb }),
+      calc('Calculate the frequency of the sound wave.', 1, f, 'Hz', `${eq(`<i>f</i> = 1 / <i>T</i> = 1 / ${A(Tm * 1e-3)} = ${AV(f, 'Hz')}`)} ✓`, { tol: .05 }),
+      calc('Calculate the wavelength of the sound wave in air.', 2, lam, 'm', `${eq(`<i>λ</i> = <i>c</i> / <i>f</i> = 340 / ${A(f)}`)} ✓<br>${eq(`<i>λ</i> = ${AV(lam, 'm')}`)} ✓`, { tol: .05 }),
+      text(`The frequency of the sound is now ${dbl ? 'doubled' : 'halved'}. The loudness of the sound and the oscilloscope settings are not changed.<br>Describe how the trace on the screen changes.`, 2, `The amplitude (height) of the trace is unchanged ✓<br>Each cycle now occupies ${A(dbl ? p / 2 : p * 2)} divisions, so ${dbl ? 'twice as many' : 'half as many'} cycles are seen on the screen ✓`)
+    ] };
+};
+
+T.PW4 = R => {
+  const lam = R.pick([0.40, 0.80, 1.2, 1.6, 2.0, 2.4]), f = R.pick([1.5, 2.0, 2.5, 4.0, 5.0]), dir = R.pick(['right', 'left']), px = R.pick([80, 120]), dpx = R.pick([40, 80, 120, 160]), qx = px + dpx, rx = qx === 280 ? 360 : R.pick([280, 360]);
+  const L2 = 2 * lam, c = f * lam, frac = dpx / 160, tPQ = frac / f, rUp = (rx === 280) === (dir === 'right');
+  const s = new Scene('A transverse wave on a rope at one instant, with points P, Q and R marked'), y0 = 150, amp = 45, yAt = x => y0 - amp * Math.sin(2 * Math.PI * (x - 40) / 160);
+  s.line(40, y0, 440, y0, { dash: '5 4', w: 1, free: true }); s.poly(wavePts(40, 440, yAt), { w: 1.8 });
+  const place = (x, name) => { const ph = ((x - 40) % 160 + 160) % 160; dot(s, x, yAt(x));
+    if (ph === 40) s.label(x, y0 - amp - 10, name, { bold: true }); else if (ph === 120) s.label(x, y0 + amp + 20, name, { bold: true });
+    else if (ph === 0) s.label(x - 9, y0 - 8, name, { bold: true, anchor: 'end' }); else s.label(x + 9, y0 - 8, name, { bold: true, anchor: 'start' }); };
+  place(px, 'P'); place(qx, 'Q'); place(rx, 'R');
+  s.dim(80, 66, 400, 66, N(L2) + ' m');
+  if (dir === 'right') s.arrow(200, 232, 280, 232); else s.arrow(280, 232, 200, 232);
+  s.label(240, 252, 'direction of travel');
+  const ang = [90, 180, 270, 360].indexOf(frac * 360);
+  return { sf: 2, scenes: [s], data: { lam, f, dir, px, qx, rx },
+    stem: `<b>Figure 1</b> shows a transverse progressive wave travelling to the ${dir} along a rope, at one instant. P, Q and R are points on the rope.<br>The horizontal distance between the first crest and the third crest shown is ${V(L2, 'm')}. The frequency of the wave is ${V(f, 'Hz')}.`,
+    parts: [
+      calc('Calculate the wavelength of the wave.', 1, lam, 'm', `The distance marked is two wavelengths: ${eq(`<i>λ</i> = ${N(L2)} / 2 = ${AV(lam, 'm')}`)} ✓`),
+      calc('Calculate the speed of the wave.', 2, c, MS1, `${eq(`<i>c</i> = <i>fλ</i> = ${N(f)} × ${A(lam)}`)} ✓<br>${eq(`<i>c</i> = ${AV(c, MS1)}`)} ✓`),
+      opt('State the phase difference between the oscillations of P and Q.', 1, ['90°', '180°', '270°', '360° (in phase)'], ang, `P and Q are ${['one quarter of a', 'half a', 'three quarters of a', 'one whole'][ang]} wavelength apart, so the phase difference is ${frac * 360}° ✓`),
+      calc('Calculate the time taken for the wave to travel a distance equal to the horizontal distance between P and Q.', 2, tPQ, 's', `${eq(`<i>T</i> = 1 / <i>f</i> = 1 / ${N(f)} = ${AV(1 / f, 's')}`)} ✓<br>The distance is ${['one quarter of a', 'half a', 'three quarters of a', 'one whole'][ang]} wavelength, so the time is the same fraction of a period: ${eq(`<i>t</i> = ${N(frac)} × ${A(1 / f)} = ${AV(tPQ, 's')}`)} ✓`),
+      opt('State the direction in which point R is moving at the instant shown.', 1, ['up the page', 'down the page', 'to the left', 'to the right'], rUp ? 0 : 1, `A short time later the whole wave pattern has moved slightly to the ${dir}. The part of the wave just to the ${dir === 'right' ? 'left' : 'right'} of R is ${rUp ? 'above' : 'below'} the equilibrium position, so R is moving ${rUp ? 'up' : 'down'} the page ✓<br>(The particles of a transverse wave only move at right angles to the direction of travel.)`)
+    ] };
+};
+
+T.PW5 = R => {
+  const f = R.pick([88, 90, 92, 94, 96, 98]), d = R.pick([15, 24, 36, 45, 60, 75, 90]), lam = C0 / (f * 1e6), Tp = 1 / (f * 1e6), t = d * 1e3 / C0;
+  return NOFIG(2, { f, d }, `A radio station broadcasts using radio waves of frequency ${V(f, 'MHz')}. A receiver is ${V(d, 'km')} from the transmitter.<br>speed of electromagnetic waves in air = ${CTXT} ${MS1}`, [
+    text('State what is meant by the frequency of a wave.', 1, 'The number of complete oscillations (of a point on the wave) per second / the number of complete waves passing a point per second ✓'),
+    calc('Calculate the wavelength of the radio waves.', 2, lam, 'm', `${eq(`<i>λ</i> = <i>c</i> / <i>f</i> = ${CTXT} / ${N(f * 1e6)}`)} ✓<br>${eq(`<i>λ</i> = ${AV(lam, 'm')}`)} ✓`),
+    calc('Calculate the period of the radio waves.', 1, Tp, 's', `${eq(`<i>T</i> = 1 / <i>f</i> = 1 / ${N(f * 1e6)} = ${AV(Tp, 's')}`)} ✓`),
+    calc('Calculate the time taken for the radio waves to travel from the transmitter to the receiver.', 2, t, 's', `${eq(`<i>t</i> = distance / speed = ${N(d * 1e3)} / ${CTXT}`)} ✓<br>${eq(`<i>t</i> = ${AV(t, 's')}`)} ✓`)
+  ]);
+};
+
+T.PW6 = R => {
+  const { lam, f, fr } = find(() => ({ lam: R.pick([1.6, 2.0, 2.4, 3.2, 4.0]), f: R.pick([5.0, 8.0, 10, 12, 15, 20]), fr: R.pick([.125, .25, .5, .75]) }), o => isNice(o.lam * o.f, 2) && isNice(o.lam * o.fr, 2));
+  const c = lam * f, d = lam * fr, phi = 2 * Math.PI * fr, k = R.pick([1, 2, 3, 4]), d2 = k * lam / 2, CMS = 'cm s<sup>−1</sup>';
+  return NOFIG(2, { c, f, d, d2 }, `Water waves are produced in a ripple tank by a dipper that vibrates at a frequency of ${V(f, 'Hz')}. The waves travel across the tank at a speed of ${V(c, CMS)}.`, [
+    text('State what is meant by the wavelength of a progressive wave.', 1, 'The shortest distance between two points on the wave that are in phase / the distance between adjacent crests ✓'),
+    calc('Calculate the wavelength of the water waves.', 2, lam, 'cm', `${eq(`<i>λ</i> = <i>c</i> / <i>f</i> = ${N(c)} / ${N(f)}`)} ✓<br>${eq(`<i>λ</i> = ${AV(lam, 'cm')}`)} ✓`),
+    calc(`Two points on the water surface are ${V(d, 'cm')} apart, measured along the direction in which the waves travel.<br>Calculate the phase difference, in radians, between the oscillations of these two points.`, 2, phi, 'rad', `${eq('phase difference = 2π × (separation / <i>λ</i>)')} ✓<br>${eq(`= 2π × (${N(d)} / ${A(lam)}) = ${AV(phi, 'rad')}`)} ✓`),
+    opt(`Two other points on the water surface are ${V(d2, 'cm')} apart, measured along the direction of travel.<br>State the phase relationship between the oscillations of these two points.`, 1, ['in phase', 'in antiphase (180° out of phase)', '90° out of phase'], k % 2 ? 1 : 0, `${eq(`${N(d2)} / ${A(lam)} = ${k / 2}`)}: the points are ${k / 2} wavelength${k === 2 ? '' : 's'} apart, so they are ${k % 2 ? 'in antiphase' : 'in phase'} ✓`)
+  ]);
+};
+
+/* ===== longitudinal and transverse waves, polarisation ===== */
+T.LT1 = R => {
+  const Nw = R.pick([2, 3]), lam = R.pick([0.20, 0.25, 0.30, 0.40, 0.50]), f = R.pick([2.0, 2.5, 4.0, 5.0]), Lm = Nw * lam, c = f * lam, xIsC = R.chance(.5);
+  const s = new Scene('A longitudinal wave on a spring shown as vertical lines that are close together in compressions and far apart in rarefactions');
+  for (let j = 0; j <= 48; j++){ const x0 = 40 + j * 100 / 12, x = x0 + 11 * Math.sin(2 * Math.PI * (x0 - 40) / 100); s.line(x, 100, x, 160, { w: 1.3 }); }
+  const xe = 90 + 100 * Nw; s.line(90, 166, 90, 196, { w: 1 }).line(xe, 166, xe, 196, { w: 1 }); s.dim(90, 188, xe, 188, N(Lm) + ' m', { below: true });
+  s.label(xIsC ? 190 : 240, 92, 'X', { bold: true }); s.arrow(190, 58, 290, 58); s.label(240, 48, 'direction of travel');
+  return { sf: 2, scenes: [s], data: { Nw, Lm, f, xIsC },
+    stem: `<b>Figure 1</b> represents a longitudinal wave travelling along a stretched spring at one instant. Each vertical line represents one coil of the spring.<br>The distance between the centres of the two compressions indicated is ${V(Lm, 'm')}. The end of the spring is oscillated at a frequency of ${V(f, 'Hz')}.`,
+    parts: [
+      opt('State whether the coil labelled X is at the centre of a compression or a rarefaction.', 1, ['a compression', 'a rarefaction'], xIsC ? 0 : 1, `X is at the centre of a ${xIsC ? 'compression: the coils are closest together' : 'rarefaction: the coils are furthest apart'} ✓`),
+      calc('Calculate the wavelength of the wave.', 1, lam, 'm', `The distance marked is ${Nw} wavelengths: ${eq(`<i>λ</i> = ${N(Lm)} / ${Nw} = ${AV(lam, 'm')}`)} ✓`),
+      calc('Calculate the speed of the wave along the spring.', 2, c, MS1, `${eq(`<i>c</i> = <i>fλ</i> = ${N(f)} × ${A(lam)}`)} ✓<br>${eq(`<i>c</i> = ${AV(c, MS1)}`)} ✓`),
+      text('Describe the motion of one coil of the spring as the wave passes.', 2, 'The coil oscillates about a fixed (equilibrium) position ✓<br>along a line parallel to the direction in which the wave travels (the direction of energy transfer) ✓'),
+      text('Explain why this wave cannot be polarised.', 1, 'Only transverse waves can be polarised: in a longitudinal wave the oscillations are along the direction of travel, so there is no plane of oscillation to select ✓')
+    ] };
+};
+
+T.LT2 = R => {
+  const aligned = R.chance(.5), rot = R.pick([90, 180, 270, 360]), flips = rot % 180 !== 0, endMax = aligned !== flips;
+  const s = new Scene('Unpolarised light passing through two polarising filters A and B to a light meter');
+  boxed(s, 10, 130, 100, 50, 'unpolarised\nlight source'); s.rect(200, 105, 8, 100, { fill: '#e4e7ea' }); s.rect(320, 105, 8, 100, { fill: '#e4e7ea' }); boxed(s, 410, 135, 70, 40, 'light\nmeter');
+  s.arrow(110, 155, 200, 155).arrow(208, 155, 320, 155).arrow(328, 155, 410, 155); s.label(204, 95, 'A', { bold: true }); s.label(324, 95, 'B', { bold: true });
+  return { sf: 2, scenes: [s], data: { aligned, rot },
+    stem: `<b>Figure 1</b> shows unpolarised light passing through two polarising filters, A and B, to a light meter. The filters are parallel to each other and at right angles to the beam of light.<br>Initially filter B is turned so that the reading on the light meter is ${aligned ? 'a maximum' : 'zero'}.`,
+    parts: [
+      text('State what is meant by polarised light.', 1, 'The oscillations (of the electric field) are in one plane only, a plane that contains the direction of travel ✓'),
+      opt(`Filter B is rotated through ${rot}° about the line of the light beam.<br>State the reading on the light meter after this rotation.`, 1, ['a maximum', 'zero', 'between zero and the maximum'], endMax ? 0 : 1, `After ${rot}° the transmission axis of B is ${endMax ? 'parallel' : 'at 90°'} to the transmission axis of A, so the reading is ${endMax ? 'a maximum' : 'zero'} ✓`),
+      text('Describe how the reading on the light meter changes as filter B is rotated through one complete turn (360°) from its initial position.', 2, aligned ? 'The reading falls to zero at 90° and rises to a maximum again at 180° ✓<br>This repeats: zero at 270° and a maximum at 360° (two maxima and two minima in each complete turn) ✓' : 'The reading rises to a maximum at 90° and falls to zero again at 180° ✓<br>This repeats: a maximum at 270° and zero at 360° (two maxima and two minima in each complete turn) ✓'),
+      text('Explain how this experiment shows that light is a transverse wave.', 2, 'Only transverse waves can be polarised (filter A allows through oscillations in one plane only) ✓<br>A longitudinal wave would pass through B equally well whatever the orientation of B, so the reading would not change ✓')
+    ] };
+};
+
+T.LT3 = R => {
+  const f = R.pick([9.4, 10, 10.5, 12, 15]), rot = R.pick([90, 180, 270]), lam = C0 / (f * 1e9), toMax = rot % 180 !== 0;
+  const s = new Scene('A microwave transmitter, a metal grille with vertical rods and a microwave receiver in a line');
+  boxed(s, 10, 130, 100, 50, 'microwave\ntransmitter'); boxed(s, 380, 130, 90, 50, 'microwave\nreceiver');
+  s.line(110, 155, 211, 155, { dash: '6 4', w: 1.1 }).line(249, 155, 380, 155, { dash: '6 4', w: 1.1 });
+  s.poly([[215, 95], [245, 110], [245, 215], [215, 200]], { close: true, w: 2, fill: '#fff' });
+  [221, 227, 233, 239].forEach(x => s.line(x, 95 + (x - 215) * .5, x, 200 + (x - 215) * .5, { w: 1.6 }));
+  s.label(230, 82, 'metal grille');
+  return { sf: 3, scenes: [s], data: { f, rot },
+    stem: `<b>Figure 1</b> shows a metal grille placed between a microwave transmitter and a microwave receiver. The grille is a frame holding parallel metal rods.<br>When the rods are vertical, as shown in <b>Figure 1</b>, the reading on the receiver is zero. The frequency of the microwaves is ${V(f, 'GHz', 3)}.<br>${CLINE}`,
+    parts: [
+      text('State what this observation shows about the microwaves emitted by the transmitter.', 1, 'The microwaves are (plane) polarised ✓'),
+      opt(`The grille is rotated through ${rot}° about the line joining the transmitter to the receiver.<br>State the reading on the receiver after this rotation.`, 1, ['a maximum', 'zero'], toMax ? 0 : 1, `The rods are now ${toMax ? 'horizontal, at right angles to their original direction, so the microwaves are transmitted and the reading is a maximum' : 'vertical again, so the microwaves are absorbed by the grille and the reading is zero'} ✓`),
+      calc('Calculate the wavelength of the microwaves.', 2, lam, 'm', `${eq(`<i>λ</i> = <i>c</i> / <i>f</i> = ${CTXT} / ${N(f * 1e9, 3)}`)} ✓<br>${eq(`<i>λ</i> = ${AV(lam, 'm')}`)} ✓`),
+      text('The grille is removed and the reading on the receiver is a maximum. The receiver is then rotated through 90° about the line joining it to the transmitter.<br>State and explain the effect on the reading.', 2, 'The reading falls to zero (a minimum) ✓<br>The aerial in the receiver only responds to oscillations in one plane; after the rotation this plane is at right angles to the plane of polarisation of the microwaves ✓')
+    ] };
+};
+
+T.LT4 = R => {
+  const [vp, vs] = R.pick([[6.0, 3.5], [8.0, 4.5], [5.0, 3.0], [6.0, 4.0], [7.5, 4.0]]), dt = R.pick([12, 15, 20, 24, 30, 36, 45]), d = dt / (1 / vs - 1 / vp), KMS = 'km s<sup>−1</sup>';
+  return NOFIG(2, { vp, vs, dt }, `An earthquake produces two types of seismic wave that travel through rock. P-waves are longitudinal and travel at ${V(vp, KMS)}. S-waves are transverse and travel at ${V(vs, KMS)}.<br>At a monitoring station the S-waves arrive ${V(dt, 's')} after the P-waves.`, [
+    text('State the difference between a longitudinal wave and a transverse wave.', 2, 'Longitudinal: the oscillations of the particles are parallel to the direction of energy transfer (direction of travel) ✓<br>Transverse: the oscillations are perpendicular to the direction of energy transfer ✓'),
+    opt('State which of these seismic waves could be polarised.', 1, ['P-waves only', 'S-waves only', 'both P-waves and S-waves', 'neither'], 1, 'S-waves only: only transverse waves can be polarised ✓'),
+    calc('Calculate the distance of the monitoring station from the earthquake.', 3, d, 'km', `${eq(`time difference: <i>d</i> / ${N(vs)} − <i>d</i> / ${N(vp)} = ${N(dt)}`)} ✓<br>${eq(`<i>d</i> = ${N(dt)} / (1 / ${N(vs)} − 1 / ${N(vp)})`)} ✓<br>${eq(`<i>d</i> = ${AV(d, 'km')}`)} ✓`)
+  ]);
+};
+
+T.LT5 = R => {
+  const f = R.pick([480, 500, 520, 560, 600, 640, 720, 750, 800]), lam = C0 / (f * 1e6), rod = lam / 2;
+  return NOFIG(2, { f }, `A television transmitter emits radio waves of frequency ${V(f, 'MHz')}. The waves are polarised. A receiving aerial has metal rods, each about half a wavelength long.<br>speed of electromagnetic waves in air = ${CTXT} ${MS1}`, [
+    calc('Calculate the wavelength of the radio waves.', 2, lam, 'm', `${eq(`<i>λ</i> = <i>c</i> / <i>f</i> = ${CTXT} / ${N(f * 1e6)}`)} ✓<br>${eq(`<i>λ</i> = ${AV(lam, 'm')}`)} ✓`),
+    calc('Calculate the length of one of the rods of the aerial.', 1, rod, 'm', `${eq(`length = <i>λ</i> / 2 = ${A(lam)} / 2 = ${AV(rod, 'm')}`)} ✓`),
+    text('Explain why the rods of the aerial must be lined up in a particular direction to receive the strongest signal.', 2, 'The transmitted waves are polarised, so their oscillations (of the electric field) are in one plane only ✓<br>The signal is strongest when the rods are parallel to this plane of oscillation (aligned with the plane of polarisation) ✓'),
+    opt('The aerial is pointing at the transmitter and receiving the strongest signal. It is then rotated through 90° about the line joining it to the transmitter.<br>State what happens to the strength of the signal received.', 1, ['it stays the same', 'it falls to a minimum', 'it falls to about half'], 1, 'The rods are now at right angles to the plane of polarisation, so the signal falls to a minimum (zero) ✓'),
+    text('Polarising sunglasses reduce the glare from light reflected by a wet road. Explain how.', 2, 'Light reflected from the road surface is (partially) polarised ✓<br>The polarising filter in the sunglasses is orientated to absorb light polarised in this plane, so the intensity of the reflected light is reduced ✓')
+  ]);
+};
+
+/* ===== stationary waves ===== */
+// string from a vibration generator over a pulley to hanging masses, showing n loops
+function stringRig(s, n){
+  const xa = 60, xb = 420, y = 150, amp = 22;
+  s.line(10, 215, 400, 215).line(400, 215, 400, 280);
+  s.rect(30, 175, 60, 40, { fill: '#e4e7ea' }); s.line(60, 175, 60, y);
+  s.line(400, 215, 420, y + 12, { free: true }); s.circle(420, y + 12, 12, { fill: '#fff' }); dot(s, 420, y + 12, 2);
+  s.arc(420, y + 12, 12, 90, 0); s.line(432, y + 12, 432, 232); s.rect(418, 232, 28, 30, { fill: '#e4e7ea' });
+  const f = sg => x => y - sg * amp * Math.sin(n * Math.PI * (x - xa) / (xb - xa));
+  s.poly(wavePts(xa, xb, f(1)), { w: 1.7 }); s.poly(wavePts(xa, xb, f(-1)), { dash: '5 4', w: 1.2 });
+  s.dim(xa, 108, xb, 108, '*L*');
+  s.label(14, 237, 'vibration generator', { anchor: 'start' }); s.label(442, 140, 'pulley', { anchor: 'start' }); s.label(454, 252, 'masses', { anchor: 'start' });
+}
+const FORMATION = 'Waves travel along the string and are reflected at the end ✓<br>The incident and reflected waves have the same frequency (and wavelength) and travel in opposite directions, so they superpose ✓<br>Nodes form where the two waves always cancel (meet in antiphase) and antinodes where they reinforce (meet in phase) ✓';
+
+T.SW1 = R => {
+  const L = R.pick([0.90, 1.2, 1.5, 1.8, 2.4]), n = R.pick([2, 3, 4, 5]), f = R.pick([40, 50, 60, 75, 80, 90, 120, 150]), lam = 2 * L / n, c = f * lam, f1 = f / n;
+  const s = new Scene(`A stationary wave with ${n} loops on a string between a vibration generator and a pulley`); stringRig(s, n);
+  return { sf: 2, scenes: [s], data: { L, n, f },
+    stem: `<b>Figure 1</b> shows a stationary wave on a string that is stretched between a vibration generator and a pulley. The distance ${th('L')} between the vibration generator and the pulley is ${V(L, 'm')}. The frequency of the vibration generator is ${V(f, 'Hz')}.`,
+    parts: [
+      text('Explain how the stationary wave is formed on the string.', 3, FORMATION),
+      calc('Calculate the wavelength of the waves on the string.', 2, lam, 'm', `The string holds ${n} loops, each half a wavelength long ✓<br>${eq(`<i>λ</i> = 2 × ${N(L)} / ${n} = ${AV(lam, 'm')}`)} ✓`),
+      calc('Calculate the speed of the waves on the string.', 2, c, MS1, `${eq(`<i>c</i> = <i>fλ</i> = ${N(f)} × ${A(lam)}`)} ✓<br>${eq(`<i>c</i> = ${AV(c, MS1)}`)} ✓`),
+      calc('The tension in the string is not changed.<br>Calculate the frequency of the first harmonic for this string.', 1, f1, 'Hz', `<b>Figure 1</b> shows the ${ORD[n]} harmonic: ${eq(`<i>f</i><sub>1</sub> = ${N(f)} / ${n} = ${AV(f1, 'Hz')}`)} ✓`)
+    ] };
+};
+
+T.SW2 = R => {
+  const L = R.pick([0.50, 0.60, 0.75, 0.80, 1.0, 1.2]), m = R.pick([0.20, 0.30, 0.40, 0.50, 0.80, 1.0]), mu = R.pick([0.80, 1.2, 1.5, 2.0, 2.5, 3.2]) * 1e-3, Tn = m * GRAV, f = Math.sqrt(Tn / mu) / (2 * L), c = 2 * L * f, m2 = 4 * m;
+  const s = new Scene('A string vibrating in its first harmonic between a vibration generator and a pulley'); stringRig(s, 1);
+  return { sf: 2, scenes: [s], data: { L, m, mu },
+    stem: `<b>Figure 1</b> shows a string vibrating at the frequency of its first harmonic. The distance ${th('L')} between the vibration generator and the pulley is ${V(L, 'm')}. The masses hanging from the string have a total mass of ${V(m, 'kg')}. The mass per unit length of the string is ${V(mu, KGM)}.`,
+    parts: [
+      calc('Calculate the tension in the string.', 1, Tn, 'N', `${eq(`<i>T</i> = <i>mg</i> = ${N(m)} × 9.81 = ${AV(Tn, 'N')}`)} ✓`),
+      calc('Calculate the frequency of the first harmonic.', 2, f, 'Hz', `${eq(`<i>f</i> = (1 / 2<i>L</i>)√(<i>T</i> / <i>μ</i>)`)}, so ${eq(`<i>f</i> = (1 / (2 × ${N(L)})) × √(${I(Tn)} / ${N(mu)})`)} ✓<br>${eq(`<i>f</i> = ${AV(f, 'Hz')}`)} ✓`),
+      calc('Calculate the speed of the waves on the string.', 2, c, MS1, `For the first harmonic ${eq(`<i>λ</i> = 2<i>L</i> = 2 × ${N(L)} = ${AV(2 * L, 'm')}`)} ✓<br>${eq(`<i>c</i> = <i>fλ</i> = ${I(f)} × ${A(2 * L)} = ${AV(c, MS1)}`)} ✓`),
+      calc('The hanging mass is changed so that the frequency of the first harmonic is doubled. The length of the string is not changed.<br>Calculate the new total hanging mass.', 2, m2, 'kg', `${eq('<i>f</i> ∝ √<i>T</i>')}, so the tension (and the mass) must be 4 times greater ✓<br>${eq(`mass = 4 × ${N(m)} = ${AV(m2, 'kg')}`)} ✓`)
+    ] };
+};
+
+T.SW3 = R => {
+  const { lam, k } = find(() => ({ lam: R.pick([2.8, 3.0, 3.2]), k: R.pick([3, 4, 5, 6, 7, 8]) }), o => isNice(o.k * o.lam / 2, 2)), x = k * lam / 2, lm = lam * 1e-2, f = C0 / lm;
+  const s = new Scene('A microwave transmitter facing a metal plate, with a detector between them');
+  boxed(s, 10, 125, 100, 50, 'microwave\ntransmitter'); s.rect(430, 95, 8, 110, { fill: '#b9bfc5' }); s.label(434, 84, 'metal plate');
+  s.line(110, 150, 430, 150, { dash: '6 4', w: 1, free: true }); s.circle(270, 150, 6, { fill: '#fff' }); s.line(270, 144, 270, 108); s.label(270, 98, 'detector'); s.arrow(225, 180, 315, 180, { both: true, w: 1.2 });
+  return { sf: 2, scenes: [s], data: { x, k },
+    stem: `<b>Figure 1</b> shows a microwave transmitter directed at a metal plate. A detector is moved along the line between the transmitter and the plate. The signal from the detector falls to a minimum at equally spaced positions.<br>The distance between the first minimum and the ${ORD[k + 1]} minimum is ${V(x, 'cm')}.<br>${CLINE}`,
+    parts: [
+      text('Explain why minima are detected at equally spaced positions.', 3, 'The microwaves are reflected by the metal plate ✓<br>The incident and reflected waves superpose to form a stationary wave ✓<br>The minima are nodes, where the two waves are always in antiphase and cancel; adjacent nodes are half a wavelength apart ✓'),
+      calc('Calculate the wavelength of the microwaves.', 2, lm, 'm', `There are ${k} spaces between the first and ${ORD[k + 1]} minima, each of length ${eq('<i>λ</i> / 2')} ✓<br>${eq(`<i>λ</i> = 2 × ${N(x)} / ${k} = ${A(lam)} cm = ${AV(lm, 'm')}`)} ✓`),
+      calc('Calculate the frequency of the microwaves.', 2, f, 'Hz', `${eq(`<i>f</i> = <i>c</i> / <i>λ</i> = ${CTXT} / ${A(lm)}`)} ✓<br>${eq(`<i>f</i> = ${AV(f, 'Hz')}`)} ✓`),
+      text('The signal at each minimum is small but not zero.<br>Suggest why.', 1, 'The reflected wave has a smaller amplitude than the incident wave at the detector (it has travelled further and spread out, and the reflection is not perfect), so the cancellation is not complete ✓')
+    ] };
+};
+
+T.SW4 = R => {
+  const fk = R.pick([1.7, 2.0, 2.5, 3.4, 4.0]), v0 = R.pick([330, 336, 340, 343, 346]), k = R.pick([3, 4, 5, 6]), x = r3(k * v0 / (2 * fk * 1e3) * 100), lam = 2 * x / k * 1e-2, v = fk * 1e3 * lam;
+  const s = new Scene('A loudspeaker facing a reflecting board, with a microphone connected to an oscilloscope between them');
+  speaker(s, 30, 150); s.label(44, 196, 'loudspeaker'); s.rect(430, 95, 8, 110, { fill: '#b9bfc5' }); s.label(404, 84, 'reflecting board');
+  s.line(58, 150, 430, 150, { dash: '6 4', w: 1, free: true }); s.rect(255, 141, 12, 18, { fill: '#fff' }); s.line(261, 159, 261, 215); boxed(s, 211, 215, 100, 30, 'oscilloscope'); s.label(261, 130, 'microphone');
+  return { sf: 2, scenes: [s], data: { fk, x, k },
+    stem: `<b>Figure 1</b> shows a loudspeaker that emits sound of frequency ${V(fk, 'kHz')} towards a reflecting board. A small microphone connected to an oscilloscope is moved along the line between the loudspeaker and the board. The amplitude of the trace falls to a minimum at equally spaced positions.<br>The distance between the first minimum and the ${ORD[k + 1]} minimum is ${V(x, 'cm', 3)}.`,
+    parts: [
+      calc('Calculate the wavelength of the sound.', 2, lam, 'm', `There are ${k} spaces between the first and ${ORD[k + 1]} minima (nodes), each of length ${eq('<i>λ</i> / 2')} ✓<br>${eq(`<i>λ</i> = 2 × ${N(x, 3)} / ${k} = ${I(lam * 100)} cm = ${AV(lam, 'm')}`)} ✓`, { sf: 3 }),
+      calc('Calculate the speed of sound in air given by these measurements.', 2, v, MS1, `${eq(`<i>c</i> = <i>fλ</i> = ${N(fk * 1e3)} × ${I(lam)}`)} ✓<br>${eq(`<i>c</i> = ${AV(v, MS1)}`)} ✓`),
+      text('State the phase difference between the incident wave and the reflected wave at a node.', 1, '180° (π rad): the two waves are in antiphase ✓'),
+      text('Describe how the amplitude of the trace changes as the microphone is moved from one minimum to the next.', 2, 'The amplitude increases to a maximum at the antinode, midway between the two nodes ✓<br>and then decreases to a minimum again at the next node ✓')
+    ] };
+};
+
+T.SW5 = R => {
+  const L = R.pick([0.63, 0.64, 0.65, 0.66]), mu = R.pick([0.40, 0.60, 1.1, 2.4, 3.6, 5.8]) * 1e-3, Tn = R.pick([60, 70, 75, 80, 90, 100]), L2 = R.pick([0.32, 0.42, 0.48, 0.56]), f = Math.sqrt(Tn / mu) / (2 * L), c = 2 * L * f, f2 = f * L / L2;
+  return NOFIG(2, { L, mu, Tn, L2 }, `A guitar string has a vibrating length of ${V(L, 'm')} and a mass per unit length of ${V(mu, KGM)}. The tension in the string is ${V(Tn, 'N')}.`, [
+    calc('Calculate the frequency of the first harmonic of the string.', 2, f, 'Hz', `${eq(`<i>f</i> = (1 / 2<i>L</i>)√(<i>T</i> / <i>μ</i>)`)}, so ${eq(`<i>f</i> = (1 / (2 × ${N(L)})) × √(${N(Tn)} / ${N(mu)})`)} ✓<br>${eq(`<i>f</i> = ${AV(f, 'Hz')}`)} ✓`),
+    calc('Calculate the speed of the waves on the string.', 2, c, MS1, `For the first harmonic ${eq(`<i>λ</i> = 2<i>L</i> = 2 × ${N(L)} = ${AV(2 * L, 'm')}`)} ✓<br>${eq(`<i>c</i> = <i>fλ</i> = ${I(f)} × ${A(2 * L)} = ${AV(c, MS1)}`)} ✓`),
+    calc(`The string is pressed against a fret so that its vibrating length is ${V(L2, 'm')}. The tension is unchanged.<br>Calculate the new frequency of the first harmonic.`, 2, f2, 'Hz', `${eq('<i>f</i> ∝ 1 / <i>L</i>')} (the wave speed is unchanged) ✓<br>${eq(`<i>f</i> = ${I(f)} × ${N(L)} / ${N(L2)} = ${AV(f2, 'Hz')}`)} ✓`),
+    text('The tension in the string is increased.<br>State and explain the effect on the frequency of the first harmonic.', 2, 'The frequency increases ✓<br>The speed of the waves on the string increases but the wavelength (2<i>L</i>) is unchanged / <i>f</i> ∝ √<i>T</i> ✓')
+  ]);
+};
+
+T.SW6 = R => {
+  const f = R.pick([110, 147, 196, 220, 262, 330, 440]), L = R.pick([0.33, 0.40, 0.50, 0.60, 0.65]), mu = R.pick([0.40, 0.60, 0.90, 1.5, 2.4, 3.6]) * 1e-3, Tn = mu * Math.pow(2 * L * f, 2), f3 = 3 * f, ch = R.pick([[2, 1], [4, 2], [.5, 4], [.25, 5]]);
+  return NOFIG(2, { f, L, mu, ch: ch[0] }, `A wire of length ${V(L, 'm')} is fixed at both ends. The mass per unit length of the wire is ${V(mu, KGM)}. The tension in the wire is adjusted until the frequency of its first harmonic is ${V(f, 'Hz', 3)}.`, [
+    calc('Calculate the tension in the wire.', 3, Tn, 'N', `${eq(`<i>f</i> = (1 / 2<i>L</i>)√(<i>T</i> / <i>μ</i>)`)} rearranged: ${eq(`<i>T</i> = <i>μ</i>(2<i>Lf</i>)<sup>2</sup>`)} ✓<br>${eq(`<i>T</i> = ${N(mu)} × (2 × ${N(L)} × ${N(f, 3)})<sup>2</sup>`)} ✓<br>${eq(`<i>T</i> = ${AV(Tn, 'N')}`)} ✓`),
+    calc('Calculate the frequency of the third harmonic of the wire.', 1, f3, 'Hz', `${eq(`<i>f</i><sub>3</sub> = 3 × ${N(f, 3)} = ${AV(f3, 'Hz')}`)} ✓`, { sf: 3 }),
+    text('Describe the appearance of the wire when it vibrates at the frequency of its third harmonic.', 2, 'Three loops (three half-wavelengths fit on the wire) ✓<br>with four nodes (including the two fixed ends) and three antinodes ✓'),
+    opt(`The tension is now changed to ${ch[0] >= 1 ? ch[0] + ' times' : ch[0] === .5 ? 'half' : 'one quarter of'} its original value.<br>State what happens to the frequency of the first harmonic.`, 1, ['it is unchanged', 'it is multiplied by √2', 'it is doubled', 'it is multiplied by 4', 'it is divided by √2', 'it is halved'], ch[1], `${eq('<i>f</i> ∝ √<i>T</i>')}, so the frequency is ${['', 'multiplied by √2', 'doubled', '', 'divided by √2', 'halved'][ch[1]]} ✓`)
+  ]);
+};
+
+T.SW7 = R => {
+  const n = R.pick([3, 4]), L = R.pick([1.2, 1.5, 1.8, 2.4]), f = R.pick([50, 60, 80, 120]), qLoop = R.pick([0, 1]), rLoop = n === 3 ? 2 : R.pick([2, 3]), lam = 2 * L / n, c = f * lam;
+  const s = new Scene(`A stationary wave with ${n} loops on a string fixed at both ends, with points P, Q and R marked`), xa = 60, xb = 420, y0 = 150, amp = 32, yAt = x => y0 - amp * Math.sin(n * Math.PI * (x - xa) / (xb - xa));
+  s.rect(48, 130, 12, 40, { fill: '#b9bfc5' }); s.rect(420, 130, 12, 40, { fill: '#b9bfc5' });
+  s.poly(wavePts(xa, xb, yAt), { w: 1.7 }); s.poly(wavePts(xa, xb, x => 2 * y0 - yAt(x)), { dash: '5 4', w: 1.2 });
+  [['P', 0, .3], ['Q', qLoop, qLoop ? .5 : .72], ['R', rLoop, .6]].forEach(([nm, lp, fr]) => { const x = xa + (lp + fr) * (xb - xa) / n; dot(s, x, yAt(x)); s.label(x, lp % 2 ? y0 + amp + 20 : y0 - amp - 9, nm, { bold: true }); });
+  s.dim(xa, 222, xb, 222, N(L) + ' m', { below: true });
+  const PH = ['0° (in phase)', '90°', '180° (antiphase)'], why = d => d === 0 ? 'are between the same pair of adjacent nodes, so they are in phase' : d % 2 ? `are separated by ${d === 1 ? 'one node' : d + ' nodes'} (an odd number), so they are in antiphase` : `are separated by ${d} nodes (an even number), so they are in phase`;
+  return { sf: 2, scenes: [s], data: { n, L, f, qLoop, rLoop },
+    stem: `<b>Figure 1</b> shows a stationary wave on a string of length ${V(L, 'm')} that is fixed at both ends. The solid line shows the string at an instant of maximum displacement and the dashed line shows it half a period later. P, Q and R are points on the string.<br>The frequency of vibration is ${V(f, 'Hz')}.`,
+    parts: [
+      opt('State the phase difference between the oscillations of P and Q.', 1, PH, qLoop % 2 ? 2 : 0, `P and Q ${why(qLoop)} ✓`),
+      opt('State the phase difference between the oscillations of P and R.', 1, PH, rLoop % 2 ? 2 : 0, `P and R ${why(rLoop)} ✓`),
+      calc('Calculate the wavelength of the waves on the string.', 1, lam, 'm', `${n} loops, each half a wavelength: ${eq(`<i>λ</i> = 2 × ${N(L)} / ${n} = ${AV(lam, 'm')}`)} ✓`),
+      calc('Calculate the speed of the progressive waves on the string.', 2, c, MS1, `${eq(`<i>c</i> = <i>fλ</i> = ${N(f)} × ${A(lam)}`)} ✓<br>${eq(`<i>c</i> = ${AV(c, MS1)}`)} ✓`),
+      text('State two differences between the oscillations of the particles in a stationary wave and those in a progressive wave.', 2, 'Amplitude: in a stationary wave the amplitude varies with position, from zero at a node to a maximum at an antinode; in a progressive wave every point has the same amplitude ✓<br>Phase: in a stationary wave all points between adjacent nodes are in phase; in a progressive wave the phase changes continuously with distance along the wave ✓')
+    ] };
+};
+
+T.SW8 = R => {
+  const c = R.pick([80, 100, 120, 160, 200, 240]), g = c / 2, mu = R.pick([0.50, 0.80, 1.2, 1.5, 2.0]) * 1e-3, Tn = mu * c * c, [ymax, yM] = axisFor(g * 4);
+  const fig = graph({ x: [0, 4, 1], y: [0, ymax, yM], xl: '(1 / L) / m⁻¹', yl: 'f / Hz', curves: [{ f: x => g * x, from: 0, to: 4 }], crosses: [1, 1.5, 2, 2.5, 3, 3.5].map(x => [x, g * x]) });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { c, mu },
+    stem: `A student investigates how the frequency ${th('f')} of the first harmonic of a stretched string varies with the length ${th('L')} of the string. The tension in the string is kept constant.<br><b>Figure 1</b> shows the student’s graph of ${th('f')} against ${eq('1 / <i>L</i>')}.`,
+    parts: [
+      calc('Determine the gradient of the graph in <b>Figure 1</b>.', 2, g, 'Hz m', `Uses a large triangle (at least half the length of the line) ✓<br>${eq(`gradient = ${A(g * 4)} / 4.0 = ${AV(g, 'Hz m')}`)} ✓`, { tol: .04 }),
+      text(`Show that the speed ${th('c')} of the waves on the string is equal to 2 × the gradient of the graph.`, 2, `For the first harmonic the length of the string is half a wavelength: ${eq('<i>λ</i> = 2<i>L</i>')} ✓<br>${eq('<i>f</i> = <i>c</i> / <i>λ</i> = (<i>c</i> / 2) × (1 / <i>L</i>)')}, so the gradient is ${eq('<i>c</i> / 2')} ✓`),
+      calc('Determine the speed of the waves on the string.', 1, c, MS1, `${eq(`<i>c</i> = 2 × ${A(g)} = ${AV(c, MS1)}`)} ✓`, { tol: .04 }),
+      calc(`The mass per unit length of the string is ${V(mu, KGM)}.<br>Calculate the tension in the string.`, 3, Tn, 'N', `${eq(`<i>f</i> = (1 / 2<i>L</i>)√(<i>T</i> / <i>μ</i>)`)}, so ${eq('gradient = ½√(<i>T</i> / <i>μ</i>)')} ✓<br>${eq(`<i>T</i> = <i>μ</i> × (2 × gradient)<sup>2</sup> = ${N(mu)} × (${A(c)})<sup>2</sup>`)} ✓<br>${eq(`<i>T</i> = ${AV(Tn, 'N')}`)} ✓`, { tol: .08 })
+    ] };
+};
+
+/* ===== interference ===== */
+function slitsFig(s){
+  boxed(s, 10, 140, 70, 30, 'laser'); s.line(80, 155, 180, 155); s.mid(80, 155, 180, 155);
+  [[95, 147], [151, 159], [163, 215]].forEach(([a, b]) => s.line(180, a, 180, b, { w: 3.5 }));
+  s.line(440, 80, 440, 230, { w: 3.5 });
+  s.line(180, 149, 440, 105, { dash: '5 4', w: 1, free: true }).line(180, 161, 440, 205, { dash: '5 4', w: 1, free: true });
+  s.label(180, 84, 'double slit'); s.label(440, 69, 'screen'); s.dim(180, 250, 440, 250, '*D*', { below: true });
+}
+const CHANGES = [['the separation of the slits is increased', 0], ['the separation of the slits is decreased', 1], ['the screen is moved further from the slits', 1], ['the screen is moved closer to the slits', 0], ['the laser is replaced with one that emits light of a longer wavelength', 1], ['the laser is replaced with one that emits light of a shorter wavelength', 0]];
+const CHWHY = ['<i>w</i> ∝ 1 / <i>s</i>', '<i>w</i> ∝ 1 / <i>s</i>', '<i>w</i> ∝ <i>D</i>', '<i>w</i> ∝ <i>D</i>', '<i>w</i> ∝ <i>λ</i>', '<i>w</i> ∝ <i>λ</i>'];
+
+T.IN1 = R => {
+  const [ln, col] = R.pick(LASERS), sm = R.pick([0.20, 0.25, 0.40, 0.50]), D = R.pick([1.2, 1.5, 1.8, 2.0, 2.5, 3.0]), w = ln * 1e-9 * D / (sm * 1e-3), ci = Math.floor(R() * CHANGES.length);
+  const s = new Scene('A laser beam incident on a double slit, with a screen a distance D from the slits'); slitsFig(s);
+  return { sf: 2, scenes: [s], data: { ln, sm, D, ci },
+    stem: `<b>Figure 1</b> shows ${col} light from a laser incident on a double slit. Interference fringes are seen on a screen. The light has a wavelength of ${V(ln, 'nm', 3)} and the separation of the slits is ${V(sm, 'mm')}. The distance ${th('D')} from the slits to the screen is ${V(D, 'm')}.`,
+    parts: [
+      text('Explain how a bright fringe is formed on the screen.', 2, 'Light from the two slits arrives at the screen in phase, because the path difference is a whole number of wavelengths ✓<br>The waves superpose constructively (reinforce) ✓'),
+      calc('Calculate the fringe spacing.', 2, w, 'm', `${eq(`<i>w</i> = <i>λD</i> / <i>s</i> = ${N(ln * 1e-9, 3)} × ${N(D)} / ${N(sm * 1e-3)}`)} ✓<br>${eq(`<i>w</i> = ${AV(w, 'm')}`)} ✓`),
+      opt(`One change is made: ${CHANGES[ci][0]}.<br>State what happens to the fringes on the screen.`, 1, ['they become closer together', 'they become further apart', 'their spacing is unchanged'], CHANGES[ci][1], `${eq(CHWHY[ci])}, so the fringes become ${CHANGES[ci][1] ? 'further apart' : 'closer together'} ✓`),
+      text('State one safety precaution that should be taken when using the laser.', 1, SAFETY)
+    ] };
+};
+
+T.IN2 = R => {
+  const v = find(() => { const Nf = R.pick([4, 5, 6, 7, 8]), sm = R.pick([0.25, 0.40, 0.50]), D = R.pick([1.5, 2.0, 2.5, 3.0]), l0 = 440 + 240 * R(), X = Number((Nf * l0 * 1e-9 * D / (sm * 1e-3) * 1e3).toPrecision(2)), lam = X * 1e-3 / Nf * sm * 1e-3 / D; return { Nf, sm, D, X, lam }; }, o => o.lam > 4.1e-7 && o.lam < 6.9e-7);
+  const { Nf, sm, D, X, lam } = v, w = X / Nf, D2 = R.pick([1.5, 2.0, 2.5, 3.0, 3.5].filter(d => d !== D)), w2 = w * D2 / D;
+  const s = new Scene('Bright fringes on a dark screen with a distance marked across several fringes'), M = Nf + R.pick([3, 4]), a0 = R.pick([1, 2]), p = 420 / M, cx = i => 30 + (i + .5) * p;
+  s.rect(30, 60, 420, 56, { fill: '#111' });
+  for (let i = 0; i < M; i++) s.body.push(`<rect x="${n2(cx(i) - p * .25)}" y="68" width="${n2(p * .5)}" height="40" rx="${n2(p * .2)}" fill="#fff" stroke="none"/>`);
+  s.line(cx(a0), 120, cx(a0), 150, { w: 1 }).line(cx(a0 + Nf), 120, cx(a0 + Nf), 150, { w: 1 }); s.dim(cx(a0), 142, cx(a0 + Nf), 142, N(X) + ' mm', { below: true });
+  return { sf: 2, scenes: [s], data: { Nf, sm, D, X, D2 },
+    stem: `Light from a laser passes through a double slit and forms interference fringes on a screen. <b>Figure 1</b> shows part of the pattern of bright fringes. The distance between the centres of the two bright fringes indicated is ${V(X, 'mm')}.<br>The separation of the slits is ${V(sm, 'mm')} and the distance from the slits to the screen is ${V(D, 'm')}.`,
+    parts: [
+      calc('Determine the fringe spacing.', 1, w, 'mm', `There are ${Nf} fringe spacings in the distance marked: ${eq(`<i>w</i> = ${N(X)} / ${Nf} = ${AV(w, 'mm')}`)} ✓`),
+      calc('Calculate the wavelength of the light.', 2, lam, 'm', `${eq(`<i>λ</i> = <i>ws</i> / <i>D</i> = ${I(w * 1e-3)} × ${N(sm * 1e-3)} / ${N(D)}`)} ✓<br>${eq(`<i>λ</i> = ${AV(lam, 'm')}`)} ✓`),
+      text('Explain why the fringe spacing is found by measuring across several fringes instead of measuring one fringe spacing directly.', 1, 'The distance measured is larger, so the percentage uncertainty in the fringe spacing is smaller ✓'),
+      calc(`The screen is moved so that it is ${V(D2, 'm')} from the slits.<br>Calculate the new fringe spacing.`, 2, w2, 'mm', `${eq('<i>w</i> ∝ <i>D</i>')} ✓<br>${eq(`<i>w</i> = ${I(w)} × ${N(D2)} / ${N(D)} = ${AV(w2, 'mm')}`)} ✓`)
+    ] };
+};
+
+T.IN3 = R => {
+  const v = find(() => { const [f, lam] = R.pick([[850, 0.40], [680, 0.50], [1700, 0.20], [425, 0.80], [1360, 0.25]]), S1 = R.pick([2.4, 3.0, 3.6, 4.2]), k = R.pick([1, 2, 3, 4, 5]); return { f, lam, S1, k, S2: S1 + k * lam / 2 }; }, o => isNice(o.S2, 3));
+  const { f, lam, S1, k } = v, S2 = r3(v.S2), pd = k * lam / 2, isMax = k % 2 === 0;
+  const s = new Scene('Two loudspeakers S1 and S2 and a point P, with the distances from each loudspeaker to P marked');
+  speaker(s, 50, 90); speaker(s, 50, 210); dot(s, 400, 130); s.line(78, 90, 400, 130, { w: 1.1 }).line(78, 210, 400, 130, { w: 1.1 });
+  s.label(40, 95, 'S_{1}', { anchor: 'end' }); s.label(40, 215, 'S_{2}', { anchor: 'end' }); s.label(410, 135, 'P', { anchor: 'start', bold: true });
+  s.label(240, 97, N(S1, 3) + ' m'); s.label(240, 199, N(S2, 3) + ' m');
+  return { sf: 2, scenes: [s], data: { f, S1, S2 },
+    stem: `<b>Figure 1</b> shows two loudspeakers, S<sub>1</sub> and S<sub>2</sub>, connected to the same signal generator so that they emit sound waves that are in phase. The frequency of the sound is ${V(f, 'Hz', 3)}. P is a point that is ${V(S1, 'm', 3)} from S<sub>1</sub> and ${V(S2, 'm', 3)} from S<sub>2</sub>.<br>speed of sound in air = ${V(340, MS1)}`,
+    parts: [
+      calc('Calculate the wavelength of the sound.', 1, lam, 'm', `${eq(`<i>λ</i> = <i>c</i> / <i>f</i> = 340 / ${N(f, 3)} = ${AV(lam, 'm')}`)} ✓`),
+      calc('Calculate the path difference between the waves from the two loudspeakers at P.', 1, pd, 'm', `${eq(`path difference = ${N(S2, 3)} − ${N(S1, 3)} = ${AV(pd, 'm')}`)} ✓`, { noSf: true }),
+      opt('State whether the loudness of the sound at P is a maximum or a minimum.', 1, ['a maximum', 'a minimum'], isMax ? 0 : 1, `${isMax ? 'A maximum' : 'A minimum'} ✓`),
+      text('Explain your answer.', 2, `${eq(`path difference / <i>λ</i> = ${A(pd)} / ${A(lam)} = ${k / 2}`)}: the path difference is ${isMax ? 'a whole number of wavelengths' : 'an odd number of half-wavelengths'} ✓<br>so the waves arrive at P ${isMax ? 'in phase and superpose constructively' : 'in antiphase and superpose destructively (cancel)'} ✓`),
+      text('The connections to one of the loudspeakers are now reversed.<br>State and explain what happens to the loudness of the sound at P.', 2, `The sound at P becomes ${isMax ? 'a minimum' : 'a maximum'} ✓<br>The two sources are now in antiphase, which adds a phase difference of 180° at every point, so the waves at P now arrive ${isMax ? 'in antiphase' : 'in phase'} ✓`)
+    ] };
+};
+
+T.IN4 = R => {
+  const lam = R.pick([2.8, 3.0, 3.2]), isMax = R.chance(.5), m = R.pick([1, 2, 3]), pd = isMax ? m * lam : (m - .5) * lam, S1 = R.pick([42, 45, 48, 52, 55]), S2 = S1 + pd;
+  const s = new Scene('A microwave transmitter, metal plates with two gaps, and a detector that can be moved along the line XY');
+  boxed(s, 5, 130, 100, 50, 'microwave\ntransmitter'); [[50, 135], [147, 163], [175, 260]].forEach(([a, b]) => s.rect(197, a, 6, b - a, { fill: '#b9bfc5' }));
+  s.label(200, 39, 'metal plates'); s.label(211, 146, 'S_{1}', { anchor: 'start' }); s.label(211, 174, 'S_{2}', { anchor: 'start' });
+  s.line(420, 50, 420, 260, { dash: '6 4', w: 1.1 }); s.label(420, 40, 'X', { bold: true }); s.label(420, 279, 'Y', { bold: true });
+  s.line(414, 155, 426, 155, { w: 1.2 }); s.label(432, 160, 'O', { anchor: 'start', bold: true }); s.circle(420, 100, 6, { fill: '#fff' }); s.label(432, 105, 'detector', { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { lam, isMax, m, S1 },
+    stem: `<b>Figure 1</b> shows microwaves of wavelength ${V(lam, 'cm')} incident on metal plates that have two narrow gaps, S<sub>1</sub> and S<sub>2</sub>. A detector is moved along the line XY. Point O is the same distance from S<sub>1</sub> and S<sub>2</sub>.<br>The signal is a maximum at O. As the detector is moved from O towards X the signal falls and rises repeatedly. The detector is stopped at the ${ORD[m]} ${isMax ? 'maximum' : 'minimum'} from O. At this position the detector is ${V(S1, 'cm')} from S<sub>1</sub>.`,
+    parts: [
+      text('Explain why the signal is a maximum at O.', 2, 'O is the same distance from both gaps, so the path difference is zero ✓<br>The waves from the two gaps arrive in phase and superpose constructively ✓'),
+      calc('Calculate the path difference between the waves from the two gaps at the position of the detector.', 2, pd, 'cm', `At the ${ORD[m]} ${isMax ? 'maximum' : 'minimum'} the path difference is ${eq(isMax ? (m === 1 ? '<i>λ</i>' : m + '<i>λ</i>') : (m - .5) + '<i>λ</i>')} ✓<br>${eq(`path difference = ${isMax ? m : m - .5} × ${N(lam)} = ${AV(pd, 'cm')}`)} ✓`),
+      calc('Calculate the distance from S<sub>2</sub> to the detector.', 1, S2, 'cm', `S<sub>2</sub> is further from the detector: ${eq(`distance = ${N(S1)} + ${A(pd)} = ${AV(S2, 'cm')}`)} ✓`, { noSf: true }),
+      opt('One of the gaps is now covered with a metal sheet.<br>State what happens to the signal at the position of the detector.', 1, ['it increases', 'it decreases', 'it stays the same'], isMax ? 1 : 0, isMax ? 'It decreases: waves now arrive from only one gap, so there is no longer constructive superposition of two waves ✓' : 'It increases: waves now arrive from only one gap, so they are no longer cancelled by waves in antiphase from the other gap ✓'),
+      text('Explain why the two gaps act as coherent sources.', 1, 'The waves from both gaps come from the same transmitter, so they have the same frequency and a constant phase difference ✓')
+    ] };
+};
+
+T.IN5 = R => {
+  const v = find(() => { const [ln] = R.pick(LASERS), D = R.pick([1.5, 2.0, 2.5, 3.0]), s0 = R.pick([0.2, 0.3, 0.4, 0.5, 0.6]), wm = Number((ln * 1e-9 * D / (s0 * 1e-3) * 1e3).toPrecision(2)); return { ln, D, wm }; }, o => o.wm >= 1.5);
+  const { ln, D, wm } = v, col = LASERS.find(l => l[0] === ln)[1], sep = ln * 1e-9 * D / (wm * 1e-3), dD = R.pick([0.50, 1.0, 1.5]), D2 = D + dD, w2 = wm * D2 / D;
+  return NOFIG(2, { ln, D, wm, dD }, `A double slit is illuminated with ${col} laser light of wavelength ${V(ln, 'nm', 3)}. Interference fringes with a spacing of ${V(wm, 'mm')} are formed on a screen that is ${V(D, 'm')} from the slits.`, [
+    text('The two slits act as coherent sources.<br>State what is meant by coherent sources.', 2, 'The sources emit waves of the same frequency (wavelength) ✓<br>with a constant phase difference ✓'),
+    calc('Calculate the separation of the slits.', 2, sep, 'm', `${eq(`<i>s</i> = <i>λD</i> / <i>w</i> = ${N(ln * 1e-9, 3)} × ${N(D)} / ${N(wm * 1e-3)}`)} ✓<br>${eq(`<i>s</i> = ${AV(sep, 'm')}`)} ✓`),
+    calc(`The screen is moved a further ${V(dD, 'm')} away from the slits.<br>Calculate the new fringe spacing.`, 2, w2, 'mm', `New distance ${eq(`<i>D</i> = ${N(D)} + ${N(dD)} = ${AV(D2, 'm')}`)} ✓<br>${eq('<i>w</i> ∝ <i>D</i>')}: ${eq(`<i>w</i> = ${N(wm)} × ${A(D2)} / ${N(D)} = ${AV(w2, 'mm')}`)} ✓`),
+    text('State one safety precaution that should be taken when using the laser.', 1, SAFETY)
+  ]);
+};
+
+T.IN6 = R => {
+  const lr = R.pick([650, 680, 700]), lb = R.pick([420, 450, 470]), sm = R.pick([0.25, 0.40, 0.50]), D = R.pick([1.5, 2.0, 2.5, 3.0]), wr = lr * 1e-9 * D / (sm * 1e-3), wb = lb * 1e-9 * D / (sm * 1e-3);
+  return NOFIG(2, { lr, lb, sm, D }, `White light passes through a single slit and then through a double slit. The separation of the double slits is ${V(sm, 'mm')}. Fringes are seen on a screen ${V(D, 'm')} from the double slit.<br>The white light includes red light of wavelength ${V(lr, 'nm', 3)} and blue light of wavelength ${V(lb, 'nm', 3)}.`, [
+    calc('Calculate the fringe spacing for the red light.', 2, wr, 'm', `${eq(`<i>w</i> = <i>λD</i> / <i>s</i> = ${N(lr * 1e-9, 3)} × ${N(D)} / ${N(sm * 1e-3)}`)} ✓<br>${eq(`<i>w</i> = ${AV(wr, 'm')}`)} ✓`),
+    calc('Calculate the fringe spacing for the blue light.', 1, wb, 'm', `${eq(`<i>w</i> = ${N(lb * 1e-9, 3)} × ${N(D)} / ${N(sm * 1e-3)} = ${AV(wb, 'm')}`)} ✓`),
+    text('Describe the appearance of the fringes seen on the screen with white light.', 3, 'The central fringe is white (every wavelength has zero path difference there) ✓<br>The fringes on either side are coloured: each is a spectrum with blue (violet) on the side nearest the centre and red on the side furthest from the centre ✓<br>Further from the centre the fringes of different colours overlap, so only a few fringes can be seen clearly ✓'),
+    text('State the purpose of the single slit.', 1, 'It makes the light reaching the two slits coherent: both slits are illuminated by light from the same point, so there is a constant phase relationship ✓')
+  ]);
+};
+
+T.IN7 = R => {
+  const lam = R.pick([480, 520, 560, 600, 640]), m = R.pick([2, 3, 4]), fr = R.pick([.25, .5, .75, 1, 1]), x = fr * lam, pdDark = (m - .5) * lam, phi = 360 * fr, kind = fr % 1 === 0 ? 0 : fr % 1 === .5 ? 1 : 2;
+  return NOFIG(3, { lam, m, x }, `Two coherent sources emit light of wavelength ${V(lam, 'nm', 3)} in phase. The light from the two sources overlaps on a screen and forms a pattern of bright and dark fringes.`, [
+    text('Explain why two separate filament lamps cannot be used to produce an interference pattern like this.', 2, 'The light from two separate lamps is not coherent ✓<br>The phase difference between the two sources changes randomly and rapidly, so no stable pattern is formed ✓'),
+    calc(`Calculate the path difference between the light from the two sources at the ${ORD[m]} dark fringe from the centre of the pattern.`, 2, pdDark, 'nm', `At the ${ORD[m]} dark fringe the path difference is ${eq(`${m - .5}<i>λ</i>`)} ✓<br>${eq(`path difference = ${m - .5} × ${N(lam, 3)} = ${AV(pdDark, 'nm')}`)} ✓`),
+    calc(`At a point Z on the screen the path difference is ${V(x, 'nm', 3)}.<br>Calculate the phase difference, in degrees, between the waves arriving at Z.`, 2, phi, '°', `${eq('phase difference = (path difference / <i>λ</i>) × 360°')} ✓<br>${eq(`= (${N(x, 3)} / ${N(lam, 3)}) × 360 = ${A(phi)}°`)} ✓`),
+    opt('State what is seen at Z.', 1, ['the centre of a bright fringe', 'the centre of a dark fringe', 'neither the centre of a bright fringe nor the centre of a dark fringe'], kind, `The path difference is ${fr} wavelength${fr === 1 ? '' : 's'}: ${['a whole number of wavelengths, so the waves are in phase: the centre of a bright fringe', 'an odd number of half-wavelengths, so the waves are in antiphase: the centre of a dark fringe', 'neither a whole number of wavelengths nor an odd number of half-wavelengths, so Z is between the centre of a bright fringe and the centre of a dark fringe'][kind]} ✓`)
+  ]);
+};
+
+T.IN8 = R => {
+  const [ln] = R.pick(LASERS.slice(1)), sm = R.pick([0.25, 0.40, 0.50]), grad = ln * 1e-3 / sm, [ymax, yM] = axisFor(grad * 3), lam = ln * 1e-9;
+  const fig = graph({ x: [0, 3, .5], y: [0, ymax, yM], xl: 'D / m', yl: 'w / mm', curves: [{ f: x => grad * x, from: 0, to: 3 }], crosses: [.5, 1, 1.5, 2, 2.5, 3].map(x => [x, grad * x]) });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { ln, sm },
+    stem: `A student uses a laser and a double slit to produce interference fringes on a screen. The student measures the fringe spacing ${th('w')} for different distances ${th('D')} between the slits and the screen. <b>Figure 1</b> shows the results.<br>The separation of the slits is ${V(sm, 'mm')}.`,
+    parts: [
+      text(`State how <b>Figure 1</b> shows that ${th('w')} is directly proportional to ${th('D')}.`, 1, 'The graph is a straight line that passes through the origin ✓'),
+      calc('Use <b>Figure 1</b> to determine the wavelength of the laser light.', 3, lam, 'm', `${eq(`gradient = (${I(grad * 3e-3)}) / 3.0 = ${I(grad * 1e-3)}`)} (using a large triangle and converting mm to m) ✓<br>${eq('<i>w</i> = <i>λD</i> / <i>s</i>')}, so ${eq('gradient = <i>λ</i> / <i>s</i>')} ✓<br>${eq(`<i>λ</i> = gradient × <i>s</i> = ${I(grad * 1e-3)} × ${N(sm * 1e-3)} = ${AV(lam, 'm')}`)} ✓`, { tol: .05 }),
+      text(`Each value of ${th('w')} was found by measuring the distance across several fringes.<br>Explain why.`, 2, 'One fringe spacing is small compared with the resolution of the ruler, so measuring it directly would give a large percentage uncertainty ✓<br>Measuring across several fringes gives a larger distance with the same absolute uncertainty, so the percentage uncertainty in <i>w</i> is smaller ✓'),
+      text('State one safety precaution that should be taken when using the laser.', 1, SAFETY)
+    ] };
+};
+
+/* ===== diffraction ===== */
+const PERMM = 'lines per mm';
+// laser, grating and the nth-order beams; with o.screen the beams end on a screen
+function gratingFig(s, o){
+  const gx = 190, cy = 165, td = Math.min(o.screen ? 34 : 40, Math.max(24, o.theta)), Lb = 250;
+  boxed(s, 10, 150, 70, 30, 'laser'); s.line(80, cy, gx, cy); s.mid(80, cy, gx, cy);
+  s.line(gx, 110, gx, 220, { w: 3.5 }); s.label(gx + 22, 98, 'diffraction grating', { anchor: 'end' });
+  if (o.screen){
+    const yn = cy - 250 * tand(td);
+    s.line(gx, cy, 440, cy); s.mid(gx, cy, 440, cy, .6); s.line(gx, cy, 440, yn); s.mid(gx, cy, 440, yn, .6);
+    s.line(440, yn - 22, 440, cy + 40, { w: 3.5 }); s.label(440, yn - 32, 'screen');
+    s.dim(458, cy, 458, yn, '*x*'); s.dim(gx, cy + 76, 440, cy + 76, '*D*', { below: true });
+    angleMark(s, gx, cy, 0, td, '*θ*', 70);
+  } else {
+    const ex = gx + Lb * cosd(td), dy = Lb * sind(td);
+    s.line(gx, cy, 440, cy); s.mid(gx, cy, 440, cy, .6); s.line(gx, cy, ex, cy - dy); s.mid(gx, cy, ex, cy - dy, .6); s.line(gx, cy, ex, cy + dy); s.mid(gx, cy, ex, cy + dy, .6);
+    s.label(447, cy + 5, 'zero order', { anchor: 'start' }); s.label(ex + 7, cy - dy + 5, `${ORD[o.n]} order`, { anchor: 'start' }); s.label(ex + 7, cy + dy + 5, `${ORD[o.n]} order`, { anchor: 'start' });
+    angleMark(s, gx, cy, 0, td, o.label, 70);
+  }
+}
+const gratingD = Nl => 1e-3 / Nl;
+const dLine = (Nl, d) => `${eq(`<i>d</i> = (1 × 10<sup>−3</sup>) / ${N(Nl, 3)} = ${AV(d, 'm')}`)} ✓`;
+const clearOrder = x => { const fr = x - Math.floor(x); return fr > .06 && fr < .94; };
+const WHITE = 'The zero-order (central) maximum is white ✓<br>Each of the other orders is a spectrum, with violet (blue) diffracted through the smallest angle and red through the largest angle ✓';
+
+T.DF1 = R => {
+  const v = find(() => { const Nl = R.pick([300, 400, 500, 600]), [l0] = R.pick(LASERS.concat([[589, 'yellow']])), n = R.pick([1, 2]), sv = n * l0 * 1e-9 / gratingD(Nl); if (sv > .95) return { ok: false }; const theta = Math.round(asind(sv) * 10) / 10, lam = gratingD(Nl) * sind(theta) / n; return { ok: true, Nl, n, theta, lam }; }, o => o.ok && clearOrder(gratingD(o.Nl) / o.lam));
+  const { Nl, n, theta, lam } = v, d = gratingD(Nl), nmax = Math.floor(d / lam), total = 2 * nmax + 1;
+  const s = new Scene('A laser beam incident normally on a diffraction grating, showing the zero-order beam and the two ' + ORD[n] + '-order beams'); gratingFig(s, { theta, n, label: N(theta, 3) + '°' });
+  return { sf: 3, scenes: [s], data: { Nl, n, theta },
+    stem: `<b>Figure 1</b> shows monochromatic light from a laser incident normally on a diffraction grating. The grating has ${V(Nl, PERMM, 3)}. The angle between the zero-order beam and each ${ORD[n]}-order beam is ${N(theta, 3)}°.`,
+    parts: [
+      calc('Calculate the distance between the centres of adjacent slits in the grating.', 1, d, 'm', dLine(Nl, d)),
+      calc('Calculate the wavelength of the laser light.', 2, lam, 'm', `${eq('<i>d</i> sin <i>θ</i> = <i>nλ</i>')} ✓<br>${eq(`<i>λ</i> = ${I(d)} × sin(${N(theta, 3)}°) / ${n} = ${AV(lam, 'm')}`)} ✓`),
+      calc('Calculate the highest order of maximum that this grating can produce with this light.', 2, nmax, '', `The largest possible value of ${eq('sin <i>θ</i>')} is 1: ${eq(`<i>d</i> / <i>λ</i> = ${I(d)} / ${I(lam)} = ${A(d / lam)}`)} ✓<br>${eq('<i>n</i>')} must be a whole number, so the highest order is ${nmax} ✓`, INT),
+      calc('Calculate the total number of maxima produced.', 1, total, '', `${nmax} on each side of the zero-order maximum: ${eq(`2 × ${nmax} + 1 = ${total}`)} ✓`, INT)
+    ] };
+};
+
+T.DF2 = R => {
+  const v = find(() => ({ Nl: R.pick([80, 100, 150, 200, 300]), ln: R.pick(LASERS)[0], n: R.pick([1, 2]), D: R.pick([1.5, 2.0, 2.5]), ci: R.pick([0, 1, 2, 3]) }), o => o.n * o.ln * 1e-9 / gratingD(o.Nl) < .5);
+  const { Nl, ln, n, D, ci } = v, d = gratingD(Nl), sv = n * ln * 1e-9 / d, theta = asind(sv), x = D * tand(theta);
+  const CH = [['a grating that has more lines per mm', 0, 'decreases'], ['a grating that has fewer lines per mm', 1, 'increases'], ['a laser that emits light of a longer wavelength', 0], ['a laser that emits light of a shorter wavelength', 1]][ci];
+  const s = new Scene('A laser beam incident normally on a diffraction grating, with the zero-order beam and one diffracted beam reaching a screen'); gratingFig(s, { theta, n, screen: true });
+  return { sf: 2, scenes: [s], data: { Nl, ln, n, D, ci },
+    stem: `<b>Figure 1</b> shows light of wavelength ${V(ln, 'nm', 3)} from a laser incident normally on a diffraction grating that has ${V(Nl, PERMM, 3)}. Maxima are seen on a screen that is a distance ${th('D')} of ${V(D, 'm')} from the grating.<br>The ${ORD[n]}-order maximum is formed at an angle ${th('θ')} to the zero-order beam and at a distance ${th('x')} from the zero-order maximum.`,
+    parts: [
+      calc(`Calculate ${th('θ')}.`, 3, theta, '°', `${dLine(Nl, d)}<br>${eq(`sin <i>θ</i> = <i>nλ</i> / <i>d</i> = ${n} × ${N(ln * 1e-9, 3)} / ${I(d)} = ${I(sv)}`)} ✓<br>${eq(`<i>θ</i> = sin<sup>−1</sup>(${I(sv)}) = ${A(theta)}°`)} ✓`, { sf: 3 }),
+      calc(`Calculate ${th('x')}.`, 2, x, 'm', `${eq(`<i>x</i> = <i>D</i> tan <i>θ</i> = ${N(D)} × tan(${I(theta)}°)`)} ✓<br>${eq(`<i>x</i> = ${AV(x, 'm')}`)} ✓`),
+      opt(`The ${ci < 2 ? 'grating' : 'laser'} is replaced with ${CH[0]}.<br>State what happens to ${th('x')}.`, 1, ['it increases', 'it decreases', 'it stays the same'], CH[1] ? 1 : 0, ci < 2 ? `${eq('<i>d</i>')} ${CH[2]}, so ${eq('sin <i>θ</i> = <i>nλ</i> / <i>d</i>')} ${CH[1] ? 'decreases' : 'increases'} and ${th('x')} ${CH[1] ? 'decreases' : 'increases'} ✓` : `${eq('sin <i>θ</i> = <i>nλ</i> / <i>d</i>')} ${CH[1] ? 'decreases' : 'increases'} because ${th('λ')} is ${CH[1] ? 'smaller' : 'larger'}, so ${th('x')} ${CH[1] ? 'decreases' : 'increases'} ✓`),
+      text('The laser is replaced with a source of white light.<br>Describe the pattern now seen on the screen.', 2, WHITE)
+    ] };
+};
+
+T.DF3 = R => {
+  const v = find(() => ({ Nl: R.pick([250, 300, 400, 500, 600]), ln: R.pick([436, 486, 546, 589, 656]) }), o => 2 * o.ln * 1e-9 / gratingD(o.Nl) < .97 && clearOrder(gratingD(o.Nl) / (o.ln * 1e-9)));
+  const { Nl, ln } = v, d = gratingD(Nl), lam = ln * 1e-9, s1 = lam / d, t1 = asind(s1), t2 = asind(2 * s1), sep = t2 - t1, nmax = Math.floor(d / lam);
+  return NOFIG(3, { Nl, ln }, `Light of wavelength ${V(ln, 'nm', 3)} is incident normally on a diffraction grating that has ${V(Nl, PERMM, 3)}.`, [
+    calc('Calculate the angle of diffraction for the first-order maximum.', 3, t1, '°', `${dLine(Nl, d)}<br>${eq(`sin <i>θ</i><sub>1</sub> = <i>λ</i> / <i>d</i> = ${N(lam, 3)} / ${I(d)} = ${I(s1)}`)} ✓<br>${eq(`<i>θ</i><sub>1</sub> = sin<sup>−1</sup>(${I(s1)}) = ${A(t1)}°`)} ✓`),
+    calc('Calculate the angle between the first-order maximum and the second-order maximum on the same side of the zero-order maximum.', 2, sep, '°', `${eq(`<i>θ</i><sub>2</sub> = sin<sup>−1</sup>(2 × ${N(lam, 3)} / ${I(d)}) = ${A(t2)}°`)} ✓<br>${eq(`angle = ${I(t2)} − ${I(t1)} = ${A(sep)}°`)} ✓`, { tol: .03 }),
+    calc('Calculate the highest order of maximum that can be observed.', 2, nmax, '', `The largest possible value of ${eq('sin <i>θ</i>')} is 1: ${eq(`<i>d</i> / <i>λ</i> = ${I(d)} / ${N(lam, 3)} = ${A(d / lam)}`)} ✓<br>${eq('<i>n</i>')} must be a whole number, so the highest order is ${nmax} ✓`, INT)
+  ]);
+};
+
+T.DF4 = R => {
+  const v = find(() => { const [src, la, ca, lb, cb] = R.pick([['a hydrogen discharge tube', 656, 'red', 486, 'blue-green'], ['a hydrogen discharge tube', 656, 'red', 434, 'violet'], ['a mercury lamp', 579, 'yellow', 436, 'blue'], ['a mercury lamp', 546, 'green', 436, 'blue']]); return { src, la, ca, lb, cb, Nl: R.pick([300, 400, 500, 600]), n: R.pick([1, 2]) }; }, o => o.n * o.la * 1e-9 / gratingD(o.Nl) < .95);
+  const { src, la, ca, lb, cb, Nl, n } = v, d = gratingD(Nl), sa = n * la * 1e-9 / d, sbv = n * lb * 1e-9 / d, ta = asind(sa), tb = asind(sbv), sep = ta - tb;
+  return NOFIG(3, { la, lb, Nl, n }, `Light from ${src} is incident normally on a diffraction grating that has ${V(Nl, PERMM, 3)}. The light includes ${ca} light of wavelength ${V(la, 'nm', 3)} and ${cb} light of wavelength ${V(lb, 'nm', 3)}.`, [
+    calc(`Calculate the angle of diffraction for the ${ca} light in the ${ORD[n]}-order spectrum.`, 3, ta, '°', `${dLine(Nl, d)}<br>${eq(`sin <i>θ</i> = <i>nλ</i> / <i>d</i> = ${n} × ${N(la * 1e-9, 3)} / ${I(d)} = ${I(sa)}`)} ✓<br>${eq(`<i>θ</i> = sin<sup>−1</sup>(${I(sa)}) = ${A(ta)}°`)} ✓`),
+    calc(`Calculate the angle between the ${ca} light and the ${cb} light in the ${ORD[n]}-order spectrum.`, 2, sep, '°', `For the ${cb} light: ${eq(`<i>θ</i> = sin<sup>−1</sup>(${n} × ${N(lb * 1e-9, 3)} / ${I(d)}) = ${A(tb)}°`)} ✓<br>${eq(`angle = ${I(ta)} − ${I(tb)} = ${A(sep)}°`)} ✓`, { tol: .03 }),
+    text('Explain how a diffraction grating can be used to identify the elements present in a source of light, such as a star.', 2, 'Each element emits (or absorbs) its own characteristic set of wavelengths: a line spectrum ✓<br>The grating separates the wavelengths; the angles of the lines are measured to find the wavelengths, which are compared with the known wavelengths for each element ✓')
+  ]);
+};
+
+T.DF5 = R => {
+  const [a, X, xM, xd] = R.pick([[2, 8, 2, 4], [3, 8, 2, 4], [1.5, 6, 2, 4], [4, 12, 4, 4]]), narrower = R.chance(.5), [c1, c2, shorter] = R.pick([['red', 'blue', 1], ['blue', 'red', 0], ['green', 'red', 0], ['green', 'violet', 1]]), width = 2 * a;
+  const fig = graph({ x: [-X, X, xM], y: [0, 1, .2], xdiv: xd, ydiv: 2, xl: 'position on screen / mm', yl: 'relative intensity', curves: [{ f: x => { const u = Math.PI * x / a; return Math.abs(u) < 1e-9 ? 1 : Math.pow(Math.sin(u) / u, 2); }, from: -X, to: X }] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { a, narrower, shorter },
+    stem: `Monochromatic ${c1} light passes through a narrow single slit and forms a diffraction pattern on a screen. <b>Figure 1</b> shows how the intensity of the light varies with position on the screen.`,
+    parts: [
+      calc('Determine the width of the central maximum.', 1, width, 'mm', `The central maximum extends from ${N(-a)} mm to ${N(a)} mm (between the first minima on each side): width = ${AV(width, 'mm')} ✓`, { abs: xM / xd }),
+      text('State how the width of the central maximum compares with the width of each of the other maxima.', 1, 'The central maximum is twice as wide as each of the other maxima ✓'),
+      opt(`The slit is made ${narrower ? 'narrower' : 'wider'}.<br>State what happens to the central maximum.`, 1, ['it becomes wider and less intense', 'it becomes wider and more intense', 'it becomes narrower and less intense', 'it becomes narrower and more intense'], narrower ? 0 : 3, narrower ? 'A narrower slit causes more diffraction, so the central maximum is wider; less light passes through and it is spread over a larger area, so it is less intense ✓' : 'A wider slit causes less diffraction, so the central maximum is narrower; more light passes through and it is spread over a smaller area, so it is more intense ✓'),
+      opt(`The original slit is used again and the ${c1} light is replaced with ${c2} light.<br>State what happens to the width of the central maximum.`, 1, ['it increases', 'it decreases', 'it stays the same'], shorter ? 1 : 0, `${c2[0].toUpperCase() + c2.slice(1)} light has a ${shorter ? 'shorter' : 'longer'} wavelength than ${c1} light, so it is diffracted ${shorter ? 'less' : 'more'}: the central maximum is ${shorter ? 'narrower' : 'wider'} ✓`),
+      text('The monochromatic light is replaced with white light.<br>Describe the diffraction pattern now seen on the screen.', 2, 'The central maximum is white ✓<br>The maxima on either side are coloured (each is a spectrum), with the blue (violet) edge nearest the centre and the red edge furthest from the centre ✓')
+    ] };
+};
+
+T.DF6 = R => {
+  const v = find(() => { const N0 = R.pick([300, 400, 500, 600]), ln = R.pick([436, 486, 546, 589, 633, 656]), n = R.pick([1, 2, 3]), sv = n * ln * 1e-9 * N0 * 1e3; return { ln, n, sv, theta: Math.round(asind(Math.min(sv, 1)) * 10) / 10 }; }, o => o.sv < .93);
+  const { ln, n, theta } = v, lam = ln * 1e-9, d = n * lam / sind(theta), perM = 1 / d, Nmm = perM * 1e-3;
+  return NOFIG(3, { ln, n, theta }, `Monochromatic light of wavelength ${V(ln, 'nm', 3)} is incident normally on a diffraction grating. The ${ORD[n]}-order maximum is observed at an angle of ${N(theta, 3)}° to the zero-order maximum.`, [
+    text(`The distance between the centres of adjacent slits is ${th('d')}. Derive the equation ${eq('<i>d</i> sin <i>θ</i> = <i>nλ</i>')} for the angles ${th('θ')} at which maxima are formed.<br>You may draw a diagram to help your answer.`, 3, `For light leaving adjacent slits at angle ${th('θ')} to the normal, the path difference is ${eq('<i>d</i> sin <i>θ</i>')} (from the right-angled triangle that has ${th('d')} as its hypotenuse) ✓<br>A maximum is formed when the light from adjacent slits arrives in phase, so the path difference must be a whole number of wavelengths, ${eq('<i>nλ</i>')} ✓<br>Therefore ${eq('<i>d</i> sin <i>θ</i> = <i>nλ</i>')} ✓`),
+    calc('Calculate the number of lines per mm on the grating.', 3, Nmm, PERMM, `${eq(`<i>d</i> = <i>nλ</i> / sin <i>θ</i> = ${n} × ${N(lam, 3)} / sin(${N(theta, 3)}°) = ${AV(d, 'm')}`)} ✓<br>${eq(`lines per metre = 1 / <i>d</i> = 1 / ${I(d)} = ${A(perM)}`)} ✓<br>${eq(`= ${AV(Nmm, PERMM)}`)} ✓`),
+    text('State one application of a diffraction grating.', 1, 'Any one: in a spectrometer to analyse the light from stars ✓ / to identify elements from their line spectra ✓ / to measure wavelengths accurately ✓ / X-ray crystallography ✓')
+  ]);
+};
+
+T.DF7 = R => {
+  const Nl = R.pick([250, 300, 400]), [l1, l2] = R.pick([[600, 410], [600, 420], [650, 420], [700, 450], [650, 450], [700, 480], [600, 450], [700, 420]]), d = gratingD(Nl), sv = 400e-9 / d, sr = 700e-9 / d, tv = asind(sv), tr = asind(sr), wid = tr - tv, big2 = 2 * l1 > 3 * l2;
+  return NOFIG(3, { Nl, l1, l2 }, `White light is incident normally on a diffraction grating that has ${V(Nl, PERMM, 3)}. The wavelengths in the white light range from ${V(400, 'nm', 3)} (violet) to ${V(700, 'nm', 3)} (red).`, [
+    calc('Calculate the angle of diffraction for the violet light in the first-order spectrum.', 3, tv, '°', `${dLine(Nl, d)}<br>${eq(`sin <i>θ</i> = <i>λ</i> / <i>d</i> = ${N(400e-9, 3)} / ${I(d)} = ${I(sv)}`)} ✓<br>${eq(`<i>θ</i> = sin<sup>−1</sup>(${I(sv)}) = ${A(tv)}°`)} ✓`),
+    calc('Calculate the angular width of the first-order spectrum.', 2, wid, '°', `For the red light: ${eq(`<i>θ</i> = sin<sup>−1</sup>(${N(700e-9, 3)} / ${I(d)}) = ${A(tr)}°`)} ✓<br>${eq(`angular width = ${I(tr)} − ${I(tv)} = ${A(wid)}°`)} ✓`, { tol: .03 }),
+    text('Describe the appearance of the zero-order maximum.', 1, 'It is white: light of every wavelength is undeviated (zero path difference), so all the colours overlap ✓'),
+    opt(`Light of wavelength ${l1} nm in the second-order spectrum is compared with light of wavelength ${l2} nm in the third-order spectrum.<br>State which is diffracted through the larger angle.`, 1, [`the second-order light of wavelength ${l1} nm`, `the third-order light of wavelength ${l2} nm`], big2 ? 0 : 1, `${eq('sin <i>θ</i> = <i>nλ</i> / <i>d</i>')}, so the angle is larger for the larger value of ${eq('<i>nλ</i>')}: ${eq(`2 × ${l1} = ${2 * l1} nm`)} and ${eq(`3 × ${l2} = ${3 * l2} nm`)}, so the ${big2 ? 'second-order' : 'third-order'} light is diffracted through the larger angle (the two spectra overlap) ✓`)
+  ]);
+};
+
+/* ===== refraction and optical fibres ===== */
+// light travels down the page from the top medium into the bottom medium
+function boundaryFig(s, o){
+  const cx = 220, cy = 150, L = 125;
+  s.line(40, cy, 400, cy, { w: 2 }); s.line(cx, 36, cx, 264, { dash: '6 4', w: 1.1 });
+  const ix = cx - L * sind(o.i), iy = cy - L * cosd(o.i), rx = cx + L * sind(o.r), ry = cy + L * cosd(o.r);
+  s.line(ix, iy, cx, cy); s.mid(ix, iy, cx, cy); s.line(cx, cy, rx, ry); s.mid(cx, cy, rx, ry);
+  angleMark(s, cx, cy, 90, 90 + o.i, o.i + '°');
+  s.label(48, 138, o.top, { anchor: 'start' }); s.label(48, 172, o.bottom, { anchor: 'start' }); s.label(cx + 8, 48, 'normal', { anchor: 'start', size: 13 });
+}
+function fibreBody(s, x0, x1){
+  s.rect(x0, 100, x1 - x0, 100, { fill: '#dfe3e7' }); s.rect(x0, 125, x1 - x0, 50, { fill: '#fff' });
+  s.line(x1 - 8, 112, x1 + 16, 112, { w: 1 }).line(x1 - 8, 150, x1 + 16, 150, { w: 1 }); s.label(x1 + 20, 117, 'cladding', { anchor: 'start' }); s.label(x1 + 20, 155, 'core', { anchor: 'start' });
+}
+const SPEEDMS = n => `${eq(`<i>c</i><sub>s</sub> = <i>c</i> / <i>n</i> = ${CTXT} / ${N(n, 3)}`)} ✓<br>${eq(`<i>c</i><sub>s</sub> = ${AV(C0 / n, MS1)}`)} ✓`;
+
+T.RF1 = R => {
+  const [mat, n] = R.pick([['glass', 1.50], ['glass', 1.52], ['Perspex', 1.49], ['water', 1.33], ['diamond', 2.42], ['glass', 1.47]]), i = R.pick([30, 35, 40, 45, 50, 55, 60, 65, 70]), r = asind(sind(i) / n), cs = C0 / n, tc = asind(1 / n);
+  const s = new Scene(`A ray of light in air refracting at a boundary with ${mat}`); boundaryFig(s, { i, r, top: 'air', bottom: mat });
+  return { sf: 2, scenes: [s], data: { n, i },
+    stem: `<b>Figure 1</b> shows a ray of light travelling in air and incident on the surface of a block of ${mat} at an angle of incidence of ${i}°. The refractive index of the ${mat} is ${NU(n)}.<br>${CLINE}`,
+    parts: [
+      calc(`Calculate the angle of refraction in the ${mat}.`, 2, r, '°', `${eq(`<i>n</i><sub>1</sub> sin <i>θ</i><sub>1</sub> = <i>n</i><sub>2</sub> sin <i>θ</i><sub>2</sub>`)} with ${eq('<i>n</i><sub>1</sub> = 1')} for air ✓<br>${eq(`<i>θ</i><sub>2</sub> = sin<sup>−1</sup>(sin(${i}°) / ${N(n, 3)}) = ${A(r)}°`)} ✓`),
+      text(`Explain why the ray bends towards the normal as it enters the ${mat}.`, 1, `Light travels more slowly in ${mat} than in air (the ${mat} has a higher refractive index / is more optically dense) ✓`),
+      calc(`Calculate the speed of light in the ${mat}.`, 2, cs, MS1, SPEEDMS(n), { sf: 3 }),
+      calc(`Calculate the critical angle for the boundary between the ${mat} and air.`, 2, tc, '°', `${eq(`sin <i>θ</i><sub>c</sub> = <i>n</i><sub>2</sub> / <i>n</i><sub>1</sub> = 1 / ${N(n, 3)}`)} ✓<br>${eq(`<i>θ</i><sub>c</sub> = sin<sup>−1</sup>(1 / ${N(n, 3)}) = ${A(tc)}°`)} ✓`, { sf: 3 })
+    ] };
+};
+
+T.RF2 = R => {
+  const v = find(() => ({ n: R.pick([1.45, 1.48, 1.50, 1.52, 1.55, 1.60]), ang: R.pick([35, 35, 40, 45, 50, 55, 60]) }), o => Math.abs(o.ang - asind(1 / o.n)) > 2);
+  const { n, ang } = v, tc = asind(1 / n), tir = ang > tc, out = tir ? ang : asind(n * sind(ang));
+  const s = new Scene('A ray of light entering a semicircular glass block along a radius and meeting the centre of the flat face'), cx = 220, cy = 130, rr = 100;
+  s.line(cx - rr, cy, cx + rr, cy, { w: 1.8 }); s.arc(cx, cy, rr, 180, 360, { w: 1.8 }); s.line(cx, 50, cx, 208, { dash: '6 4', w: 1.1 });
+  const sx = cx - 165 * sind(ang), sy = cy + 165 * cosd(ang); s.line(sx, sy, cx, cy); s.mid(sx, sy, cx, cy, .25);
+  angleMark(s, cx, cy, 270 - ang, 270, ang + '°', 34, R0 => Math.min(R0, 80)); s.label(272, 172, 'glass'); s.label(330, 105, 'air', { anchor: 'start' }); s.label(cx + 8, 62, 'normal', { anchor: 'start', size: 13 });
+  return { sf: 2, scenes: [s], data: { n, ang },
+    stem: `<b>Figure 1</b> shows a ray of light that enters a semicircular glass block along a radius. The ray meets the centre of the flat face of the block at an angle of ${ang}° to the normal. The refractive index of the glass is ${NU(n)}.`,
+    parts: [
+      text('Explain why the ray does not change direction when it enters the block at the curved surface.', 1, 'The ray travels along a radius, so it meets the curved surface along the normal (angle of incidence = 0°) ✓'),
+      calc('Calculate the critical angle for the boundary between the glass and air.', 2, tc, '°', `${eq(`sin <i>θ</i><sub>c</sub> = <i>n</i><sub>2</sub> / <i>n</i><sub>1</sub> = 1 / ${N(n, 3)}`)} ✓<br>${eq(`<i>θ</i><sub>c</sub> = sin<sup>−1</sup>(1 / ${N(n, 3)}) = ${A(tc)}°`)} ✓`, { sf: 3 }),
+      opt('State what happens to the ray at the flat face.', 1, ['it is totally internally reflected', 'it is refracted into the air (with a weak reflected ray)'], tir ? 0 : 1, tir ? `The angle of incidence (${ang}°) is greater than the critical angle (${A(tc)}°), so the ray is totally internally reflected ✓` : `The angle of incidence (${ang}°) is less than the critical angle (${A(tc)}°), so the ray is refracted into the air ✓`),
+      calc(tir ? 'Determine the angle between the normal and the ray after it has been reflected at the flat face.' : 'Calculate the angle of refraction in the air.', 2, out, '°', tir ? `Total internal reflection obeys the law of reflection ✓<br>angle of reflection = angle of incidence = ${A(out)}° ✓` : `${eq(`<i>n</i><sub>1</sub> sin <i>θ</i><sub>1</sub> = <i>n</i><sub>2</sub> sin <i>θ</i><sub>2</sub>`)} with ${eq('<i>n</i><sub>2</sub> = 1')} for air ✓<br>${eq(`<i>θ</i><sub>2</sub> = sin<sup>−1</sup>(${N(n, 3)} × sin(${ang}°)) = ${A(out)}°`)} ✓`)
+    ] };
+};
+
+T.RF3 = R => {
+  const n1 = R.pick([1.48, 1.50, 1.52, 1.55, 1.60]), n2 = Math.round((n1 - R.pick([.02, .03, .05, .08])) * 100) / 100, tc = asind(n2 / n1), cs = C0 / n1, lower = R.chance(.5);
+  const s = new Scene('A ray of light travelling along the core of a step-index optical fibre by repeated total internal reflection'); fibreBody(s, 60, 400);
+  const pts = [[60, 150], [100, 125], [180, 175], [260, 125], [340, 175], [384, 147.5]]; s.poly(pts.slice(0, 5), { w: 1.5 }); s.arrow(340, 175, 384, 147.5, { w: 1.5 }); [0, 1, 2, 3].forEach(k => s.mid(pts[k][0], pts[k][1], pts[k + 1][0], pts[k + 1][1]));
+  return { sf: 3, scenes: [s], data: { n1, n2, lower },
+    stem: `<b>Figure 1</b> shows a ray of light travelling along a step-index optical fibre. The refractive index of the core is ${NU(n1)} and the refractive index of the cladding is ${NU(n2)}.<br>${CLINE}`,
+    parts: [
+      calc('Calculate the critical angle for the boundary between the core and the cladding.', 2, tc, '°', `${eq(`sin <i>θ</i><sub>c</sub> = <i>n</i><sub>2</sub> / <i>n</i><sub>1</sub> = ${N(n2, 3)} / ${N(n1, 3)}`)} ✓<br>${eq(`<i>θ</i><sub>c</sub> = sin<sup>−1</sup>(${N(n2, 3)} / ${N(n1, 3)}) = ${A(tc)}°`)} ✓`, { sf: 3 }),
+      calc('Calculate the speed of light in the core.', 2, cs, MS1, SPEEDMS(n1)),
+      text('State two functions of the cladding.', 2, 'Any two:<br>it protects the surface of the core from scratches and damage, which would let light escape ✓<br>it prevents crosstalk: light cannot pass from one core to another where fibres touch ✓<br>it increases the critical angle, so only rays close to the axis are transmitted and modal dispersion is reduced ✓'),
+      opt(`The cladding is replaced with a material that has a ${lower ? 'lower' : 'slightly higher'} refractive index${lower ? '' : ' that is still less than that of the core'}.<br>State what happens to the critical angle at the boundary between the core and the cladding.`, 1, ['it increases', 'it decreases', 'it stays the same'], lower ? 1 : 0, `${eq('sin <i>θ</i><sub>c</sub> = <i>n</i><sub>2</sub> / <i>n</i><sub>1</sub>')} and ${eq('<i>n</i><sub>2</sub>')} is ${lower ? 'smaller' : 'larger'}, so the critical angle ${lower ? 'decreases' : 'increases'} ✓`)
+    ] };
+};
+
+T.RF4 = R => {
+  const v = find(() => { const n1 = R.pick([1.48, 1.50, 1.52, 1.55]), n2 = Math.round((n1 - R.pick([.03, .05, .08, .10])) * 100) / 100, ang = R.pick([15, 20, 25, 30, 35, 40, 45, 50]); return { n1, n2, ang }; }, o => Math.abs(90 - asind(sind(o.ang) / o.n1) - asind(o.n2 / o.n1)) > 1.5);
+  const { n1, n2, ang } = v, r = asind(sind(ang) / n1), al = 90 - r, tc = asind(n2 / n1), tir = al > tc;
+  const s = new Scene('A ray of light in air entering the end of an optical fibre at the centre of the core'), ad = Math.min(50, Math.max(28, ang)); fibreBody(s, 160, 440);
+  s.line(20, 150, 215, 150, { dash: '6 4', w: 1.1 }); const sx = 160 - 130 * cosd(ad), sy = 150 + 130 * sind(ad); s.line(sx, sy, 160, 150); s.mid(sx, sy, 160, 150);
+  const hx = 160 + 25 / tand(20); s.line(160, 150, hx, 125, { w: 1.5 }); s.mid(160, 150, hx, 125, .62); angleMark(s, 160, 150, 180, 180 + ad, ang + '°', 44); s.label(40, 112, 'air', { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { n1, n2, ang },
+    stem: `<b>Figure 1</b> shows a ray of light in air incident on the centre of the end of a step-index optical fibre. The ray makes an angle of ${ang}° with the axis of the fibre, which is the normal to the end face. The ray is refracted into the core and then meets the boundary between the core and the cladding.<br>The refractive index of the core is ${NU(n1)} and the refractive index of the cladding is ${NU(n2)}.`,
+    parts: [
+      calc('Calculate the angle of refraction of the ray as it enters the core.', 2, r, '°', `${eq(`<i>n</i><sub>1</sub> sin <i>θ</i><sub>1</sub> = <i>n</i><sub>2</sub> sin <i>θ</i><sub>2</sub>`)} with ${eq('<i>n</i><sub>1</sub> = 1')} for air ✓<br>${eq(`<i>θ</i><sub>2</sub> = sin<sup>−1</sup>(sin(${ang}°) / ${N(n1, 3)}) = ${A(r)}°`)} ✓`),
+      calc('Calculate the angle of incidence of the ray at the boundary between the core and the cladding.', 1, al, '°', `The normal to this boundary is at 90° to the axis of the fibre: ${eq(`90 − ${I(r)} = ${A(al)}°`)} ✓`, { noSf: true }),
+      calc('Calculate the critical angle for the boundary between the core and the cladding.', 2, tc, '°', `${eq(`sin <i>θ</i><sub>c</sub> = <i>n</i><sub>2</sub> / <i>n</i><sub>1</sub> = ${N(n2, 3)} / ${N(n1, 3)}`)} ✓<br>${eq(`<i>θ</i><sub>c</sub> = sin<sup>−1</sup>(${N(n2, 3)} / ${N(n1, 3)}) = ${A(tc)}°`)} ✓`, { sf: 3 }),
+      opt('State what happens to the ray at the boundary between the core and the cladding.', 1, ['it is totally internally reflected and stays in the core', 'it is refracted into the cladding'], tir ? 0 : 1, tir ? `The angle of incidence (${A(al)}°) is greater than the critical angle (${A(tc)}°), so the ray is totally internally reflected ✓` : `The angle of incidence (${A(al)}°) is less than the critical angle (${A(tc)}°), so the ray is refracted into the cladding (with only partial reflection) ✓`)
+    ] };
+};
+
+T.RF5 = R => {
+  const n = R.pick([1.45, 1.47, 1.48, 1.50]), l0 = R.pick([850, 1300, 1550]), Lk = R.pick([2.0, 5.0, 12, 25, 40]), cs = C0 / n, t = Lk * 1e3 / cs, lg = l0 / n;
+  return NOFIG(2, { n, l0, Lk }, `Infrared radiation that has a wavelength of ${V(l0, 'nm', 3)} in air is sent along the axis of an optical fibre of length ${V(Lk, 'km')}. The refractive index of the core of the fibre is ${NU(n)}.<br>${CLINE}`, [
+    calc('Calculate the speed of the infrared radiation in the core.', 2, cs, MS1, SPEEDMS(n), { sf: 3 }),
+    calc('Calculate the time taken for the radiation to travel along the fibre.', 2, t, 's', `${eq(`<i>t</i> = distance / speed = ${N(Lk * 1e3)} / ${I(cs)}`)} ✓<br>${eq(`<i>t</i> = ${AV(t, 's')}`)} ✓`),
+    opt('State what happens to the frequency and the wavelength of the radiation as it passes from air into the core.', 1, ['the frequency is unchanged and the wavelength decreases', 'the frequency decreases and the wavelength is unchanged', 'the frequency and the wavelength both decrease', 'the frequency and the wavelength are both unchanged'], 0, `The frequency is unchanged; the speed decreases, so the wavelength decreases (${eq('<i>c</i> = <i>fλ</i>')}) ✓`),
+    calc('Calculate the wavelength of the radiation in the core.', 2, lg, 'nm', `The frequency is unchanged, so the wavelength is proportional to the speed: ${eq('<i>λ</i><sub>core</sub> = <i>λ</i><sub>air</sub> / <i>n</i>')} ✓<br>${eq(`<i>λ</i><sub>core</sub> = ${N(l0, 3)} / ${N(n, 3)} = ${AV(lg, 'nm')}`)} ✓`, { sf: 3 })
+  ]);
+};
+
+T.RF6 = R => {
+  const na = R.pick([1.462, 1.465, 1.468, 1.470]), dn = R.pick([.004, .006, .008, .012]), nb = Math.round((na - dn) * 1000) / 1000, Lk = R.pick([5.0, 10, 20, 40]), dt = Lk * 1e3 * (na - nb) / C0;
+  return NOFIG(2, { na, nb, Lk }, `Pulses of light that contain two wavelengths are sent along the axis of an optical fibre of length ${V(Lk, 'km')}. The refractive index of the core is ${NU(na, 4)} for the shorter wavelength and ${NU(nb, 4)} for the longer wavelength.<br>${CLINE}`, [
+    text('Explain what is meant by material dispersion in an optical fibre.', 2, 'The refractive index of the core depends on wavelength, so different wavelengths travel at different speeds ✓<br>The different wavelengths in a pulse arrive at different times, so the pulse becomes longer (pulse broadening) ✓'),
+    calc('Calculate the difference between the times taken for the two wavelengths to travel along the fibre.', 3, dt, 's', `For each wavelength ${eq('<i>t</i> = <i>L</i> / <i>c</i><sub>s</sub> = <i>Ln</i> / <i>c</i>')} ✓<br>${eq(`Δ<i>t</i> = ${N(Lk * 1e3)} × (${N(na, 4)} − ${N(nb, 4)}) / ${CTXT}`)} ✓<br>${eq(`Δ<i>t</i> = ${AV(dt, 's')}`)} ✓`, { noSf: true }),
+    text('Pulse broadening is also caused by modal dispersion.<br>Explain what causes modal dispersion and state how it can be reduced.', 2, 'Rays enter the fibre at different angles and so travel along paths of different lengths, taking different times to pass along the fibre ✓<br>It is reduced by using a core with a very small diameter (a monomode fibre) ✓'),
+    text('State one problem caused by pulse broadening.', 1, 'Neighbouring pulses overlap, so the information cannot be read correctly / the number of pulses that can be sent each second (the bit rate) is limited ✓')
+  ]);
+};
+
+T.RF7 = R => {
+  const v = find(() => { const [m1, n1, m2, n2] = R.pick([['glass', 1.52, 'water', 1.33], ['glass', 1.60, 'oil', 1.47], ['Perspex', 1.49, 'water', 1.33], ['glass', 1.55, 'water', 1.33], ['diamond', 2.42, 'glass', 1.52]]); return { m1, n1, m2, n2, i: R.pick([25, 30, 35, 40, 45, 50]) }; }, o => o.n1 * sind(o.i) / o.n2 < .96);
+  const { m1, n1, m2, n2, i } = v, sv = n1 * sind(i) / n2, r = asind(sv), tc = asind(n2 / n1), big = Math.ceil((tc + 4) / 5) * 5;
+  const s = new Scene(`A ray of light in ${m1} refracting at a boundary with ${m2}`); boundaryFig(s, { i, r, top: m1, bottom: m2 });
+  return { sf: 2, scenes: [s], data: { n1, n2, i },
+    stem: `<b>Figure 1</b> shows a ray of light travelling in ${m1} and incident on a boundary with ${m2} at an angle of incidence of ${i}°. The refractive index of the ${m1} is ${NU(n1)} and the refractive index of the ${m2} is ${NU(n2)}.`,
+    parts: [
+      calc(`Calculate the angle of refraction in the ${m2}.`, 3, r, '°', `${eq(`<i>n</i><sub>1</sub> sin <i>θ</i><sub>1</sub> = <i>n</i><sub>2</sub> sin <i>θ</i><sub>2</sub>`)} ✓<br>${eq(`sin <i>θ</i><sub>2</sub> = ${N(n1, 3)} × sin(${i}°) / ${N(n2, 3)} = ${I(sv)}`)} ✓<br>${eq(`<i>θ</i><sub>2</sub> = sin<sup>−1</sup>(${I(sv)}) = ${A(r)}°`)} ✓`),
+      opt(`State how the speed of light in the ${m2} compares with the speed of light in the ${m1}.`, 1, [`it is greater in the ${m2}`, `it is smaller in the ${m2}`, 'it is the same in both'], 0, `The ${m2} has the smaller refractive index, so light travels faster in the ${m2} (${eq('<i>c</i><sub>s</sub> = <i>c</i> / <i>n</i>')}) ✓`),
+      calc(`Calculate the critical angle for the boundary between the ${m1} and the ${m2}.`, 2, tc, '°', `${eq(`sin <i>θ</i><sub>c</sub> = <i>n</i><sub>2</sub> / <i>n</i><sub>1</sub> = ${N(n2, 3)} / ${N(n1, 3)}`)} ✓<br>${eq(`<i>θ</i><sub>c</sub> = sin<sup>−1</sup>(${N(n2, 3)} / ${N(n1, 3)}) = ${A(tc)}°`)} ✓`, { sf: 3 }),
+      text(`The angle of incidence is increased to ${big}°.<br>Describe what happens to the ray at the boundary.`, 2, `${big}° is greater than the critical angle, so the ray is totally internally reflected (there is no refracted ray) ✓<br>The angle of reflection is ${big}° ✓`)
+    ] };
+};
+
+T.RF8 = R => {
+  const n = R.pick([1.33, 1.40, 1.45, 1.50, 1.60]), cs = C0 / n, tc = asind(1 / n), xe = Math.min(.6, 1 / n);
+  const fig = graph({ x: [0, .6, .1], y: [0, 1, .2], xdiv: 5, ydiv: 4, xl: 'sin θ₂', yl: 'sin θ₁', curves: [{ f: x => n * x, from: 0, to: xe }], crosses: [10, 20, 30, 40, 50, 60, 70].map(a => [sind(a) / n, sind(a)]).filter(p => p[0] <= .6) });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { n },
+    stem: `A student directs a ray of light from air into a transparent block and measures the angle of incidence ${th('θ', '1')} and the angle of refraction ${th('θ', '2')} for several rays. <b>Figure 1</b> shows the student’s graph of ${eq('sin <i>θ</i><sub>1</sub>')} against ${eq('sin <i>θ</i><sub>2</sub>')}.<br>${CLINE}`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the refractive index of the block.', 2, n, '', `${eq('<i>n</i> = sin <i>θ</i><sub>1</sub> / sin <i>θ</i><sub>2</sub>')} = gradient of the graph (refractive index of air = 1) ✓<br>${eq(`gradient = ${A(n * .5)} / 0.50 = ${A(n)}`)} (using a large triangle) ✓`, { tol: .03 }),
+      calc('Calculate the speed of light in the block.', 2, cs, MS1, `${eq(`<i>c</i><sub>s</sub> = <i>c</i> / <i>n</i> = ${CTXT} / ${A(n)}`)} ✓<br>${eq(`<i>c</i><sub>s</sub> = ${AV(cs, MS1)}`)} ✓`, { tol: .04 }),
+      calc('Calculate the critical angle for the boundary between the block and air.', 2, tc, '°', `${eq(`sin <i>θ</i><sub>c</sub> = 1 / <i>n</i> = 1 / ${A(n)}`)} ✓<br>${eq(`<i>θ</i><sub>c</sub> = sin<sup>−1</sup>(1 / ${A(n)}) = ${A(tc)}°`)} ✓`, { tol: .04 }),
+      text('State what happens to the speed, the frequency and the wavelength of the light as it passes from air into the block.', 2, 'The speed decreases and the wavelength decreases ✓<br>The frequency does not change ✓')
+    ] };
+};
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    if (p.ans !== undefined && !p.options && (p.abs !== undefined || p.tol)){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${N(Math.max(lo, 0), 3)} to ${N(hi, 3)}${p.unit === '°' ? '°' : p.unit ? ' ' + p.unit : ''}${q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0) continue; const a = plain(A(pj.ans)), a4 = plain(I(pj.ans)), m = plain(p.ms); if ((m.includes(a) || m.includes(a4)) && !given.includes(a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length) g.push('Allow ecf from their answer' + (ecf.length > 1 ? 's' : '') + ' to ' + ecf.join(' and ') + '.');
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${p.unit === '°' ? '°' : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  INEXACT.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${o}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.int ? p.ans : ENGINE.disp(p.ans)}${p.unit === '°' ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.abs === undefined && !p.tol && !p.int ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like SW3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>

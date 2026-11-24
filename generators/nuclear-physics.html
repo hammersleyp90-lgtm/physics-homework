@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Nuclear Physics Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+.nuc{display:inline-flex;flex-direction:column;vertical-align:-0.42em;font-size:.68em;line-height:1.02;text-align:right;margin-right:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Nuclear Physics Question Generator</h1>
+    <p>AQA-style practice on section 3.8 (Nuclear physics). 51 question types and many thousands of different questions with mark schemes: apparatus, decay-curve, N–Z and energy-level questions, tables of results, plus calculation and description questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="RD3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number(x.toPrecision(n));
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    let e = Math.floor(Math.log10(a) + 1e-12), m = Number((x / Math.pow(10, e)).toPrecision(n));
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+const A = x => isNice(x, 2) ? N(x, 2) : N(x, 3);      // answers: 2 sf when exact, otherwise 3 sf
+const AV = (x, unit) => A(x) + ' ' + unit;
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? .9 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside, halo: !!o.halo });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}${l.halo ? ' stroke="#fff" stroke-width="4" paint-order="stroke"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+// axis label: ^{..} superscript, _{..} subscript
+const axl = s => esc(s).replace(/\^\{([^}]*)\}/g, '<tspan dy="-6" font-size="10">$1</tspan><tspan dy="6">\u200b</tspan>').replace(/_\{([^}]*)\}/g, '<tspan dy="4" font-size="10">$1</tspan><tspan dy="-4">\u200b</tspan>');
+const axp = s => String(s).replace(/[\^_]\{([^}]*)\}/g, '$1');
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = 52, mt = 16, mr = 22;
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(m) + 1e-9));
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(Math.max(xa, Math.min(0, xb))), ay0 = Y(Math.max(ya, Math.min(0, yb)));
+  let marks = '';
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= ya - 1e-9 && y <= yb + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.dots || []).forEach(d => { marks += `<circle cx="${n2(X(d.x))}" cy="${n2(Y(d.y))}" r="4.2" fill="#000"/><text x="${n2(X(d.x) + (d.dx || 9))}" y="${n2(Y(d.y) + (d.dy || 5))}" font-weight="700" font-size="15" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(d.t)}</text>`; });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(axp(g.yl))} against ${esc(axp(g.xl))}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${th - 8}" text-anchor="middle">${axl(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${axl(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [ya, yb] = g.y, inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.dots || []).forEach(p => { if (!inX(p.x) || !inY(p.y)) e.push('marked nuclide outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+/* ---------- nuclear physics: shared helpers ---------- */
+const TOPICS = { RS: 'Rutherford scattering and nuclear radius', AB: 'α, β and γ radiation', RD: 'Radioactive decay', NI: 'Nuclear instability', ME: 'Mass and energy', FR: 'Induced fission and safety' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const INT = { int: true, noSkill: true };
+const UNC = { u: true, noSkill: true };
+const r3 = x => Number(x.toPrecision(3));
+const I = x => isNice(x, 2) ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);      // intermediate values in working, to 4 significant figures
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join(' ')}</tr> ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join(' ')}</tr>`).join(' ')}</table>`;
+const an = w => (/^[aeiou]/i.test(w) ? 'an ' : 'a ') + w;
+const pow10 = e => `10<sup>${String(e).replace('-', '−')}</sup>`;
+const meanOf = a => a.reduce((s, x) => s + x, 0) / a.length;
+const dot = (s, x, y, r = 3.2) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+// nuclide notation: nucleon number above proton number, then the symbol
+const nuc = (sym, A, Z) => `<span class="nuc"><span>${A}</span><span>${Z}</span></span>${sym}`;
+const LET = ['A', 'B', 'C', 'D', 'E'];
+// AQA data-sheet values
+const QE = 1.60e-19, EPS0 = 8.85e-12, HP = 6.63e-34, UKG = 1.661e-27, UMEV = 931.5, MPU = 1.00728, MNU = 1.00867, MEU = 0.00055, NAV = 6.02e23, MEVJ = 1.60e-13, MNKG = 1.675e-27;
+const YRS = 3.15e7, MALPHA = 6.64e-27;
+const ALPHA = 'alpha (α)', BETA = 'beta-minus (β<sup>−</sup>)', GAMMA = 'gamma (γ)';
+const DMODES = ['α decay', 'β<sup>−</sup> decay', 'β<sup>+</sup> decay'];
+const K4 = '4π × 8.85 × 10<sup>−12</sup>';
+const SE = '1.60 × 10<sup>−19</sup>', SMEV = '1.60 × 10<sup>−13</sup>', SH = '6.63 × 10<sup>−34</sup>', SC = '3.00 × 10<sup>8</sup>', SNA = '6.02 × 10<sup>23</sup>', SU = '1.661 × 10<sup>−27</sup>', SYR = '3.15 × 10<sup>7</sup>';
+const cbrt = x => Math.pow(x, 1 / 3);
+const lg2 = Math.LN2;
+
+/* ===== Rutherford scattering and nuclear radius ===== */
+const RSOBS = [
+  ['Most of the alpha particles passed straight through the foil with little or no deflection.', 'Most of the atom is empty space.'],
+  ['A small number of alpha particles were deflected through large angles.', 'The positive charge of the atom is concentrated in a very small region.'],
+  ['A very small number of alpha particles were deflected through more than 90°.', 'Most of the mass of the atom is concentrated in a very small, positively charged nucleus.']
+];
+const RSFALSE = ['The positive charge is spread evenly through the whole atom.', 'Electrons orbit the nucleus in fixed energy levels.', 'The nucleus contains neutral particles as well as protons.'];
+const RSCHG = [
+  ['a foil of the same thickness made of silver (proton number 47)', 1, 'A silver nucleus has a smaller charge (fewer protons) than a gold nucleus ✓<br>so the electrostatic repulsion on an alpha particle at a given distance is smaller and the deflections are smaller ✓'],
+  ['a foil of the same thickness made of aluminium (proton number 13)', 1, 'An aluminium nucleus has a much smaller charge (fewer protons) than a gold nucleus ✓<br>so the electrostatic repulsion on an alpha particle at a given distance is smaller and the deflections are smaller ✓'],
+  ['alpha particles with a greater kinetic energy', 1, 'The alpha particles have more momentum (are moving faster) ✓<br>so the same repulsive force deflects them less / they do not get as close to the nucleus before being turned back ✓'],
+  ['alpha particles with a smaller kinetic energy', 0, 'The alpha particles have less momentum (are moving more slowly) ✓<br>so the same repulsive force deflects them more / they are deflected further from their original direction ✓']
+];
+function rsApparatus(th){
+  const s = new Scene('Alpha-particle scattering apparatus: a source in a lead block, a thin gold foil and a detector that moves around the foil inside an evacuated chamber');
+  const cx = 300, cy = 200, fx0 = 299, rad = th * Math.PI / 180, c = Math.cos(rad), sn = Math.sin(rad);
+  s.circle(cx, cy, 170, { tag: 'chamber' });
+  s.rect(150, 172, 62, 18, { fill: '#a3a9ae' }); s.rect(150, 210, 62, 18, { fill: '#a3a9ae' }); s.rect(142, 172, 8, 56, { fill: '#a3a9ae' });
+  dot(s, 157, 200, 4);
+  s.arrow(214, 200, 292, 200, { w: 1.5 });
+  s.rect(296, 165, 6, 70, { fill: '#555' });
+  s.line(306, 200, 446, 200, { dash: '6 5', w: 1.1 });
+  s.line(fx0 + 8 * c, 200 - 8 * sn, fx0 + 116 * c, 200 - 116 * sn, { dash: '6 5', w: 1.3 });
+  const P = (r, w) => [fx0 + r * c - w * sn, 200 - r * sn - w * c];
+  s.poly([P(118, -13), P(162, -13), P(162, 13), P(118, 13)], { close: true, fill: '#fff' });
+  s.arc(fx0, 200, 48, 0, th, { w: 1.2 }); s.label(fx0 + 66 * Math.cos(rad / 2), 200 - 66 * Math.sin(rad / 2) + 6, '*θ*');
+  s.line(290, 369.8, 290, 400); s.line(310, 369.8, 310, 400);
+  s.label(300, 420, 'to vacuum pump', { size: 14 });
+  s.label(181, 162, 'lead', { size: 14 }); s.label(181, 250, 'α source', { size: 14 });
+  s.label(299, 154, 'thin gold foil', { size: 14 });
+  s.label(fx0 + 205 * c, 200 - 205 * sn + 5, 'detector', { size: 14 });
+  s.label(300, 318, 'vacuum', { size: 14 });
+  return s;
+}
+T.RS1 = R => {
+  const [s, th] = (() => { let o; for (let i = 0; i < 40; i++){ const t = R.pick([20, 30, 40, 50, 60, 70, 110, 120, 130]); o = [rsApparatus(t), t]; if (!o[0].check().length) break; } return o; })();
+  const [o1, o2] = pickN(R, [0, 1, 2], 2), ci = Math.floor(R() * RSCHG.length), C = RSCHG[ci], ob = (k, L) => choose(R, `One observation was: ${RSOBS[k][0]}<br>Which conclusion about the structure of the atom did Rutherford draw from this observation?`, 1, RSOBS[k][1], RSFALSE, `${RSOBS[k][1]} ✓`);
+  const EFF = ['the number increases', 'the number decreases', 'the number stays the same'];
+  return { sf: 2, scenes: [s], data: { th, o1, o2, ci },
+    stem: `<b>Figure 1</b> shows the apparatus used to investigate the scattering of alpha particles by a thin gold foil. The detector can be moved to measure the number of alpha particles scattered through different angles <i>θ</i>.`,
+    parts: [
+      text('Explain why the chamber is evacuated.', 1, 'So that the alpha particles are not absorbed by (do not collide with and lose energy to) air molecules ✓'),
+      text('Explain why the gold foil must be very thin.', 1, 'So that each alpha particle is scattered by only one nucleus / so that the alpha particles are not absorbed in the foil ✓'),
+      ob(o1), ob(o2),
+      opt(`The detector is moved from the position shown to a larger angle <i>θ</i>.<br>State what happens to the number of alpha particles detected per minute.`, 1, EFF, 1, 'The number decreases: fewer alpha particles are scattered through larger angles ✓'),
+      opt(`The experiment is repeated using ${C[0]}.<br>State the effect on the number of alpha particles scattered through large angles.`, 1, EFF, C[1], `${C[1] ? 'The number decreases' : 'The number increases'} ✓`),
+      text('Explain your answer.', 2, C[2])
+    ] };
+};
+
+// paths of alpha particles near a nucleus, worked out step by step from the inverse-square repulsion (d0 = distance of closest approach head-on)
+function alphaPath(b, sgn){
+  // start far away with the speed that gives a kinetic energy of 0.5 at infinity, and record the path once it is within 11 d0
+  let x = -400, y = b, vx = Math.sqrt(1 - sgn / Math.hypot(400, b)), vy = 0; const k = 0.5 * sgn, pts = [];
+  for (let i = 0; i < 200000; i++){
+    const r = Math.hypot(x, y), dt = Math.min(0.02, 0.004 * r) * (r > 12 ? 10 : 1), a = k / (r * r * r);
+    vx += a * x * dt / 2; vy += a * y * dt / 2; x += vx * dt; y += vy * dt;
+    const r2 = Math.hypot(x, y), a2 = k / (r2 * r2 * r2); vx += a2 * x * dt / 2; vy += a2 * y * dt / 2;
+    if (x < -11) continue;
+    if (!pts.length || i % 6 === 0) pts.push([x, y]);
+    if (r2 > 11 && x * vx + y * vy > 0) break;
+  }
+  pts.push([x, y]); return pts;
+}
+T.RS2 = R => {
+  let s, P;
+  for (let tries = 0; tries < 40; tries++){
+    const sg = R.chance(.5) ? 1 : -1;
+    P = shuffleR(R, [{ k: 'near', b: sg * R.pick([0.25, 0.3, 0.35, 0.4]), s: 1 }, { k: 'mid', b: -sg * R.pick([0.8, 0.9, 1.0, 1.1]), s: 1 }, { k: 'far', b: sg * R.pick([1.7, 1.9, 2.1, 2.3]), s: 1 }, { k: 'bad', b: -sg * R.pick([2.6, 2.8, 3.0, 3.2]), s: -1 }]);
+    s = new Scene('Paths of four alpha particles, labelled A to D, passing a nucleus'); const sc = 22, ox = 300, oy = 210, X = p => ox + p[0] * sc, Y = p => oy - p[1] * sc;
+    P.forEach((p, i) => { const pts = alphaPath(p.b, p.s).map(q => [X(q), Y(q)]); s.poly(pts, { w: 1.5 }); s.mid(pts[0][0], pts[0][1], pts[0][0] + 60, pts[0][1], .5, 8); s.label(pts[0][0] - 8, pts[0][1] + 5, LET[i], { anchor: 'end', bold: true }); p.L = LET[i]; });
+    dot(s, ox, oy, 5);
+    if (!s.check().length) break;
+  }
+  const L = k => P.find(p => p.k === k).L, near = L('near'), bad = L('bad'), mid = L('mid');
+  return { sf: 2, scenes: [s], data: { P: P.map(p => [p.L, p.b, p.s]) },
+    stem: `<b>Figure 1</b> shows the paths A, B, C and D of four alpha particles that approach a gold nucleus, shown as a dot. The particles start with the same kinetic energy. One of the paths is drawn incorrectly.`,
+    parts: [
+      opt('Which path shows the alpha particle that gets closest to the nucleus?', 1, LET.slice(0, 4), LET.indexOf(near), `${near}: the alpha particle with the largest deflection gets closest to the nucleus ✓`),
+      opt('Which path is <b>not</b> possible?', 1, LET.slice(0, 4), LET.indexOf(bad), `${bad}: it curves towards the nucleus, but the alpha particle is repelled ✓`),
+      text('Explain why the alpha particles are deflected.', 2, 'The nucleus and the alpha particle are both positively charged ✓<br>so there is an electrostatic (Coulomb) repulsion between them, which is larger the closer the alpha particle is to the nucleus ✓'),
+      choose(R, `Which statement is correct for the alpha particle on path ${near} at its point of closest approach to the nucleus?`, 1, 'Its electric potential energy is a maximum.', ['Its kinetic energy is a maximum.', 'The electrostatic force on it is zero.', 'Its speed is a maximum.'], 'Its electric potential energy is a maximum (and its kinetic energy a minimum) ✓'),
+      opt(`An alpha particle with a greater kinetic energy starts along the same line as path ${mid}.<br>State how its deflection compares with the deflection on path ${mid}.`, 1, ['it is larger', 'it is smaller', 'it is the same'], 1, 'It is smaller ✓'),
+      text('Explain why the electrons in the gold atoms have a negligible effect on the paths of the alpha particles.', 1, 'An electron has a very much smaller mass than an alpha particle (about 1/7300 of it), so an alpha particle is hardly deflected by an electron ✓')
+    ] };
+};
+
+const TARGETS = [['gold', 'Au', 79, 197], ['silver', 'Ag', 47, 107], ['platinum', 'Pt', 78, 195], ['tin', 'Sn', 50, 120], ['copper', 'Cu', 29, 63], ['lead', 'Pb', 82, 208]];
+T.RS3 = R => {
+  const ti = Math.floor(R() * TARGETS.length), [nm, sy, Z, Am] = TARGETS[ti], E = R.pick([4.8, 5.0, 5.3, 5.5, 6.0, 7.7]), R0 = R.pick([1.2, 1.3, 1.4]);
+  const EJ = E * MEVJ, d = 2 * Z * QE * QE / (4 * Math.PI * EPS0 * EJ), Rn = R0 * 1e-15 * cbrt(Am);
+  return NOFIG(2, { ti, E, R0 }, `In a scattering experiment, alpha particles with a kinetic energy of ${V(E, 'MeV')} are fired at a thin foil of ${nm}. The ${nm} nucleus ${nuc(sy, Am, Z)} has a proton number of ${Z}.`, [
+    calc('Calculate the kinetic energy of an alpha particle in J.', 1, EJ, 'J', `${eq(`<i>E</i><sub>k</sub> = ${N(E)} × ${SMEV} = ${AV(EJ, 'J')}`)} ✓`, { noSkill: true }),
+    calc(`An alpha particle travels directly towards a ${nm} nucleus.<br>Calculate the distance of closest approach to the centre of the nucleus.`, 3, d, 'm', `Charges are 2<i>e</i> for the alpha particle and ${Z}<i>e</i> for the nucleus ✓<br>At closest approach, initial kinetic energy = electric potential energy: ${eq(`<i>d</i> = (2 × ${Z} × (${SE})<sup>2</sup>) / (${K4} × ${I(EJ)})`)} ✓<br>${eq(`<i>d</i> = ${AV(d, 'm')}`)} ✓`),
+    calc(`The radius <i>R</i> of a nucleus of nucleon number <i>A</i> is given by <i>R</i> = <i>R</i><sub>0</sub><i>A</i><sup>1/3</sup>, where <i>R</i><sub>0</sub> = ${V(R0, 'fm')}.<br>Calculate the radius of the ${nm} nucleus in m.`, 2, Rn, 'm', `${eq(`<i>R</i> = ${N(R0)} × 10<sup>−15</sup> × ${Am}<sup>1/3</sup>`)} ✓<br>${eq(`<i>R</i> = ${AV(Rn, 'm')}`)} ✓`),
+    text('Explain why the distance of closest approach can only give an upper limit for the radius of the nucleus.', 1, 'The alpha particle is turned back before it reaches the nucleus, so the nucleus must be smaller than the distance of closest approach ✓'),
+    opt('The kinetic energy of the alpha particles is doubled.<br>State the effect on the distance of closest approach.', 1, ['it halves', 'it doubles', 'it falls to a quarter', 'it is unchanged'], 0, 'It halves, because <i>d</i> is inversely proportional to the kinetic energy ✓'),
+    text('Suggest why alpha particles with a very much larger kinetic energy would not give a reliable value for the distance of closest approach.', 1, 'They would get close enough to the nucleus to be affected by the strong nuclear force (as well as the electrostatic force) ✓')
+  ]);
+};
+
+const NUCS = [['carbon', 'C', 6, 12, 2300], ['iron', 'Fe', 26, 56, 7900], ['silver', 'Ag', 47, 107, 10500], ['gold', 'Au', 79, 197, 19300], ['lead', 'Pb', 82, 208, 11300], ['uranium', 'U', 92, 238, 19100], ['aluminium', 'Al', 13, 27, 2700], ['copper', 'Cu', 29, 63, 8900]];
+T.RS4 = R => {
+  const [i1, i2] = pickN(R, [0, 1, 2, 3, 4, 5, 6, 7], 2), [n1, s1, Z1, A1, rho1] = NUCS[i1], [n2, s2, Z2, A2] = NUCS[i2], R0 = R.pick([1.2, 1.3, 1.4]);
+  const Rr = R0 * 1e-15 * cbrt(A1), ratio = cbrt(A1 / A2), m = A1 * UKG, Vn = 4 / 3 * Math.PI * Math.pow(Rr, 3), rho = m / Vn;
+  return NOFIG(2, { i1, i2, R0 }, `The radius <i>R</i> of a nucleus of nucleon number <i>A</i> is given by <i>R</i> = <i>R</i><sub>0</sub><i>A</i><sup>1/3</sup>, where <i>R</i><sub>0</sub> = ${V(R0, 'fm')}. 1 u = ${SU} kg.`, [
+    calc(`Calculate the radius of a ${nuc(s1, A1, Z1)} nucleus.`, 2, Rr, 'm', `${eq(`<i>R</i> = ${N(R0)} × 10<sup>−15</sup> × ${A1}<sup>1/3</sup>`)} ✓<br>${eq(`<i>R</i> = ${AV(Rr, 'm')}`)} ✓`),
+    calc(`Calculate the ratio <br>radius of a ${nuc(s1, A1, Z1)} nucleus / radius of a ${nuc(s2, A2, Z2)} nucleus.`, 1, ratio, '', `${eq(`ratio = (${A1} / ${A2})<sup>1/3</sup> = ${A(ratio)}`)} ✓`, { noSkill: true }),
+    calc(`Assume that the mass of the ${nuc(s1, A1, Z1)} nucleus is ${A1} u.<br>Calculate the density of the nucleus.`, 3, rho, KGM3, `${eq(`mass = ${A1} × ${SU} = ${I(m)} kg`)} ✓<br>${eq(`volume = 4/3 × π × (${I(Rr)})<sup>3</sup> = ${I(Vn)} m<sup>3</sup>`)} ✓<br>${eq(`<i>ρ</i> = ${I(m)} / ${I(Vn)} = ${AV(rho, KGM3)}`)} ✓`),
+    text('Explain why all nuclei have approximately the same density.', 2, 'The mass of a nucleus is proportional to <i>A</i> ✓<br>the volume is proportional to <i>R</i><sup>3</sup>, which is proportional to <i>A</i>, so mass ÷ volume does not depend on <i>A</i> ✓'),
+    calc(`The density of ${n1} is ${V(rho1, KGM3, 3)}.<br>Calculate the ratio density of the ${n1} nucleus / density of ${n1}.`, 1, rho / rho1, '', `${eq(`ratio = ${I(rho)} / ${N(rho1, 3)} = ${A(rho / rho1)}`)} ✓ (the atom is mostly empty space)`, { noSkill: true })
+  ]);
+};
+
+const RSP = [['C', 6, 12], ['O', 8, 16], ['Si', 14, 28], ['Ca', 20, 40], ['Fe', 26, 56], ['Zn', 30, 64], ['Zr', 40, 90], ['Sn', 50, 120], ['Ba', 56, 138], ['Au', 79, 197], ['Pb', 82, 208]];
+const RTEST = [['U', 92, 238], ['Th', 90, 232], ['Ra', 88, 226], ['Bi', 83, 209], ['Cs', 55, 133], ['I', 53, 127]];
+T.RS5 = R => {
+  const R0 = R.pick([1.20, 1.25, 1.30, 1.35, 1.40]), xr = [7, 6.8, 6.6, 6.4, 6.2, 6, 5.8, 5.6, 5.4, 5.2, 5, 4.8, 4.6, 4.4, 4.2, 4].find(x => Math.abs(R0 * x / 0.2 - Math.round(R0 * x / 0.2)) < 1e-9), yr = R0 * xr;
+  const pts = pickN(R, RSP, 6).sort((a, b) => a[2] - b[2]).map(p => [cbrt(p[2]), R0 * cbrt(p[2]) * (1 + (R() * 2 - 1) * 0.02)]);
+  const ti = Math.floor(R() * RTEST.length), [ts, tz, ta] = RTEST[ti], Rt = R0 * cbrt(ta), rho = 3 * UKG / (4 * Math.PI * Math.pow(R0 * 1e-15, 3));
+  const k = R.pick([8, 27, 64]), kr = Math.round(cbrt(k));
+  const fig = graph({ x: [0, 7, 1], y: [0, 10, 2], xdiv: 5, ydiv: 10, h: 360, xl: 'A^{1/3}', yl: 'R / fm', crosses: pts, curves: [{ f: x => R0 * x, from: 0, to: 7 }], reads: [[0, 0], [xr, yr]] });
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: { R0, ti, k },
+    stem: `High-energy electron diffraction is used to measure the radii <i>R</i> of nuclei with different nucleon numbers <i>A</i>. <b>Figure 1</b> shows a graph of <i>R</i> against <i>A</i><sup>1/3</sup>, with a line of best fit. 1 u = ${SU} kg.`,
+    parts: [
+      calc('Determine <i>R</i><sub>0</sub>, the gradient of the line, in fm.', 2, R0, 'fm', `Uses a large triangle, for example (0, 0) and (${N(xr, 2)}, ${N(yr, 2)}) ✓<br>${eq(`<i>R</i><sub>0</sub> = ${N(yr, 2)} / ${N(xr, 2)} = ${A(R0)} fm`)} ✓`, { tol: .03, noSkill: true }),
+      calc(`Calculate the radius of a ${nuc(ts, ta, tz)} nucleus.`, 2, Rt, 'fm', `${eq(`<i>R</i> = ${A(R0)} × ${ta}<sup>1/3</sup>`)} ✓<br>${eq(`<i>R</i> = ${AV(Rt, 'fm')}`)} ✓`, { tol: .03, noSkill: true }),
+      text('Explain how <b>Figure 1</b> shows that <i>R</i> is proportional to <i>A</i><sup>1/3</sup>.', 1, 'The graph is a straight line through the origin ✓'),
+      choose(R, `Nucleus X has ${k} times the nucleon number of nucleus Y.<br>What is the ratio radius of X / radius of Y?`, 1, String(kr), [String(k), String(k * k * k > 1000 ? kr * kr : k * k), N(Math.sqrt(k), 3)].filter((v, i, a) => a.indexOf(v) === i && v !== String(kr)).slice(0, 3), `(${k})<sup>1/3</sup> = ${kr} ✓`),
+      calc('Calculate the density of nuclear matter. Use your value of <i>R</i><sub>0</sub> and assume that the mass of each nucleon is 1 u.', 2, rho, KGM3, `${eq(`<i>ρ</i> = <i>A</i>u / (4/3 π<i>R</i><sub>0</sub><sup>3</sup><i>A</i>) = 3 × ${SU} / (4π × (${A(R0)} × 10<sup>−15</sup>)<sup>3</sup>)`)} ✓<br>${eq(`<i>ρ</i> = ${AV(rho, KGM3)}`)} ✓`, { tol: .05, noSkill: true, guide: ['Allow ecf from their value of <i>R</i><sub>0</sub> in (a).'] }),
+      text('Explain why electrons are used rather than alpha particles to measure nuclear radii accurately.', 1, 'Electrons are leptons, so they are not affected by the strong nuclear force (alpha particles are) ✓')
+    ] };
+};
+
+T.RS6 = R => {
+  const v = find(() => ({ E: R.pick([200, 250, 300, 350, 400, 420, 450, 500]), th: R.pick([22, 24, 26, 28, 30, 32, 34, 36, 38, 40]) }), o => { const l = HP * C0 / (o.E * MEVJ), Rn = 0.61 * l / Math.sin(o.th * Math.PI / 180); return Rn > 2.6e-15 && Rn < 7.4e-15; });
+  const { E, th } = v, EJ = E * MEVJ, lam = HP * C0 / EJ, Rn = 0.61 * lam / Math.sin(th * Math.PI / 180), m = 0.06;
+  const f = t => { const x = t / th; return x <= 1 ? m + (1 - m) * Math.pow(1 - x, 1.5) : m + 1.5 * Math.pow(x - 1, 1.5) * Math.exp(-2 * (x - 1)); };
+  const fig = graph({ x: [0, 60, 10], y: [0, 1.0, 0.2], xdiv: 5, ydiv: 5, h: 320, xl: 'diffraction angle / °', yl: 'relative intensity', curves: [{ f, from: 0, to: 60 }], reads: [[th, f(th)]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { E, th },
+    stem: `A beam of electrons, each with an energy of ${V(E, 'MeV')}, is directed at a thin target. <b>Figure 1</b> shows how the relative intensity of the diffracted electrons varies with the diffraction angle. For the first minimum, sin <i>θ</i> = 0.61<i>λ</i> / <i>R</i>, where <i>R</i> is the radius of the nucleus and <i>λ</i> is the de Broglie wavelength of the electrons.`,
+    parts: [
+      calc('The electrons travel at almost the speed of light, so their energy <i>E</i> = <i>hc</i> / <i>λ</i>.<br>Calculate <i>λ</i>.', 2, lam, 'm', `${eq(`<i>E</i> = ${E} × ${SMEV} = ${I(EJ)} J`)} ✓<br>${eq(`<i>λ</i> = (${SH} × ${SC}) / ${I(EJ)} = ${AV(lam, 'm')}`)} ✓`),
+      calc('Use <b>Figure 1</b> to determine the diffraction angle of the first minimum.', 1, th, '°', `<i>θ</i> = ${th}° ✓`, { abs: 1 }),
+      calc('Calculate the radius of the nucleus.', 2, Rn, 'm', `${eq(`<i>R</i> = 0.61 × ${I(lam)} / sin(${th}°)`)} ✓<br>${eq(`<i>R</i> = ${AV(Rn, 'm')}`)} ✓`, { tol: .04, noSkill: true, guide: ['Allow ecf from their values in (a) and (b).'] }),
+      text('Explain why electrons are used rather than neutrons for this measurement.', 1, 'Electrons are leptons, so they do not interact through the strong nuclear force ✓'),
+      text('Explain why the electrons must have such a high energy.', 1, 'Their de Broglie wavelength must be of the same order as the size of the nucleus (about 10<sup>−15</sup> m) for diffraction to be observed ✓'),
+      opt('The energy of the electrons is increased.<br>State the effect on the angle of the first minimum.', 1, ['it increases', 'it decreases', 'it is unchanged'], 1, 'It decreases, because the wavelength is smaller ✓')
+    ] };
+};
+
+const ATOMS = [['gold', 'Au', 79, 197, 1.44, 196.97], ['copper', 'Cu', 29, 63, 1.28, 62.93], ['aluminium', 'Al', 13, 27, 1.43, 26.98], ['silver', 'Ag', 47, 107, 1.44, 106.91], ['iron', 'Fe', 26, 56, 1.26, 55.93], ['lead', 'Pb', 82, 208, 1.75, 207.98]];
+T.RS7 = R => {
+  const ai = Math.floor(R() * ATOMS.length), [nm, sy, Z, Am, ra, M] = ATOMS[ai], R0 = R.pick([1.2, 1.3, 1.4]);
+  const Rn = R0 * 1e-15 * cbrt(Am), ratio = ra * 1e-10 / Rn, frac = Math.pow(Rn / (ra * 1e-10), 3), pe = Z * MEU / M * 100;
+  return NOFIG(3, { ai, R0 }, `This question compares the size and mass of ${an(nm)} atom with the size and mass of its nucleus ${nuc(sy, Am, Z)}. The radius of ${an(nm)} atom is ${V(ra * 1e-10, 'm', 3)}. The radius <i>R</i> of a nucleus is given by <i>R</i> = <i>R</i><sub>0</sub><i>A</i><sup>1/3</sup>, where <i>R</i><sub>0</sub> = ${V(R0, 'fm')}.`, [
+    calc(`Calculate the radius of the ${nm} nucleus.`, 2, Rn, 'm', `${eq(`<i>R</i> = ${N(R0)} × 10<sup>−15</sup> × ${Am}<sup>1/3</sup>`)} ✓<br>${eq(`<i>R</i> = ${AV(Rn, 'm')}`)} ✓`),
+    calc('Calculate the ratio radius of the atom / radius of the nucleus.', 1, ratio, '', `${eq(`ratio = ${N(ra * 1e-10, 3)} / ${I(Rn)} = ${A(ratio)}`)} ✓`, { noSkill: true }),
+    calc('Calculate the fraction of the volume of the atom that is occupied by the nucleus.', 2, frac, '', `Volume is proportional to radius cubed ✓<br>${eq(`fraction = (${I(Rn)} / ${N(ra * 1e-10, 3)})<sup>3</sup> = ${A(frac)}`)} ✓`, { noSkill: true }),
+    calc(`The mass of ${an(nm)} atom is ${M} u.<br>Calculate the percentage of the mass of the atom that is due to its electrons.`, 2, pe, '%', `${eq(`mass of electrons = ${Z} × 0.00055 = ${I(Z * MEU)} u`)} ✓<br>${eq(`percentage = ${I(Z * MEU)} / ${M} × 100 = ${A(pe)}%`)} ✓`, { noSkill: true }),
+    choose(R, 'Which observation in the alpha-particle scattering experiment showed that most of the atom is empty space?', 1, 'Most alpha particles passed straight through the foil.', ['A few alpha particles were deflected through more than 90°.', 'The alpha particles produced flashes of light on the detector.', 'Some alpha particles were absorbed by the foil.'], 'Most alpha particles passed straight through the foil ✓')
+  ]);
+};
+
+const RTAB = [['C', 6, 12], ['O', 8, 16], ['Si', 14, 28], ['Ca', 20, 40], ['Fe', 26, 56], ['Ni', 28, 58], ['Sr', 38, 88], ['Sn', 50, 120], ['Ba', 56, 138], ['Au', 79, 197], ['Pb', 82, 208]];
+T.RS8 = R => {
+  const v = find(() => { const R0 = R.pick([1.18, 1.20, 1.22, 1.24, 1.26]), rows = pickN(R, RTAB, 5).sort((a, b) => a[2] - b[2]).map(p => { const r = Math.round(R0 * cbrt(p[2]) * (1 + (R() * 2 - 1) * .03) * 100) / 100; return { p, r, q: r3(r / cbrt(p[2])) }; }); return { R0, rows, miss: Math.floor(R() * 5) }; },
+    o => { const q = o.rows.map(r => r.q); return Math.max(...q) - Math.min(...q) >= 0.04 && new Set(q).size === 5 && o.rows.every(r => isNice(r.r, 3)); });
+  const { rows, miss } = v, qs = rows.map(r => r.q), mR0 = meanOf(qs), hr = (Math.max(...qs) - Math.min(...qs)) / 2, pc = hr / mR0 * 100;
+  const ti = Math.floor(R() * RTEST.length), [ts, tz, ta] = RTEST[ti], Rt = mR0 * cbrt(ta);
+  const tab = tableH('Table 1', ['Nucleus', '<i>A</i>', '<i>R</i> / fm', '(<i>R</i> / <i>A</i><sup>1/3</sup>) / fm'], rows.map((r, i) => [nuc(r.p[0], r.p[2], r.p[1]), r.p[2], N(r.r, 3), i === miss ? '' : N(r.q, 3)]));
+  const mr = rows[miss];
+  return NOFIG(3, { rows: rows.map(r => [r.p[2], r.r]), miss, ti },
+    `A student uses published values of nuclear radii <i>R</i> to test the relationship <i>R</i> = <i>R</i><sub>0</sub><i>A</i><sup>1/3</sup>. Table 1 shows the data.<br>${tab}`, [
+      calc(`Calculate the missing value of <i>R</i> / <i>A</i><sup>1/3</sup> for ${nuc(mr.p[0], mr.p[2], mr.p[1])}.`, 1, mr.r / cbrt(mr.p[2]), 'fm', `${eq(`${N(mr.r, 3)} / ${mr.p[2]}<sup>1/3</sup> = ${A(mr.r / cbrt(mr.p[2]))} fm`)} ✓`, { noSkill: true }),
+      calc('Calculate the mean value of <i>R</i><sub>0</sub>. Use the values of <i>R</i> / <i>A</i><sup>1/3</sup> to 3 significant figures.', 1, mR0, 'fm', `${eq(`mean = (${qs.map(x => N(x, 3)).join(' + ')}) / 5 = ${A(mR0)} fm`)} ✓`, { noSkill: true }),
+      calc('The uncertainty in <i>R</i><sub>0</sub> is half the range of the values.<br>Calculate the uncertainty in <i>R</i><sub>0</sub>.', 1, hr, 'fm', `${eq(`uncertainty = (${N(Math.max(...qs), 3)} − ${N(Math.min(...qs), 3)}) / 2 = ${U(hr)} fm`)} ✓`, UNC),
+      calc('Calculate the percentage uncertainty in <i>R</i><sub>0</sub>.', 1, pc, '%', `${eq(`percentage uncertainty = ${U(hr)} / ${I(mR0)} × 100 = ${U(pc)}%`)} ✓`, UNC),
+      calc(`Use your mean value of <i>R</i><sub>0</sub> to calculate the radius of a ${nuc(ts, ta, tz)} nucleus.`, 2, Rt, 'fm', `${eq(`<i>R</i> = ${I(mR0)} × ${ta}<sup>1/3</sup>`)} ✓<br>${eq(`<i>R</i> = ${AV(Rt, 'fm')}`)} ✓`, { noSkill: true }),
+      text('Explain why the radius of a nucleus is expected to be proportional to <i>A</i><sup>1/3</sup>.', 2, 'Nucleons are packed together at (approximately) constant density, so the volume of a nucleus is proportional to <i>A</i> ✓<br>volume is proportional to <i>R</i><sup>3</sup>, so <i>R</i><sup>3</sup> ∝ <i>A</i> and <i>R</i> ∝ <i>A</i><sup>1/3</sup> ✓')
+    ]);
+};
+
+/* ===== α, β and γ radiation ===== */
+const RADQ = [
+  ['is the most strongly ionising', 0], ['is the least strongly ionising', 2], ['is stopped by a sheet of paper', 0], ['passes through paper but is stopped by a few millimetres of aluminium', 1],
+  ['is only reduced significantly by several centimetres of lead', 2], ['has a range of a few centimetres in air', 0], ['has a range of about a metre in air', 1], ['is deflected most by a magnetic field', 1],
+  ['is not deflected by an electric field', 2], ['consists of fast-moving electrons', 1], ['consists of two protons and two neutrons', 0], ['obeys an inverse-square law in air', 2]
+];
+const RADO = [ALPHA, BETA, GAMMA];
+T.AB1 = R => {
+  const qs = pickN(R, RADQ.map((x, i) => i), 4);
+  return NOFIG(2, { qs }, 'Radioactive sources can emit alpha, beta-minus and gamma radiation.', qs.map(i => opt(`State which radiation ${RADQ[i][0]}.`, 1, RADO, RADQ[i][1], `${RADO[RADQ[i][1]]} ✓`)).concat([
+    text('Explain why alpha radiation has a short range in air.', 2, 'Alpha particles are strongly ionising: they produce many ion pairs per millimetre of path ✓<br>each ionisation takes energy from the alpha particle, so it loses all its kinetic energy in a short distance ✓'),
+    text('Explain why gamma radiation from a point source obeys an inverse-square law in air.', 2, 'Gamma photons are hardly absorbed by air ✓<br>the photons spread out equally in all directions, so the same number pass through the surface of a sphere of area 4π<i>r</i><sup>2</sup> at any distance <i>r</i> ✓')
+  ]));
+};
+
+function counterScene(aria, absorber, dlab){
+  const s = new Scene(aria);
+  s.rect(40, 175, 40, 50, { fill: '#a3a9ae' }); s.rect(80, 192, 6, 16, { fill: '#000' });
+  s.label(58, 246, 'source', { size: 14 });
+  if (absorber){ s.rect(146, 150, 9, 100, { fill: '#d6d9dc' }); s.label(150, 138, 'absorber', { size: 14 }); }
+  const gx = absorber ? 210 : 250;
+  s.rect(gx, 182, 110, 36, { fill: '#fff' }); s.line(gx, 182, gx, 218, { w: 3 }); s.rect(gx + 110, 188, 14, 24, { fill: '#fff' });
+  s.label(gx + 55, 172, 'GM tube', { size: 14 });
+  s.line(gx + 124, 200, gx + 170, 200); boxed(s, gx + 170, 172, 104, 56, 'counter');
+  if (dlab){ s.line(86, 214, 86, 268, { w: 1, dash: '4 3' }); s.line(gx, 222, gx, 268, { w: 1, dash: '4 3' }); s.dim(86, 262, gx, 262, dlab, { below: true }); }
+  return s;
+}
+const COMBOS = [['ag', 'alpha and gamma only'], ['bg', 'beta and gamma only'], ['ab', 'alpha and beta only'], ['abg', 'alpha, beta and gamma']];
+T.AB2 = R => {
+  const ci = Math.floor(R() * 4), cb = COMBOS[ci][0], B = 18 + Math.floor(R() * 18);
+  const a = cb.includes('a') ? 150 + Math.floor(R() * 250) : 0, b = cb.includes('b') ? 150 + Math.floor(R() * 250) : 0, g = cb.includes('g') ? 80 + Math.floor(R() * 120) : 0;
+  const tg = R.pick([0.30, 0.35, 0.40]);
+  const rows = [['source removed', B], ['none', B + a + b + g], ['paper', B + Math.round(0.97 * b) + g], ['3 mm aluminium', B + Math.round(0.96 * g)], ['10 mm lead', B + Math.round(tg * g)]];
+  const s = counterScene('A radioactive source, an absorber and a GM tube connected to a counter', true);
+  const rs = [cb.includes('a') ? 'The count rate falls greatly when paper is used, so alpha is present ✓' : 'Paper makes little difference to the count rate, so no alpha is emitted ✓',
+    cb.includes('b') ? 'The count rate falls greatly from paper to 3 mm of aluminium, so beta is present ✓' : 'The count rate hardly changes from paper to 3 mm of aluminium, so no beta is emitted ✓',
+    cb.includes('g') ? 'The count rate with 3 mm of aluminium (and with lead) is still well above background, so gamma is present ✓' : 'With 3 mm of aluminium the count rate falls to the background count rate, so no gamma is emitted ✓'];
+  return { sf: 2, scenes: [s], data: { cb, rows: rows.map(r => r[1]) },
+    stem: `A student uses the apparatus in <b>Figure 1</b> to find which types of radiation a source emits. The student records the count rate with no absorber and with different absorbers, and the background count rate with the source removed. Table 1 shows the results.<br>${tableH('Table 1', ['Absorber', 'Count rate / min<sup>−1</sup>'], rows)}`,
+    parts: [
+      calc('Calculate the corrected count rate with no absorber.', 1, rows[1][1] - B, 'min<sup>−1</sup>', `${eq(`${rows[1][1]} − ${B} = ${rows[1][1] - B} min<sup>−1</sup>`)} ✓`, INT),
+      opt('State which radiations the source emits.', 1, COMBOS.map(c => c[1]), ci, `${COMBOS[ci][1]} ✓`),
+      text('Explain how the results show this.', 3, rs.join('<br>')),
+      text('Explain why the count rate with 10 mm of lead is not zero.', 1, cb.includes('g') ? 'Gamma radiation is not completely absorbed by 10 mm of lead (and background radiation is still detected) ✓' : 'Background radiation is still detected ✓'),
+      text('State two precautions the student should take to reduce the radiation dose received from the source.', 2, 'Any two from:<br>handle the source with long tongs (a handling tool) ✓<br>keep the source as far from the body as possible / do not point it at anyone ✓<br>return the source to its lead-lined box as soon as possible to minimise the time of exposure ✓')
+    ] };
+};
+
+T.AB3 = R => {
+  const v = find(() => { const d1 = R.pick([0.20, 0.25, 0.30]), d2 = R.pick([0.50, 0.60, 0.80, 1.00]), d3 = R.pick([0.40, 0.45]), off = R.chance(.5) ? 0 : R.pick([0.02, 0.03, 0.04]), k = R.pick([90, 120, 150, 200, 240]), B = 20 + Math.floor(R() * 16);
+    const c = d => Math.round(k / Math.pow(d + off, 2)); return { d1, d2, d3, off, k, B, C: [d1, d3, d2].map(d => c(d) + B) }; },
+    o => { const p = (o.C[0] - o.B) * Math.pow(o.d1 / o.d2, 2), m = o.C[2] - o.B, dev = Math.abs(m - p) / p; return o.d3 < o.d2 && (o.off ? dev > .1 : dev < .03) && m > 2 * o.B; });
+  const { d1, d2, d3, off, B, C } = v, c1 = C[0] - B, pred = c1 * Math.pow(d1 / d2, 2), meas = C[2] - B, dB = d1 * Math.sqrt(c1 / B), ok = !off;
+  const s = counterScene('A gamma source and a GM tube a distance d apart, connected to a counter', false, '*d*');
+  return { sf: 2, scenes: [s], data: { d1, d2, d3, B, C },
+    stem: `A student uses the apparatus in <b>Figure 1</b> to test whether gamma radiation from a source obeys an inverse-square law. The background count rate is ${B} min<sup>−1</sup>. Table 1 shows the count rates recorded.<br>${tableH('Table 1', ['<i>d</i> / m', 'Count rate / min<sup>−1</sup>'], [[N(d1, 2), C[0]], [N(d3, 2), C[1]], [N(d2, 2), C[2]]])}`,
+    parts: [
+      calc(`Calculate the corrected count rate when <i>d</i> = ${N(d1, 2)} m.`, 1, c1, 'min<sup>−1</sup>', `${eq(`${C[0]} − ${B} = ${c1} min<sup>−1</sup>`)} ✓`, INT),
+      calc(`Calculate the corrected count rate expected at <i>d</i> = ${N(d2, 2)} m if the radiation obeys an inverse-square law.`, 2, pred, 'min<sup>−1</sup>', `Uses corrected count rate ∝ 1 / <i>d</i><sup>2</sup> ✓<br>${eq(`${c1} × (${N(d1, 2)} / ${N(d2, 2)})<sup>2</sup> = ${A(pred)} min<sup>−1</sup>`)} ✓`, { noSkill: true }),
+      opt('State whether the results support the inverse-square law.', 1, ['yes', 'no'], ok ? 0 : 1, ok ? `Yes: the measured corrected count rate (${meas} min<sup>−1</sup>) is close to the expected value ✓` : `No: the measured corrected count rate (${meas} min<sup>−1</sup>) is not close to the expected value ✓`),
+      text('Suggest two reasons why the results from an experiment like this may not obey the inverse-square law.', 2, 'Any two from:<br>the source is not a point source ✓<br>the distance measured is not the distance from the source itself to the sensitive part of the GM tube (a systematic error in <i>d</i>) ✓<br>the count rates vary randomly because decay is random ✓<br>at high count rates the GM tube does not record every particle (dead time) ✓'),
+      calc('Use the corrected count rate at the smallest distance to calculate the distance at which the corrected count rate would equal the background count rate.', 2, dB, 'm', `${eq(`<i>d</i> = ${N(d1, 2)} × √(${c1} / ${B})`)} ✓<br>${eq(`<i>d</i> = ${AV(dB, 'm')}`)} ✓`)
+    ] };
+};
+
+T.AB4 = R => {
+  const v = find(() => { const e = R.pick([1.5, 2.0, 2.5, 3.0, 3.5]), G = R.pick([0.0040, 0.0045, 0.0050, 0.0055]), yr = R.pick([0.14, 0.15, 0.16, 0.17, 0.18]); return { e, G, yr, xr: yr / G - e }; },
+    o => o.xr <= 35 + 1e-9 && o.xr >= 26 && Math.abs(o.xr * 2 - Math.round(o.xr * 2)) < 1e-9);
+  const { e, G, yr, xr } = v, k = 1 / G, ds = [5, 10, 15, 20, 25, 30], pts = ds.map(d => [d, G * (d + e) * (1 + (R() * 2 - 1) * .015)]);
+  const X = R.pick([16, 20, 25, 30]), dX = k / Math.sqrt(X) - e;
+  const fig = graph({ x: [-5, 35, 5], y: [0, 0.20, 0.05], xdiv: 5, ydiv: 5, h: 340, xl: 'd / cm', yl: 'R^{−1/2} / min^{1/2}', crosses: pts, curves: [{ f: d => G * (d + e), from: -e, to: Math.min(35, 0.199 / G - e) }], reads: [[-e, 0], [xr, yr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { e, G, X },
+    stem: `A student measures the corrected count rate <i>R</i> at different distances <i>d</i> from a gamma source. The source is inside a holder, so the true distance from the source is (<i>d</i> + <i>e</i>), where <i>e</i> is a constant. The inverse-square law gives (<i>d</i> + <i>e</i>) = <i>k</i> / √<i>R</i>, where <i>k</i> is a constant. <b>Figure 1</b> shows the student's graph of 1 / √<i>R</i> against <i>d</i>, with <i>R</i> in counts per minute.`,
+    parts: [
+      text('Explain why the graph is a straight line.', 1, '1 / √<i>R</i> = (<i>d</i> + <i>e</i>) / <i>k</i> = <i>d</i> / <i>k</i> + <i>e</i> / <i>k</i>, which has the form <i>y</i> = <i>mx</i> + <i>c</i> ✓'),
+      calc('Determine the gradient of the graph and hence <i>k</i>.', 2, k, 'cm min<sup>−1/2</sup>', `${eq(`gradient = (${N(yr, 2)} − 0) / (${N(xr, 3)} − (−${N(e, 2)})) = ${I(G)}`)} min<sup>1/2</sup> cm<sup>−1</sup> ✓<br>${eq(`<i>k</i> = 1 / ${I(G)} = ${A(k)}`)} cm min<sup>−1/2</sup> ✓`, { tol: .04, noSkill: true }),
+      calc('Use <b>Figure 1</b> to determine <i>e</i>.', 1, e, 'cm', `The line crosses the <i>d</i> axis at −<i>e</i>, so <i>e</i> = ${N(e, 2)} cm ✓`, { abs: .5 }),
+      calc(`Calculate the value of <i>d</i> at which the corrected count rate would be ${X} min<sup>−1</sup>.`, 2, dX, 'cm', `${eq(`<i>d</i> + <i>e</i> = <i>k</i> / √<i>R</i> = ${A(k)} / √(${X}) = ${I(dX + e)}`)} cm ✓<br>${eq(`<i>d</i> = ${I(dX + e)} − ${N(e, 2)} = ${A(dX)}`)} cm ✓`, { tol: .06, noSkill: true, guide: ['Allow ecf from their values of <i>k</i> and <i>e</i>.'] }),
+      text('Explain why the student uses corrected count rates.', 1, 'The background radiation adds to every count rate, so it must be subtracted to give the count rate due to the source alone ✓')
+    ] };
+};
+
+T.AB5 = R => {
+  const tb = R.pick([10, 15, 20, 30]), Nb = R.pick([240, 270, 300, 330, 360, 420]) + Math.floor(R() * 9), ts = R.pick([2.0, 5.0, 10]), Ns = 2400 + Math.floor(R() * 4000);
+  const bg = Nb / (tb * 60), cr = Ns / (ts * 60) - bg;
+  return NOFIG(3, { tb, Nb, ts, Ns }, 'A GM tube and counter detect radiation even when no radioactive source is present. This is background radiation.', [
+    choose(R, 'Which is the largest source of background radiation for most people in the UK?', 1, 'radon gas from rocks and soil', ['medical X-rays', 'cosmic rays', 'nuclear power stations'], 'Radon gas (from rocks and soil) ✓'),
+    text('Name two other sources of background radiation.', 2, 'Any two from:<br>cosmic rays ✓<br>rocks and soil (for example granite) ✓<br>food and drink ✓<br>medical uses (X-rays, tracers) ✓<br>nuclear weapons testing / nuclear accidents / the nuclear industry ✓'),
+    calc(`With no source present, ${Nb} counts are recorded in ${tb} minutes.<br>Calculate the background count rate in s<sup>−1</sup>.`, 1, bg, 's<sup>−1</sup>', `${eq(`${Nb} / (${tb} × 60) = ${A(bg)} s<sup>−1</sup>`)} ✓`, { noSkill: true }),
+    calc(`A source is placed in front of the GM tube and ${Ns} counts are recorded in ${N(ts)} minutes.<br>Calculate the count rate due to the source in s<sup>−1</sup>.`, 2, cr, 's<sup>−1</sup>', `${eq(`count rate = ${Ns} / (${N(ts)} × 60) = ${I(Ns / (ts * 60))} s<sup>−1</sup>`)} ✓<br>${eq(`corrected count rate = ${I(Ns / (ts * 60))} − ${I(bg)} = ${A(cr)} s<sup>−1</sup>`)} ✓`, { noSkill: true }),
+    text('Explain why the background count is recorded over a long time.', 1, 'Radioactive decay is random, so a long time gives a larger count and reduces the effect of random variation (a smaller percentage uncertainty) ✓')
+  ]);
+};
+
+function gaugeScene(){
+  const s = new Scene('Thickness gauge: a sheet passes between rollers and between a radioactive source and a detector, which is connected to a control unit that adjusts the rollers');
+  s.line(40, 200, 540, 200); s.line(40, 208, 540, 208);
+  s.circle(120, 175, 25); s.circle(120, 233, 25);
+  s.label(120, 136, 'rollers', { size: 14 });
+  s.rect(310, 118, 40, 36, { fill: '#a3a9ae' }); s.label(330, 106, 'source', { size: 14 });
+  s.line(330, 156, 330, 196, { dash: '4 3', w: 1.1 });
+  s.rect(314, 214, 32, 70, { fill: '#fff' }); s.label(356, 254, 'detector', { size: 14, anchor: 'start' });
+  boxed(s, 170, 318, 120, 52, 'control unit');
+  s.poly([[330, 284], [330, 344], [290, 344]]); s.poly([[170, 344], [120, 344], [120, 258]]);
+  s.arrow(430, 182, 510, 182); s.label(470, 168, 'direction of motion', { size: 14 });
+  return s;
+}
+const GAUGE = [['paper', 1, 'strontium-90', 28.8], ['aluminium foil', 1, 'krypton-85', 10.8], ['steel plate about 2 cm thick', 2, 'cobalt-60', 5.27]];
+T.AB6 = R => {
+  const gi = Math.floor(R() * 3), [mat, rad, src, Th] = GAUGE[gi], t = R.pick([2.0, 3.0, 4.0, 5.0, 8.0]), pc = 100 * Math.pow(2, -t / Th);
+  const why = rad === 1 ? 'Alpha would be completely absorbed by the ' + mat + ' ✓<br>gamma would pass through almost unaffected, so the count rate would hardly change when the thickness changes ✓'
+    : 'Alpha and beta would be completely absorbed by the steel ✓<br>only gamma passes through, and its count rate changes measurably with the thickness of the steel ✓';
+  return { sf: 3, scenes: [gaugeScene()], data: { gi, t },
+    stem: `<b>Figure 1</b> shows a system that controls the thickness of ${mat} during manufacture. The count rate from the detector is used to adjust the pressure of the rollers.`,
+    parts: [
+      opt('State which type of radiation the source should emit.', 1, RADO, rad, `${RADO[rad]} ✓`),
+      text('Explain why the other two types of radiation are not suitable.', 2, why),
+      opt('The count rate increases.<br>State what the control unit should do to the rollers.', 1, ['move them further apart (reduce the pressure)', 'move them closer together (increase the pressure)', 'leave them unchanged'], 0, 'The sheet has become thinner, so the rollers should be moved further apart ✓'),
+      calc(`The source is ${src}, which has a half-life of ${V(Th, 'years', 3)}.<br>Calculate the activity of the source after ${N(t)} years as a percentage of its initial activity.`, 2, pc, '%', `Uses <i>A</i> / <i>A</i><sub>0</sub> = (1/2)<sup><i>t</i> / <i>T</i>½</sup> ✓<br>${eq(`percentage = 100 × (1/2)<sup>(${N(t)} / ${N(Th, 3)})</sup> = ${A(pc)}%`)} ✓`, { noSkill: true }),
+      text('Explain why the source must have a long half-life.', 1, 'So that its activity (and the count rate for a given thickness) stays almost constant, and changes in count rate are due to changes in thickness / the source does not need replacing often ✓'),
+      text('Explain why the control unit uses the count rate averaged over several seconds.', 1, 'Radioactive decay is random, so the count rate fluctuates even when the thickness is constant ✓')
+    ] };
+};
+
+T.AB7 = R => {
+  const E = R.pick([4.8, 5.0, 5.3, 5.5, 5.8]), w = R.pick([30, 32, 34, 35]), r = R.pick([3.5, 4.0, 4.5, 5.0]), Eb = R.pick([0.50, 0.80, 1.0, 1.5]), nb = R.pick([10, 12, 15]);
+  const Np = E * 1e6 / w, per = Np / (r * 10), Q = Np * QE, rb = Eb * 1e6 / (w * nb) / 1000;
+  return NOFIG(2, { E, w, r, Eb, nb }, `An alpha particle with a kinetic energy of ${V(E, 'MeV')} travels ${V(r, 'cm')} through air before it stops. On average, ${V(w, 'eV')} of energy is needed to produce one ion pair in air.`, [
+    calc('Calculate the number of ion pairs produced by the alpha particle.', 2, Np, '', `Converts the energy to eV: ${N(E)} × 10<sup>6</sup> eV ✓<br>${eq(`number = ${N(E)} × 10<sup>6</sup> / ${w} = ${A(Np)}`)} ✓`, { noSkill: true }),
+    calc('Calculate the average number of ion pairs produced per millimetre of the path.', 1, per, 'mm<sup>−1</sup>', `${eq(`${I(Np)} / ${N(r * 10)} = ${A(per)} per mm`)} ✓`, { noSkill: true }),
+    calc('Calculate the total charge on the positive ions produced.', 1, Q, 'C', `${eq(`<i>Q</i> = ${I(Np)} × ${SE} = ${AV(Q, 'C')}`)} ✓`),
+    calc(`A beta particle with a kinetic energy of ${V(Eb, 'MeV')} produces about ${nb} ion pairs per millimetre in air.<br>Estimate the range of the beta particle in air.`, 2, rb, 'm', `${eq(`number of ion pairs = ${N(Eb)} × 10<sup>6</sup> / ${w} = ${I(Eb * 1e6 / w)}`)} ✓<br>${eq(`range = ${I(Eb * 1e6 / w)} / ${nb} = ${I(rb * 1000)} mm = ${AV(rb, 'm')}`)} ✓`),
+    text('Explain why an alpha particle is more strongly ionising than a beta particle.', 2, 'An alpha particle has a larger charge (+2<i>e</i>) ✓<br>it is much more massive, so at the same energy it moves more slowly and spends longer near each atom it passes ✓')
+  ]);
+};
+
+function fieldScene(into, Ls){
+  const s = new Scene('Alpha, beta and gamma radiation entering a uniform magnetic field directed ' + (into ? 'into' : 'out of') + ' the page, with three paths labelled X, Y and Z');
+  const sg = into ? 1 : -1, y0 = 210;
+  s.field(150, 50, 330, 320, into ? 'in' : 'out', { border: true, step: 40 });
+  s.rect(50, 192, 62, 36, { fill: '#a3a9ae' }); dot(s, 104, 210, 4); s.label(81, 248, 'source', { size: 14 });
+  s.line(112, 210, 150, 210, { w: 1.6 });
+  const Ra = 1000, pa = [], Rb = 85, pb = [];
+  for (let i = 0; i <= 60; i++){ const x = 150 + 330 * i / 60; pa.push([x, y0 + sg * (Ra - Math.sqrt(Ra * Ra - (x - 150) * (x - 150))) * -1]); }
+  const cy = y0 + sg * Rb; let ph = 0;
+  for (; ph <= Math.PI; ph += Math.PI / 60){ const x = 150 + Rb * Math.sin(ph), y = cy - sg * Rb * Math.cos(ph); if (y > 365 || y < 55) break; pb.push([x, y]); }
+  const last = pb[pb.length - 1], prev = pb[pb.length - 2], ux = last[0] - prev[0], uy = last[1] - prev[1], ul = Math.hypot(ux, uy);
+  pb.push([last[0] + ux / ul * 40, last[1] + uy / ul * 40]);
+  s.poly(pa, { w: 1.6 }); s.poly(pb, { w: 1.6 }); s.line(150, 210, 480, 210, { w: 1.6 });
+  s.label(pa[pa.length - 1][0] + 10, pa[pa.length - 1][1] + 5, Ls.a, { anchor: 'start', bold: true });
+  s.label(490, 215, Ls.g, { anchor: 'start', bold: true });
+  const e = pb[pb.length - 1]; s.label(e[0] + 10, e[1] + (sg > 0 ? 12 : 0), Ls.b, { anchor: 'start', bold: true });
+  return s;
+}
+T.AB8 = R => {
+  const into = R.chance(.5), lets = shuffleR(R, ['X', 'Y', 'Z']), Ls = { a: lets[0], b: lets[1], g: lets[2] };
+  const v = R.pick([1.4e7, 1.5e7, 1.6e7]), B = R.pick([0.40, 0.50, 0.60, 0.80, 1.2]), r = MALPHA * v / (B * 2 * QE);
+  const s = fieldScene(into, Ls);
+  return { sf: 2, scenes: [s], data: { into, Ls, v, B },
+    stem: `A source emits alpha, beta-minus and gamma radiation. A narrow beam of the radiation enters a region of uniform magnetic field directed ${into ? 'into' : 'out of'} the page. <b>Figure 1</b> shows the paths X, Y and Z of the three types of radiation. The diagram is not to scale. Mass of an alpha particle = ${N(MALPHA, 3)} kg.`,
+    parts: [
+      opt('Which path is followed by the alpha particles?', 1, ['X', 'Y', 'Z'], ['X', 'Y', 'Z'].indexOf(Ls.a), `${Ls.a}: positive particles are deflected ${into ? 'upwards' : 'downwards'} by Fleming's left-hand rule ✓`),
+      opt('Which path is followed by the beta-minus particles?', 1, ['X', 'Y', 'Z'], ['X', 'Y', 'Z'].indexOf(Ls.b), `${Ls.b}: negative particles are deflected the opposite way, with a much smaller radius ✓`),
+      text('Explain why the path of the gamma radiation is not deflected.', 1, 'Gamma radiation is electromagnetic radiation (photons) with no charge, so there is no magnetic force on it ✓'),
+      calc(`The alpha particles have a speed of ${V(v, MS1)} and the magnetic flux density is ${V(B, 'T')}.<br>Calculate the radius of the path of the alpha particles.`, 3, r, 'm', `Charge of alpha particle = 2 × ${SE} = 3.20 × 10<sup>−19</sup> C ✓<br>${eq(`<i>r</i> = <i>mv</i> / <i>BQ</i> = (${N(MALPHA, 3)} × ${N(v)}) / (${N(B)} × 3.20 × 10<sup>−19</sup>)`)} ✓<br>${eq(`<i>r</i> = ${AV(r, 'm')}`)} ✓`),
+      text('Explain why the path of the beta-minus particles is much more curved than the path of the alpha particles.', 2, 'A beta-minus particle has a very much smaller mass than an alpha particle ✓<br>so its momentum is much smaller (even though it is faster and has half the charge), and <i>r</i> = <i>mv</i> / <i>BQ</i> is much smaller ✓')
+    ] };
+};
+
+const GSRC = [['caesium-137', 0.66], ['cobalt-60', 2.5], ['iridium-192', 0.38], ['technetium-99m', 0.14]];
+T.AB9 = R => {
+  const gi = Math.floor(R() * GSRC.length), [src, Eg] = GSRC[gi], Ab = R.pick([2.0, 4.0, 5.0, 8.0]) * (gi === 3 ? 1e8 : 1e9), r = R.pick([0.50, 0.80, 1.0, 1.5, 2.0]);
+  const P = Ab * Eg * MEVJ, Iy = P / (4 * Math.PI * r * r), Il = R.pick([1.0, 2.0, 5.0]) * Math.pow(10, Math.floor(Math.log10(Iy)) - 2), rl = Math.sqrt(P / (4 * Math.PI * Il));
+  return NOFIG(2, { gi, Ab, r, Il }, `A ${src} source has an activity of ${V(Ab, 'Bq')}. Assume that each decay produces gamma radiation with a total energy of ${V(Eg, 'MeV')} and that the source behaves as a point source.`, [
+    calc('Calculate the energy emitted per second as gamma radiation.', 2, P, 'W', `${eq(`energy of each decay = ${N(Eg)} × ${SMEV} = ${I(Eg * MEVJ)} J`)} ✓<br>${eq(`<i>P</i> = ${N(Ab)} × ${I(Eg * MEVJ)} = ${AV(P, 'W')}`)} ✓`),
+    calc(`Calculate the intensity of the gamma radiation at a distance of ${V(r, 'm')} from the source.`, 2, Iy, 'W m<sup>−2</sup>', `${eq(`<i>I</i> = <i>P</i> / 4π<i>r</i><sup>2</sup> = ${I(P)} / (4π × ${N(r)}<sup>2</sup>)`)} ✓<br>${eq(`<i>I</i> = ${AV(Iy, 'W m<sup>−2</sup>')}`)} ✓`),
+    calc(`Calculate the distance from the source at which the intensity is ${V(Il, 'W m<sup>−2</sup>')}.`, 2, rl, 'm', `${eq(`<i>r</i> = √(${I(P)} / (4π × ${N(Il)}))`)} ✓<br>${eq(`<i>r</i> = ${AV(rl, 'm')}`)} ✓`),
+    choose(R, 'Why does gamma radiation obey an inverse-square law in air?', 1, 'It spreads out equally in all directions and is hardly absorbed by air.', ['It travels at the speed of light.', 'It has no charge so it is not deflected.', 'It is strongly ionising.'], 'It spreads out equally in all directions from a point source and is hardly absorbed by air ✓'),
+    text('Explain why a source of alpha radiation is dangerous inside the body but not outside it.', 2, 'Outside the body, alpha particles are stopped by air or by the outer layer of dead skin ✓<br>inside the body, alpha particles are highly ionising and all their energy is absorbed by nearby living cells, damaging them ✓')
+  ]);
+};
+/* ===== Radioactive decay ===== */
+const TUN = { min: ['minutes', 'min', 60], h: ['hours', 'h', 3600], day: ['days', 'days', 86400] };
+const SEC = { min: '60', h: '3600', day: '8.64 × 10<sup>4</sup>' };
+T.RD1 = R => {
+  const uk = R.pick(['min', 'h', 'day']), [uw, ua, us] = TUN[uk], Th = R.pick([2.0, 3.0, 4.0, 6.0, 8.0]), A0 = R.pick([40, 50, 60, 80, 100, 120]);
+  const [xm, xM] = axisFor(4 * Th), [ym, yM] = axisFor(A0), minor = xM / 10, ab = minor / 2, tl = ab / Th + .01;
+  const lam = lg2 / (Th * us), N0 = A0 * 1e3 / lam, t1 = Th * Math.log2(100);
+  const fig = graph({ x: [0, xm, xM], y: [0, ym, yM], xdiv: 10, ydiv: 5, h: 320, xl: `t / ${ua}`, yl: 'A / kBq', curves: [{ f: t => A0 * Math.pow(2, -t / Th), from: 0, to: xm }], reads: [[0, A0], [Th, A0 / 2]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { uk, Th, A0 },
+    stem: `<b>Figure 1</b> shows how the activity <i>A</i> of a radioactive sample varies with time <i>t</i>.`,
+    parts: [
+      calc(`Use <b>Figure 1</b> to determine the half-life of the sample in ${uw}.`, 2, Th, ua, `Reads the time for the activity to fall from ${A0} kBq to ${A0 / 2} kBq (or any other halving) ✓<br><i>T</i><sub>½</sub> = ${N(Th)} ${ua} ✓`, { abs: ab }),
+      calc('Calculate the decay constant of the sample in s<sup>−1</sup>.', 2, lam, 's<sup>−1</sup>', `Converts the half-life to seconds: ${N(Th)} × ${SEC[uk]} = ${I(Th * us)} s ✓<br>${eq(`<i>λ</i> = ln 2 / ${I(Th * us)} = ${AV(lam, 's<sup>−1</sup>')}`)} ✓`, { tol: tl, noSkill: true, guide: ['Allow ecf from (a).'] }),
+      calc('Calculate the number of undecayed nuclei in the sample at <i>t</i> = 0.', 2, N0, '', `${eq(`<i>N</i> = <i>A</i> / <i>λ</i> = ${A0} × 10<sup>3</sup> / ${I(lam)}`)} ✓<br>${eq(`<i>N</i> = ${A(N0)}`)} ✓`, { tol: tl, noSkill: true, guide: ['Allow ecf from (b).'] }),
+      calc(`Calculate the time taken for the activity to fall to 1.0% of its initial value, in ${uw}.`, 2, t1, ua, `${eq(`0.010 = e<sup>−<i>λt</i></sup> so <i>t</i> = ln(100) / <i>λ</i> = <i>T</i><sub>½</sub> × ln(100) / ln 2`)} ✓<br>${eq(`<i>t</i> = ${N(Th)} × ${I(Math.log2(100))} = ${A(t1)}`)} ${ua} ✓`, { tol: tl, noSkill: true, guide: ['Allow ecf from (a).'] }),
+      opt('State the fraction of the original nuclei that remain undecayed after three half-lives.', 1, ['1/3', '1/6', '1/8', '1/9'], 2, '(1/2)<sup>3</sup> = 1/8 ✓')
+    ] };
+};
+
+const ISO = [['cobalt-60', 'Co', 60, 27, 5.27, 'y'], ['strontium-90', 'Sr', 90, 38, 28.8, 'y'], ['caesium-137', 'Cs', 137, 55, 30.2, 'y'], ['iodine-131', 'I', 131, 53, 8.02, 'day'], ['radium-226', 'Ra', 226, 88, 1600, 'y'], ['americium-241', 'Am', 241, 95, 432, 'y'], ['polonium-210', 'Po', 210, 84, 138, 'day'], ['sodium-24', 'Na', 24, 11, 15.0, 'h'], ['phosphorus-32', 'P', 32, 15, 14.3, 'day']];
+const UW = { y: ['years', 3.15e7, SYR], day: ['days', 86400, '8.64 × 10<sup>4</sup>'], h: ['hours', 3600, '3600'] };
+T.RD2 = R => {
+  const ii = Math.floor(R() * ISO.length), [nm, sy, Am, Z, Th, uk] = ISO[ii], [uw, us, uss] = UW[uk], m = R.pick([1.0, 2.0, 2.5, 4.0, 5.0]), tf = R.pick([0.5, 1.5, 2.5, 3.0]);
+  const [mu, mf, ms] = uk === 'h' ? ['pg', 1e-12, '10<sup>−12</sup>'] : uk === 'day' ? ['ng', 1e-9, '10<sup>−9</sup>'] : ['μg', 1e-6, '10<sup>−6</sup>'];
+  const t = Number((Th * tf).toPrecision(2)), Nn = m * mf / Am * NAV, lam = lg2 / (Th * us), Act = lam * Nn, At = Act * Math.exp(-lam * t * us);
+  return NOFIG(3, { ii, m, t }, `A sample contains ${V(m, mu)} of ${nm} (${nuc(sy, Am, Z)}), which has a half-life of ${V(Th, uw, 3)}. The molar mass of ${nm} is ${Am} g mol<sup>−1</sup>.${uk === 'y' ? ' 1 year = ' + SYR + ' s.' : ''}`, [
+    calc('Calculate the number of nuclei in the sample.', 2, Nn, '', `${eq(`number of moles = ${N(m)} × ${ms} / ${Am} = ${I(m * mf / Am)}`)} ✓<br>${eq(`<i>N</i> = ${I(m * mf / Am)} × ${SNA} = ${A(Nn)}`)} ✓`, { noSkill: true }),
+    calc(`Calculate the decay constant of ${nm} in s<sup>−1</sup>.`, 2, lam, 's<sup>−1</sup>', `${eq(`<i>T</i><sub>½</sub> = ${N(Th, 3)} × ${uss} = ${I(Th * us)} s`)} ✓<br>${eq(`<i>λ</i> = ln 2 / ${I(Th * us)} = ${AV(lam, 's<sup>−1</sup>')}`)} ✓`),
+    calc('Calculate the activity of the sample.', 1, Act, 'Bq', `${eq(`<i>A</i> = <i>λN</i> = ${I(lam)} × ${I(Nn)} = ${AV(Act, 'Bq')}`)} ✓`),
+    calc(`Calculate the activity of the sample after ${N(t)} ${uw}.`, 2, At, 'Bq', `${eq(`<i>λt</i> = ${I(lam)} × ${N(t)} × ${uss} = ${I(lam * t * us)}`)} ✓<br>${eq(`<i>A</i> = <i>A</i><sub>0</sub>e<sup>−<i>λt</i></sup> = ${I(Act)} × e<sup>−${I(lam * t * us)}</sup> = ${AV(At, 'Bq')}`)} ✓`),
+    choose(R, 'Which of the following is the activity of a sample?', 1, 'the number of nuclei that decay per second', ['the number of undecayed nuclei in the sample', 'the time taken for half of the nuclei to decay', 'the probability that a nucleus decays per second'], 'The number of nuclei that decay per second ✓')
+  ]);
+};
+
+T.RD3 = R => {
+  const a = R.pick([0.23, 0.25, 0.26]), m = R.pick([5.0, 8.0, 10, 12, 20, 25]), tt = R.pick([2000, 3500, 5000, 8000, 11000, 15000, 20000]);
+  const A0 = a * m, As = r3(A0 * Math.pow(2, -tt / 5730)), lam = lg2 / 5730, age = Math.log(A0 / As) / lam;
+  return NOFIG(2, { a, m, As }, `Carbon-14 has a half-life of 5730 years. The activity due to carbon-14 in living wood is ${V(a, 'Bq')} per gram of carbon. A sample of carbon of mass ${N(m)} g from an ancient wooden object has an activity of ${V(As, 'Bq', 3)} due to carbon-14.`, [
+    calc('Calculate the decay constant of carbon-14 in year<sup>−1</sup>.', 1, lam, 'year<sup>−1</sup>', `${eq(`<i>λ</i> = ln 2 / 5730 = ${A(lam)}`)} year<sup>−1</sup> ✓`, { noSkill: true }),
+    calc('Calculate the activity of the same mass of carbon from living wood.', 1, A0, 'Bq', `${eq(`${N(a)} × ${N(m)} = ${AV(A0, 'Bq')}`)} ✓`, { noSkill: true }),
+    calc('Calculate the age of the object.', 3, age, 'years', `${eq(`${N(As, 3)} = ${I(A0)} e<sup>−<i>λt</i></sup>`)} ✓<br>${eq(`<i>t</i> = ln(${I(A0)} / ${N(As, 3)}) / ${I(lam)}`)} ✓<br>${eq(`<i>t</i> = ${A(age)}`)} years ✓`),
+    text('Explain why carbon dating cannot be used to find the age of an object that is 100 000 years old.', 1, 'After so many half-lives the activity is very small (comparable with background), so it cannot be measured reliably ✓'),
+    text('State one assumption made in this method.', 1, 'The ratio of carbon-14 to carbon-12 in the atmosphere (and so in living things) was the same when the wood was alive as it is now ✓')
+  ]);
+};
+
+T.RD4 = R => {
+  const c = R.pick([6.0, 6.5, 7.0, 7.5, 8.0, 8.5]), lam = R.pick([0.020, 0.025, 0.030, 0.040, 0.050]);
+  const xr = [60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40].find(x => Math.abs(lam * x / 0.1 - Math.round(lam * x / 0.1)) < 1e-9), yr = c - lam * xr;
+  const ya = Math.floor(c - 60 * lam - 0.1), yb = Math.ceil(c + 0.1), pts = [0, 10, 20, 30, 40, 50, 60].map(t => [t, c - lam * t + (R() * 2 - 1) * .03]);
+  const fig = graph({ x: [0, 60, 10], y: [ya, yb, 1], xdiv: 5, ydiv: 10, h: 340, xl: 't / min', yl: 'ln (A / Bq)', crosses: pts, curves: [{ f: t => c - lam * t, from: 0, to: 60 }], reads: [[0, c], [xr, yr]] });
+  const A0 = Math.exp(c), N0 = A0 / (lam / 60), Th = lg2 / lam;
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { c, lam },
+    stem: `A student measures the activity <i>A</i> of a radioactive source at different times <i>t</i>. <b>Figure 1</b> shows a graph of ln (<i>A</i> / Bq) against <i>t</i>, with a line of best fit.`,
+    parts: [
+      text('Explain why the graph is a straight line.', 1, '<i>A</i> = <i>A</i><sub>0</sub>e<sup>−<i>λt</i></sup>, so ln <i>A</i> = ln <i>A</i><sub>0</sub> − <i>λt</i>, which has the form <i>y</i> = <i>mx</i> + <i>c</i> ✓'),
+      calc('Use the gradient of the graph to determine the decay constant in min<sup>−1</sup>.', 2, lam, 'min<sup>−1</sup>', `Uses a large triangle, for example (0, ${N(c, 2)}) and (${xr}, ${N(yr, 3)}) ✓<br>${eq(`<i>λ</i> = −gradient = (${N(c, 2)} − ${N(yr, 3)}) / ${xr} = ${A(lam)}`)} min<sup>−1</sup> ✓`, { tol: .04, noSkill: true }),
+      calc('Calculate the half-life of the source in minutes.', 1, Th, 'min', `${eq(`<i>T</i><sub>½</sub> = ln 2 / ${A(lam)} = ${A(Th)}`)} min ✓`, { tol: .04, noSkill: true, guide: ['Allow ecf from (b).'] }),
+      calc('Use <b>Figure 1</b> to determine the activity of the source at <i>t</i> = 0.', 2, A0, 'Bq', `Intercept on the ln <i>A</i> axis = ${N(c, 2)} ✓<br>${eq(`<i>A</i><sub>0</sub> = e<sup>${N(c, 2)}</sup> = ${AV(A0, 'Bq')}`)} ✓`, { tol: .06, noSkill: true }),
+      calc('Calculate the number of undecayed nuclei in the source at <i>t</i> = 0.', 2, N0, '', `${eq(`<i>λ</i> = ${A(lam)} / 60 = ${I(lam / 60)} s<sup>−1</sup>`)} ✓<br>${eq(`<i>N</i> = ${I(A0)} / ${I(lam / 60)} = ${A(N0)}`)} ✓`, { tol: .075, noSkill: true, guide: ['Allow ecf from (b) and (d).'] })
+    ] };
+};
+
+T.RD5 = R => {
+  const v = find(() => { const Th = R.pick([50, 60, 70, 80, 90, 100]), C0 = 500 + Math.floor(R() * 400), B = 3 + Math.floor(R() * 6), ts = [0, 30, 60, 90, 120, 150, 180];
+    const cor = ts.map(t => Math.round(C0 * Math.pow(2, -t / Th) * (1 + (R() * 2 - 1) * .02))); return { Th, B, ts, cor, cnt: cor.map(c => c + B), k1: 1 + Math.floor(R() * 5), k2: 1 + Math.floor(R() * 5) }; },
+    o => o.k1 !== o.k2 && o.cor[6] >= 40);
+  const { Th, B, ts, cor, cnt, k1, k2 } = v, Tm = 180 * lg2 / Math.log(cor[0] / cor[6]), lnk = Math.log(cor[k2]);
+  const rows = ts.map((t, i) => [t, cnt[i], i === k1 ? '' : cor[i], i === k2 || i === k1 ? '' : fx(Math.log(cor[i]), 2)]);
+  return NOFIG(3, { Th, B, cnt, k1, k2 },
+    `A student measures the count from a short-lived radioactive source in 10 s intervals. The background count in 10 s is ${B}. Table 1 shows the results.<br>${tableH('Table 1', ['<i>t</i> / s', 'Count in 10 s', 'Corrected count', 'ln (corrected count)'], rows)}`, [
+      calc(`Calculate the corrected count at <i>t</i> = ${ts[k1]} s.`, 1, cor[k1], '', `${eq(`${cnt[k1]} − ${B} = ${cor[k1]}`)} ✓`, INT),
+      calc(`Calculate ln (corrected count) at <i>t</i> = ${ts[k2]} s.`, 1, lnk, '', `${eq(`ln(${cor[k2]}) = ${fx(lnk, 2)}`)} ✓`, { fx: 2, abs: .011, noSkill: true }),
+      calc('Use the corrected counts at <i>t</i> = 0 and <i>t</i> = 180 s to calculate the half-life of the source.', 3, Tm, 's', `${eq(`ln(${cor[0]} / ${cor[6]}) = <i>λ</i> × 180`)} ✓<br>${eq(`<i>λ</i> = ${I(Math.log(cor[0] / cor[6]))} / 180 = ${I(Math.log(cor[0] / cor[6]) / 180)}`)} s<sup>−1</sup> ✓<br>${eq(`<i>T</i><sub>½</sub> = ln 2 / ${I(Math.log(cor[0] / cor[6]) / 180)} = ${AV(Tm, 's')}`)} ✓`),
+      text('Explain why a graph of ln (corrected count) against <i>t</i> gives a more reliable value of the half-life than two readings.', 2, 'Radioactive decay is random, so each count is subject to random variation ✓<br>a line of best fit uses all the readings and reduces the effect of random errors ✓'),
+      opt('The student forgets to subtract the background count.<br>State the effect on the value of the half-life obtained.', 1, ['it is too large', 'it is too small', 'it is unchanged'], 0, 'Too large: the uncorrected count falls by a smaller fraction in the same time ✓')
+    ]);
+};
+
+T.RD6 = R => {
+  const A0 = R.pick([400, 500, 600, 800]), t = R.pick([3.0, 4.0, 9.0, 10, 15, 20]), p = R.pick([1.0, 2.0, 5.0, 10]), Ai = R.pick([300, 350, 400, 450, 500]), td = R.pick([2.0, 3.0, 4.0, 5.0]);
+  const At = A0 * Math.pow(2, -t / 6.0), tp = 6.0 * Math.log2(100 / p), Ap = Ai * Math.pow(2, td / 6.0);
+  return NOFIG(2, { A0, t, p, Ai, td }, 'Technetium-99m is used as a medical tracer. It emits gamma radiation only and has a half-life of 6.0 hours.', [
+    text('Explain two reasons why technetium-99m is suitable for use as a medical tracer.', 2, 'Any two from:<br>it emits only gamma radiation, which is weakly ionising and passes out of the body to be detected ✓<br>its half-life is long enough for the scan to be carried out ✓<br>its half-life is short enough that the activity in the patient falls quickly, limiting the dose ✓<br>it can be attached to different chemicals to target different organs ✓'),
+    calc(`A patient is injected with technetium-99m with an activity of ${V(A0, 'MBq')}.<br>Calculate the activity after ${N(t)} hours.`, 2, At, 'MBq', `${eq(`<i>A</i> = ${A0} × (1/2)<sup>(${N(t)} / 6.0)</sup>`)} ✓<br>${eq(`<i>A</i> = ${A(At)}`)} MBq ✓`),
+    calc(`Calculate the time taken for the activity to fall to ${N(p)}% of its initial value.`, 2, tp, 'hours', `${eq(`${N(p / 100)} = (1/2)<sup><i>t</i> / 6.0</sup>`)} ✓<br>${eq(`<i>t</i> = 6.0 × ln(${N(100 / p)}) / ln 2 = ${A(tp)}`)} hours ✓`),
+    calc(`A dose must have an activity of ${V(Ai, 'MBq')} when it is injected. It is prepared ${N(td)} hours before the injection.<br>Calculate the activity that the dose must have when it is prepared.`, 2, Ap, 'MBq', `${eq(`<i>A</i><sub>prepared</sub> = ${Ai} × 2<sup>(${N(td)} / 6.0)</sup>`)} ✓<br>${eq(`= ${A(Ap)}`)} MBq ✓`),
+    choose(R, 'What does the "m" in technetium-99m mean?', 1, 'The nucleus is in a metastable excited state that lasts for a relatively long time.', ['The nucleus has more neutrons than protons.', 'The nucleus emits a beta particle with each gamma photon.', 'The nucleus is a different isotope from technetium-99.'], 'The nucleus is in a metastable (long-lived) excited state ✓')
+  ]);
+};
+
+T.RD7 = R => {
+  const Th = R.pick([2.0, 4.0, 5.0, 8.0, 12]), N0 = R.pick([2.0, 5.0, 8.0]) * 1e12, t1 = R.pick([3.0, 5.0, 7.0, 10]), k = R.pick([5, 10, 20, 50]), t2 = R.pick([1.0, 1.5, 3.0, 6.0]);
+  const f = Math.pow(2, -t1 / Th), tk = Th * Math.log2(k), lam = lg2 / Th, Nd = N0 * (1 - Math.exp(-lam * t2));
+  return NOFIG(2, { Th, N0, t1, k, t2 }, `A radioactive isotope has a half-life of ${V(Th, 'hours')}. A sample initially contains ${V(N0, 'nuclei')} of the isotope.`, [
+    calc(`Calculate the fraction of the original nuclei that remain undecayed after ${N(t1)} hours.`, 2, f, '', `${eq(`<i>λ</i> = ln 2 / ${N(Th)} = ${I(lam)} h<sup>−1</sup>`)} ✓<br>${eq(`fraction = e<sup>(−${I(lam)} × ${N(t1)})</sup> = ${A(f)}`)} ✓`, { noSkill: true }),
+    calc(`Calculate the time taken for the activity to fall to 1/${k} of its initial value.`, 2, tk, 'hours', `${eq(`1/${k} = e<sup>−<i>λt</i></sup>`)}, so <i>t</i> = ln ${k} / <i>λ</i> ✓<br>${eq(`<i>t</i> = ln(${k}) / ${I(lam)} = ${A(tk)}`)} hours ✓`),
+    calc(`Calculate the number of nuclei that decay in the first ${N(t2)} hours.`, 2, Nd, '', `${eq(`<i>N</i> = ${N(N0)} × e<sup>(−${I(lam)} × ${N(t2)})</sup> = ${I(N0 - Nd)}`)} ✓<br>${eq(`number decayed = ${N(N0)} − ${I(N0 - Nd)} = ${A(Nd)}`)} ✓`, { noSkill: true }),
+    choose(R, 'What does the decay constant of an isotope represent?', 1, 'the probability that a nucleus decays per unit time', ['the time for the number of nuclei to halve', 'the number of nuclei that decay per second', 'the fraction of nuclei remaining after one half-life'], 'The probability that a nucleus decays per unit time ✓'),
+    text('Explain why it is not possible to predict when a particular nucleus in the sample will decay.', 1, 'Radioactive decay is random (and spontaneous): each nucleus has a constant probability of decaying per unit time ✓')
+  ]);
+};
+
+T.RD8 = R => {
+  const A0 = R.pick([30, 33, 37, 40]), yrs = R.pick([5.0, 10, 15, 20]);
+  const lam = lg2 / (432 * YRS), Nn = A0 * 1e3 / lam, mg = Nn * 241 / NAV, pc = (1 - Math.pow(2, -yrs / 432)) * 100;
+  return NOFIG(2, { A0, yrs }, `A smoke alarm contains a source of americium-241, which emits alpha particles and has a half-life of 432 years. The activity of the source is ${V(A0, 'kBq')}. 1 year = ${SYR} s. The molar mass of americium-241 is 241 g mol<sup>−1</sup>.`, [
+    calc('Calculate the decay constant of americium-241 in s<sup>−1</sup>.', 1, lam, 's<sup>−1</sup>', `${eq(`<i>λ</i> = ln 2 / (432 × ${SYR}) = ${AV(lam, 's<sup>−1</sup>')}`)} ✓`),
+    calc('Calculate the number of americium-241 nuclei in the source.', 1, Nn, '', `${eq(`<i>N</i> = <i>A</i> / <i>λ</i> = ${A0} × 10<sup>3</sup> / ${I(lam)} = ${A(Nn)}`)} ✓`, { noSkill: true }),
+    calc('Calculate the mass of americium-241 in the source, in g.', 2, mg, 'g', `${eq(`number of moles = ${I(Nn)} / ${SNA} = ${I(Nn / NAV)}`)} ✓<br>${eq(`mass = ${I(Nn / NAV)} × 241 = ${A(mg)}`)} g ✓`, { noSkill: true }),
+    calc(`Calculate the percentage decrease in the activity of the source over ${N(yrs)} years.`, 2, pc, '%', `${eq(`fraction remaining = (1/2)<sup>(${N(yrs)} / 432)</sup> = ${I(1 - pc / 100)}`)} ✓<br>${eq(`percentage decrease = (1 − ${I(1 - pc / 100)}) × 100 = ${A(pc)}%`)} ✓`, { noSkill: true }),
+    text('Explain why an alpha source is suitable for use in a smoke alarm.', 2, 'Alpha particles are highly ionising, so they ionise the air between the electrodes and produce a measurable current ✓<br>alpha particles have a short range (are absorbed by a few cm of air or the casing), so there is no danger to people nearby ✓'),
+    choose(R, 'How does smoke cause the alarm to sound?', 1, 'Smoke particles absorb alpha particles, so fewer ions are produced and the current falls.', ['Smoke particles are ionised, so the current rises.', 'Smoke increases the activity of the source.', 'Smoke reflects the alpha particles back to the source.'], 'Smoke absorbs alpha particles, so less ionisation occurs and the current falls ✓')
+  ]);
+};
+
+const DATING = [['rubidium-87', 'strontium-87', 4.88e10], ['uranium-238', 'lead-206', 4.47e9], ['uranium-235', 'lead-207', 7.04e8], ['samarium-147', 'neodymium-143', 1.06e11], ['thorium-232', 'lead-208', 1.40e10]];
+T.RD9 = R => {
+  const v = find(() => ({ di: Math.floor(R() * DATING.length), r: R.pick([0.0200, 0.0250, 0.0400, 0.0500, 0.0800, 0.120, 0.250, 0.400, 0.600, 0.800]), m: R.pick([1.20, 1.50, 2.40, 3.60]) }),
+    o => { const t = Math.log(1 + o.r) * DATING[o.di][2] / lg2; return t > 2e8 && t < 4.5e9; });
+  const { di, r, m } = v, [p, d, Th] = DATING[di], lam = lg2 / Th, t = Math.log(1 + r) / lam, m0 = m * (1 + r);
+  return NOFIG(3, { di, r, m }, `${p[0].toUpperCase() + p.slice(1)} decays to the stable isotope ${d} with a half-life of ${V(Th, 'years', 3)}. A sample of rock contains ${nuclei(r)} ${d} nuclei for every ${p} nucleus. Assume that there was no ${d} in the rock when it formed and that none has escaped.`, [
+    calc(`Calculate the decay constant of ${p} in year<sup>−1</sup>.`, 1, lam, 'year<sup>−1</sup>', `${eq(`<i>λ</i> = ln 2 / ${N(Th, 3)} = ${A(lam)}`)} year<sup>−1</sup> ✓`, { noSkill: true }),
+    calc('Calculate the age of the rock.', 3, t, 'years', `Number of ${p} nuclei when the rock formed = <i>N</i><sub>P</sub> + <i>N</i><sub>D</sub> = ${I(1 + r)}<i>N</i><sub>P</sub> ✓<br>${eq(`1 / ${I(1 + r)} = e<sup>−<i>λt</i></sup>`)}, so ${eq(`<i>t</i> = ln(${I(1 + r)}) / ${I(lam)}`)} ✓<br>${eq(`<i>t</i> = ${A(t)}`)} years ✓`),
+    calc(`The rock now contains ${V(m, 'mg', 3)} of ${p}.<br>Calculate the mass of ${p} in the rock when it formed.`, 2, m0, 'mg', `The number of ${p} nuclei was ${I(1 + r)} times the present number ✓<br>${eq(`mass = ${N(m, 3)} × ${I(1 + r)} = ${A(m0)}`)} mg ✓`, { noSkill: true }),
+    text(`Explain why the assumption that none of the ${d} has escaped from the rock is important.`, 1, `If some ${d} had escaped, the measured ratio would be too small and the calculated age would be too small ✓`)
+  ]);
+};
+const nuclei = r => N(r, 3);
+
+/* ===== Nuclear instability ===== */
+const Ns = Z => Z + 0.0065 * Z * Z;
+T.NI1 = R => {
+  const v = find(() => { const zp = 20 + Math.floor(R() * 40), zq = 15 + Math.floor(R() * 35), zr = 88 + Math.floor(R() * 7);
+    return { P: [zp, Math.round(Ns(zp)) + 8 + Math.floor(R() * 7)], Q: [zq, Math.round(Ns(zq)) - 5 - Math.floor(R() * 4)], Rr: [zr, Math.round(Ns(zr)) + Math.floor(R() * 5) - 2], L: shuffleR(R, ['P', 'Q', 'R']) }; },
+    o => Math.abs(o.P[0] - o.Q[0]) > 8 && o.Q[1] > o.Q[0] - 1);
+  const { P, Q, Rr, L } = v, nucl = [[P, 1, L[0]], [Q, 2, L[1]], [Rr, 0, L[2]]];
+  const fig = graph({ x: [0, 100, 20], y: [0, 160, 20], xdiv: 5, ydiv: 5, h: 360, w: 380, xl: 'proton number Z', yl: 'neutron number N',
+    curves: [{ f: Ns, from: 0, to: 95, name: 'stable nuclei', at: [60, 120] }, { f: z => z, from: 0, to: 100, dash: '7 5', w: 1.3, name: 'N = Z', at: [84, 70] }],
+    dots: nucl.map(([p, k, l]) => ({ x: p[0], y: p[1], t: l })) });
+  const ask = shuffleR(R, nucl), hit = ask[0];
+  const why = ['it is a heavy nucleus (proton number above 82), too large to be stable', 'it lies above the stable nuclei (too many neutrons for its proton number)', 'it lies below the stable nuclei (too few neutrons for its proton number)'];
+  const after = k => k === 1 ? [hit[0][0] + 1, hit[0][0] + hit[0][1]] : k === 2 ? [hit[0][0] - 1, hit[0][0] + hit[0][1]] : [hit[0][0] - 2, hit[0][0] + hit[0][1] - 4];
+  const [zA, aA] = after(hit[1]);
+  return { sf: 2, scenes: [], figs: [fig], data: { P, Q, Rr, L },
+    stem: `<b>Figure 1</b> shows how the neutron number <i>N</i> varies with the proton number <i>Z</i> for stable nuclei. Three unstable nuclides are marked ${L.slice().sort().join(', ').replace(/, ([^,]*)$/, ' and $1')}.`,
+    parts: ask.map(([p, k, l]) => opt(`State the most likely mode of decay of nuclide ${l}.`, 1, DMODES, k, `${DMODES[k]}: ${why[k]} ✓`)).concat([
+      calc(`Nuclide ${hit[2]} has ${hit[0][0]} protons and ${hit[0][1]} neutrons.<br>State the proton number of the nucleus formed when it decays.`, 1, zA, '', `${zA} ✓`, INT),
+      calc(`State the nucleon number of the nucleus formed when nuclide ${hit[2]} decays.`, 1, aA, '', `${aA} ✓`, INT),
+      text('Explain why stable heavy nuclei have more neutrons than protons.', 2, 'Neutrons add to the attractive strong nuclear force without adding electrostatic repulsion ✓<br>the strong force has a short range (acts only between neighbouring nucleons) but the electrostatic repulsion acts between all the protons, so extra neutrons are needed to hold a large nucleus together ✓')
+    ]) };
+};
+
+const ALPHAS = [['uranium-238', 'U', 92, 238, 'Th'], ['radium-226', 'Ra', 88, 226, 'Rn'], ['polonium-210', 'Po', 84, 210, 'Pb'], ['americium-241', 'Am', 95, 241, 'Np'], ['radon-222', 'Rn', 86, 222, 'Po'], ['thorium-232', 'Th', 90, 232, 'Ra']];
+const BMINUS = [['carbon-14', 'C', 6, 14, 'N'], ['strontium-90', 'Sr', 38, 90, 'Y'], ['cobalt-60', 'Co', 27, 60, 'Ni'], ['caesium-137', 'Cs', 55, 137, 'Ba'], ['iodine-131', 'I', 53, 131, 'Xe'], ['phosphorus-32', 'P', 15, 32, 'S']];
+const BPLUS = [['fluorine-18', 'F', 9, 18, 'O'], ['sodium-22', 'Na', 11, 22, 'Ne'], ['carbon-11', 'C', 6, 11, 'B'], ['nitrogen-13', 'N', 7, 13, 'C'], ['oxygen-15', 'O', 8, 15, 'N']];
+const EMIT = { m: 'an electron and an electron antineutrino', p: 'a positron and an electron neutrino' };
+T.NI2 = R => {
+  const ia = Math.floor(R() * ALPHAS.length), ib = Math.floor(R() * BMINUS.length), ip = Math.floor(R() * BPLUS.length), [an_, as, az, aa, ad] = ALPHAS[ia], [bn, bs, bz, ba, bd] = BMINUS[ib], [pn, ps, pz, pa, pd] = BPLUS[ip];
+  const al = nuc('α', 4, 2);
+  return NOFIG(2, { ia, ib, ip }, 'This question is about radioactive decay equations.', [
+    calc(`${an_[0].toUpperCase() + an_.slice(1)} decays by alpha emission: ${nuc(as, aa, az)} → ${nuc(ad, '?', '?')} + ${al}<br>State the proton number of the nucleus formed.`, 1, az - 2, '', `${az} − 2 = ${az - 2} ✓`, INT),
+    calc('State the nucleon number of the nucleus formed.', 1, aa - 4, '', `${aa} − 4 = ${aa - 4} ✓`, INT),
+    choose(R, `${bn[0].toUpperCase() + bn.slice(1)} (${nuc(bs, ba, bz)}) decays by beta-minus emission.<br>Which particles are emitted?`, 1, EMIT.m, [EMIT.p, 'an electron and an electron neutrino', 'a positron and an electron antineutrino'], `${EMIT.m[0].toUpperCase() + EMIT.m.slice(1)} ✓`),
+    calc(`State the proton number of the nucleus formed when ${bn} decays.`, 1, bz + 1, '', `${bz} + 1 = ${bz + 1} (${bd}) ✓`, INT),
+    choose(R, `${pn[0].toUpperCase() + pn.slice(1)} (${nuc(ps, pa, pz)}) decays by beta-plus emission.<br>Which particles are emitted?`, 1, EMIT.p, [EMIT.m, 'a positron and an electron antineutrino', 'an electron and an electron neutrino'], `${EMIT.p[0].toUpperCase() + EMIT.p.slice(1)} ✓`),
+    calc(`State the proton number of the nucleus formed when ${pn} decays.`, 1, pz - 1, '', `${pz} − 1 = ${pz - 1} (${pd}) ✓`, INT),
+    choose(R, 'Which quark change takes place in beta-minus decay?', 1, 'a down quark changes to an up quark', ['an up quark changes to a down quark', 'a strange quark changes to an up quark', 'a down quark changes to a strange quark'], 'A down quark changes to an up quark (udd → uud) ✓'),
+    text('Explain how the energies of beta-minus particles led to the prediction of the antineutrino.', 1, 'The beta particles have a range of energies up to a maximum, but the energy released in each decay is fixed, so another particle (the antineutrino) must carry away the rest of the energy ✓')
+  ]);
+};
+
+const CHAINS = [['uranium-238', 'U', 92, 238, 'lead-206', 'Pb', 82, 206], ['thorium-232', 'Th', 90, 232, 'lead-208', 'Pb', 82, 208], ['uranium-235', 'U', 92, 235, 'lead-207', 'Pb', 82, 207], ['radium-226', 'Ra', 88, 226, 'lead-206', 'Pb', 82, 206], ['neptunium-237', 'Np', 93, 237, 'bismuth-209', 'Bi', 83, 209], ['plutonium-239', 'Pu', 94, 239, 'lead-207', 'Pb', 82, 207], ['radon-222', 'Rn', 86, 222, 'lead-206', 'Pb', 82, 206]];
+T.NI3 = R => {
+  const ci = Math.floor(R() * CHAINS.length), [p, ps, pz, pa, d, ds, dz, da] = CHAINS[ci], na = (pa - da) / 4, nb = 2 * na - (pz - dz);
+  return NOFIG(2, { ci }, `${p[0].toUpperCase() + p.slice(1)} (${nuc(ps, pa, pz)}) decays through a series of alpha and beta-minus decays to the stable nuclide ${d} (${nuc(ds, da, dz)}).`, [
+    calc('Calculate the number of alpha decays in the series.', 2, na, '', `Only alpha decay changes the nucleon number, by 4 each time ✓<br>${eq(`(${pa} − ${da}) / 4 = ${na}`)} ✓`, INT),
+    calc('Calculate the number of beta-minus decays in the series.', 2, nb, '', `The alpha decays reduce the proton number by ${2 * na}, to ${pz - 2 * na}; each beta-minus decay increases it by 1 ✓<br>${eq(`${dz} − ${pz - 2 * na} = ${nb}`)} ✓`, INT),
+    calc(`Calculate the number of neutrons in a nucleus of ${d}.`, 1, da - dz, '', `${da} − ${dz} = ${da - dz} ✓`, INT),
+    choose(R, 'How do the neutron number <i>N</i> and the proton number <i>Z</i> change in alpha decay?', 1, '<i>N</i> decreases by 2 and <i>Z</i> decreases by 2', ['<i>N</i> decreases by 4 and <i>Z</i> decreases by 2', '<i>N</i> decreases by 1 and <i>Z</i> increases by 1', '<i>N</i> increases by 1 and <i>Z</i> decreases by 1'], '<i>N</i> decreases by 2 and <i>Z</i> decreases by 2 ✓'),
+    choose(R, 'How do <i>N</i> and <i>Z</i> change in beta-minus decay?', 1, '<i>N</i> decreases by 1 and <i>Z</i> increases by 1', ['<i>N</i> increases by 1 and <i>Z</i> decreases by 1', '<i>N</i> decreases by 2 and <i>Z</i> decreases by 2', '<i>N</i> is unchanged and <i>Z</i> increases by 1'], '<i>N</i> decreases by 1 and <i>Z</i> increases by 1 ✓'),
+    text('Gamma radiation is often emitted after an alpha or beta decay. Explain why.', 2, 'The daughter nucleus is often left in an excited state ✓<br>it loses this energy by emitting a gamma photon, with no change to <i>N</i> or <i>Z</i> ✓')
+  ]);
+};
+
+function levelsScene(Q, Ls){
+  const s = new Scene('Nuclear energy levels: the parent nucleus decays by beta-minus emission to an excited state of the daughter nucleus'), k = 250 / Q, Y = E => 340 - E * k, top = Ls[Ls.length - 1];
+  [0].concat(Ls).forEach(E => { s.line(210, Y(E), 350, Y(E), { w: 2 }); s.label(360, Y(E) + 5, E ? fx(E, 2) + ' MeV' : '0', { anchor: 'start', size: 15 }); });
+  s.line(40, Y(Q), 150, Y(Q), { w: 2 }); s.label(95, Y(Q) - 10, 'parent nucleus', { size: 15 }); s.label(95, Y(Q) + 22, fx(Q, 2) + ' MeV', { size: 15 });
+  s.arrow(150, Y(Q), 208, Y(top), { w: 1.4 }); s.label(181, (Y(Q) + Y(top)) / 2 - 16, 'β^{−}', { size: 15 });
+  s.label(280, 368, 'daughter nucleus', { size: 15 });
+  return s;
+}
+T.NI4 = R => {
+  const v = find(() => { const E1 = R.pick([0.35, 0.51, 0.66, 0.84, 1.17, 1.33]), E2 = E1 + R.pick([0.42, 0.58, 0.81, 1.02, 1.17]), three = R.chance(.5), Ls = [E1, E2]; if (three) Ls.push(E2 + R.pick([0.36, 0.55, 0.72]));
+    const L = Ls.map(x => Math.round(x * 100) / 100), Q = Math.round((L[L.length - 1] + R.pick([0.28, 0.32, 0.48, 0.55, 0.71])) * 100) / 100; return { L, Q }; },
+    o => { const all = [0].concat(o.L), gaps = []; for (let i = 0; i < all.length; i++) for (let j = 0; j < i; j++) gaps.push(all[i] - all[j]); const sg = gaps.slice().sort((a, b) => a - b); return sg[1] - sg[0] > 0.04 && o.L.every(x => isNice(x, 3)); });
+  const { L, Q } = v, all = [0].concat(L), n = L.length, top = L[n - 1], nxt = L[n - 2], Eg = (top - nxt) * MEVJ, lam = HP * C0 / Eg, nl = n * (n + 1) / 2;
+  const tr = []; for (let i = 1; i < all.length; i++) for (let j = 0; j < i; j++) tr.push([all[i], all[j]]);
+  const gap = t => t[0] - t[1], best = tr.reduce((a, t) => gap(t) < gap(a) ? t : a), tstr = t => `from ${fx(t[0], 2)} MeV to ${t[1] ? fx(t[1], 2) + ' MeV' : 'the ground state'}`;
+  const others = shuffleR(R, tr.filter(t => t !== best)).slice(0, 3).map(tstr);
+  return { sf: 3, scenes: [levelsScene(Q, L)], data: { L, Q },
+    stem: `<b>Figure 1</b> shows the energy levels of a daughter nucleus formed by beta-minus decay. The parent nucleus decays to the ${fx(top, 2)} MeV excited state of the daughter nucleus, which then de-excites by emitting gamma photons.`,
+    parts: [
+      calc(`Calculate the energy, in J, of the gamma photon emitted when the nucleus changes from the ${fx(top, 2)} MeV level to the ${fx(nxt, 2)} MeV level.`, 2, Eg, 'J', `${eq(`energy = ${fx(top, 2)} − ${fx(nxt, 2)} = ${fx(top - nxt, 2)} MeV`)} ✓<br>${eq(`${fx(top - nxt, 2)} × ${SMEV} = ${AV(Eg, 'J')}`)} ✓`),
+      calc('Calculate the wavelength of this gamma photon.', 2, lam, 'm', `${eq(`<i>λ</i> = <i>hc</i> / <i>E</i> = (${SH} × ${SC}) / ${I(Eg)}`)} ✓<br>${eq(`<i>λ</i> = ${AV(lam, 'm')}`)} ✓`),
+      calc('State the maximum number of different gamma photon energies that can be emitted as the daughter nucleus returns to its ground state.', 1, nl, '', `${nl} (one for each pair of levels) ✓`, INT),
+      choose(R, 'Which transition produces the gamma photon with the longest wavelength?', 1, tstr(best), others, `${tstr(best)[0].toUpperCase() + tstr(best).slice(1)}: the smallest energy difference ✓`),
+      calc('Calculate the maximum kinetic energy of the beta-minus particles, in MeV.', 1, Q - top, 'MeV', `${eq(`${fx(Q, 2)} − ${fx(top, 2)} = ${A(Q - top)}`)} MeV ✓`, { noSkill: true }),
+      text('Explain why most beta-minus particles have less than this kinetic energy.', 1, 'The energy released is shared between the beta-minus particle and the electron antineutrino (in different proportions in each decay) ✓')
+    ] };
+};
+
+const BEMIT = [['phosphorus-32', 1.71], ['yttrium-90', 2.28], ['strontium-90', 0.546], ['carbon-14', 0.156], ['caesium-137', 0.514], ['bismuth-210', 1.16], ['thallium-204', 0.763], ['sulfur-35', 0.167], ['potassium-40', 1.31]];
+T.NI5 = R => {
+  const bi = Math.floor(R() * BEMIT.length), [nm, K] = BEMIT[bi], [xm, xM] = axisFor(K * 1.15), ab = xM / 10, fr = R.pick([0.25, 0.4, 0.5, 0.6]), K1 = Number((K * fr).toPrecision(2));
+  const pk = 0.5 * K / 1.7, f0 = Math.sqrt(pk) * Math.pow(K - pk, 1.2), f = x => x >= K ? 0 : Math.sqrt(x) * Math.pow(K - x, 1.2) / f0, du = K / UMEV;
+  const fig = graph({ x: [0, xm, xM], y: [0, 1.2, 0.2], xdiv: 5, ydiv: 5, h: 300, xl: 'kinetic energy / MeV', yl: 'relative number of β^{−} particles', curves: [{ f, from: 0, to: K }], reads: [[K, 0]] });
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: { bi, K1 },
+    stem: `${nm[0].toUpperCase() + nm.slice(1)} decays by beta-minus emission. <b>Figure 1</b> shows the distribution of the kinetic energies of the beta-minus particles emitted.`,
+    parts: [
+      calc('Use <b>Figure 1</b> to determine the maximum kinetic energy of the beta-minus particles.', 1, K, 'MeV', `${N(K, 3)} MeV ✓`, { abs: ab }),
+      text('Explain how <b>Figure 1</b> shows that another particle must be emitted in beta-minus decay.', 2, 'The same amount of energy is released in every decay, but the beta-minus particles have a continuous range of kinetic energies ✓<br>so another particle (the electron antineutrino) must carry away the rest of the energy ✓'),
+      calc(`A beta-minus particle is emitted with a kinetic energy of ${V(K1, 'MeV')}.<br>Calculate the energy carried away by the antineutrino. Assume that the kinetic energy of the recoiling nucleus is negligible.`, 1, K - K1, 'MeV', `${eq(`${N(K, 3)} − ${N(K1)} = ${A(K - K1)}`)} MeV ✓`, { abs: ab, noSkill: true, guide: ['Allow ecf from (a).'] }),
+      calc('Calculate the difference in mass, in u, between the parent nucleus and the products of the decay.', 2, du, 'u', `Uses 1 u = 931.5 MeV ✓<br>${eq(`Δ<i>m</i> = ${N(K, 3)} / 931.5 = ${A(du)}`)} u ✓`, { tol: Math.max(.015, ab / K + .005), noSkill: true, guide: ['Allow ecf from (a).'] }),
+      choose(R, 'Which statement about the electron antineutrino is correct?', 1, 'It has no charge and almost zero rest mass.', ['It has a charge of −1 and almost zero rest mass.', 'It has no charge and the same rest mass as an electron.', 'It is a hadron with no charge.'], 'It has no charge and (almost) zero rest mass ✓')
+    ] };
+};
+
+const ECAP = [['beryllium-7', 'Be', 4, 7, 'Li'], ['potassium-40', 'K', 19, 40, 'Ar'], ['iron-55', 'Fe', 26, 55, 'Mn'], ['chromium-51', 'Cr', 24, 51, 'V'], ['iodine-125', 'I', 53, 125, 'Te'], ['lead-205', 'Pb', 82, 205, 'Tl'], ['gallium-67', 'Ga', 31, 67, 'Zn']];
+T.NI6 = R => {
+  const ei = Math.floor(R() * ECAP.length), [nm, sy, Z, Am, dsy] = ECAP[ei], lam = R.pick([0.050, 0.10, 0.15, 0.20, 0.25]), Ek = HP * C0 / (lam * 1e-9) / 1.60e-16;
+  return NOFIG(2, { ei, lam }, `A nucleus of ${nm} decays by electron capture: ${nuc(sy, Am, Z)} + ${nuc('e', 0, '−1')} → ${nuc(dsy, '?', '?')} + ν<sub>e</sub>`, [
+    calc('State the proton number of the nucleus formed.', 1, Z - 1, '', `${Z} − 1 = ${Z - 1} ✓`, INT),
+    calc('State the nucleon number of the nucleus formed.', 1, Am, '', `${Am} (unchanged) ✓`, INT),
+    choose(R, 'What is the particle ν<sub>e</sub> emitted in electron capture?', 1, 'an electron neutrino', ['an electron antineutrino', 'a positron', 'a photon'], 'An electron neutrino ✓'),
+    text('Electron capture is followed by the emission of an X-ray photon. Explain why.', 2, 'The captured electron leaves a vacancy in an inner shell of the atom ✓<br>an electron from a higher energy level moves down to fill it, emitting the energy difference as an X-ray photon ✓'),
+    calc(`One of the X-ray photons has a wavelength of ${V(lam, 'nm')}.<br>Calculate its energy in keV.`, 2, Ek, 'keV', `${eq(`<i>E</i> = <i>hc</i> / <i>λ</i> = (${SH} × ${SC}) / (${N(lam)} × 10<sup>−9</sup>) = ${I(Ek * 1.6e-16)} J`)} ✓<br>${eq(`<i>E</i> = ${I(Ek * 1.6e-16)} / 1.60 × 10<sup>−16</sup> = ${A(Ek)} keV`)} ✓`, { noSkill: true }),
+    choose(R, 'Which quark change takes place in electron capture?', 1, 'an up quark changes to a down quark', ['a down quark changes to an up quark', 'an up quark changes to a strange quark', 'a down quark changes to a strange quark'], 'An up quark changes to a down quark (a proton becomes a neutron) ✓')
+  ]);
+};
+
+const ADEC = [['polonium-210', 'Po', 84, 210, 5.30], ['radium-226', 'Ra', 88, 226, 4.78], ['uranium-238', 'U', 92, 238, 4.20], ['americium-241', 'Am', 95, 241, 5.49], ['radon-222', 'Rn', 86, 222, 5.49], ['thorium-232', 'Th', 90, 232, 4.01], ['plutonium-239', 'Pu', 94, 239, 5.16]];
+T.NI7 = R => {
+  const ai = Math.floor(R() * ADEC.length), [nm, sy, Z, Am, K] = ADEC[ai], va = Math.sqrt(2 * K * MEVJ / MALPHA), vd = 4 * va / (Am - 4), Kd = K * 4 / (Am - 4), Q = K + Kd;
+  return NOFIG(3, { ai }, `A stationary ${nm} nucleus (${nuc(sy, Am, Z)}) decays by emitting an alpha particle with a kinetic energy of ${V(K, 'MeV', 3)}. Mass of an alpha particle = ${N(MALPHA, 3)} kg.`, [
+    text('Explain why the daughter nucleus and the alpha particle move in opposite directions.', 1, 'Momentum is conserved and the total momentum before the decay is zero, so the two momenta are equal and opposite ✓'),
+    calc('Calculate the speed of the alpha particle.', 2, va, MS1, `${eq(`<i>E</i><sub>k</sub> = ${N(K, 3)} × ${SMEV} = ${I(K * MEVJ)} J`)} ✓<br>${eq(`<i>v</i> = √(2 × ${I(K * MEVJ)} / ${N(MALPHA, 3)}) = ${AV(va, MS1)}`)} ✓`),
+    calc('Calculate the speed of the daughter nucleus. Assume that the masses of the nuclei are proportional to their nucleon numbers.', 2, vd, MS1, `${eq(`4<i>v</i><sub>α</sub> = ${Am - 4}<i>v</i><sub>d</sub>`)} ✓<br>${eq(`<i>v</i><sub>d</sub> = 4 × ${I(va)} / ${Am - 4} = ${AV(vd, MS1)}`)} ✓`),
+    calc('Calculate the kinetic energy of the daughter nucleus in MeV.', 1, Kd, 'MeV', `${eq(`<i>E</i><sub>k</sub> = ${N(K, 3)} × 4 / ${Am - 4} = ${A(Kd)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate the total energy released in the decay in MeV.', 1, Q, 'MeV', `${eq(`${N(K, 3)} + ${I(Kd)} = ${A(Q)}`)} MeV ✓`, { noSkill: true }),
+    opt('State which particle has the greater kinetic energy.', 1, ['the alpha particle', 'the daughter nucleus', 'they have equal kinetic energies'], 0, 'The alpha particle: the momenta are equal, and <i>E</i><sub>k</sub> = <i>p</i><sup>2</sup> / 2<i>m</i> is larger for the smaller mass ✓')
+  ]);
+};
+
+const NZC = [
+  ['uranium-238', [[92, 146], [90, 144], [91, 143], [92, 142], [90, 140]], 'U'], ['thorium-232', [[90, 142], [88, 140], [89, 139], [90, 138], [88, 136]], 'Th'],
+  ['radium-226', [[88, 138], [86, 136], [84, 134], [82, 132], [83, 131]], 'Ra'], ['lead-214', [[82, 132], [83, 131], [84, 130], [82, 128], [83, 127]], 'Pb'],
+  ['uranium-235', [[92, 143], [90, 141], [91, 140], [89, 138], [90, 137]], 'U'], ['neptunium-237', [[93, 144], [91, 142], [92, 141], [90, 139], [88, 137]], 'Np']
+];
+function nzScene(ch, side){
+  const s = new Scene('Grid of neutron number against proton number showing four steps of a decay chain as numbered arrows'), pts = ch[1];
+  const Zs = pts.map(p => p[0]), Nn = pts.map(p => p[1]), z0 = Math.min(...Zs) - 1, z1 = Math.max(...Zs) + 1, n0 = Math.min(...Nn) - 1, n1 = Math.max(...Nn) + 1, cl = 36;
+  const X = z => 70 + (z - z0) * cl, Y = n => 30 + (n1 - n) * cl;
+  for (let z = z0; z <= z1; z++){ s.line(X(z), Y(n1), X(z), Y(n0), { w: .6, stroke: '#9aa1a8', free: true }); s.label(X(z), Y(n0) + 22, String(z), { size: 13 }); }
+  for (let n = n0; n <= n1; n++){ s.line(X(z0), Y(n), X(z1), Y(n), { w: .6, stroke: '#9aa1a8', free: true }); s.label(X(z0) - 10, Y(n) + 5, String(n), { size: 13, anchor: 'end' }); }
+  s.label((X(z0) + X(z1)) / 2, Y(n0) + 44, 'proton number *Z*', { size: 14 }); s.label(X(z0) - 6, Y(n1) - 14, 'neutron number *N*', { size: 14, anchor: 'start' });
+  pts.forEach(p => dot(s, X(p[0]), Y(p[1]), 5));
+  for (let i = 0; i < 4; i++){ const [a, b] = [pts[i], pts[i + 1]], x1 = X(a[0]), y1 = Y(a[1]), x2 = X(b[0]), y2 = Y(b[1]), l = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / l, uy = (y2 - y1) / l;
+    s.arrow(x1 + 8 * ux, y1 + 8 * uy, x2 - 8 * ux, y2 - 8 * uy, { w: 1.6 }); const sd = side[i] ? 1 : -1; s.label((x1 + x2) / 2 - uy * 14 * sd, (y1 + y2) / 2 + ux * 14 * sd + 5, String(i + 1), { bold: true, size: 15, halo: true }); }
+  s.label(X(pts[0][0]) + 10, Y(pts[0][1]) - 10, `${ch[2]}-${pts[0][0] + pts[0][1]}`, { size: 14, halo: true, anchor: 'start' });
+  return s;
+}
+T.NI8 = R => {
+  const ci = Math.floor(R() * NZC.length), ch = NZC[ci]; let s;
+  for (let k = 0; k < 16; k++){ s = nzScene(ch, [k & 1, k & 2, k & 4, k & 8].map(Boolean)); if (!s.check().length) break; }
+  const pts = ch[1], mode = i => { const dz = pts[i + 1][0] - pts[i][0], dn = pts[i + 1][1] - pts[i][1]; return dz === -2 && dn === -2 ? 0 : dz === 1 && dn === -1 ? 1 : 2; };
+  const [qa, qb] = pickN(R, [0, 1, 2, 3], 2).sort();
+  return { sf: 2, scenes: [s], data: { ci },
+    stem: `<b>Figure 1</b> shows the first four steps in the decay of ${ch[0]}. Each arrow, numbered 1 to 4, represents one decay.`,
+    parts: [
+      opt(`State the type of decay shown by arrow ${qa + 1}.`, 1, DMODES, mode(qa), `${DMODES[mode(qa)]}: ${mode(qa) === 0 ? '<i>Z</i> and <i>N</i> both decrease by 2' : '<i>Z</i> increases by 1 and <i>N</i> decreases by 1'} ✓`),
+      opt(`State the type of decay shown by arrow ${qb + 1}.`, 1, DMODES, mode(qb), `${DMODES[mode(qb)]}: ${mode(qb) === 0 ? '<i>Z</i> and <i>N</i> both decrease by 2' : '<i>Z</i> increases by 1 and <i>N</i> decreases by 1'} ✓`),
+      calc('State the proton number of the nuclide at the end of arrow 2.', 1, pts[2][0], '', `${pts[2][0]} ✓`, INT),
+      calc('State the nucleon number of the nuclide at the end of arrow 4.', 1, pts[4][0] + pts[4][1], '', `${pts[4][0]} + ${pts[4][1]} = ${pts[4][0] + pts[4][1]} ✓`, INT),
+      calc('State the number of neutrons in the nuclide at the end of arrow 4.', 1, pts[4][1], '', `${pts[4][1]} ✓`, INT),
+      choose(R, 'Which arrow would represent a beta-plus decay on this grid?', 1, 'one square to the left and one square up', ['one square to the right and one square down', 'two squares to the left and two squares down', 'one square up only'], 'One square to the left (<i>Z</i> − 1) and one square up (<i>N</i> + 1) ✓'),
+      text('Explain why alpha decay of a heavy nucleus is often followed by beta-minus decay.', 2, 'Alpha decay removes equal numbers of protons and neutrons (2 of each), so the ratio <i>N</i> / <i>Z</i> increases ✓<br>the daughter nucleus has too many neutrons for stability, so it decays by beta-minus emission ✓')
+    ] };
+};
+/* ===== Mass and energy ===== */
+// nuclear masses in u (atomic mass minus the electrons), to 5 decimal places
+const NMASS = [['helium-4', 'He', 2, 4, 4.00151], ['lithium-7', 'Li', 3, 7, 7.01436], ['carbon-12', 'C', 6, 12, 11.99671], ['nitrogen-14', 'N', 7, 14, 13.99923], ['oxygen-16', 'O', 8, 16, 15.99053], ['neon-20', 'Ne', 10, 20, 19.98695],
+  ['aluminium-27', 'Al', 13, 27, 26.97441], ['iron-56', 'Fe', 26, 56, 55.92067], ['cobalt-59', 'Co', 27, 59, 58.91838], ['nickel-60', 'Ni', 28, 60, 59.91543], ['copper-63', 'Cu', 29, 63, 62.91369], ['zirconium-90', 'Zr', 40, 90, 89.88276], ['tin-120', 'Sn', 50, 120, 119.87477], ['lead-208', 'Pb', 82, 208, 207.93167], ['uranium-235', 'U', 92, 235, 234.99346]];
+const r5 = x => Math.round(x * 1e5) / 1e5;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+T.ME1 = R => {
+  const ni = Math.floor(R() * NMASS.length), [nm, sy, Z, Am, m] = NMASS[ni], Nn = Am - Z, tot = r5(Z * MPU + Nn * MNU), dm = r5(tot - m), BE = dm * UMEV;
+  return NOFIG(3, { ni }, `The mass of ${an(nm)} nucleus (${nuc(sy, Am, Z)}) is ${fx(m, 5)} u.`, [
+    calc('State the number of neutrons in the nucleus.', 1, Nn, '', `${Am} − ${Z} = ${Nn} ✓`, INT),
+    calc('Calculate the mass defect of the nucleus in u.', 2, dm, 'u', `${eq(`mass of nucleons = ${Z} × 1.00728 + ${Nn} × 1.00867 = ${fx(tot, 5)}`)} u ✓<br>${eq(`mass defect = ${fx(tot, 5)} − ${fx(m, 5)} = ${fx(dm, 5)}`)} u ✓`, { fx: 5, noSkill: true }),
+    calc('Calculate the binding energy of the nucleus in MeV.', 1, BE, 'MeV', `${eq(`${fx(dm, 5)} × 931.5 = ${A(BE)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate the binding energy per nucleon in MeV.', 1, BE / Am, 'MeV', `${eq(`${I(BE)} / ${Am} = ${A(BE / Am)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate the binding energy of the nucleus in J.', 1, BE * MEVJ, 'J', `${eq(`${I(BE)} × ${SMEV} = ${AV(BE * MEVJ, 'J')}`)} ✓`),
+    text('State what is meant by the binding energy of a nucleus.', 1, 'The energy needed to separate a nucleus into its individual protons and neutrons ✓')
+  ]);
+};
+
+// binding energy per nucleon: a smooth curve (liquid-drop formula) for the graph
+const ZST = a => a / (1.98 + 0.0155 * Math.pow(a, 2 / 3)), BEN = a => { const z = ZST(a); return 15.75 - 17.8 / cbrt(a) - 0.711 * z * z / Math.pow(a, 4 / 3) - 23.7 * Math.pow(a - 2 * z, 2) / (a * a); };
+const FISP = [[['Ba', 141, 56, 8.326], ['Kr', 92, 36, 8.513], 3], [['Xe', 140, 54, 8.315], ['Sr', 94, 38, 8.594], 2]];
+T.ME2 = R => {
+  const a1 = R.pick([20, 40, 100, 150, 200, 240]), b1 = BEN(a1), fi = Math.floor(R() * FISP.length), [X, Y, k] = FISP[fi], bU = 7.591, Q = X[1] * X[3] + Y[1] * Y[3] - 235 * bU;
+  const fig = graph({ x: [0, 250, 50], y: [0, 10, 2], xdiv: 5, ydiv: 10, h: 330, xl: 'nucleon number A', yl: 'binding energy per nucleon / MeV', curves: [{ f: BEN, from: 6, to: 245 }], reads: [[a1, b1]] });
+  const tab = tableH('Table 1', ['Nucleus', 'Binding energy per nucleon / MeV'], [[nuc('U', 235, 92), '7.591'], [nuc(X[0], X[1], X[2]), fx(X[3], 3)], [nuc(Y[0], Y[1], Y[2]), fx(Y[3], 3)]]);
+  const tl = 0.1 / b1 + .01;
+  return { sf: 3, scenes: [], figs: [fig], readFig: 'Figure 1', data: { a1, fi },
+    stem: `<b>Figure 1</b> shows how the binding energy per nucleon varies with nucleon number <i>A</i>.`,
+    parts: [
+      calc(`Use <b>Figure 1</b> to determine the binding energy per nucleon of a nucleus with <i>A</i> = ${a1}.`, 1, b1, 'MeV', `${A(b1)} MeV ✓`, { abs: .1 }),
+      calc(`Calculate the total binding energy of this nucleus.`, 1, a1 * b1, 'MeV', `${eq(`${a1} × ${N(b1, 3)} = ${A(a1 * b1)}`)} MeV ✓`, { tol: tl, noSkill: true, guide: ['Allow ecf from (a).'] }),
+      choose(R, 'Which nuclei are the most stable?', 1, 'those with nucleon numbers of about 56', ['those with the smallest nucleon numbers', 'those with the largest nucleon numbers', 'those with nucleon numbers of about 4'], 'Those with nucleon numbers of about 56 (iron), which have the greatest binding energy per nucleon ✓'),
+      text('Explain why energy is released when a uranium-235 nucleus undergoes fission.', 2, 'The fission products have a greater binding energy per nucleon than uranium-235 ✓<br>so the total binding energy increases (the products have less mass) and the difference is released as energy ✓'),
+      calc(`Table 1 gives data for the fission ${nuc('U', 235, 92)} + ${nuc('n', 1, 0)} → ${nuc(X[0], X[1], X[2])} + ${nuc(Y[0], Y[1], Y[2])} + ${k}${nuc('n', 1, 0)}<br>${tab}<br>Calculate the energy released in this fission.`, 2, Q, 'MeV', `${eq(`binding energy of products = ${X[1]} × ${fx(X[3], 3)} + ${Y[1]} × ${fx(Y[3], 3)} = ${fx(X[1] * X[3] + Y[1] * Y[3], 1)}`)} MeV ✓<br>${eq(`energy released = ${fx(X[1] * X[3] + Y[1] * Y[3], 1)} − 235 × 7.591 = ${A(Q)}`)} MeV ✓`, { noSkill: true }),
+      choose(R, 'Which statement explains why energy is released when two light nuclei fuse?', 1, 'The product nucleus has a greater binding energy per nucleon.', ['The product nucleus has a smaller binding energy per nucleon.', 'The mass of the product is greater than the total mass of the original nuclei.', 'Neutrons are released, which carry energy away.'], 'The product nucleus has a greater binding energy per nucleon ✓')
+    ] };
+};
+
+T.ME3 = R => {
+  const Pe = R.pick([500, 600, 900, 1200, 1300]), eta = R.pick([0.30, 0.33, 0.35, 0.40]), dmu = R.pick([0.0304, 0.0189, 0.00523, 0.0188]), L = 3.85e26;
+  const Pth = Pe * 1e6 / eta, md = Pth * 86400 / (C0 * C0), Em = dmu * UMEV, mL = L / (C0 * C0);
+  return NOFIG(3, { Pe, eta, dmu }, `This question is about the equivalence of mass and energy, <i>E</i> = <i>mc</i><sup>2</sup>. 1 u is equivalent to 931.5 MeV.`, [
+    calc(`A nuclear power station has an electrical power output of ${V(Pe, 'MW')} and an overall efficiency of ${N(eta * 100)}%.<br>Calculate the mass converted to energy in the reactor each day.`, 3, md, 'kg', `${eq(`input power = ${Pe} × 10<sup>6</sup> / ${N(eta)} = ${I(Pth)} W`)} ✓<br>${eq(`energy per day = ${I(Pth)} × 86400 = ${I(Pth * 86400)} J`)} ✓<br>${eq(`<i>m</i> = <i>E</i> / <i>c</i><sup>2</sup> = ${I(Pth * 86400)} / (${SC})<sup>2</sup> = ${AV(md, 'kg')}`)} ✓`),
+    calc(`In a nuclear reaction, the mass of the products is ${fx(dmu, dmu < .01 ? 5 : 4)} u less than the mass of the reactants.<br>Calculate the energy released, in MeV.`, 1, Em, 'MeV', `${eq(`${fx(dmu, dmu < .01 ? 5 : 4)} × 931.5 = ${A(Em)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate this energy in J.', 1, Em * MEVJ, 'J', `${eq(`${I(Em)} × ${SMEV} = ${AV(Em * MEVJ, 'J')}`)} ✓`),
+    calc(`The Sun radiates energy at a rate of ${N(L, 3)} W.<br>Calculate the mass the Sun loses each second because of this.`, 2, mL, 'kg', `${eq(`<i>m</i> = <i>P</i> / <i>c</i><sup>2</sup> = ${N(L, 3)} / (${SC})<sup>2</sup>`)} ✓<br>${eq(`<i>m</i> = ${AV(mL, 'kg')}`)} ✓`),
+    choose(R, 'Which statement about the mass of a nucleus is correct?', 1, 'It is less than the total mass of its separate protons and neutrons.', ['It is equal to the total mass of its separate protons and neutrons.', 'It is greater than the total mass of its separate protons and neutrons.', 'It is equal to the mass of its protons only.'], 'It is less than the total mass of its separate nucleons; the difference is the mass defect ✓')
+  ]);
+};
+
+const NM5 = { D: ['H', 2, 1, 2.01355], T: ['H', 3, 1, 3.01550], He3: ['He', 3, 2, 3.01493], He4: ['He', 4, 2, 4.00151], n: ['n', 1, 0, 1.00867], p: ['p', 1, 1, 1.00728] };
+const FUS = [[['D', 'T'], ['He4', 'n']], [['D', 'D'], ['He3', 'n']], [['D', 'D'], ['T', 'p']], [['D', 'He3'], ['He4', 'p']]];
+const PNAME = { n: 'a neutron', p: 'a proton' };
+T.ME4 = R => {
+  const fi = Math.floor(R() * FUS.length), [re, pr] = FUS[fi], M = k => NM5[k][3], nk = k => nuc(NM5[k][0], NM5[k][1], NM5[k][2]);
+  const mr = r5(M(re[0]) + M(re[1])), mp = r5(M(pr[0]) + M(pr[1])), dm = r5(mr - mp), Q = dm * UMEV, QJ = Q * MEVJ, perkg = QJ / (mr * UKG);
+  const masses = [...new Set(re.concat(pr))].map(k => `${nk(k)}: ${fx(M(k), 5)} u`).join('<br>');
+  return NOFIG(3, { fi }, `A fusion reaction is ${nk(re[0])} + ${nk(re[1])} → ${nk(pr[0])} + X<br>The masses of the particles are:<br>${masses}`, [
+    choose(R, 'Identify particle X.', 1, PNAME[pr[1]], [PNAME[pr[1] === 'n' ? 'p' : 'n'], 'an electron', 'a positron'], `${cap(PNAME[pr[1]])}: nucleon number and charge are conserved ✓`),
+    calc('Calculate the decrease in mass in the reaction, in u.', 2, dm, 'u', `${eq(`mass before = ${fx(M(re[0]), 5)} + ${fx(M(re[1]), 5)} = ${fx(mr, 5)}`)} u and ${eq(`mass after = ${fx(M(pr[0]), 5)} + ${fx(M(pr[1]), 5)} = ${fx(mp, 5)}`)} u ✓<br>${eq(`decrease = ${fx(mr, 5)} − ${fx(mp, 5)} = ${fx(dm, 5)}`)} u ✓`, { fx: 5, noSkill: true }),
+    calc('Calculate the energy released, in MeV.', 1, Q, 'MeV', `${eq(`${fx(dm, 5)} × 931.5 = ${A(Q)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate the energy released, in J.', 1, QJ, 'J', `${eq(`${I(Q)} × ${SMEV} = ${AV(QJ, 'J')}`)} ✓`),
+    text('Explain why fusion only occurs at very high temperatures.', 2, 'The nuclei are positively charged and repel each other ✓<br>they need very high kinetic energies (high temperature) to overcome the electrostatic repulsion and get close enough for the strong nuclear force to act ✓'),
+    calc(`Calculate the energy released per kilogram of reactants. 1 u = ${SU} kg.`, 2, perkg, 'J kg<sup>−1</sup>', `${eq(`mass of reactants = ${fx(mr, 5)} × ${SU} = ${I(mr * UKG)} kg`)} ✓<br>${eq(`${I(QJ)} / ${I(mr * UKG)} = ${A(perkg)}`)} J kg<sup>−1</sup> ✓`, { noSkill: true })
+  ]);
+};
+
+// atomic masses in u (electrons balance in fission and alpha decay)
+const FISR = [['U', 235, 92, 235.0439, [['Xe', 142, 54, 141.9297], ['Sr', 90, 38, 89.9077]], 4], ['U', 235, 92, 235.0439, [['Ba', 141, 56, 140.9144], ['Kr', 92, 36, 91.9262]], 3],
+  ['U', 235, 92, 235.0439, [['Xe', 140, 54, 139.9216], ['Sr', 94, 38, 93.9154]], 2], ['U', 235, 92, 235.0439, [['Cs', 137, 55, 136.9071], ['Rb', 96, 37, 95.9343]], 3], ['Pu', 239, 94, 239.0522, [['Xe', 134, 54, 133.9054], ['Zr', 103, 40, 102.9266]], 3]];
+const r4 = x => Math.round(x * 1e4) / 1e4;
+T.ME5 = R => {
+  const fi = Math.floor(R() * FISR.length), [ps, pa, pz, pm, [X, Y], k] = FISR[fi], mn = 1.0087, before = r4(pm + mn), after = r4(X[3] + Y[3] + k * mn), dm = r4(before - after), Q = dm * UMEV, QJ = Q * MEVJ;
+  const perkg = QJ / (pm * UKG), P = R.pick([1.5, 2.0, 2.5, 3.0, 3.6]), rate = P * 1e9 / QJ, nn = nuc('n', 1, 0);
+  return NOFIG(3, { fi, P }, `A possible fission reaction is ${nuc(ps, pa, pz)} + ${nn} → ${nuc(X[0], X[1], X[2])} + ${nuc(Y[0], Y[1], Y[2])} + <i>x</i>${nn}<br>${tableH('Table 1', ['Particle', 'Mass / u'], [[nuc(ps, pa, pz), fx(pm, 4)], [nuc(X[0], X[1], X[2]), fx(X[3], 4)], [nuc(Y[0], Y[1], Y[2]), fx(Y[3], 4)], [nn, '1.0087']])}`, [
+    calc('Determine <i>x</i>.', 1, k, '', `${eq(`${pa} + 1 − ${X[1]} − ${Y[1]} = ${k}`)} ✓`, INT),
+    calc('Calculate the decrease in mass in the reaction, in u.', 2, dm, 'u', `${eq(`mass before = ${fx(pm, 4)} + 1.0087 = ${fx(before, 4)}`)} u and ${eq(`mass after = ${fx(X[3], 4)} + ${fx(Y[3], 4)} + ${k} × 1.0087 = ${fx(after, 4)}`)} u ✓<br>${eq(`decrease = ${fx(before, 4)} − ${fx(after, 4)} = ${fx(dm, 4)}`)} u ✓`, { fx: 4, noSkill: true }),
+    calc('Calculate the energy released in one fission, in MeV.', 1, Q, 'MeV', `${eq(`${fx(dm, 4)} × 931.5 = ${A(Q)}`)} MeV ✓`, { noSkill: true }),
+    calc(`Calculate the energy released per kilogram of ${nuc(ps, pa, pz)} if every nucleus undergoes this fission. 1 u = ${SU} kg.`, 2, perkg, 'J kg<sup>−1</sup>', `${eq(`energy per fission = ${I(Q)} × ${SMEV} = ${I(QJ)} J`)} and ${eq(`mass of one nucleus = ${fx(pm, 4)} × ${SU} = ${I(pm * UKG)} kg`)} ✓<br>${eq(`${I(QJ)} / ${I(pm * UKG)} = ${A(perkg)}`)} J kg<sup>−1</sup> ✓`, { noSkill: true }),
+    calc(`A reactor core produces a thermal power of ${V(P, 'GW')}. Assume every fission releases this energy.<br>Calculate the number of fissions per second.`, 2, rate, 's<sup>−1</sup>', `${eq(`energy per fission = ${I(Q)} × ${SMEV} = ${I(QJ)} J`)} ✓<br>${eq(`${N(P)} × 10<sup>9</sup> / ${I(QJ)} = ${A(rate)}`)} s<sup>−1</sup> ✓`, { noSkill: true }),
+    text('Explain why the neutrons released in fission are important for the operation of a reactor.', 1, 'They can go on to cause further fissions, producing a (self-sustaining) chain reaction ✓')
+  ]);
+};
+
+const ADQ = [['radium-226', 'Ra', 88, 226, 226.02541, 'Rn', 222.01758], ['polonium-210', 'Po', 84, 210, 209.98287, 'Pb', 205.97447], ['uranium-238', 'U', 92, 238, 238.05079, 'Th', 234.04360],
+  ['americium-241', 'Am', 95, 241, 241.05683, 'Np', 237.04817], ['plutonium-239', 'Pu', 94, 239, 239.05216, 'U', 235.04393], ['radon-222', 'Rn', 86, 222, 222.01758, 'Po', 218.00897]];
+T.ME6 = R => {
+  const ai = Math.floor(R() * ADQ.length), [nm, sy, Z, Am, mp, dsy, md] = ADQ[ai], mHe = 4.00260, after = r5(md + mHe), dm = r5(mp - after), Q = dm * UMEV, Ka = Q * (Am - 4) / Am;
+  return NOFIG(3, { ai }, `${cap(nm)} decays by alpha emission: ${nuc(sy, Am, Z)} → ${nuc(dsy, '?', '?')} + ${nuc('He', 4, 2)}<br>${tableH('Table 1', ['Atom', 'Mass / u'], [[nuc(sy, Am, Z), fx(mp, 5)], [nuc(dsy, Am - 4, Z - 2), fx(md, 5)], [nuc('He', 4, 2), '4.00260']])}`, [
+    calc('State the proton number of the daughter nucleus.', 1, Z - 2, '', `${Z} − 2 = ${Z - 2} ✓`, INT),
+    calc('State the nucleon number of the daughter nucleus.', 1, Am - 4, '', `${Am} − 4 = ${Am - 4} ✓`, INT),
+    calc('Calculate the decrease in mass in the decay, in u.', 2, dm, 'u', `${eq(`mass after = ${fx(md, 5)} + 4.00260 = ${fx(after, 5)}`)} u ✓<br>${eq(`decrease = ${fx(mp, 5)} − ${fx(after, 5)} = ${fx(dm, 5)}`)} u ✓`, { fx: 5, noSkill: true }),
+    calc('Calculate the energy released in the decay, in MeV.', 1, Q, 'MeV', `${eq(`${fx(dm, 5)} × 931.5 = ${A(Q)}`)} MeV ✓`, { noSkill: true }),
+    calc('Calculate the kinetic energy of the alpha particle. Assume the parent nucleus is stationary and the masses are proportional to the nucleon numbers.', 2, Ka, 'MeV', `Momentum is conserved, so the energy is shared in the inverse ratio of the masses: alpha particle gets ${Am - 4}/${Am} ✓<br>${eq(`<i>E</i><sub>k</sub> = ${I(Q)} × ${Am - 4} / ${Am} = ${A(Ka)}`)} MeV ✓`, { noSkill: true }),
+    text('Explain why the alpha particle carries away most of the energy released.', 1, 'The alpha particle and daughter nucleus have equal and opposite momenta, and the alpha particle has the much smaller mass, so it has the larger kinetic energy (<i>E</i><sub>k</sub> = <i>p</i><sup>2</sup> / 2<i>m</i>) ✓')
+  ]);
+};
+
+T.ME7 = R => {
+  const [L, M] = R.pick([[3.8e26, 2.0e30], [5.8e26, 2.2e30], [2.6e27, 3.0e30], [9.6e27, 4.0e30], [1.5e28, 4.2e30]]), dm = r5(4 * MPU - 4.00151 - 2 * MEU), Q = dm * UMEV, Qt = 26.7, rate = L / (Qt * MEVJ), mL = L / (C0 * C0), fr = mL * YRS / M;
+  return NOFIG(3, { L, M }, `A star has a power output of ${V(L, 'W')} and a mass of ${V(M, 'kg')}. In its core, hydrogen is converted to helium: 4${nuc('p', 1, 1)} → ${nuc('He', 4, 2)} + 2${nuc('e', 0, '+1')} + 2ν<sub>e</sub><br>Mass of a proton = 1.00728 u, mass of a helium-4 nucleus = 4.00151 u, mass of a positron = 0.00055 u.`, [
+    calc('Calculate the mass converted to energy in the star each second.', 2, mL, 'kg', `${eq(`<i>m</i> = <i>P</i> / <i>c</i><sup>2</sup> = ${N(L)} / (${SC})<sup>2</sup>`)} ✓<br>${eq(`<i>m</i> = ${AV(mL, 'kg')}`)} ✓`),
+    calc('Calculate the energy released in one reaction, in MeV. Ignore the mass of the neutrinos.', 2, Q, 'MeV', `${eq(`Δ<i>m</i> = 4 × 1.00728 − 4.00151 − 2 × 0.00055 = ${fx(dm, 5)}`)} u ✓<br>${eq(`<i>E</i> = ${fx(dm, 5)} × 931.5 = ${A(Q)}`)} MeV ✓`, { noSkill: true }),
+    calc(`When the positrons annihilate with electrons, the total energy released per reaction is ${Qt} MeV.<br>Calculate the number of reactions per second in the star.`, 2, rate, 's<sup>−1</sup>', `${eq(`energy per reaction = ${Qt} × ${SMEV} = ${I(Qt * MEVJ)} J`)} ✓<br>${eq(`number per second = ${N(L)} / ${I(Qt * MEVJ)} = ${A(rate)}`)} s<sup>−1</sup> ✓`, { noSkill: true }),
+    calc(`Calculate the fraction of the star's mass converted to energy in one year. 1 year = ${SYR} s.`, 1, fr, '', `${eq(`${I(mL)} × ${SYR} / ${N(M)} = ${A(fr)}`)} ✓`, { noSkill: true }),
+    text('Explain why the annihilation of the positrons increases the energy released per reaction.', 1, 'Each positron annihilates with an electron and the mass of both particles is converted into energy (gamma photons) ✓')
+  ]);
+};
+
+const BEPN = { D: ['H', 2, 1, 1.112], T: ['H', 3, 1, 2.827], He3: ['He', 3, 2, 2.573], He4: ['He', 4, 2, 7.074], Li6: ['Li', 6, 3, 5.332], Li7: ['Li', 7, 3, 5.606], n: ['n', 1, 0, 0], p: ['p', 1, 1, 0] };
+const FUS2 = [[['D', 'T'], ['He4', 'n']], [['D', 'D'], ['He3', 'n']], [['D', 'He3'], ['He4', 'p']], [['Li6', 'n'], ['He4', 'T']], [['Li7', 'p'], ['He4', 'He4']], [['He3', 'He3'], ['He4', 'p', 'p']]];
+T.ME8 = R => {
+  const fi = Math.floor(R() * FUS2.length), [re, pr] = FUS2[fi], be = k => BEPN[k][1] * BEPN[k][3], nk = k => nuc(BEPN[k][0], BEPN[k][1], BEPN[k][2]);
+  const keys = ['D', 'T', 'He3', 'He4', 'Li6', 'Li7'], tab = tableH('Table 1', ['Nucleus', 'Binding energy per nucleon / MeV'], keys.map(k => [nk(k), fx(BEPN[k][3], 3)]));
+  const xi = R.pick(['T', 'He3', 'Li6', 'Li7']), Bx = be(xi), Q = pr.reduce((s, k) => s + be(k), 0) - re.reduce((s, k) => s + be(k), 0);
+  const side = a => a.map(k => be(k) ? `${BEPN[k][1]} × ${fx(BEPN[k][3], 3)}` : '0').join(' + '), sum = a => a.reduce((s, k) => s + be(k), 0);
+  const show = a => a.map(nk).join(' + ');
+  return NOFIG(3, { fi, xi }, `Table 1 gives the binding energy per nucleon of some light nuclei.<br>${tab}`, [
+    calc(`Calculate the total binding energy of a ${nk(xi)} nucleus.`, 1, Bx, 'MeV', `${eq(`${BEPN[xi][1]} × ${fx(BEPN[xi][3], 3)} = ${A(Bx)}`)} MeV ✓`, { noSkill: true }),
+    calc(`Calculate the energy released in the reaction ${show(re)} → ${show(pr)}`, 2, Q, 'MeV', `${eq(`binding energy before = ${side(re)} = ${fx(sum(re), 3)}`)} MeV and ${eq(`after = ${side(pr)} = ${fx(sum(pr), 3)}`)} MeV ✓<br>${eq(`energy released = ${fx(sum(pr), 3)} − ${fx(sum(re), 3)} = ${A(Q)}`)} MeV ✓`, { noSkill: true }),
+    choose(R, 'Which nucleus in Table 1 is the most stable?', 1, nk('He4'), ['D', 'Li7', 'Li6'].map(nk), `${nk('He4')}: it has the greatest binding energy per nucleon ✓`),
+    text('Explain, in terms of binding energy, why this reaction releases energy.', 2, 'The total binding energy of the products is greater than that of the reactants ✓<br>so the products have less mass, and the mass difference is released as kinetic energy of the products ✓'),
+    calc(`Calculate the mass defect of the ${nk(xi)} nucleus in u.`, 1, Bx / UMEV, 'u', `${eq(`${I(Bx)} / 931.5 = ${A(Bx / UMEV)}`)} u ✓`, { noSkill: true }),
+    choose(R, 'Why must the nuclei have a high kinetic energy for fusion to occur?', 1, 'to overcome the electrostatic repulsion and get within range of the strong nuclear force', ['to break the bonds between the nucleons', 'to release neutrons from the nuclei', 'to make the nuclei radioactive'], 'To overcome the electrostatic repulsion so that they get close enough for the strong nuclear force to act ✓')
+  ]);
+};
+
+T.ME9 = R => {
+  const fuel = R.pick([['uranium-235', 235], ['plutonium-239', 239]]), Ef = R.pick([195, 200, 205, 210]), m = R.pick([1.0, 2.0, 5.0]), cv = R.pick([24, 27, 30, 32]);
+  const Nn = m * 1000 / fuel[1] * NAV, E = Nn * Ef * MEVJ, mc = E / (cv * 1e6);
+  return NOFIG(2, { f: fuel[1], Ef, m, cv }, `Each fission of a ${fuel[0]} nucleus releases about ${V(Ef, 'MeV', 3)}. The molar mass of ${fuel[0]} is ${fuel[1]} g mol<sup>−1</sup>. Burning coal releases ${V(cv, 'MJ')} per kilogram.`, [
+    calc(`Calculate the number of nuclei in ${V(m, 'kg')} of ${fuel[0]}.`, 1, Nn, '', `${eq(`${N(m * 1000)} / ${fuel[1]} × ${SNA} = ${A(Nn)}`)} ✓`, { noSkill: true }),
+    calc(`Calculate the energy released if all the nuclei in ${N(m)} kg undergo fission.`, 2, E, 'J', `${eq(`energy per fission = ${Ef} × ${SMEV} = ${I(Ef * MEVJ)} J`)} ✓<br>${eq(`<i>E</i> = ${I(Nn)} × ${I(Ef * MEVJ)} = ${AV(E, 'J')}`)} ✓`),
+    calc('Calculate the mass of coal that would release the same energy.', 1, mc, 'kg', `${eq(`${I(E)} / (${cv} × 10<sup>6</sup>) = ${AV(mc, 'kg')}`)} ✓`),
+    text('Explain why the energy released per fission is so much larger than the energy released per molecule when coal burns.', 1, 'Fission changes the binding energy of nucleons held by the strong nuclear force (energies of MeV), but burning only rearranges electrons in chemical bonds (energies of a few eV) ✓'),
+    text('State two advantages of generating electricity from nuclear fission rather than from burning coal.', 2, 'Any two from:<br>no carbon dioxide (or other greenhouse gases) emitted while generating ✓<br>a very small mass of fuel produces a very large amount of energy ✓<br>it provides a reliable, continuous supply that does not depend on the weather ✓<br>no sulfur dioxide or smoke is produced ✓')
+  ]);
+};
+
+/* ===== Induced fission and safety ===== */
+function reactorScene(L){
+  const s = new Scene('Cross-section of a thermal nuclear reactor with five parts labelled A to E');
+  s.rect(40, 40, 440, 380, { fill: '#c9cdd1' }); s.rect(94, 86, 332, 288, { fill: '#fff' });
+  s.rect(110, 100, 300, 260, { fill: '#e6edf3', w: 3 });
+  [150, 214, 278, 342].forEach(x => s.rect(x, 170, 14, 160, { fill: '#555' }));
+  [185, 249, 313].forEach(x => s.rect(x, 14, 10, 236, { fill: '#fff' }));
+  s.rect(410, 130, 110, 16, { fill: '#fff' }); s.rect(410, 318, 110, 16, { fill: '#fff' });
+  s.arrow(524, 138, 556, 138); s.arrow(556, 326, 524, 326);
+  s.label(562, 143, 'to heat exchanger', { size: 13, anchor: 'start' }); s.label(562, 331, 'from heat exchanger', { size: 13, anchor: 'start' });
+  const P = { fuel: [[150, 290], [14, 295]], control: [[194, 24], [232, 14]], moderator: [[253, 345], [253, 452]], shield: [[52, 405], [14, 410]], coolant: [[490, 130], [490, 104]] };
+  Object.keys(P).forEach(k => { const [[tx, ty], [lx, ly]] = P[k]; const dx = tx - lx, dy = ty - (ly - 5), d = Math.hypot(dx, dy); s.line(lx + dx / d * 10, ly - 5 + dy / d * 10, tx, ty, { w: 1.1 }); s.label(lx, ly, L[k], { bold: true, size: 16 }); });
+  return s;
+}
+T.FR1 = R => {
+  const lets = shuffleR(R, LET), L = { fuel: lets[0], control: lets[1], moderator: lets[2], shield: lets[3], coolant: lets[4] };
+  const s = reactorScene(L);
+  return { sf: 2, scenes: [s], data: { L },
+    stem: `<b>Figure 1</b> shows a simplified cross-section of a thermal nuclear reactor. The parts labelled A to E are the fuel rods, the control rods, the moderator, the coolant pipe and the concrete shield.`,
+    parts: [
+      opt('Which letter labels a control rod?', 1, LET, LET.indexOf(L.control), `${L.control} ✓`),
+      opt('Which letter labels the moderator?', 1, LET, LET.indexOf(L.moderator), `${L.moderator} ✓`),
+      text('Explain the function of the moderator.', 2, 'The moderator slows down the fast neutrons released in fission, by (elastic) collisions with moderator nuclei ✓<br>slow (thermal) neutrons are much more likely to be absorbed by uranium-235 nuclei and cause fission ✓'),
+      choose(R, 'Which material is suitable for the control rods?', 1, 'boron', ['graphite', 'lead', 'uranium-238'], 'Boron (or cadmium), which absorbs neutrons ✓'),
+      text('Explain what happens when the control rods are pushed further into the reactor core.', 2, 'More neutrons are absorbed by the control rods ✓<br>so fewer fissions occur each second and the power output falls ✓'),
+      text('State the purpose of the concrete shield.', 1, 'To absorb the gamma radiation and neutrons that escape from the reactor core ✓')
+    ] };
+};
+
+const MODS = [['water (hydrogen nuclei)', 0.63], ['heavy water (deuterium nuclei)', 0.52], ['graphite (carbon nuclei)', 0.15]];
+T.FR2 = R => {
+  const mi = Math.floor(R() * MODS.length), [mn, p] = MODS[mi], E0 = R.pick([1.0, 2.0, 2.5]), n = R.pick([3, 4, 5, 6]), Et = 0.025;
+  const En = E0 * Math.pow(1 - p, n), nc = Math.log(Et / (E0 * 1e6)) / Math.log(1 - p), v = Math.sqrt(2 * Et * QE / MNKG);
+  return NOFIG(2, { mi, E0, n }, `In a thermal reactor, neutrons released by fission have a kinetic energy of about ${V(E0, 'MeV')}. The moderator is ${mn}. On average a neutron loses ${N(p * 100)}% of its kinetic energy in each collision with a moderator nucleus.`, [
+    calc(`Calculate the kinetic energy of a neutron after ${n} collisions, in MeV.`, 2, En, 'MeV', `Each collision leaves ${N(1 - p)} of the kinetic energy ✓<br>${eq(`<i>E</i> = ${N(E0)} × ${N(1 - p)}<sup>${n}</sup> = ${A(En)}`)} MeV ✓`, { noSkill: true }),
+    calc('A neutron is thermal when its kinetic energy is about 0.025 eV.<br>Calculate the number of collisions needed for a neutron to become thermal.', 3, nc, '', `${eq(`${N(E0)} × 10<sup>6</sup> × ${N(1 - p)}<sup><i>n</i></sup> = 0.025`)} ✓<br>${eq(`<i>n</i> = ln(0.025 / (${N(E0)} × 10<sup>6</sup>)) / ln(${N(1 - p)})`)} ✓<br>${eq(`<i>n</i> = ${A(nc)}`)}, so ${Math.ceil(nc)} collisions ✓`, { noSkill: true, alt: [Math.ceil(nc)], altNote: `Also accept ${Math.ceil(nc)}.` }),
+    calc(`Calculate the speed of a thermal neutron with a kinetic energy of 0.025 eV. Mass of a neutron = ${N(MNKG, 4)} kg.`, 2, v, MS1, `${eq(`<i>E</i><sub>k</sub> = 0.025 × ${SE} = 4.0 × 10<sup>−21</sup> J`)} ✓<br>${eq(`<i>v</i> = √(2 × 4.0 × 10<sup>−21</sup> / ${N(MNKG, 4)}) = ${AV(v, MS1)}`)} ✓`),
+    text('Explain why a good moderator has nuclei with a small nucleon number.', 2, 'In a collision, a neutron transfers more of its kinetic energy to a nucleus whose mass is close to its own ✓<br>so fewer collisions are needed to slow the neutrons to thermal speeds ✓'),
+    text('State one other property needed for a good moderator.', 1, 'It must not absorb neutrons (it must have a low neutron-absorption probability) ✓')
+  ]);
+};
+
+T.FR3 = R => {
+  const k = R.pick([1.002, 1.005, 1.01, 1.02]), n = R.pick([100, 200, 300, 500]), N0 = R.pick([100, 200, 500]), M = R.pick([100, 1000, 10000]), tau = R.pick([0.10, 0.50, 1.0]);
+  const Nn = N0 * Math.pow(k, n), g = Math.log(M) / Math.log(k), t = g * tau / 1000;
+  return NOFIG(3, { k, n, N0, M, tau }, `In a chain reaction, each generation of neutrons produces on average <i>k</i> times as many neutrons in the next generation. In one arrangement of fuel, <i>k</i> = ${k}.`, [
+    text('State what is meant by the critical mass of a fissile material.', 1, 'The minimum mass of the material needed for a self-sustaining chain reaction ✓'),
+    text('Explain why a chain reaction cannot be sustained in a small piece of the material.', 1, 'Too many neutrons escape through the surface before they can cause further fission (the surface area to volume ratio is too large) ✓'),
+    calc(`A chain reaction starts with ${N0} neutrons.<br>Calculate the number of neutrons after ${n} generations.`, 2, Nn, '', `${eq(`<i>N</i> = <i>N</i><sub>0</sub><i>k</i><sup><i>n</i></sup> = ${N0} × ${k}<sup>${n}</sup>`)} ✓<br>${eq(`<i>N</i> = ${A(Nn)}`)} ✓`, { noSkill: true }),
+    calc(`Calculate the number of generations needed for the number of neutrons to increase by a factor of ${M}.`, 2, g, '', `${eq(`${k}<sup><i>n</i></sup> = ${M}`)} ✓<br>${eq(`<i>n</i> = ln(${M}) / ln(${k}) = ${A(g)}`)} ✓`, { noSkill: true }),
+    calc(`The time between generations is ${V(tau, 'ms')}.<br>Calculate the time taken for this increase.`, 1, t, 's', `${eq(`${I(g)} × ${N(tau)} × 10<sup>−3</sup> = ${AV(t, 's')}`)} ✓`),
+    opt('In a reactor operating at constant power, state the average number of neutrons from each fission that go on to cause another fission.', 1, ['less than 1', 'exactly 1', 'more than 1'], 1, 'Exactly 1, so the rate of fission stays constant ✓')
+  ]);
+};
+
+T.FR4 = R => {
+  const Pe = R.pick([600, 900, 1200, 1300]), eta = R.pick([0.30, 0.33, 0.35, 0.40]), Ef = R.pick([200, 202, 205]);
+  const Pth = Pe * 1e6 / eta, rate = Pth / (Ef * MEVJ), mday = rate * 86400 * 235 * UKG;
+  return NOFIG(3, { Pe, eta, Ef }, `A nuclear power station has an electrical power output of ${V(Pe, 'MW')} and an efficiency of ${N(eta * 100)}%. Each fission of uranium-235 releases ${V(Ef, 'MeV', 3)}. 1 u = ${SU} kg.`, [
+    calc('Calculate the thermal power produced in the reactor core.', 1, Pth, 'W', `${eq(`${Pe} × 10<sup>6</sup> / ${N(eta)} = ${AV(Pth, 'W')}`)} ✓`),
+    calc('Calculate the number of fissions per second.', 2, rate, 's<sup>−1</sup>', `${eq(`energy per fission = ${Ef} × ${SMEV} = ${I(Ef * MEVJ)} J`)} ✓<br>${eq(`${I(Pth)} / ${I(Ef * MEVJ)} = ${A(rate)}`)} s<sup>−1</sup> ✓`, { noSkill: true }),
+    calc('Calculate the mass of uranium-235 used each day.', 2, mday, 'kg', `${eq(`number per day = ${I(rate)} × 86400 = ${I(rate * 86400)}`)} ✓<br>${eq(`mass = ${I(rate * 86400)} × 235 × ${SU} = ${AV(mday, 'kg')}`)} ✓`),
+    calc('Calculate the power that is not converted to electrical power.', 1, Pth - Pe * 1e6, 'W', `${eq(`${I(Pth)} − ${Pe} × 10<sup>6</sup> = ${AV(Pth - Pe * 1e6, 'W')}`)} ✓`),
+    choose(R, 'In what form is most of the energy released in a fission at first?', 1, 'kinetic energy of the fission fragments', ['energy of gamma photons', 'kinetic energy of the neutrons released', 'energy of the antineutrinos'], 'Kinetic energy of the fission fragments ✓')
+  ]);
+};
+
+const ABS = [['boron-10', 'B', 5, 10, 10.01294, ['Li', 7, 3, 7.01600], ['He', 4, 2, 4.00260], 'an alpha particle'], ['cadmium-113', 'Cd', 48, 113, 112.90441, ['Cd', 114, 48, 113.90337], null, 'a gamma photon']];
+T.FR5 = R => {
+  const ai = R.chance(.5) ? 0 : 1, [nm, sy, Z, Am, m, P, Q2] = ABS[ai], mn = 1.00867, before = r5(m + mn), after = r5(P[3] + (Q2 ? Q2[3] : 0)), dm = r5(before - after), Q = dm * UMEV, Xr = R.pick([2.0e17, 5.0e17, 1.0e18]), Pw = Xr * Q * MEVJ;
+  const eqn = `${nuc(sy, Am, Z)} + ${nuc('n', 1, 0)} → ${nuc(P[0], '?', '?')}${Q2 ? ' + ' + nuc('He', 4, 2) : ' + γ'}`;
+  return NOFIG(3, { ai, Xr }, `Control rods can contain ${nm}, which absorbs neutrons: ${eqn}<br>${tableH('Table 1', ['Particle', 'Mass / u'], [[nuc(sy, Am, Z) + ' atom', fx(m, 5)], [nuc('n', 1, 0), '1.00867'], [nuc(P[0], P[1], P[2]) + ' atom', fx(P[3], 5)]].concat(Q2 ? [[nuc('He', 4, 2) + ' atom', '4.00260']] : []))}`, [
+    calc(`State the proton number of the ${P[0]} nucleus formed.`, 1, P[2], '', `${Z} + 0${Q2 ? ' − 2' : ''} = ${P[2]} ✓`, INT),
+    calc(`State the nucleon number of the ${P[0]} nucleus formed.`, 1, P[1], '', `${Am} + 1${Q2 ? ' − 4' : ''} = ${P[1]} ✓`, INT),
+    calc('Calculate the decrease in mass in the reaction, in u.', 2, dm, 'u', `${eq(`mass before = ${fx(m, 5)} + 1.00867 = ${fx(before, 5)}`)} u${Q2 ? ` and ${eq(`mass after = ${fx(P[3], 5)} + 4.00260 = ${fx(after, 5)}`)} u` : ''} ✓<br>${eq(`decrease = ${fx(before, 5)} − ${fx(after, 5)} = ${fx(dm, 5)}`)} u ✓`, { fx: 5, noSkill: true }),
+    calc('Calculate the energy released in each reaction, in MeV.', 1, Q, 'MeV', `${eq(`${fx(dm, 5)} × 931.5 = ${A(Q)}`)} MeV ✓`, { noSkill: true }),
+    calc(`The control rods absorb ${V(Xr, 'neutrons')} each second.<br>Calculate the rate at which energy is released in the control rods by these reactions.`, 2, Pw, 'W', `${eq(`energy per reaction = ${I(Q)} × ${SMEV} = ${I(Q * MEVJ)} J`)} ✓<br>${eq(`<i>P</i> = ${N(Xr)} × ${I(Q * MEVJ)} = ${AV(Pw, 'W')}`)} ✓`),
+    opt('The control rods are raised partly out of the reactor core.<br>State the effect on the rate of fission.', 1, ['it increases', 'it decreases', 'it stays the same'], 0, 'It increases, because fewer neutrons are absorbed ✓')
+  ]);
+};
+
+const WASTE = [['caesium-137', 30.2, 'years'], ['strontium-90', 28.8, 'years'], ['plutonium-239', 24100, 'years'], ['iodine-131', 8.02, 'days'], ['krypton-85', 10.8, 'years']];
+T.FR6 = R => {
+  const wi = Math.floor(R() * WASTE.length), [nm, Th, un] = WASTE[wi], A0 = R.pick([2.0, 5.0, 8.0, 12]), tf = R.pick([0.4, 0.75, 1.5, 2.5]), t = Number((Th * tf).toPrecision(2)), k = R.pick([100, 1000]);
+  const At = A0 * Math.pow(2, -t / Th), tk = Th * Math.log2(k);
+  return NOFIG(3, { wi, A0, t, k }, `Spent fuel removed from a reactor contains ${nm}, which has a half-life of ${V(Th, un, 3)}. The activity of the ${nm} in a batch of spent fuel is ${V(A0, 'TBq')}.`, [
+    text('Explain why spent fuel is much more radioactive than fresh fuel.', 2, 'It contains fission fragments, which have too many neutrons and are unstable (beta-minus and gamma emitters) ✓<br>and heavier nuclides, such as plutonium, formed when uranium-238 absorbs neutrons ✓'),
+    calc(`Calculate the activity of the ${nm} after ${N(t)} ${un}.`, 2, At, 'TBq', `${eq(`<i>t</i> / <i>T</i><sub>½</sub> = ${N(t)} / ${N(Th, 3)} = ${I(t / Th)}`)} ✓<br>${eq(`<i>A</i> = ${N(A0)} × (1/2)<sup>${I(t / Th)}</sup> = ${A(At)}`)} TBq ✓`),
+    calc(`Calculate the time taken for the activity of the ${nm} to fall to 1/${k} of its initial value.`, 2, tk, un, `${eq(`(1/2)<sup><i>n</i></sup> = 1/${k}, so <i>n</i> = log<sub>2</sub> ${k} = ${I(Math.log2(k))}`)} half-lives ✓<br>${eq(`<i>t</i> = ${I(Math.log2(k))} × ${N(Th, 3)} = ${A(tk)}`)} ${un} ✓`),
+    text('Describe how spent fuel is handled and stored.', 3, 'Any three from:<br>it is removed from the reactor by remote handling ✓<br>it is stored under water in cooling ponds, where the water absorbs radiation and removes the heat produced ✓<br>it is reprocessed to separate unused uranium and plutonium from the waste ✓<br>high-level waste is vitrified (sealed in glass) and stored in sealed steel containers ✓<br>it is stored for a very long time, eventually deep underground, because some isotopes have very long half-lives ✓')
+  ]);
+};
+
+const FPAIR = [[['Ba', 141, 56], ['Kr', 92, 36], 3], [['Xe', 140, 54], ['Sr', 94, 38], 2], [['Cs', 137, 55], ['Rb', 96, 37], 3], [['La', 147, 57], ['Br', 87, 35], 2], [['Te', 134, 52], ['Zr', 100, 40], 2], [['Xe', 139, 54], ['Sr', 95, 38], 2]];
+T.FR7 = R => {
+  const fi = Math.floor(R() * FPAIR.length), [X, Y, k] = FPAIR[fi], K = R.pick([165, 170, 175]), KX = K * Y[1] / (X[1] + Y[1]), nn = nuc('n', 1, 0);
+  return NOFIG(3, { fi, K }, `In a thermal reactor, uranium-235 undergoes induced fission: ${nuc('U', 235, 92)} + ${nn} → ${nuc(X[0], X[1], X[2])} + ${nuc(Y[0], Y[1], '?')} + <i>x</i>${nn}`, [
+    calc('Determine <i>x</i>.', 1, k, '', `${eq(`235 + 1 − ${X[1]} − ${Y[1]} = ${k}`)} ✓`, INT),
+    calc(`Determine the proton number of ${Y[0]}.`, 1, Y[2], '', `${eq(`92 − ${X[2]} = ${Y[2]}`)} ✓`, INT),
+    text('Explain why the fission fragments are radioactive.', 2, 'Heavy nuclei have a larger ratio of neutrons to protons than stable middle-sized nuclei ✓<br>so the fragments have too many neutrons to be stable and decay by beta-minus emission ✓'),
+    calc(`The fragments share a total kinetic energy of ${V(K, 'MeV', 3)}. Assume that the uranium nucleus was stationary and that the neutrons carry negligible momentum.<br>Calculate the kinetic energy of the ${X[0]} fragment.`, 2, KX, 'MeV', `The momenta are equal and opposite, so the kinetic energies are in the inverse ratio of the masses ✓<br>${eq(`<i>E</i><sub>k</sub> = ${K} × ${Y[1]} / (${X[1]} + ${Y[1]}) = ${A(KX)}`)} MeV ✓`, { noSkill: true }),
+    choose(R, 'Which statement describes induced fission?', 1, 'A heavy nucleus absorbs a neutron and splits into two smaller nuclei.', ['Two light nuclei join together to form a heavier nucleus.', 'A heavy nucleus splits without absorbing a neutron.', 'A heavy nucleus emits an alpha particle.'], 'A heavy nucleus absorbs a neutron and splits into two smaller nuclei ✓'),
+    text('Explain why a thermal (slow) neutron is used to cause the fission of uranium-235.', 1, 'A slow neutron is much more likely to be absorbed by a uranium-235 nucleus, forming unstable uranium-236, which then splits ✓')
+  ]);
+};
+
+const COOL = [['water', 4200], ['carbon dioxide gas', 1200], ['liquid sodium', 1300]];
+T.FR8 = R => {
+  const ci = Math.floor(R() * COOL.length), [cn, c] = COOL[ci], P = R.pick([1.5, 2.0, 2.5, 3.0]), dT = R.pick([30, 35, 40, 50]), eta = R.pick([0.30, 0.33, 0.35, 0.40]);
+  const mdot = P * 1e9 / (c * dT), Pe = P * eta;
+  return NOFIG(2, { ci, P, dT, eta }, `A reactor core produces a thermal power of ${V(P, 'GW')}. The coolant is ${cn}, with a specific heat capacity of ${V(c, 'J kg<sup>−1</sup> K<sup>−1</sup>')}. The temperature of the coolant rises by ${V(dT, 'K')} as it passes through the core.`, [
+    calc('Calculate the mass of coolant that must flow through the core each second.', 2, mdot, 'kg s<sup>−1</sup>', `${eq(`<i>P</i> = (<i>m</i> / <i>t</i>) <i>c</i>Δ<i>T</i>`)} ✓<br>${eq(`<i>m</i> / <i>t</i> = ${N(P)} × 10<sup>9</sup> / (${c} × ${dT}) = ${A(mdot)}`)} kg s<sup>−1</sup> ✓`, { noSkill: true }),
+    text('State two properties of a good coolant.', 2, 'Any two from:<br>a high specific heat capacity ✓<br>it does not absorb neutrons (much) ✓<br>it flows easily (is a liquid or gas with low viscosity) ✓<br>it does not become highly radioactive or corrode the pipes ✓'),
+    calc(`The power station has an efficiency of ${N(eta * 100)}%.<br>Calculate the electrical power output.`, 1, Pe * 1e9, 'W', `${eq(`${N(eta)} × ${N(P)} × 10<sup>9</sup> = ${AV(Pe * 1e9, 'W')}`)} ✓`),
+    choose(R, 'In a pressurised water reactor, what is the function of the water in the core?', 1, 'It is both the moderator and the coolant.', ['It is only the coolant.', 'It is only the moderator.', 'It absorbs neutrons to control the rate of fission.'], 'It is both the moderator and the coolant ✓'),
+    text('State two benefits of generating electricity using nuclear power.', 2, 'Any two from:<br>no carbon dioxide (greenhouse gases) emitted during generation ✓<br>a large amount of energy from a small mass of fuel ✓<br>a reliable supply that does not depend on the weather ✓<br>fuel reserves will last a long time ✓')
+  ]);
+};
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number(a.toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0 || pj.int) continue; const a = plain(A(pj.ans)), a4 = plain(I(pj.ans)), m = plain(p.ms); if ((m.includes(a) || m.includes(a4)) && !given.includes(a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length && !g.some(x => /ecf/.test(x))) g.push('Allow ecf from their answer' + (ecf.length > 1 ? 's' : '') + ' to ' + ecf.join(' and ') + '.');
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], ''], ['Bq', ['bq', 'becquerel', 'becquerels', 's-1'], 'Accept s<sup>−1</sup>.'], ['s<sup>−1</sup>', ['s-1', '/s', 'persecond'], ''], ['T', ['t', 'tesla'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : A(p.ans); });
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${o}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like RD3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>

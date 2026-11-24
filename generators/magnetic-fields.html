@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Magnetic Fields Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Magnetic Fields Question Generator</h1>
+    <p>AQA-style practice on section 3.7.5. 59 question types and tens of thousands of different questions with mark schemes: diagram, graph and oscilloscope questions, plus calculation and description questions without a diagram.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="MC3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number(x.toPrecision(n));
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    let e = Math.floor(Math.log10(a) + 1e-12), m = Number((x / Math.pow(10, e)).toPrecision(n));
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+const A = x => isNice(x, 2) ? N(x, 2) : N(x, 3);      // answers: 2 sf when exact, otherwise 3 sf
+const AV = (x, unit) => A(x) + ' ' + unit;
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', RADS = 'rad s<sup>−1</sup>', CKG = 'C kg<sup>−1</sup>', WBT = 'Wb turns';
+const QE = 1.60e-19, ME = 9.11e-31, MP = 1.67e-27, GRAV = 9.81;
+
+/* ---------- diagram drawing ---------- */
+const DIRV = { right: [1, 0], left: [-1, 0], up: [0, 1], down: [0, -1] };        // y is up the page here
+const DIRNAME = { up: 'up the page', down: 'down the page', left: 'to the left', right: 'to the right', in: 'into the page', out: 'out of the page' };
+const DIRS6 = ['up', 'down', 'left', 'right', 'in', 'out'];
+// direction of the force on a positive charge moving (or conventional current flowing) in direction d, field into ('in') or out of ('out') the page
+function forceDir(d, field){
+  const [lx, ly] = DIRV[d], bz = field === 'in' ? -1 : 1, fx = ly * bz, fy = -lx * bz;
+  return fx > 0 ? 'right' : fx < 0 ? 'left' : fy > 0 ? 'up' : 'down';
+}
+const OPP = { up: 'down', down: 'up', left: 'right', right: 'left', in: 'out', out: 'in' };
+
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? .9 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function pole(s, x, y, w, h, letter){ s.rect(x, y, w, h, { fill: '#e4e7ea' }); if (letter) s.label(x + w / 2, y + h / 2 + 6, letter, { bold: true, size: 17 }); }
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+// current into / out of the page, seen end-on
+function endOn(s, cx, cy, dir, r = 9){ s.circle(cx, cy, r, { fill: '#fff' }); if (dir === 'out') s.body.push(`<circle cx="${cx}" cy="${cy}" r="2.6" fill="#000" stroke="none"/>`); else { const k = r * .62; s.line(cx - k, cy - k, cx + k, cy + k, { free: true, w: 1.4 }); s.line(cx - k, cy + k, cx + k, cy - k, { free: true, w: 1.4 }); } }
+// zig-zag of n loops round a vertical limb between y0 and y1, centred on x; the two ends finish on the side given by sgn
+function winding(s, x, y0, y1, n, sgn, half = 18){ const pts = [], dy = (y1 - y0) / n; for (let i = 0; i < n; i++){ pts.push([x + sgn * half, y0 + i * dy], [x - sgn * half, y0 + (i + .5) * dy]); } pts.push([x + sgn * half, y1]); s.poly(pts, { w: 1.5, tag: 'winding' }); }
+function transformer(s, o = {}){             // core 150 x 150 with limbs 26 wide; returns the coil terminals
+  const x = 120, y = 30, W = 150, H = 150, t = 26;
+  s.rect(x, y, W, H, { fill: '#e4e7ea', tag: 'core' }); s.rect(x + t, y + t, W - 2 * t, H - 2 * t, { fill: '#fff', tag: 'core' });
+  const np = o.np || 5, ns = o.ns || 9, lx = x + t / 2, rx = x + W - t / 2, y0 = y + t + 10, y1 = y + H - t - 10;
+  winding(s, lx, y0, y1, np, -1); winding(s, rx, y0, y1, ns, 1);
+  s.line(lx - 18, y0, 50, y0).line(lx - 18, y1, 50, y1).line(rx + 18, y0, 340, y0).line(rx + 18, y1, 340, y1);
+  s.label(x + W / 2, y - 9, 'iron core'); s.label(lx - 8, y + H + 21, 'primary coil'); s.label(rx + 8, y + H + 21, 'secondary coil');
+  return { px: 50, sx: 340, y0, y1, ym: (y0 + y1) / 2 };
+}
+function acSource(s, cx, cy){ s.circle(cx, cy, 15, { fill: '#fff' }); s.body.push(`<path d="M${cx - 8} ${cy}q4 -9 8 0t8 0" stroke-width="1.4"/>`); }
+function resistorV(s, x, y0, y1){ const m = (y0 + y1) / 2; s.line(x, y0, x, m - 24).line(x, m + 24, x, y1).rect(x - 9, m - 24, 18, 48, { fill: '#fff' }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {};
+function graph(g){
+  LAST.g = g;
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = 52, mt = 16, mr = 22;
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(m) + 1e-9));
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const nx = Math.round((xb - xa) / xM * div), ny = Math.round((yb - ya) / yM * div);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / div), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % div) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / div, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / div), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % div) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / div, yM)}</text>`; } }
+  const ax0 = X(Math.max(xa, Math.min(0, xb))), ay0 = Y(Math.max(ya, Math.min(0, yb)));
+  let marks = '';
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= ya - 1e-9 && y <= yb + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="1.9" stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle">${esc(c.name)}</text>`;
+  });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(g.yl)} against ${esc(g.xl)}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${th - 8}" text-anchor="middle">${esc(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${esc(g.yl)}</text></g></svg>`;
+}
+
+
+/* ---------- question templates ---------- */
+const TOPICS = { FW: 'Force on a current-carrying wire', MC: 'Moving charges in a magnetic field', FL: 'Magnetic flux and flux linkage', EI: 'Electromagnetic induction', AC: 'Alternating currents', TR: 'Transformers' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const rng = (a, b, step) => { const o = []; for (let x = a; x <= b + 1e-9; x += step) o.push(Number(x.toPrecision(6))); return o; };
+const fieldWords = d => d === 'in' ? 'into the page' : 'out of the page';
+const marksWords = d => d === 'in' ? 'crosses' : 'dots';
+const LHR = 'Fleming’s left-hand rule';
+
+/* ===== force on a current-carrying wire ===== */
+T.FW1 = R => {
+  const L = R.pick(rng(4, 8, .5)), I = R.pick(rng(2, 5, .25)), Bt = R.pick(rng(.08, .24, .02));
+  const m = Number((Bt * I * L * 1e-2 / GRAV * 1e3).toPrecision(3)), F = m * 1e-3 * GRAV, B = F / (I * L * 1e-2);
+  const cur = R.pick(['up', 'down']), inc = R.chance(.5), I2 = find(() => R.pick(rng(1.5, 6, .25)), x => Math.abs(x - I) > .4), m2 = m * I2 / I;
+  const wireForce = inc ? 'out' : 'in';                       // plan view: out of the page is vertically upwards
+  const bx = -(inc ? 1 : -1) / (cur === 'up' ? 1 : -1), north = bx < 0 ? 'Q' : 'P';
+  const s = new Scene('Plan view of a wire DE between two magnets P and Q');
+  pole(s, 40, 40, 50, 150, 'P'); pole(s, 190, 40, 50, 150, 'Q');
+  s.line(140, 14, 140, 216, { w: 2.4 }); if (cur === 'up') s.mid(140, 216, 140, 14); else s.mid(140, 14, 140, 216);
+  s.label(140, 8, 'D', { bold: true }).label(140, 234, 'E', { bold: true }).dim(22, 40, 22, 190, plain(V(L, 'cm', 3)), { left: true });
+  s.label(262, 120, 'magnet', { anchor: 'start' });
+  s.meta = { cur, wireForce, north };
+  return { sf: 3, scenes: [s], data: { L: L * 1e-2, I, m: m * 1e-3, I2, cur, inc },
+    stem: `<b>Figure 1</b> is a plan view of two magnets <b>P</b> and <b>Q</b> that are supported on a yoke and placed on an electronic balance. The magnets produce a uniform horizontal magnetic field in the region between them. A copper wire <b>DE</b> is clamped horizontally between the magnets, at right angles to the field. The arrow shows the direction of the current in the wire.<br>With no current in the wire the balance reads 0.000 g. When the current is ${V(I, 'A', 3)} the balance reads ${inc ? '+' : '−'}${V(m, 'g', 3)}. Each magnet is ${V(L, 'cm', 3)} long. Assume that the field is uniform between the magnets and zero beyond them.`,
+    parts: [
+      opt('State the direction of the force that the magnetic field exerts on the wire <b>DE</b>.', 1, ['vertically upwards', 'vertically downwards', 'horizontally towards P', 'horizontally towards Q'], inc ? 0 : 1,
+        `${inc ? 'Vertically upwards' : 'Vertically downwards'} ✓<br>The reading ${inc ? 'increases, so the force on the magnets is downwards' : 'decreases, so the force on the magnets is upwards'}. The force on the wire is equal and opposite (Newton’s third law).`),
+      calc('Calculate the magnetic flux density between the magnets.', 3, B, 'T',
+        `Force on wire = change in reading × <i>g</i>: ${eq(`<i>F</i> = ${N(m * 1e-3, 3)} × 9.81 = ${N(F, 3)} N`)} ✓<br>${eq(`<i>B</i> = <i>F</i> / <i>Il</i> = ${N(F, 3)} / (${N(I, 3)} × ${N(L * 1e-2, 3)})`)} ✓<br>${eq(`<i>B</i> = ${N(B, 3)} T`)} ✓`),
+      opt('State which magnet, <b>P</b> or <b>Q</b>, has its north pole facing the wire.', 1, ['P', 'Q'], north === 'P' ? 0 : 1,
+        `${north} ✓<br>Using ${LHR}: the force on the wire is ${inc ? 'upwards (out of the page in Figure 1)' : 'downwards (into the page in Figure 1)'} and the current is ${DIRNAME[cur]}, so the field is directed from ${north} to ${north === 'P' ? 'Q' : 'P'}. Field lines leave a north pole.`),
+      calc(`The current is changed to ${V(I2, 'A', 3)} without changing its direction.<br>Calculate the magnitude of the new balance reading.`, 2, m2, 'g',
+        `Force (and so reading) is proportional to current ✓<br>${eq(`reading = ${N(m, 3)} × ${N(I2, 3)} / ${N(I, 3)} = ${N(m2, 3)} g`)} ✓`)
+    ] };
+};
+
+T.FW2 = R => {
+  const B = R.pick([20, 25, 30, 40, 50, 60, 75, 80, 120, 150, 200, 250]), I = R.pick(rng(1.5, 8, .5)), l = R.pick([4, 5, 6, 8, 10, 12, 15, 20, 25]);
+  const F = B * 1e-3 * I * l * 1e-2, field = R.pick(['in', 'out']), cur = R.pick(['left', 'right', 'up', 'down']), fd = forceDir(cur, field);
+  const I3 = find(() => R.pick(rng(1, 12, .5)), x => Math.abs(x - I) > .9), F2 = Number((B * 1e-3 * I3 * l * 1e-2).toPrecision(2)), I2 = F2 / (B * 1e-3 * l * 1e-2);
+  const s = new Scene('A straight wire carrying a current through a region of uniform magnetic field'), horiz = cur === 'left' || cur === 'right';
+  if (horiz){ s.field(60, 30, 280, 200, field, { border: true }); s.line(10, 130, 390, 130, { w: 2.4 });
+    if (cur === 'right') s.mid(10, 130, 390, 130, .5, 11); else s.mid(390, 130, 10, 130, .5, 11);
+    s.dim(60, 250, 340, 250, plain(V(l, 'cm')), { below: true }).label(8, 118, 'wire', { anchor: 'start' }); }
+  else { s.field(50, 40, 300, 190, field, { border: true }); s.line(200, 6, 200, 264, { w: 2.4 });
+    if (cur === 'down') s.mid(200, 6, 200, 264, .5, 11); else s.mid(200, 264, 200, 6, .5, 11);
+    s.dim(30, 40, 30, 230, plain(V(l, 'cm')), { left: true }).label(210, 14, 'wire', { anchor: 'start' }); }
+  s.meta = { cur, field, force: fd };
+  return { sf: 2, scenes: [s], data: { B: B * 1e-3, I, l: l * 1e-2, F2, cur, field },
+    stem: `<b>Figure 1</b> shows a straight wire that passes through a region of uniform magnetic field of flux density ${V(B, 'mT')}. The ${marksWords(field)} show that the field is directed ${fieldWords(field)}. The arrow shows the direction of the current in the wire. The length of wire in the field is ${V(l, 'cm')} and the current in the wire is ${V(I, 'A')}.`,
+    parts: [
+      opt('State the direction of the force on the wire.', 1, DIRS6.map(d => DIRNAME[d]), DIRS6.indexOf(fd), `${DIRNAME[fd][0].toUpperCase() + DIRNAME[fd].slice(1)} ✓<br>From ${LHR}, with the field ${fieldWords(field)} and the current ${DIRNAME[cur]}.`),
+      calc('Calculate the magnitude of the force on the wire.', 2, F, 'N', `${eq(`<i>F</i> = <i>BIl</i> = ${N(B * 1e-3)} × ${N(I)} × ${N(l * 1e-2)}`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+      calc(`Calculate the current needed for the force on the wire to be ${V(F2, 'N')}.`, 2, I2, 'A', `${eq(`<i>I</i> = <i>F</i> / <i>Bl</i> = ${N(F2)} / (${N(B * 1e-3)} × ${N(l * 1e-2)})`)} ✓<br>${eq(`<i>I</i> = ${AV(I2, 'A')}`)} ✓`),
+      text('The wire is now turned so that it is parallel to the magnetic field lines.<br>State and explain the size of the force on the wire.', 2, 'The force is zero ✓<br>A force acts only when the current has a component perpendicular to the field (here the current is parallel to the field) ✓')
+    ] };
+};
+
+T.FW3 = R => {
+  const q = find(() => { const m = R.pick(rng(2, 9, .5)), l = R.pick([10, 12, 15, 20, 25, 30, 40]), B = R.pick([40, 50, 60, 75, 80, 100, 120, 150, 200]); return { m, l, B, I: m * 1e-3 * GRAV / (B * 1e-3 * l * 1e-2) }; }, q => q.I >= .8 && q.I <= 12);
+  const { m, l, B, I } = q, W = m * 1e-3 * GRAV, I2 = Number((I * R.pick([1.3, 1.5, 1.8, 2.2])).toPrecision(2)), a = (B * 1e-3 * I2 * l * 1e-2 - W) / (m * 1e-3);
+  const field = R.pick(['in', 'out']), curDir = forceDir('right', field) === 'up' ? 'right' : 'left';
+  const s = new Scene('A horizontal wire XY in a uniform magnetic field');
+  s.field(60, 30, 280, 180, field, { border: true }); s.line(20, 110, 380, 110, { w: 2.6 });
+  s.label(10, 115, 'X', { bold: true }).label(390, 115, 'Y', { bold: true }).arrow(200, 112, 200, 172).label(210, 160, 'weight', { anchor: 'start' });
+  s.dim(60, 230, 340, 230, plain(V(l, 'cm')), { below: true }); s.meta = { field, cur: curDir, force: 'up' };
+  return { sf: 2, scenes: [s], data: { m: m * 1e-3, l: l * 1e-2, B: B * 1e-3, I2, field },
+    stem: `<b>Figure 1</b> shows a straight horizontal wire <b>XY</b> in a uniform horizontal magnetic field of flux density ${V(B, 'mT')}. The field is at right angles to the wire and is directed ${fieldWords(field)}. The length of wire in the field is ${V(l, 'cm')}. The mass of the wire is ${V(m, 'g')}.<br>The current in the wire is adjusted until the magnetic force on the wire is equal to its weight.`,
+    parts: [
+      opt('State the direction of the current in the wire.', 1, ['from X to Y', 'from Y to X'], curDir === 'right' ? 0 : 1, `From ${curDir === 'right' ? 'X to Y' : 'Y to X'} ✓<br>The force must be up the page. From ${LHR} with the field ${fieldWords(field)}, the current is ${DIRNAME[curDir]}.`),
+      calc('Calculate the weight of the wire.', 1, W, 'N', `${eq(`<i>W</i> = <i>mg</i> = ${N(m * 1e-3)} × 9.81 = ${AV(W, 'N')}`)} ✓`),
+      calc('Calculate the current in the wire.', 2, I, 'A', `${eq('<i>BIl</i> = <i>mg</i>')} ✓<br>${eq(`<i>I</i> = ${A(W)} / (${N(B * 1e-3)} × ${N(l * 1e-2)}) = ${AV(I, 'A')}`)} ✓`),
+      calc(`The current is increased to ${V(I2, 'A')}.<br>Calculate the initial upward acceleration of the wire.`, 3, a, MS2,
+        `${eq(`magnetic force = <i>BIl</i> = ${N(B * 1e-3)} × ${N(I2)} × ${N(l * 1e-2)} = ${AV(B * 1e-3 * I2 * l * 1e-2, 'N')}`)} ✓<br>${eq(`resultant force = ${N(B * 1e-3 * I2 * l * 1e-2, 4)} − ${N(W, 4)} = ${AV(B * 1e-3 * I2 * l * 1e-2 - W, 'N')}`)} ✓<br>${eq(`<i>a</i> = <i>F</i> / <i>m</i> = ${A(B * 1e-3 * I2 * l * 1e-2 - W)} / ${N(m * 1e-3)} = ${AV(a, MS2)}`)} ✓`, { tol: .05 })
+    ] };
+};
+
+T.FW4 = R => {
+  const q = find(() => { const L = R.pick([4, 5, 6, 8, 10]), B = R.pick([40, 50, 60, 75, 80, 90, 100, 120, 150]); return { L, B, G: B * L * 1e-2 }; }, q => q.G >= 2 && q.G <= 12);
+  const { L, B, G } = q, out = R.pick(['in', 'out']), fd = out === 'out' ? 'up' : 'down', Ib = R.pick([7.5, 8, 9, 10, 12]), Fb = G * Ib;
+  const [ymax, yM] = axisFor(G * 5);
+  const s = new Scene('A wire seen end-on between the north and south poles of a magnet');
+  pole(s, 30, 50, 60, 120, 'N'); pole(s, 310, 50, 60, 120, 'S');
+  [75, 145].forEach(y => { s.line(90, y, 310, y, { w: 1.1 }); s.mid(90, y, 310, y, .3, 8); s.mid(90, y, 310, y, .72, 8); });
+  s.line(90, 110, 181, 110, { w: 1.1 }).line(219, 110, 310, 110, { w: 1.1 }).mid(90, 110, 181, 110, .5, 8).mid(219, 110, 310, 110, .5, 8);
+  endOn(s, 200, 110, out); s.label(200, 196, 'wire (seen end-on)'); s.line(200, 122, 200, 180, { w: 1, dash: '3 3' });
+  s.meta = { cur: out, fieldTo: 'right', force: fd };
+  const g = graph({ x: [0, 5, 1], y: [0, ymax, yM], xl: 'current / A', yl: 'force / mN', curves: [{ f: x => G * x, from: 0, to: 5 }], crosses: [1, 2, 3, 4, 5].map(x => [x, G * x]) });
+  return { sf: 2, scenes: [s], figs: [g], gspec: LAST.g, data: { L: L * 1e-2, G, Ib, out },
+    stem: `A student investigates how the force on a current-carrying wire in a magnetic field varies with the current. <b>Figure 1</b> shows the wire, seen end-on, in the uniform horizontal field between the poles of a magnet. The wire is at right angles to the field and the current in the wire is directed ${fieldWords(out)}. The length of wire in the field is ${V(L, 'cm')}.<br><b>Figure 2</b> shows how the force on the wire varies with the current.`,
+    parts: [
+      opt('State the direction of the force on the wire in <b>Figure 1</b>.', 1, ['up the page', 'down the page', 'to the left', 'to the right'], fd === 'up' ? 0 : 1, `${fd === 'up' ? 'Up' : 'Down'} the page ✓<br>From ${LHR}: field to the right (N to S), current ${fieldWords(out)}.`),
+      calc('Determine the gradient of the graph in <b>Figure 2</b>.', 2, G, 'mN A<sup>−1</sup>', `Uses a large triangle, at least half the length of the line ✓<br>${eq(`gradient = ${A(G * 5)} / 5.0 = ${A(G)} mN A<sup>−1</sup>`)} ✓`, { tol: .04 }),
+      calc('Calculate the magnetic flux density between the poles.', 2, B, 'mT', `${eq('<i>F</i> = <i>BIl</i>')}, so ${eq('gradient = <i>Bl</i>')} ✓<br>${eq(`<i>B</i> = ${A(G)} × 10<sup>−3</sup> / ${N(L * 1e-2)} = ${N(B * 1e-3)} T = ${AV(B, 'mT')}`)} ✓`, { tol: .05 }),
+      text('The magnet is replaced with a stronger magnet of the same length and the experiment is repeated.<br>State and explain how the graph changes.', 2, 'The line is steeper / has a larger gradient, and still passes through the origin ✓<br>The gradient is <i>Bl</i> and <i>B</i> is larger (for any given current the force is larger) ✓'),
+      calc(`Calculate the force on the wire when the current is ${V(Ib, 'A')}.`, 1, Fb, 'mN', `${eq(`<i>F</i> = gradient × <i>I</i> = ${A(G)} × ${N(Ib)} = ${AV(Fb, 'mN')}`)} ✓`, { tol: .05 })
+    ] };
+};
+
+T.FW5 = R => {
+  const Nt = R.pick([20, 25, 40, 50, 80, 100, 150, 200]), I = R.pick(rng(.2, 2, .1)), B = R.pick([.05, .08, .1, .12, .15, .2, .25, .3, .4]), l = R.pick([3, 4, 5, 6, 8]), w = R.pick([2, 2.5, 3, 4, 5, 6]);
+  const F = B * I * l * 1e-2 * Nt, M = F * w * 1e-2, cw = R.chance(.5), fPS = cw ? 'in' : 'out';
+  const s = new Scene('A rectangular coil PQRS between the poles of a magnet');
+  pole(s, 20, 50, 50, 140, 'N'); pole(s, 310, 50, 50, 140, 'S');
+  s.rect(130, 70, 120, 100, { w: 2.4 }); s.line(190, 40, 190, 200, { dash: '7 4', w: 1.1 }); s.label(190, 32, 'axis of rotation');
+  s.arrow(76, 120, 116, 120, { w: 1.1 }).arrow(264, 120, 304, 120, { w: 1.1 }).label(96, 110, '*B*').label(284, 110, '*B*');
+  const c = [[130, 70], [250, 70], [250, 170], [130, 170]], order = cw ? [0, 1, 2, 3, 0] : [0, 3, 2, 1, 0];
+  for (let i = 0; i < 4; i++){ const a = c[order[i]], b = c[order[i + 1]]; s.mid(a[0], a[1], b[0], b[1], Math.abs(a[0] - b[0]) > 1 ? .25 : .5, 10); }
+  s.label(122, 64, 'P', { bold: true, anchor: 'end' }).label(258, 64, 'Q', { bold: true, anchor: 'start' }).label(258, 187, 'R', { bold: true, anchor: 'start' }).label(122, 187, 'S', { bold: true, anchor: 'end' });
+  s.meta = { curPS: cw ? 'up' : 'down', fieldTo: 'right', force: fPS };
+  return { sf: 2, scenes: [s], data: { N: Nt, I, B, l: l * 1e-2, w: w * 1e-2, cw },
+    stem: `<b>Figure 1</b> shows a rectangular coil <b>PQRS</b> of ${Nt} turns in a uniform magnetic field of flux density ${V(B, 'T')}. The plane of the coil is parallel to the field and the coil can rotate about the axis shown. The arrows on the coil show the direction of the current, which is ${V(I, 'A')}.<br>PS = QR = ${V(l, 'cm')} and PQ = SR = ${V(w, 'cm')}.`,
+    parts: [
+      calc('Calculate the magnitude of the force on side <b>PS</b> of the coil.', 2, F, 'N', `Force on one wire = <i>BIl</i>, and there are ${Nt} turns: ${eq(`<i>F</i> = <i>BIlN</i> = ${N(B)} × ${N(I)} × ${N(l * 1e-2)} × ${Nt}`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+      opt('State the direction of the force on side <b>PS</b>.', 1, ['into the page', 'out of the page', 'up the page', 'down the page'], fPS === 'in' ? 0 : 1, `${fPS === 'in' ? 'Into' : 'Out of'} the page ✓<br>From ${LHR}: field to the right, current in PS ${cw ? 'up' : 'down'} the page.`),
+      text('Explain why there is no magnetic force on sides <b>PQ</b> and <b>SR</b> when the coil is in the position shown.', 1, 'The current in these sides is parallel to the magnetic field (no component of the current is perpendicular to the field) ✓'),
+      calc('The forces on <b>PS</b> and <b>QR</b> form a couple.<br>Calculate the moment of this couple.', 2, M, 'N m', `${eq('moment of couple = force × perpendicular distance between the forces')} ✓<br>${eq(`moment = ${A(F)} × ${N(w * 1e-2)} = ${AV(M, 'N m')}`)} ✓`)
+    ] };
+};
+
+T.FW6 = R => {
+  const q = find(() => { const B = R.pick([.05, .08, .1, .12, .15, .2, .25, .3, .4, .5]), l = R.pick([5, 6, 8, 10, 12, 15, 20]), I = R.pick(rng(2, 20, 1)), m = R.pick([5, 8, 10, 12, 15, 20, 25, 40, 50]), d = R.pick([10, 15, 20, 25, 30, 40, 50]);
+    const F = B * I * l * 1e-2, a = F / (m * 1e-3); return { B, l, I, m, d, F, a, v: Math.sqrt(2 * a * d * 1e-2) }; }, q => q.a >= .5 && q.a <= 60);
+  const { B, l, I, m, d, F, a, v } = q, field = R.pick(['in', 'out']), plusTop = R.chance(.5), cur = plusTop ? 'down' : 'up', fd = forceDir(cur, field);
+  const s = new Scene('A metal rod resting across two horizontal conducting rails, seen from above');
+  s.field(66, 78, 240, 84, field); s.line(40, 70, 370, 70, { w: 2.2 }).line(40, 170, 370, 170, { w: 2.2 }).line(190, 54, 190, 186, { w: 4.5 });
+  s.circle(34, 70, 6, { fill: '#fff' }).circle(34, 170, 6, { fill: '#fff' }).label(20, 75, plusTop ? '+' : '−', { anchor: 'end', size: 18 }).label(20, 175, plusTop ? '−' : '+', { anchor: 'end', size: 18 });
+  s.label(190, 46, 'rod').label(378, 75, 'rail', { anchor: 'start' }).label(378, 175, 'rail', { anchor: 'start' }).dim(326, 72, 326, 168, plain(V(l, 'cm')));
+  s.label(24, 125, 'dc supply', { anchor: 'end' }); s.meta = { cur, field, force: fd };
+  return { sf: 2, scenes: [s], data: { B, l: l * 1e-2, I, m: m * 1e-3, d: d * 1e-2, cur, field },
+    stem: `<b>Figure 1</b> shows, from above, a metal rod resting across two horizontal conducting rails that are ${V(l, 'cm')} apart. The rails are connected to a dc supply, so there is a current of ${V(I, 'A')} in the rod. The rails and rod are in a uniform vertical magnetic field of flux density ${V(B, 'T')} directed ${fieldWords(field)}. The mass of the rod is ${V(m, 'g')}.`,
+    parts: [
+      opt('State the direction in which the rod starts to move.', 1, ['to the left', 'to the right', 'up the page', 'down the page'], fd === 'left' ? 0 : 1, `${fd === 'left' ? 'To the left' : 'To the right'} ✓<br>The current in the rod is ${DIRNAME[cur]} (from + to −) and the field is ${fieldWords(field)}; then use ${LHR}.`),
+      calc('Calculate the magnetic force on the rod.', 2, F, 'N', `${eq(`<i>F</i> = <i>BIl</i> = ${N(B)} × ${N(I)} × ${N(l * 1e-2)}`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+      calc('Calculate the initial acceleration of the rod. Assume that friction is negligible.', 1, a, MS2, `${eq(`<i>a</i> = <i>F</i> / <i>m</i> = ${A(F)} / ${N(m * 1e-3)} = ${AV(a, MS2)}`)} ✓`),
+      calc(`Calculate the speed of the rod after it has moved ${V(d, 'cm')} from rest. Assume that the acceleration stays constant.`, 2, v, MS1, `${eq(`<i>v</i><sup>2</sup> = <i>u</i><sup>2</sup> + 2<i>as</i> = 2 × ${A(a)} × ${N(d * 1e-2)}`)} ✓<br>${eq(`<i>v</i> = ${AV(v, MS1)}`)} ✓`),
+      text('In practice the acceleration of the rod decreases as the rod speeds up, even without friction.<br>Explain why.', 2, 'The moving rod cuts magnetic flux, so an emf is induced in it ✓<br>This emf opposes the supply (Lenz’s law), so the current, and therefore the force <i>BIl</i>, decreases ✓')
+    ] };
+};
+
+/* ===== moving charges ===== */
+const PARTICLES = { electron: { name: 'electron', an: 'an', Q: QE, m: ME, sign: -1, qs: '1.60 × 10<sup>−19</sup>', ms: '9.11 × 10<sup>−31</sup>' }, proton: { name: 'proton', an: 'a', Q: QE, m: MP, sign: 1, qs: '1.60 × 10<sup>−19</sup>', ms: '1.67 × 10<sup>−27</sup>' } };
+T.MC1 = R => {
+  const p = PARTICLES[R.pick(['electron', 'proton'])];
+  const q = find(() => { const v = p.sign < 0 ? R.pick(rng(4, 30, 1)) * 1e6 : R.pick(rng(.4, 6, .2)) * 1e6, B = p.sign < 0 ? R.pick(rng(.5, 6, .5)) : R.pick([20, 25, 40, 50, 80, 100, 150, 200, 250, 400]); return { v, B, r: p.m * v / (B * 1e-3 * p.Q) }; }, q => q.r >= .01 && q.r <= .5);
+  const { v, B, r } = q, F = B * 1e-3 * p.Q * v, field = R.pick(['in', 'out']), fpos = forceDir('right', field), up = (fpos === 'up') === (p.sign > 0);
+  const s = new Scene('A charged particle entering a region of uniform magnetic field, with two possible paths X and Y');
+  s.field(60, 20, 300, 240, field, { border: true }); s.arrow(0, 140, 60, 140, { w: 1.8 }).label(30, 128, p.name);
+  s.arc(60, 30, 110, -90, -20, { dash: '6 4' }).arc(60, 250, 110, 90, 20, { dash: '6 4' }).label(176, 64, 'X', { bold: true }).label(176, 226, 'Y', { bold: true });
+  s.meta = { vel: 'right', field, sign: p.sign, path: up ? 'X' : 'Y' };
+  return { sf: 2, scenes: [s], data: { v, B: B * 1e-3, Q: p.Q, m: p.m, sign: p.sign, field },
+    stem: `<b>Figure 1</b> shows ${p.an} ${p.name} moving at a speed of ${V(v, MS1)} as it enters a region of uniform magnetic field of flux density ${V(B, 'mT')}. The field is directed ${fieldWords(field)}. The dashed lines <b>X</b> and <b>Y</b> are two possible paths.<br>mass of ${p.name} = ${p.ms} kg`,
+    parts: [
+      opt(`State which path, <b>X</b> or <b>Y</b>, the ${p.name} follows.`, 1, ['X', 'Y'], up ? 0 : 1, `${up ? 'X' : 'Y'} ✓<br>${LHR} gives a force ${DIRNAME[fpos]} on a positive charge moving to the right${p.sign < 0 ? '; the electron is negative, so the force on it is ' + DIRNAME[OPP[fpos]] : ''}.`),
+      calc(`Calculate the magnetic force on the ${p.name}.`, 2, F, 'N', `${eq(`<i>F</i> = <i>BQv</i> = ${N(B * 1e-3)} × ${p.qs} × ${N(v)}`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+      calc('Calculate the radius of the path in the field.', 3, r, 'm', `Magnetic force provides the centripetal force: ${eq('<i>BQv</i> = <i>mv</i><sup>2</sup> / <i>r</i>')} ✓<br>${eq(`<i>r</i> = <i>mv</i> / <i>BQ</i> = ${p.ms} × ${N(v)} / (${N(B * 1e-3)} × ${p.qs})`)} ✓<br>${eq(`<i>r</i> = ${AV(r, 'm')}`)} ✓`),
+      text(`Explain why the speed of the ${p.name} does not change while it is in the field.`, 2, 'The magnetic force is always perpendicular to the velocity ✓<br>so the force does no work on the particle (no change in kinetic energy) ✓')
+    ] };
+};
+
+T.MC2 = R => {
+  const part = R.pick([{ name: 'proton', an: 'a', m: 1.67e-27, k: 1, ms: '1.67 × 10<sup>−27</sup>' }, { name: 'deuteron', an: 'a', m: 3.34e-27, k: 1, ms: '3.34 × 10<sup>−27</sup>' }, { name: 'alpha particle', an: 'an', m: 6.64e-27, k: 2, ms: '6.64 × 10<sup>−27</sup>' }]), Q = part.k * QE;
+  const q = find(() => { const B = R.pick(rng(.3, .95, .05).concat([1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6])), rm = R.pick(rng(.2, .8, .05)); return { B, rm, v: B * Q * rm / part.m }; }, q => q.v <= 4e7 && q.v >= 5e6);
+  const { B, rm, v } = q, f = B * Q / (2 * Math.PI * part.m), KE = .5 * part.m * v * v, MeV = KE / 1.6e-13;
+  const s = new Scene('The two D-shaped regions of a cyclotron with the spiral path of a particle');
+  s.poly(s.arcPts(190, 143, 122, 0, 180), { close: true, w: 2 }).poly(s.arcPts(190, 157, 122, 180, 360), { close: true, w: 2 });
+  let x = 178, r = 12, upper = true; const pts = [];
+  for (let k = 0; k < 9; k++){ const c = upper ? 190 : 178; (upper ? s.arcPts(c, 150, r, 180, 0) : s.arcPts(c, 150, r, 0, -180)).forEach(p => pts.push(p)); r += 12; upper = !upper; }
+  s.poly(pts, { free: true, w: 1.2 }); const end = pts[pts.length - 1]; s.arrow(end[0], end[1], end[0], end[1] + 52, { w: 1.2 });
+  s.label(190, 10, 'D-shaped region').label(190, 302, 'D-shaped region').label(322, 146, 'gap', { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { B, rm, m: part.m, Q },
+    stem: `A cyclotron has two D-shaped regions in which there is a uniform magnetic field of flux density ${V(B, 'T')}, directed perpendicular to the plane of <b>Figure 1</b>. An alternating potential difference across the gap between the regions accelerates ${part.name}s each time they cross it. <b>Figure 1</b> shows the path of ${part.an} ${part.name} that starts near the centre.<br>mass of ${part.name} = ${part.ms} kg${part.k === 2 ? '<br>charge of alpha particle = +2<i>e</i>' : ''}`,
+    parts: [
+      text(`Explain why the magnetic field cannot change the speed of the ${part.name} while it is inside one of the D-shaped regions.`, 1, 'The magnetic force is always perpendicular to the velocity, so it does no work on the particle ✓'),
+      text(`Show that the time taken for the ${part.name} to travel round one semicircular path does not depend on the radius of the path.`, 3, `${eq('<i>BQv</i> = <i>mv</i><sup>2</sup> / <i>r</i>')}, so ${eq('<i>v</i> = <i>BQr</i> / <i>m</i>')} ✓<br>time for a semicircle ${eq('<i>t</i> = π<i>r</i> / <i>v</i>')} ✓<br>${eq('<i>t</i> = π<i>m</i> / <i>BQ</i>')}, in which <i>r</i> does not appear ✓`),
+      calc(`The maximum radius of the path is ${V(rm, 'm')}.<br>Calculate the maximum speed of the ${part.name}. Ignore relativistic effects.`, 2, v, MS1, `${eq(`<i>v</i> = <i>BQr</i> / <i>m</i> = ${N(B)} × ${N(Q, 3)} × ${N(rm)} / ${part.ms}`)} ✓<br>${eq(`<i>v</i> = ${AV(v, MS1)}`)} ✓`),
+      calc('Calculate the frequency of the alternating potential difference.', 2, f, 'Hz', `Period = time for two semicircles = ${eq('2π<i>m</i> / <i>BQ</i>')}, so ${eq('<i>f</i> = <i>BQ</i> / 2π<i>m</i>')} ✓<br>${eq(`<i>f</i> = ${N(B)} × ${N(Q, 3)} / (2π × ${part.ms}) = ${AV(f, 'Hz')}`)} ✓`),
+      calc(`Calculate, in MeV, the maximum kinetic energy of the ${part.name}.`, 3, MeV, 'MeV', `${eq(`<i>E</i><sub>k</sub> = ½<i>mv</i><sup>2</sup> = ½ × ${part.ms} × (${A(v)})<sup>2</sup>`)} ✓<br>${eq(`<i>E</i><sub>k</sub> = ${AV(KE, 'J')}`)} ✓<br>${eq(`<i>E</i><sub>k</sub> = ${A(KE)} / 1.60 × 10<sup>−13</sup> = ${AV(MeV, 'MeV')}`)} ✓`)
+    ] };
+};
+
+T.MC3 = R => {
+  const ion = R.pick(['lithium', 'potassium', 'sodium', 'neon']), v = R.pick(rng(.8, 6, .1)) * 1e5, B = R.pick([.05, .08, .1, .12, .15, .2, .25, .3, .4]), d = R.pick([10, 12, 15, 20, 25, 30, 40]);
+  const E = v * B, pd = E * d * 1e-3, field = R.pick(['in', 'out']), fm = forceDir('right', field), posPlate = fm === 'up' ? 'P' : 'Q';
+  const s = new Scene('A beam of positive ions passing between two parallel plates P and Q in a magnetic field, towards an aperture');
+  s.rect(80, 40, 220, 10, { fill: '#000' }).rect(80, 200, 220, 10, { fill: '#000' }); s.field(80, 58, 220, 134, field);
+  s.arrow(4, 125, 70, 125, { w: 1.8 }).line(70, 125, 344, 125, { dash: '7 4', w: 1.1 }).line(350, 30, 350, 117, { w: 3 }).line(350, 133, 350, 220, { w: 3 });
+  s.label(36, 113, 'ion beam').label(360, 130, 'aperture', { anchor: 'start' }).label(310, 50, 'P', { bold: true, anchor: 'start' }).label(310, 210, 'Q', { bold: true, anchor: 'start' });
+  s.meta = { vel: 'right', field, force: fm, posPlate };
+  return { sf: 2, scenes: [s], data: { v, B, d: d * 1e-3, field },
+    stem: `<b>Figure 1</b> shows part of a mass spectrometer. A narrow beam of positive ${ion} ions travelling at different speeds passes between two parallel plates <b>P</b> and <b>Q</b>. There is a uniform electric field of strength <i>E</i> between the plates and a uniform magnetic field of flux density <i>B</i>, directed ${fieldWords(field)}, in the same region. Only ions travelling at one speed <i>v</i> are undeflected and pass through the aperture.`,
+    parts: [
+      opt('State the direction of the magnetic force on a positive ion in the beam.', 1, ['up the page', 'down the page', 'into the page', 'out of the page'], fm === 'up' ? 0 : 1, `${fm === 'up' ? 'Up' : 'Down'} the page ✓<br>From ${LHR}: the positive ions move to the right (the direction of conventional current) and the field is ${fieldWords(field)}.`),
+      opt('State which plate, <b>P</b> or <b>Q</b>, is positive.', 1, ['P', 'Q'], posPlate === 'P' ? 0 : 1, `${posPlate} ✓<br>For undeflected ions the electric force is opposite to the magnetic force, so it is ${DIRNAME[OPP[fm]]}: the electric field points from ${posPlate} to ${posPlate === 'P' ? 'Q' : 'P'}.`),
+      text('Show that the speed of the undeflected ions is given by <i>v</i> = <i>E</i> / <i>B</i>.', 2, `For no deflection the electric and magnetic forces are equal in magnitude (and opposite in direction) ✓<br>${eq('<i>EQ</i> = <i>BQv</i>')}, so ${eq('<i>v</i> = <i>E</i> / <i>B</i>')} ✓`),
+      calc(`Ions travelling at ${V(v, MS1)} pass through the aperture when <i>B</i> = ${V(B, 'T')}.<br>Calculate <i>E</i>.`, 2, E, 'V m<sup>−1</sup>', `${eq(`<i>E</i> = <i>vB</i> = ${N(v)} × ${N(B)}`)} ✓<br>${eq(`<i>E</i> = ${AV(E, 'V m<sup>−1</sup>')}`)} ✓`),
+      calc(`The plates are ${V(d, 'mm')} apart.<br>Calculate the potential difference between the plates.`, 1, pd, 'V', `${eq(`<i>V</i> = <i>Ed</i> = ${A(E)} × ${N(d * 1e-3)} = ${AV(pd, 'V')}`)} ✓`),
+      opt('An ion in the beam has a speed greater than <i>v</i>.<br>State how this ion moves between the plates.', 1, ['it is deflected towards P', 'it is deflected towards Q', 'it is undeflected'], fm === 'up' ? 0 : 1, `Deflected towards ${fm === 'up' ? 'P' : 'Q'} ✓<br>The magnetic force <i>BQv</i> is now greater than the electric force <i>EQ</i>, so the resultant force is ${DIRNAME[fm]}.`)
+    ] };
+};
+
+T.MC4 = R => {
+  const [A1, A2, el] = R.pick([[6, 7, 'lithium'], [20, 22, 'neon'], [35, 37, 'chlorine'], [39, 41, 'potassium'], [12, 13, 'carbon'], [10, 11, 'boron'], [24, 26, 'magnesium']]);
+  const m1 = Number((A1 * 1.661e-27).toPrecision(3)), m2 = Number((A2 * 1.661e-27).toPrecision(3));
+  const q = find(() => { const v = R.pick(rng(1, 6, .25)) * 1e5, B = R.pick(rng(.1, .8, .05)); return { v, B, r1: m1 * v / (B * QE), r2: m2 * v / (B * QE) }; }, q => q.r1 >= .02 && q.r2 <= .6);
+  const { v, B, r1, r2 } = q, sep = 2 * (r2 - r1), right = R.chance(.5), field = right ? 'out' : 'in', sg = right ? 1 : -1, ax = right ? 90 : 310;
+  const s = new Scene('Ions entering a region of uniform magnetic field through an aperture and following semicircular paths to a detector');
+  s.rect(30, 30, 340, 200, { dash: '6 4', w: 1.1, free: true });
+  s.line(30, 230, ax - 7, 230, { w: 3.2 }).line(ax + 7, 230, 370, 230, { w: 3.2 });
+  [[78, 'A'], [108, 'B']].forEach(([r, n]) => { const c = ax + sg * r; s.poly(right ? s.arcPts(c, 230, r, 180, 0) : s.arcPts(c, 230, r, 0, 180), { w: 1.4 }); s.label(ax + sg * 2 * r, 250, n, { bold: true }); });
+  s.arrow(ax, 286, ax, 238, { w: 1.6 }).label(ax, 302, 'ion beam').label(200, 54, 'region of uniform magnetic field');
+  s.label(right ? 378 : 22, 235, 'detector', { anchor: right ? 'start' : 'end' }).label(ax - sg * 14, 250, 'aperture', { anchor: right ? 'end' : 'start', size: 13 });
+  s.meta = { vel: 'up', curve: right ? 'right' : 'left', field, sign: 1 };
+  return { sf: 3, scenes: [s], data: { v, B, m1, m2, right },
+    stem: `<b>Figure 1</b> shows part of a mass spectrometer. Singly-charged positive ions of two isotopes of ${el}, ${el}-${A1} and ${el}-${A2}, pass through an aperture at the same speed of ${V(v, MS1, 3)}. They enter a region of uniform magnetic field of flux density ${V(B, 'T', 3)}, follow semicircular paths and strike a detector at <b>A</b> and <b>B</b>.<br>mass of ${el}-${A1} ion = ${N(m1, 3)} kg<br>mass of ${el}-${A2} ion = ${N(m2, 3)} kg`,
+    parts: [
+      opt('State the direction of the magnetic field.', 1, ['into the page', 'out of the page', 'to the left', 'to the right'], field === 'in' ? 0 : 1, `${field === 'in' ? 'Into' : 'Out of'} the page ✓<br>At the aperture the ions move up the page and the force on them is ${DIRNAME[right ? 'right' : 'left']} (towards the centre of the path); then use ${LHR}.`),
+      text('Show that the radius <i>r</i> of the path of an ion of mass <i>m</i> and charge <i>Q</i> moving at speed <i>v</i> is given by <i>r</i> = <i>mv</i> / <i>BQ</i>.', 2, `The magnetic force provides the centripetal force ✓<br>${eq('<i>BQv</i> = <i>mv</i><sup>2</sup> / <i>r</i>')}, which rearranges to ${eq('<i>r</i> = <i>mv</i> / <i>BQ</i>')} ✓`),
+      calc(`Calculate the distance from the aperture to <b>A</b>, where the ${el}-${A1} ions strike the detector.`, 3, 2 * r1, 'm', `${eq(`<i>r</i> = <i>mv</i> / <i>BQ</i> = ${N(m1, 3)} × ${N(v, 3)} / (${N(B, 3)} × 1.60 × 10<sup>−19</sup>)`)} ✓<br>${eq(`<i>r</i> = ${N(r1, 3)} m`)} ✓<br>${eq(`distance = 2<i>r</i> = ${N(2 * r1, 3)} m`)} ✓`),
+      calc('Calculate the distance between <b>A</b> and <b>B</b>.', 2, sep, 'm', `${eq(`distance from aperture to B = 2 × ${N(m2, 3)} × ${N(v, 3)} / (${N(B, 3)} × 1.60 × 10<sup>−19</sup>) = ${N(2 * r2, 4)} m`)} ✓<br>${eq(`AB = ${N(2 * r2, 4)} − ${N(2 * r1, 4)} = ${N(sep, 3)} m`)} ✓`, { tol: .05 }),
+      text(`A doubly-charged ${el}-${A1} ion enters through the aperture at the same speed.<br>State and explain where this ion strikes the detector.`, 2, 'Half-way between the aperture and A ✓<br><i>r</i> = <i>mv</i> / <i>BQ</i>, so doubling <i>Q</i> halves the radius (and the diameter) of the path ✓')
+    ] };
+};
+
+T.MC5 = R => {
+  const q = find(() => { const Va = R.pick([250, 400, 500, 800, 1000, 1200, 1500, 2000, 2500, 3000]), B = R.pick(rng(.8, 6, .2)); const v = Math.sqrt(2 * QE * Va / ME); return { Va, B, v, r: ME * v / (B * 1e-3 * QE) }; }, q => q.r >= .015 && q.r <= .15);
+  const { Va, B, v, r } = q, k = find(() => R.pick([2, 4, .5]), k => isNice(Va * k, 2)), r2 = r * Math.sqrt(k), field = R.pick(['in', 'out']), up = forceDir('right', field) === 'down';   // electrons are negative
+  const s = new Scene('An electron beam accelerated from a cathode to an anode and then curving in a uniform magnetic field');
+  s.line(30, 100, 30, 180, { w: 4 }).line(110, 90, 110, 133, { w: 4 }).line(110, 147, 110, 190, { w: 4 }).label(28, 90, 'cathode').label(112, 80, 'anode');
+  s.field(180, 30, 210, 220, field, { border: true }); s.line(33, 140, 180, 140, { w: 1.5 }).mid(33, 140, 180, 140, .75, 10);
+  if (up) s.arc(180, 20, 120, -90, -25, { w: 1.5 }); else s.arc(180, 260, 120, 90, 25, { w: 1.5 });
+  s.label(70, 210, 'electron gun'); s.meta = { vel: 'right', field, sign: -1, curve: up ? 'up' : 'down' };
+  return { sf: 2, scenes: [s], data: { Va, B: B * 1e-3, k },
+    stem: `<b>Figure 1</b> shows an electron gun in which electrons are accelerated from rest through a potential difference of ${V(Va, 'V')} between the cathode and the anode. The beam then enters a region of uniform magnetic field of flux density ${V(B, 'mT')}, directed ${fieldWords(field)}, and follows the curved path shown.`,
+    parts: [
+      calc('Calculate the speed of the electrons as they leave the anode.', 3, v, MS1, `Energy gained = work done by the field: ${eq('<i>eV</i> = ½<i>mv</i><sup>2</sup>')} ✓<br>${eq(`<i>v</i> = √(2 × 1.60 × 10<sup>−19</sup> × ${N(Va)} / 9.11 × 10<sup>−31</sup>)`)} ✓<br>${eq(`<i>v</i> = ${AV(v, MS1)}`)} ✓`),
+      calc('Calculate the radius of the path of the electrons in the magnetic field.', 2, r, 'm', `${eq(`<i>r</i> = <i>mv</i> / <i>Be</i> = 9.11 × 10<sup>−31</sup> × ${A(v)} / (${N(B * 1e-3)} × 1.60 × 10<sup>−19</sup>)`)} ✓<br>${eq(`<i>r</i> = ${AV(r, 'm')}`)} ✓`),
+      text('Explain why the path of the electrons in the magnetic field is part of a circle.', 2, 'The magnetic force is always perpendicular to the velocity of the electrons ✓<br>The force has constant magnitude (speed and <i>B</i> are constant), so it acts as a centripetal force ✓'),
+      calc(`The accelerating potential difference is changed to ${V(Va * k, 'V')}.<br>Calculate the new radius of the path.`, 2, r2, 'm', `${eq('<i>r</i> ∝ <i>v</i>')} and ${eq('<i>v</i> ∝ √<i>V</i>')}, so ${eq('<i>r</i> ∝ √<i>V</i>')} ✓<br>${eq(`<i>r</i> = ${A(r)} × √${k === .5 ? '0.5' : k} = ${AV(r2, 'm')}`)} ✓`)
+    ] };
+};
+
+T.MC6 = R => {
+  const q = find(() => { const Va = R.pick([150, 175, 200, 225, 250, 275, 300, 350, 400]), B = R.pick(rng(.8, 2, .05)), rt = Math.sqrt(2 * Va / 1.76e11) / (B * 1e-3) * (0.97 + .06 * R()); return { Va, B, d: Number((2 * rt * 100).toPrecision(3)) }; }, q => q.d >= 5 && q.d <= 16);
+  const { Va, B, d } = q, r = d / 200, sc = 2 * Va / (B * B * 1e-6 * r * r), pc = Math.abs(sc - 1.76e11) / 1.76e11 * 100, field = R.pick(['in', 'out']), sense = field === 'out' ? 'anticlockwise' : 'clockwise';
+  const s = new Scene('A circular beam of electrons inside a glass bulb in a uniform magnetic field');
+  s.circle(190, 150, 132, { w: 1.3 }); s.field(100, 60, 180, 180, field); s.circle(190, 160, 68, { w: 2 }); s.rect(180, 221, 20, 14, { fill: '#000' });
+  s.dim(122, 160, 258, 160, plain(V(d, 'cm', 3))).label(190, 303, 'electron gun').line(190, 236, 190, 288, { w: 1, dash: '3 3' }).label(300, 40, 'glass bulb', { anchor: 'start' }).label(190, 82, 'electron beam', { size: 13 });
+  s.meta = { field, sign: -1, sense };
+  return { sf: 3, scenes: [s], data: { Va, B: B * 1e-3, d: d * 1e-2, field },
+    stem: `<b>Figure 1</b> shows a fine-beam tube used to measure the specific charge of the electron. Electrons are accelerated from rest through a potential difference of ${V(Va, 'V', 3)} and then move in a circle in a uniform magnetic field of flux density ${V(B, 'mT', 3)}, directed ${fieldWords(field)}. The diameter of the circular path is ${V(d, 'cm', 3)}.`,
+    parts: [
+      opt('State the direction in which the electrons move around the circle in <b>Figure 1</b>.', 1, ['clockwise', 'anticlockwise'], sense === 'clockwise' ? 0 : 1, `${sense[0].toUpperCase() + sense.slice(1)} ✓<br>The force on each electron must act towards the centre of the circle. Apply ${LHR}, remembering that the conventional current is opposite to the electron’s velocity.`),
+      text('Show that the specific charge of the electron is given by<br><i>e</i> / <i>m</i> = 2<i>V</i> / <i>B</i><sup>2</sup><i>r</i><sup>2</sup><br>where <i>V</i> is the accelerating potential difference and <i>r</i> is the radius of the path.', 3, `${eq('<i>eV</i> = ½<i>mv</i><sup>2</sup>')} ✓<br>${eq('<i>Bev</i> = <i>mv</i><sup>2</sup> / <i>r</i>')}, so ${eq('<i>v</i> = <i>Ber</i> / <i>m</i>')} ✓<br>Substitutes for <i>v</i>: ${eq('<i>eV</i> = ½<i>m</i>(<i>Ber</i> / <i>m</i>)<sup>2</sup>')}, leading to ${eq('<i>e</i> / <i>m</i> = 2<i>V</i> / <i>B</i><sup>2</sup><i>r</i><sup>2</sup>')} ✓`),
+      calc('Calculate the value of the specific charge of the electron given by these measurements.', 3, sc, CKG, `${eq(`<i>r</i> = ${N(d, 3)} / 2 = ${N(d / 2, 3)} cm = ${N(r, 3)} m`)} ✓<br>${eq(`<i>e</i> / <i>m</i> = 2 × ${N(Va, 3)} / ((${N(B * 1e-3, 3)})<sup>2</sup> × (${N(r, 3)})<sup>2</sup>)`)} ✓<br>${eq(`<i>e</i> / <i>m</i> = ${N(sc, 3)} ${CKG}`)} ✓`),
+      calc(`The accepted value is 1.76 × 10<sup>11</sup> ${CKG}.<br>Calculate the percentage difference between the measured value and the accepted value.`, 1, pc, '%', `${eq(`percentage difference = (${N(Math.abs(sc - 1.76e11), 3)} / 1.76 × 10<sup>11</sup>) × 100 = ${A(pc)} %`)} ✓`, { abs: .3 })
+    ] };
+};
+
+T.MC7 = R => {
+  const q = find(() => { const B = R.pick([20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500]), v = R.pick(rng(1, 9.5, .5)) * 1e6; return { B, v, r: MP * v / (B * 1e-3 * QE) }; }, q => q.r >= .02 && q.r <= 2);
+  const { B, v, r } = q, Tp = 2 * Math.PI * MP / (B * 1e-3 * QE), ra = 6.64e-27 * v / (B * 1e-3 * 2 * QE), field = R.pick(['in', 'out']), dir = forceDir('right', field) === 'down' ? 'right' : 'left', sg = dir === 'right' ? 1 : -1;
+  const s = new Scene('A proton moving in a circular path in a uniform magnetic field');
+  s.field(40, 20, 300, 260, field, { border: true }); s.circle(190, 155, 88, { w: 1.5 });
+  s.body.push('<circle cx="190" cy="67" r="4" fill="#000" stroke="none"/>'); s.arrow(190, 67, 190 + sg * 62, 67, { w: 1.8 }).label(190 + sg * 72, 72, '*v*', { anchor: sg > 0 ? 'start' : 'end' }).label(190 - sg * 8, 58, 'proton', { anchor: sg > 0 ? 'end' : 'start' });
+  s.line(190, 155, 190 + 88 * Math.cos(.6), 155 + 88 * Math.sin(.6), { dash: '5 4', w: 1.1 }).label(212, 197, '*r*');
+  s.meta = { vel: dir, field, sign: 1, force: 'down' };
+  return { sf: 2, scenes: [s], data: { B: B * 1e-3, v },
+    stem: `<b>Figure 1</b> shows a proton moving at a constant speed <i>v</i> of ${V(v, MS1)} in a circular path of radius <i>r</i> in a uniform magnetic field of flux density ${V(B, 'mT')}. The field is directed ${fieldWords(field)}.<br>mass of proton = 1.67 × 10<sup>−27</sup> kg`,
+    parts: [
+      calc('Calculate the radius <i>r</i> of the path.', 2, r, 'm', `${eq(`<i>r</i> = <i>mv</i> / <i>BQ</i> = 1.67 × 10<sup>−27</sup> × ${N(v)} / (${N(B * 1e-3)} × 1.60 × 10<sup>−19</sup>)`)} ✓<br>${eq(`<i>r</i> = ${AV(r, 'm')}`)} ✓`),
+      calc('Calculate the time taken for the proton to complete one circular orbit.', 2, Tp, 's', `${eq(`<i>T</i> = 2π<i>r</i> / <i>v</i> = 2π × ${A(r)} / ${N(v)}`)} (or ${eq('<i>T</i> = 2π<i>m</i> / <i>BQ</i>')}) ✓<br>${eq(`<i>T</i> = ${AV(Tp, 's')}`)} ✓`),
+      text('A second proton moves in the same field at twice the speed.<br>Explain why both protons take the same time to complete one orbit.', 2, `${eq('<i>r</i> = <i>mv</i> / <i>BQ</i>')}, so doubling the speed doubles the radius (and the circumference) ✓<br>${eq('<i>T</i> = 2π<i>r</i> / <i>v</i> = 2π<i>m</i> / <i>BQ</i>')}, which does not depend on <i>v</i> ✓`),
+      calc(`An alpha particle of mass 6.64 × 10<sup>−27</sup> kg and charge +2<i>e</i> moves in the same field at ${V(v, MS1)}.<br>Calculate the radius of its path.`, 2, ra, 'm', `${eq(`<i>r</i> = <i>mv</i> / <i>BQ</i> = 6.64 × 10<sup>−27</sup> × ${N(v)} / (${N(B * 1e-3)} × 2 × 1.60 × 10<sup>−19</sup>)`)} ✓<br>${eq(`<i>r</i> = ${AV(ra, 'm')}`)} ✓`)
+    ] };
+};
+
+
+/* ===== magnetic flux and flux linkage ===== */
+T.FL1 = R => {
+  const q = find(() => { const a = R.pick([4, 5, 6, 8, 10, 12, 15, 20]), b = R.pick([4, 5, 6, 8, 10, 12, 15]), Nt = R.pick([20, 25, 40, 50, 80, 100, 150, 200, 250, 400, 500]), B = R.pick([15, 20, 25, 30, 40, 50, 60, 80, 120, 150, 200, 250, 400]); return { a, b, Nt, B }; }, q => q.a > q.b);
+  const { a, b, Nt, B } = q, t = R.pick([.05, .08, .1, .2, .25, .4, .5]), phi = B * 1e-3 * a * b * 1e-4, link = phi * Nt, emf = link / t, field = R.pick(['in', 'out']);
+  const s = new Scene('A rectangular coil in a uniform magnetic field');
+  s.field(20, 20, 360, 250, field, { border: true }); s.rect(110, 70, 180, 120, { w: 2.6 });
+  s.dim(110, 212, 290, 212, plain(V(a, 'cm')), { below: true }).dim(92, 70, 92, 190, plain(V(b, 'cm')), { left: true }).label(200, 60, 'coil');
+  return { sf: 2, scenes: [s], data: { a: a * 1e-2, b: b * 1e-2, N: Nt, B: B * 1e-3, t },
+    stem: `<b>Figure 1</b> shows a rectangular coil of ${Nt} turns in a uniform magnetic field of flux density ${V(B, 'mT')}. The field is directed ${fieldWords(field)}, at right angles to the plane of the coil. The coil measures ${V(a, 'cm')} by ${V(b, 'cm')}.`,
+    parts: [
+      calc('Calculate the magnetic flux through one turn of the coil.', 2, phi, 'Wb', `${eq(`<i>Φ</i> = <i>BA</i> = ${N(B * 1e-3)} × (${N(a * 1e-2)} × ${N(b * 1e-2)})`)} ✓<br>${eq(`<i>Φ</i> = ${AV(phi, 'Wb')}`)} ✓`),
+      calc('Calculate the magnetic flux linkage of the coil.', 1, link, WBT, `${eq(`<i>NΦ</i> = ${Nt} × ${A(phi)} = ${AV(link, WBT)}`)} ✓`),
+      calc(`The flux density falls to zero at a steady rate in ${V(t, 's')}.<br>Calculate the emf induced in the coil.`, 2, emf, 'V', `${eq('<i>ε</i> = <i>N</i>Δ<i>Φ</i> / Δ<i>t</i>')} (magnitude) ✓<br>${eq(`<i>ε</i> = ${A(link)} / ${N(t)} = ${AV(emf, 'V')}`)} ✓`),
+      text('State Faraday’s law of electromagnetic induction.', 2, 'The (magnitude of the) induced emf is (directly) proportional to ✓<br>the rate of change of magnetic flux linkage ✓')
+    ] };
+};
+
+T.FL2 = R => {
+  const Bm = R.pick([20, 30, 40, 50, 60, 80, 100, 120, 150, 200]), Ac = R.pick([12, 15, 20, 25, 30, 40, 50, 60, 80]), Nt = R.pick([50, 80, 100, 120, 150, 200, 250, 300, 400, 500]), th = R.pick(rng(25, 70, 5)), t = R.pick([.05, .1, .15, .2, .25, .4, .5]);
+  const full = Bm * 1e-3 * Ac * 1e-4 * Nt, l1 = full * Math.cos(th * Math.PI / 180), dl = full - l1, emf = dl / t, ra = th * Math.PI / 180;
+  const s = new Scene('Side view of a coil in a uniform magnetic field, with the normal to the coil at an angle to the field lines');
+  [50, 90, 130, 170, 210].forEach(y => { s.line(30, y, 350, y, { w: 1.1 }); s.mid(30, y, 350, y, .12, 8); s.mid(30, y, 350, y, .9, 8); });
+  s.line(190 - 62 * Math.sin(ra), 130 - 62 * Math.cos(ra), 190 + 62 * Math.sin(ra), 130 + 62 * Math.cos(ra), { w: 5 });
+  s.line(190, 130, 190 + 100 * Math.cos(ra), 130 - 100 * Math.sin(ra), { dash: '6 4', w: 1.2 }).arc(190, 130, 34, 0, th, { w: 1.1 });
+  s.label(190 + 52 * Math.cos(ra / 2), 130 - 52 * Math.sin(ra / 2) + 5, '*θ*');
+  return { sf: 2, scenes: [s], data: { B: Bm * 1e-3, A: Ac * 1e-4, N: Nt, th, t },
+    stem: `<b>Figure 1</b> shows a side view of a flat coil in a uniform magnetic field of flux density ${V(Bm, 'mT')}. The thick line is the coil seen edge-on and the dashed line is the normal to the plane of the coil. The normal makes an angle <i>θ</i> of ${th}° with the field lines. The coil has ${Nt} turns and each turn has an area of ${V(Ac, 'cm<sup>2</sup>')}.`,
+    parts: [
+      calc('Calculate the magnetic flux linkage of the coil in the position shown.', 2, l1, WBT, `${eq(`<i>NΦ</i> = <i>BAN</i> cos <i>θ</i> = ${N(Bm * 1e-3)} × ${N(Ac * 1e-4)} × ${Nt} × cos ${th}°`)} ✓<br>${eq(`<i>NΦ</i> = ${AV(l1, WBT)}`)} ✓`),
+      calc('The coil is rotated until its plane is at right angles to the field lines.<br>Calculate the change in the flux linkage.', 2, dl, WBT, `New flux linkage ${eq(`= <i>BAN</i> = ${AV(full, WBT)}`)} ✓<br>${eq(`change = ${N(full, 4)} − ${N(l1, 4)} = ${AV(dl, WBT)}`)} ✓`, { tol: .06 }),
+      calc(`This rotation takes ${V(t, 's')}.<br>Calculate the mean emf induced in the coil during the rotation.`, 1, emf, 'V', `${eq(`<i>ε</i> = Δ(<i>NΦ</i>) / Δ<i>t</i> = ${A(dl)} / ${N(t)} = ${AV(emf, 'V')}`)} ✓`, { tol: .06 }),
+      opt('State the position of the coil in which its flux linkage is zero.', 1, ['plane of the coil parallel to the field lines', 'plane of the coil at right angles to the field lines', 'normal to the coil at 45° to the field lines'], 0, 'Plane of the coil parallel to the field lines (<i>θ</i> = 90°) ✓<br>No field lines pass through the coil.')
+    ] };
+};
+
+T.FL3 = R => {
+  const Nt = R.pick([20, 25, 40, 50, 80, 100, 200]), d = R.pick([30, 40, 50, 60, 80, 100, 120]), B = R.pick([30, 45, 60, 75, 90, 120, 150, 200, 250]), t = R.pick([.1, .2, .25, .4, .5]);
+  const Ar = Math.PI * Math.pow(d * 1e-3 / 2, 2), link = B * 1e-3 * Ar * Nt, emf = link / t, field = R.pick(['in', 'out']);
+  const s = new Scene('A circular coil in a uniform magnetic field with a vertical axis of rotation');
+  s.field(30, 24, 320, 252, field, { border: true }); s.circle(190, 150, 82, { w: 2.6 }); s.line(190, 34, 190, 266, { dash: '7 4', w: 1.1 });
+  s.label(190, 16, 'axis of rotation').label(149, 143, plain(V(d, 'mm'))); s.arrow(108, 150, 272, 150, { both: true, w: 1.1, s: 7 });
+  return { sf: 2, scenes: [s], data: { N: Nt, d: d * 1e-3, B: B * 1e-3, t },
+    stem: `<b>Figure 1</b> shows a circular coil of ${Nt} turns and diameter ${V(d, 'mm')} in a uniform magnetic field of flux density ${V(B, 'mT')}. The field is directed ${fieldWords(field)}, so the plane of the coil is at right angles to the field lines. The coil can be rotated about the axis shown.`,
+    parts: [
+      calc('Calculate the area of the coil.', 1, Ar, 'm<sup>2</sup>', `${eq(`<i>A</i> = π<i>r</i><sup>2</sup> = π × (${A(d * 1e-3 / 2)})<sup>2</sup> = ${AV(Ar, 'm<sup>2</sup>')}`)} ✓`),
+      calc('Calculate the flux linkage of the coil in the position shown.', 2, link, WBT, `${eq(`<i>NΦ</i> = <i>BAN</i> = ${N(B * 1e-3)} × ${A(Ar)} × ${Nt}`)} ✓<br>${eq(`<i>NΦ</i> = ${AV(link, WBT)}`)} ✓`),
+      calc(`The coil is rotated through 90° in ${V(t, 's')}, so that its plane becomes parallel to the field lines.<br>Calculate the mean emf induced in the coil.`, 2, emf, 'V', `Flux linkage changes from ${A(link)} ${WBT} to zero ✓<br>${eq(`<i>ε</i> = Δ(<i>NΦ</i>) / Δ<i>t</i> = ${A(link)} / ${N(t)} = ${AV(emf, 'V')}`)} ✓`),
+      calc(`The coil is returned to its original position. It is then rotated through 180° in ${V(t, 's')}.<br>Calculate the mean emf induced in the coil during this rotation.`, 2, 2 * emf, 'V', `The flux now passes through the coil in the opposite direction, so the change in flux linkage is ${eq(`2<i>BAN</i> = ${AV(2 * link, WBT)}`)} ✓<br>${eq(`<i>ε</i> = ${A(2 * link)} / ${N(t)} = ${AV(2 * emf, 'V')}`)} ✓`)
+    ] };
+};
+
+T.FL4 = R => {
+  const B = R.pick([2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 40]), Nt = R.pick([100, 200, 250, 400, 500, 800, 1000, 1500, 2000]), d = R.pick([8, 10, 12, 15, 20, 25]), t = R.pick([10, 15, 20, 25, 40, 50, 80]);
+  const Ar = Math.PI * Math.pow(d * 1e-3 / 2, 2), link = B * 1e-3 * Ar * Nt, emf = link / (t * 1e-3);
+  const s = new Scene('Cross-section of a solenoid with a small search coil at its centre connected to a data logger');
+  for (let x = 70; x <= 330; x += 20){ endOn(s, x, 70, 'out', 7); endOn(s, x, 190, 'in', 7); }
+  [108, 152].forEach(y => { s.line(74, y, 326, y, { w: 1.1 }); s.mid(74, y, 326, y, .2, 8); s.mid(74, y, 326, y, .88, 8); });
+  s.line(200, 112, 200, 148, { w: 5 }).line(200, 148, 200, 232, { w: 1.2 }); boxed(s, 150, 232, 100, 30, 'data logger');
+  s.label(200, 50, 'solenoid').label(212, 135, 'search coil', { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { B: B * 1e-3, N: Nt, d: d * 1e-3, t: t * 1e-3 },
+    stem: `<b>Figure 1</b> shows a cross-section through a long solenoid. A small search coil is placed at the centre of the solenoid with its plane at right angles to the axis of the solenoid, and is connected to a data logger. The current in the solenoid produces a uniform magnetic field of flux density ${V(B, 'mT')} inside the solenoid.<br>The search coil has ${Nt} turns and a diameter of ${V(d, 'mm')}.`,
+    parts: [
+      calc('Calculate the flux linkage of the search coil.', 3, link, WBT, `${eq(`<i>A</i> = π × (${A(d * 1e-3 / 2)})<sup>2</sup> = ${AV(Ar, 'm<sup>2</sup>')}`)} ✓<br>${eq(`<i>NΦ</i> = <i>BAN</i> = ${N(B * 1e-3)} × ${A(Ar)} × ${Nt}`)} ✓<br>${eq(`<i>NΦ</i> = ${AV(link, WBT)}`)} ✓`),
+      calc(`The current in the solenoid is switched off and the flux density falls to zero in ${V(t, 'ms')}.<br>Calculate the mean emf induced in the search coil.`, 2, emf, 'V', `${eq(`<i>ε</i> = Δ(<i>NΦ</i>) / Δ<i>t</i> = ${A(link)} / ${N(t * 1e-3)}`)} ✓<br>${eq(`<i>ε</i> = ${AV(emf, 'V')}`)} ✓`),
+      text('The search coil is turned so that its plane is parallel to the axis of the solenoid, and the current is switched on and off again.<br>Explain why no emf is induced in the search coil.', 2, 'The field lines are parallel to the plane of the coil, so no flux passes through the coil (the flux linkage is zero) ✓<br>The flux linkage stays at zero, so there is no change of flux linkage (and no induced emf) ✓'),
+      calc(`The original search coil is replaced by one with the same number of turns and twice the diameter, with its plane at right angles to the axis.<br>Calculate the mean emf induced when the flux density again falls to zero in ${V(t, 'ms')}.`, 2, 4 * emf, 'V', 'Doubling the diameter makes the area (and the flux linkage) four times as large ✓<br>' + eq(`<i>ε</i> = 4 × ${A(emf)} = ${AV(4 * emf, 'V')}`) + ' ✓')
+    ] };
+};
+
+/* ===== electromagnetic induction ===== */
+T.EI1 = R => {
+  const L = R.pick([20, 25, 30, 32, 40, 50, 60]), B = R.pick(rng(.1, .6, .02)), Nt = R.pick([1, 1, 5, 10, 20]), t = R.pick([.05, .08, .1, .2, .25, .4, .5, .8, 1.2]), field = R.pick(['in', 'out']), giveEmf = R.chance(.5);
+  const link = Nt * B * L * L * 1e-6, emfT = link / t, emfD = Number(emfT.toPrecision(2)), tAns = link / emfD, v = L * 1e-3 / (giveEmf ? tAns : t), sense = field === 'in' ? 'anticlockwise' : 'clockwise';
+  const s = new Scene('A square coil moving from position G outside a magnetic field to position H inside the field');
+  s.field(170, 20, 200, 230, field, { border: true }); s.rect(40, 95, 70, 70, { w: 2.4 }).rect(230, 95, 70, 70, { w: 1.6, dash: '6 4' });
+  s.arrow(116, 130, 162, 130, { w: 1.6 }).label(75, 186, 'G', { bold: true }).label(265, 186, 'H', { bold: true }).label(75, 86, 'coil').label(270, 12, 'region of magnetic field');
+  s.meta = { field, sense };
+  return { sf: 2, scenes: [s], data: { L: L * 1e-3, B, N: Nt, t, emfD, giveEmf, field },
+    stem: `<b>Figure 1</b> shows a square coil of ${Nt === 1 ? 'a single turn' : Nt + ' turns'} that is moved at a constant speed from position <b>G</b>, outside a uniform magnetic field, to position <b>H</b>, inside the field. The field has a flux density of ${V(B, 'T')} and is directed ${fieldWords(field)}. Each side of the coil is ${V(L, 'mm')} long. The coil is connected by flexible wires to an oscilloscope.<br>${giveEmf ? `While the coil is crossing the edge of the field the oscilloscope shows a constant emf of ${V(emfD, 'V')}.` : `The coil takes ${V(t, 's')} to cross the edge of the field, from the moment its leading side enters the field until the whole coil is inside.`}`,
+    parts: [
+      calc('Calculate the change in the flux linkage of the coil as it moves from <b>G</b> to <b>H</b>.', 2, link, WBT, `${eq(`Δ(<i>NΦ</i>) = <i>BAN</i> = ${N(B)} × (${N(L * 1e-3)})<sup>2</sup>${Nt > 1 ? ' × ' + Nt : ''}`)} ✓<br>${eq(`Δ(<i>NΦ</i>) = ${AV(link, WBT)}`)} ✓`),
+      giveEmf ? calc('Calculate the time taken for the coil to cross the edge of the field.', 2, tAns, 's', `${eq('<i>ε</i> = Δ(<i>NΦ</i>) / Δ<i>t</i>')}, so ${eq(`Δ<i>t</i> = ${A(link)} / ${N(emfD)}`)} ✓<br>${eq(`Δ<i>t</i> = ${AV(tAns, 's')}`)} ✓`)
+        : calc('Calculate the emf induced in the coil while it is crossing the edge of the field.', 2, emfT, 'V', `${eq(`<i>ε</i> = Δ(<i>NΦ</i>) / Δ<i>t</i> = ${A(link)} / ${N(t)}`)} ✓<br>${eq(`<i>ε</i> = ${AV(emfT, 'V')}`)} ✓`),
+      calc('Calculate the speed of the coil.', 1, v, MS1, `The coil moves a distance equal to one side while crossing the edge: ${eq(`<i>v</i> = ${N(L * 1e-3)} / ${giveEmf ? A(tAns) : N(t)} = ${AV(v, MS1)}`)} ✓`),
+      opt('State the direction of the induced current in the coil, as seen in <b>Figure 1</b>, while the coil is entering the field.', 1, ['clockwise', 'anticlockwise'], sense === 'clockwise' ? 0 : 1, `${sense[0].toUpperCase() + sense.slice(1)} ✓<br>The flux through the coil ${fieldWords(field)} is increasing. By Lenz’s law the induced current produces a field ${fieldWords(OPP[field])} inside the coil, which needs ${sense === 'clockwise' ? 'a clockwise' : 'an anticlockwise'} current.`),
+      text('The coil continues to move at the same speed while it is completely inside the field.<br>Explain why the induced emf is now zero.', 2, 'The flux linkage of the coil is constant (as much flux enters the coil at the front as leaves at the back) ✓<br>An emf is induced only when the flux linkage changes / the emfs in the leading and trailing sides are equal and cancel ✓')
+    ] };
+};
+
+function coilPoles(s){
+  pole(s, 20, 50, 50, 140, 'N'); pole(s, 310, 50, 50, 140, 'S'); s.rect(130, 70, 120, 100, { w: 2.4 }); s.line(190, 36, 190, 204, { dash: '7 4', w: 1.1 }); s.label(190, 28, 'axis of rotation');
+  s.arrow(76, 120, 116, 120, { w: 1.1 }).arrow(264, 120, 304, 120, { w: 1.1 }).label(96, 110, '*B*').label(284, 110, '*B*').label(160, 189, 'coil');
+}
+T.EI2 = R => {
+  const q = find(() => { const f = R.pick([5, 10, 20, 25, 50]), [e0, yM] = R.pick([[1.5, .5], [2, .5], [3, 1], [4, 1], [6, 2], [8, 2], [2.5, .5]]), Nt = R.pick([50, 80, 100, 150, 200, 250, 400, 500]), a = R.pick([4, 5, 6, 8, 10]), b = R.pick([3, 4, 5, 6, 8]);
+    return { f, e0, yM, Nt, a, b, B: e0 / (a * b * 1e-4 * Nt * 2 * Math.PI * f) }; }, q => q.B >= .02 && q.B <= .9 && q.a >= q.b);
+  const { f, e0, yM, Nt, a, b, B } = q, Tm = 1000 / f, w = 2 * Math.PI * f;
+  const s = new Scene('A rectangular coil that rotates between the poles of a magnet'); coilPoles(s);
+  const g = graph({ x: [0, 2 * Tm, Tm / 2], y: [-e0, e0, yM], h: 320, xl: 'time / ms', yl: 'emf / V', curves: [{ f: x => e0 * Math.sin(2 * Math.PI * x / Tm), from: 0, to: 2 * Tm }] });
+  return { sf: 2, scenes: [s], figs: [g], gspec: LAST.g, data: { f, e0, N: Nt, A: a * b * 1e-4 },
+    stem: `<b>Figure 1</b> shows a rectangular coil that rotates at a constant rate in the uniform magnetic field between the poles of a magnet. The coil has ${Nt} turns and measures ${V(a, 'cm')} by ${V(b, 'cm')}. <b>Figure 2</b> shows how the emf induced in the coil varies with time.`,
+    parts: [
+      calc('Determine the frequency of rotation of the coil.', 2, f, 'Hz', `Period read from graph = ${A(Tm)} ms ✓<br>${eq(`<i>f</i> = 1 / <i>T</i> = 1 / ${N(Tm * 1e-3)} = ${AV(f, 'Hz')}`)} ✓`, { tol: .05 }),
+      calc('Calculate the angular speed of the coil.', 1, w, RADS, `${eq(`<i>ω</i> = 2π<i>f</i> = 2π × ${A(f)} = ${AV(w, RADS)}`)} ✓`, { tol: .05 }),
+      calc('Calculate the magnetic flux density between the poles.', 3, B, 'T', `Peak emf read from graph = ${N(e0)} V ✓<br>${eq('<i>ε</i><sub>max</sub> = <i>BANω</i>')}, so ${eq(`<i>B</i> = ${N(e0)} / (${N(a * 1e-2)} × ${N(b * 1e-2)} × ${Nt} × ${A(w)})`)} ✓<br>${eq(`<i>B</i> = ${AV(B, 'T')}`)} ✓`, { tol: .06 }),
+      calc('The frequency of rotation is doubled.<br>Calculate the new peak emf.', 1, 2 * e0, 'V', `Peak emf is proportional to <i>ω</i> (and so to <i>f</i>): ${eq(`<i>ε</i><sub>max</sub> = 2 × ${N(e0)} = ${AV(2 * e0, 'V')}`)} ✓`, { tol: .05 }),
+      opt('State the position of the coil at an instant when the emf is a maximum.', 1, ['plane of the coil parallel to the field', 'plane of the coil at right angles to the field'], 0, 'Plane of the coil parallel to the field ✓<br>The flux linkage is zero at this instant but its rate of change is greatest (the sides of the coil cut the field lines at right angles).')
+    ] };
+};
+
+T.EI3 = R => {
+  const q = find(() => { const B = R.pick(rng(.1, .8, .05)), l = R.pick([8, 10, 12, 15, 20, 25]), v = R.pick(rng(.5, 6, .5)), Rr = R.pick([.2, .5, 1, 2, 4, 5, 8, 10]); const e = B * l * 1e-2 * v; return { B, l, v, Rr, e, I: e / Rr }; }, q => q.I >= .01 && q.I <= 5);
+  const { B, l, v, Rr, e, I } = q, F = B * I * l * 1e-2, P = I * I * Rr, field = R.pick(['in', 'out']), vd = R.pick(['right', 'left']), cd = forceDir(vd, field), sg = vd === 'right' ? 1 : -1;
+  const s = new Scene('A metal rod XY moving along two conducting rails that are joined by a resistor');
+  s.field(84, 78, 240, 84, field); s.line(60, 70, 372, 70, { w: 2.2 }).line(60, 170, 372, 170, { w: 2.2 }); resistorV(s, 60, 70, 170); s.line(220, 54, 220, 186, { w: 4.5 });
+  s.arrow(220 + sg * 6, 120, 220 + sg * 62, 120, { w: 1.6 }).label(220 + sg * 70, 125, '*v*', { anchor: sg > 0 ? 'start' : 'end' });
+  s.label(220, 46, 'X', { bold: true }).label(220, 204, 'Y', { bold: true }).label(42, 125, '*R*', { anchor: 'end' }).label(380, 75, 'rail', { anchor: 'start' }).label(380, 175, 'rail', { anchor: 'start' }).dim(336, 72, 336, 168, plain(V(l, 'cm')));
+  s.meta = { vel: vd, field, cur: cd };
+  return { sf: 2, scenes: [s], data: { B, l: l * 1e-2, v, R: Rr, field, vd },
+    stem: `<b>Figure 1</b> shows a metal rod <b>XY</b> that slides on two parallel conducting rails ${V(l, 'cm')} apart. The rails are joined by a resistor <i>R</i> of resistance ${V(Rr, 'Ω')}; the resistance of the rod and rails is negligible. There is a uniform magnetic field of flux density ${V(B, 'T')} directed ${fieldWords(field)}. The rod is pulled ${DIRNAME[vd]} at a constant speed <i>v</i> of ${V(v, MS1)}.`,
+    parts: [
+      calc('Calculate the emf induced in the rod.', 2, e, 'V', `${eq(`<i>ε</i> = <i>Blv</i> = ${N(B)} × ${N(l * 1e-2)} × ${N(v)}`)} ✓<br>${eq(`<i>ε</i> = ${AV(e, 'V')}`)} ✓`),
+      opt('State the direction of the induced current in the rod.', 1, ['from X to Y', 'from Y to X'], cd === 'down' ? 0 : 1, `From ${cd === 'down' ? 'X to Y' : 'Y to X'} ✓<br>The current in the rod must give a force on the rod that opposes its motion (Lenz’s law), so the force is ${DIRNAME[OPP[vd]]}; ${LHR} then gives a current ${DIRNAME[cd]}.`),
+      calc('Calculate the current in the resistor.', 1, I, 'A', `${eq(`<i>I</i> = <i>ε</i> / <i>R</i> = ${A(e)} / ${N(Rr)} = ${AV(I, 'A')}`)} ✓`),
+      calc('Calculate the force that must be applied to the rod to keep it moving at constant speed.', 2, F, 'N', `Applied force = magnetic force on the rod = ${eq(`<i>BIl</i> = ${N(B)} × ${A(I)} × ${N(l * 1e-2)}`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+      calc('Calculate the rate at which energy is dissipated in the resistor.', 1, P, 'W', `${eq(`<i>P</i> = <i>I</i><sup>2</sup><i>R</i> = (${A(I)})<sup>2</sup> × ${N(Rr)} = ${AV(P, 'W')}`)} (which equals <i>Fv</i>) ✓`),
+      text('Explain, in terms of energy, why a force is needed to keep the rod moving at constant speed.', 2, 'The induced current in the rod is in a magnetic field, so a force acts on the rod that opposes its motion ✓<br>Work done by the applied force against this force is transferred to electrical energy, which is dissipated in the resistor ✓')
+    ] };
+};
+
+T.EI4 = R => {
+  const q = find(() => ({ t1: R.pick([4, 8, 10, 12, 16, 20]), tp: R.pick([8, 10, 12, 20]), tf: R.pick([4, 8, 10, 12, 16, 20, 30]), Pm: R.pick([2, 3, 4, 5, 6, 8, 10, 12]), Nt: R.pick([20, 25, 40, 50, 80, 100, 200, 400]) }), q => q.t1 !== q.tf && q.t1 + q.tp + q.tf <= 56);
+  const { t1, tp, tf, Pm, Nt } = q, t2 = t1 + tp, t3 = t2 + tf, e1 = Pm / t1, e2 = Pm / tf, [ymax, yM] = axisFor(Pm), field = R.pick(['in', 'out']);
+  const s = new Scene('A coil in a magnetic field, connected to a data logger');
+  s.field(20, 20, 300, 200, field, { border: true }); s.rect(90, 70, 160, 100, { w: 2.6 }).label(170, 60, 'coil');
+  s.line(250, 100, 360, 100, { w: 1.2 }).line(250, 140, 360, 140, { w: 1.2 }); boxed(s, 360, 90, 70, 60, 'data\nlogger');
+  const fn = x => x <= t1 ? Pm * x / t1 : x <= t2 ? Pm : x <= t3 ? Pm * (t3 - x) / tf : 0;
+  const g = graph({ x: [0, 60, 10], y: [0, ymax, yM], xl: 'time / ms', yl: 'flux linkage / mWb turns', curves: [{ f: fn, from: 0, to: 60 }] });
+  return { sf: 2, scenes: [s], figs: [g], gspec: LAST.g, data: { t1, t2, t3, Pm, N: Nt },
+    stem: `<b>Figure 1</b> shows a coil of ${Nt} turns in a magnetic field. The plane of the coil is at right angles to the field. The flux density of the field is changed, and a data logger records the emf induced in the coil. <b>Figure 2</b> shows how the flux linkage of the coil varies with time.`,
+    parts: [
+      calc(`Determine the magnitude of the emf induced in the coil between 0 and ${t1} ms.`, 2, e1, 'V', `emf = gradient of the graph ✓<br>${eq(`<i>ε</i> = ${N(Pm * 1e-3)} / ${N(t1 * 1e-3)} = ${AV(e1, 'V')}`)} ✓`, { tol: .05 }),
+      calc(`State the emf induced in the coil between ${t1} ms and ${t2} ms.`, 1, 0, 'V', 'Zero ✓<br>The flux linkage is not changing (the gradient is zero).'),
+      calc(`Determine the magnitude of the emf induced in the coil between ${t2} ms and ${t3} ms.`, 2, e2, 'V', `Change in flux linkage = ${N(Pm * 1e-3)} ${WBT} in ${N(tf * 1e-3)} s ✓<br>${eq(`<i>ε</i> = ${N(Pm * 1e-3)} / ${N(tf * 1e-3)} = ${AV(e2, 'V')}`)} ✓`, { tol: .05 }),
+      text(`State and explain how the emf between ${t2} ms and ${t3} ms differs in direction from the emf between 0 and ${t1} ms.`, 2, 'The emf is in the opposite direction (has the opposite sign) ✓<br>The gradient of the graph is negative instead of positive / the flux linkage is decreasing instead of increasing ✓'),
+      calc('Calculate the maximum magnetic flux through one turn of the coil.', 1, Pm * 1e-3 / Nt, 'Wb', `${eq(`<i>Φ</i> = ${N(Pm * 1e-3)} / ${Nt} = ${AV(Pm * 1e-3 / Nt, 'Wb')}`)} ✓`, { tol: .05 })
+    ] };
+};
+
+T.EI5 = R => {
+  const Nt = R.pick([200, 250, 400, 500, 600, 800, 1000, 1200]), p1 = R.pick([5, 10, 15, 20]), dp = R.pick([20, 25, 30, 40, 50, 60, 80]), t = R.pick([.1, .15, .2, .25, .4, .5]), Rr = R.pick([5, 8, 10, 12, 20, 25, 40, 50]);
+  const emf = Nt * dp * 1e-6 / t, I = emf / Rr, pole1 = R.pick(['N', 'S']), toward = R.chance(.5), induced = toward ? pole1 : (pole1 === 'N' ? 'S' : 'N'), pa = toward ? p1 : p1 + dp, pb = toward ? p1 + dp : p1;
+  const s = new Scene('A bar magnet near one end of a coil that is connected to a sensitive ammeter');
+  s.rect(30, 112, 110, 36, { fill: '#e4e7ea' }).line(85, 112, 85, 148, { w: 1.1 }).label(58, 136, pole1 === 'N' ? 'S' : 'N', { bold: true, size: 17 }).label(112, 136, pole1, { bold: true, size: 17 });
+  if (toward) s.arrow(50, 96, 120, 96, { w: 1.6 }); else s.arrow(120, 96, 50, 96, { w: 1.6 }); s.label(85, 86, 'motion of magnet');
+  s.rect(200, 95, 132, 70, { w: 1.3 }); for (let x = 206; x <= 314; x += 12) s.line(x, 165, x + 12, 95, { w: 1.5 });
+  s.poly([[206, 165], [206, 228], [250, 228]], { w: 1.3 }).poly([[326, 95], [344, 95], [344, 228], [280, 228]], { w: 1.3 }); meter(s, 265, 228, 'A');
+  s.label(266, 84, 'coil').label(192, 182, 'E', { bold: true, anchor: 'end' }).label(354, 182, 'F', { bold: true, anchor: 'start' });
+  s.meta = { pole1, toward, induced };
+  return { sf: 2, scenes: [s], data: { N: Nt, dp: dp * 1e-6, t, R: Rr, pole1, toward },
+    stem: `<b>Figure 1</b> shows a bar magnet and a coil of ${Nt} turns that is connected to a sensitive ammeter. The magnet is moved ${toward ? 'towards' : 'away from'} end <b>E</b> of the coil, in the direction of the arrow. During this movement the magnetic flux through each turn of the coil changes from ${V(pa, 'μWb')} to ${V(pb, 'μWb')} in ${V(t, 's')}.`,
+    parts: [
+      text('State Lenz’s law.', 1, 'The direction of the induced emf (or current) is such that it opposes the change (of flux) that produces it ✓'),
+      opt('State the magnetic pole that the induced current produces at end <b>E</b> of the coil.', 1, ['north pole', 'south pole'], induced === 'N' ? 0 : 1, `${induced === 'N' ? 'North' : 'South'} pole ✓<br>The induced current must oppose the motion of the magnet, so end E ${toward ? 'repels' : 'attracts'} the ${pole1 === 'N' ? 'north' : 'south'} pole of the magnet.`),
+      text('Explain how Lenz’s law is a consequence of the conservation of energy in this demonstration.', 2, `Work must be done to move the magnet against the ${toward ? 'repulsive' : 'attractive'} force from the coil ✓<br>This work is transferred to electrical energy in the coil (if the force assisted the motion, energy would be created from nothing) ✓`),
+      calc('Calculate the mean emf induced in the coil.', 2, emf, 'V', `${eq(`<i>ε</i> = <i>N</i>Δ<i>Φ</i> / Δ<i>t</i> = ${Nt} × (${N(Math.max(pa, pb))} − ${N(Math.min(pa, pb))}) × 10<sup>−6</sup> / ${N(t)}`)} ✓<br>${eq(`<i>ε</i> = ${AV(emf, 'V')}`)} ✓`),
+      calc(`The total resistance of the coil and the ammeter is ${V(Rr, 'Ω')}.<br>Calculate the mean current in the coil.`, 1, I, 'A', `${eq(`<i>I</i> = <i>ε</i> / <i>R</i> = ${A(emf)} / ${N(Rr)} = ${AV(I, 'A')}`)} ✓`)
+    ] };
+};
+
+T.EI6 = R => {
+  const h = R.pick([10, 15, 20, 25, 30, 40, 45, 50, 60]), Nt = R.pick([200, 300, 400, 500, 600, 800, 1000, 1500]), [e1, e2, yM] = R.pick([[20, 30, 10], [40, 60, 20], [100, 150, 50], [200, 300, 100], [60, 80, 20], [30, 40, 10]]);
+  const v = Math.sqrt(2 * GRAV * h * 1e-2), rate = e2 * 1e-3 / Nt, ymax = e2 + yM;
+  const s = new Scene('A bar magnet held above a vertical tube that passes through a coil connected to a data logger');
+  s.line(172, 40, 172, 270, { w: 1.3 }).line(208, 40, 208, 270, { w: 1.3 }); s.rect(160, 150, 60, 40, { fill: '#fff', w: 1.5 }); for (let y = 158; y <= 182; y += 8) s.line(160, y, 220, y, { w: 1.1 });
+  s.rect(178, -34, 24, 52, { fill: '#e4e7ea' }).line(178, -8, 202, -8, { w: 1.1 }).label(190, -14, 'N', { bold: true, size: 14, inside: true }).label(190, 12, 'S', { bold: true, size: 14, inside: true });
+  s.line(220, 160, 290, 160, { w: 1.2 }).line(220, 180, 290, 180, { w: 1.2 }); boxed(s, 290, 148, 76, 44, 'data\nlogger');
+  s.dim(140, -8, 140, 170, plain(V(h, 'cm')), { left: true }).label(216, -4, 'magnet', { anchor: 'start' }).label(190, 288, 'plastic tube').label(232, 142, 'coil', { anchor: 'start' });
+  const g = graph({ x: [0, 100, 20], y: [-ymax, ymax, yM], h: 320, xl: 'time / ms', yl: 'emf / mV', curves: [{ f: x => e1 * Math.exp(-Math.pow((x - 34) / 11, 2)) - e2 * Math.exp(-Math.pow((x - 62) / 7.5, 2)), from: 0, to: 100 }] });
+  return { sf: 2, scenes: [s], figs: [g], gspec: LAST.g, data: { h: h * 1e-2, N: Nt, e2: e2 * 1e-3 },
+    stem: `<b>Figure 1</b> shows a bar magnet held above a vertical plastic tube. A coil of ${Nt} turns is wound around the tube and connected to a data logger. The centre of the magnet is ${V(h, 'cm')} above the centre of the coil. The magnet is released from rest and falls through the coil. <b>Figure 2</b> shows how the emf induced in the coil varies with time as the magnet passes through.`,
+    parts: [
+      text('Explain why an emf is induced in the coil as the magnet enters it.', 2, 'The magnetic flux linking the coil changes (increases) as the magnet approaches and enters ✓<br>An emf is induced that is proportional to the rate of change of flux linkage (Faraday’s law) ✓'),
+      text('Explain why the second peak in <b>Figure 2</b> has the opposite sign to the first peak.', 1, 'As the magnet leaves the coil the flux linkage decreases instead of increasing, so the rate of change of flux linkage has the opposite sign ✓'),
+      text('Explain why the second peak has a greater magnitude and lasts for a shorter time than the first peak.', 2, 'The magnet is accelerating, so it is moving faster when it leaves the coil ✓<br>The rate of change of flux linkage is greater (larger emf) and the magnet takes less time to leave the coil (narrower peak) ✓'),
+      calc('Calculate the speed of the centre of the magnet as it passes the centre of the coil. Assume that the forces opposing the motion of the magnet are negligible.', 2, v, MS1, `${eq(`<i>v</i><sup>2</sup> = 2<i>gs</i> = 2 × 9.81 × ${N(h * 1e-2)}`)} ✓<br>${eq(`<i>v</i> = ${AV(v, MS1)}`)} ✓`),
+      calc('Determine the maximum rate of change of magnetic flux through one turn of the coil.', 2, rate, 'Wb s<sup>−1</sup>', `Maximum emf read from graph = ${N(e2)} mV (magnitude) ✓<br>${eq(`Δ<i>Φ</i> / Δ<i>t</i> = <i>ε</i> / <i>N</i> = ${N(e2 * 1e-3)} / ${Nt} = ${AV(rate, 'Wb s<sup>−1</sup>')}`)} ✓`, { tol: .07 })
+    ] };
+};
+
+T.EI7 = R => {
+  const Nt = R.pick([50, 80, 100, 150, 200, 250, 400]), Ac = R.pick([20, 25, 30, 40, 50, 60, 80, 100, 150]), B1 = R.pick([0, 10, 20]), dB = R.pick([20, 30, 40, 50, 60]), slow = R.chance(.5), t1 = slow ? R.pick([1, 1.5, 2]) : R.pick([.2, .3, .4]), Rr = R.pick([2, 4, 5, 8, 10, 20, 25, 50]);
+  const B2 = B1 + dB, rate = dB * 1e-3 / t1, emf = Nt * Ac * 1e-4 * rate, I = emf / Rr, Qc = I * t1, [ymax, yM] = axisFor(B2), field = R.pick(['in', 'out']), sense = field === 'in' ? 'anticlockwise' : 'clockwise';
+  const s = new Scene('A circular coil in a uniform magnetic field');
+  s.field(30, 20, 320, 240, field, { border: true }); s.circle(190, 140, 78, { w: 2.6 }).label(190, 50, 'coil'); s.meta = { field, sense };
+  const g = graph({ x: slow ? [0, 3, .5] : [0, .5, .1], y: [0, ymax, yM], xl: 'time / s', yl: 'flux density / mT', curves: [{ f: x => x <= t1 ? B1 + dB * x / t1 : B2, from: 0, to: slow ? 3 : .5 }] });
+  return { sf: 2, scenes: [s], figs: [g], gspec: LAST.g, data: { N: Nt, A: Ac * 1e-4, dB: dB * 1e-3, t1, R: Rr, field },
+    stem: `<b>Figure 1</b> shows a circular coil of ${Nt} turns in a uniform magnetic field directed ${fieldWords(field)}. The plane of the coil is at right angles to the field. Each turn has an area of ${V(Ac, 'cm<sup>2</sup>')}. The ends of the coil are joined, and the total resistance of the coil is ${V(Rr, 'Ω')}.<br><b>Figure 2</b> shows how the flux density of the field varies with time.`,
+    parts: [
+      calc(`Determine the rate of change of flux density during the first ${N(t1)} s.`, 2, rate, 'T s<sup>−1</sup>', `Change in flux density read from graph = ${N(B2)} − ${B1 ? N(B1) : '0'} = ${N(dB)} mT ✓<br>${eq(`Δ<i>B</i> / Δ<i>t</i> = ${N(dB * 1e-3)} / ${N(t1)} = ${AV(rate, 'T s<sup>−1</sup>')}`)} ✓`, { tol: .05 }),
+      calc(`Calculate the emf induced in the coil during the first ${N(t1)} s.`, 2, emf, 'V', `${eq('<i>ε</i> = <i>NA</i> Δ<i>B</i> / Δ<i>t</i>')} ✓<br>${eq(`<i>ε</i> = ${Nt} × ${N(Ac * 1e-4)} × ${A(rate)} = ${AV(emf, 'V')}`)} ✓`, { tol: .05 }),
+      calc('Calculate the induced current in the coil during this time.', 1, I, 'A', `${eq(`<i>I</i> = <i>ε</i> / <i>R</i> = ${A(emf)} / ${N(Rr)} = ${AV(I, 'A')}`)} ✓`, { tol: .05 }),
+      calc('Calculate the charge that flows past a point in the coil while the flux density is changing.', 2, Qc, 'C', `${eq('<i>Q</i> = <i>It</i>')} ✓<br>${eq(`<i>Q</i> = ${A(I)} × ${N(t1)} = ${AV(Qc, 'C')}`)} ✓`, { tol: .05 }),
+      opt('State the direction of the induced current in the coil, as seen in <b>Figure 1</b>, while the flux density is increasing.', 1, ['clockwise', 'anticlockwise'], sense === 'clockwise' ? 0 : 1, `${sense[0].toUpperCase() + sense.slice(1)} ✓<br>By Lenz’s law the induced current produces a field ${fieldWords(OPP[field])} inside the coil, to oppose the increase in flux.`)
+    ] };
+};
+
+T.EI8 = R => {
+  const v = R.pick([150, 160, 180, 200, 220, 240, 250, 260]), l = R.pick([30, 35, 40, 48, 60, 64]), Bv = R.pick([35, 40, 42, 45, 48, 50]), t = R.pick([5, 10, 20, 30, 60]), field = R.pick(['in', 'out']);
+  const emf = Bv * 1e-6 * l * v, flux = emf * t, pos = forceDir('up', field) === 'left' ? 'P' : 'Q';
+  const s = new Scene('An aircraft, seen from above, flying through the vertical component of the Earth’s magnetic field');
+  s.field(30, 14, 340, 226, field); s.line(190, 62, 190, 222, { w: 7 }).line(70, 140, 310, 140, { w: 5 }).line(166, 212, 214, 212, { w: 4 });
+  s.arrow(190, 56, 190, 16, { w: 1.6 }).label(200, 34, '*v*', { anchor: 'start' }).label(58, 145, 'P', { bold: true, anchor: 'end' }).label(322, 145, 'Q', { bold: true, anchor: 'start' }).dim(70, 258, 310, 258, plain(V(l, 'm')), { below: true });
+  s.line(70, 146, 70, 262, { w: .8, dash: '3 3' }).line(310, 146, 310, 262, { w: .8, dash: '3 3' });
+  s.meta = { vel: 'up', field, pos };
+  return { sf: 2, scenes: [s], data: { v, l, B: Bv * 1e-6, t, field },
+    stem: `<b>Figure 1</b> shows an aircraft, seen from above, flying horizontally at a constant speed <i>v</i> of ${V(v, MS1)}. <b>P</b> and <b>Q</b> are the tips of its metal wings, which are ${V(l, 'm')} apart. The vertical component of the Earth’s magnetic field has a flux density of ${V(Bv, 'μT')} and is directed ${fieldWords(field)} in <b>Figure 1</b>.`,
+    parts: [
+      calc('Calculate the emf induced between the wing tips.', 2, emf, 'V', `${eq(`<i>ε</i> = <i>Blv</i> = ${N(Bv * 1e-6)} × ${N(l)} × ${N(v)}`)} ✓<br>${eq(`<i>ε</i> = ${AV(emf, 'V')}`)} ✓`),
+      opt('State which wing tip, <b>P</b> or <b>Q</b>, is at the higher potential.', 1, ['P', 'Q'], pos === 'P' ? 0 : 1, `${pos} ✓<br>${LHR} gives a force towards ${pos} on positive charge moving up the page (equivalently, electrons in the wing are pushed towards ${pos === 'P' ? 'Q' : 'P'}).`),
+      calc(`Calculate the magnetic flux cut by the wings in ${V(t, 's')}.`, 2, flux, 'Wb', `Area swept out ${eq(`= <i>lvt</i> = ${N(l)} × ${N(v)} × ${N(t)} = ${AV(l * v * t, 'm<sup>2</sup>')}`)} ✓<br>${eq(`<i>Φ</i> = <i>BA</i> = ${N(Bv * 1e-6)} × ${A(l * v * t)} = ${AV(flux, 'Wb')}`)} ✓`),
+      text('A voltmeter inside the aircraft is connected between the wing tips by wires that run along the wings.<br>Explain why the voltmeter reads zero.', 2, 'The connecting wires move with the wings and cut the same flux, so an equal emf is induced in them ✓<br>The two emfs act in opposite senses around the circuit (the flux linkage of the complete circuit does not change), so there is no resultant emf ✓')
+    ] };
+};
+
+
+/* ===== alternating currents ===== */
+const GAINS = [[.5, 'V'], [1, 'V'], [2, 'V'], [5, 'V'], [10, 'V'], [20, 'V'], [50, 'V']];
+const TBS = [.5, 1, 2, 5, 10, 20];
+function acLoop(s, o = {}){                    // ac supply on the left, resistor at x = rx
+  const rx = o.rx || 300; s.poly([[60, 105], [60, 50], [rx, 50]]).poly([[60, 135], [60, 190], [rx, 190]]); acSource(s, 60, 120); resistorV(s, rx, 50, 190);
+  s.label(38, 125, 'ac supply', { anchor: 'end' }).label(rx - 17, 125, o.name || '*R*', { anchor: 'end' });
+  if (o.scope){ s.poly([[rx, 50], [rx + 110, 50], [rx + 110, 95]]).poly([[rx, 190], [rx + 110, 190], [rx + 110, 145]]); boxed(s, rx + 65, 95, 90, 50, 'oscilloscope');
+    s.body.push(`<circle cx="${rx}" cy="50" r="3.6" fill="#000"/><circle cx="${rx}" cy="190" r="3.6" fill="#000"/>`); }
+}
+const sine = (a, p) => t => a * Math.sin(2 * Math.PI * t / p);
+
+T.AC1 = R => {
+  const a = R.pick([2, 2.5, 3, 3.5]), p = R.pick([2, 2.5, 4, 5]), [g] = R.pick(GAINS), tb = R.pick(TBS), Rr = find(() => R.pick([10, 22, 47, 100, 220, 470, 1000, 2200, 4700, 10000, 22000, 47000]), r => { const P = a * g * a * g / 2 / r; return P <= 5 && P >= 1e-3; });
+  const V0 = a * g, Vr = V0 / Math.SQRT2, Tm = p * tb, f = 1000 / Tm, P = Vr * Vr / Rr, sc = scope(sine(a, p));
+  const s = new Scene('An ac supply connected to a resistor, with an oscilloscope across the resistor'); acLoop(s, { rx: 220, scope: true });
+  return { sf: 2, scenes: [s], figs: [sc.svg], scopeBad: sc.bad, data: { a, p, g, tb, R: Rr },
+    stem: `<b>Figure 1</b> shows an oscilloscope connected across a resistor <i>R</i> that is connected to an ac supply. <b>Figure 2</b> shows the trace on the oscilloscope screen.<br>The y-gain is set to ${V(g, 'V div<sup>−1</sup>')} and the time-base is set to ${V(tb, 'ms div<sup>−1</sup>')}.`,
+    parts: [
+      calc('Determine the peak voltage of the supply.', 1, V0, 'V', `Amplitude = ${N(a)} divisions: ${eq(`<i>V</i><sub>0</sub> = ${N(a)} × ${N(g)} = ${AV(V0, 'V')}`)} ✓`, { abs: .12 * g }),
+      calc('Calculate the rms voltage of the supply.', 1, Vr, 'V', `${eq(`<i>V</i><sub>rms</sub> = <i>V</i><sub>0</sub> / √2 = ${A(V0)} / √2 = ${AV(Vr, 'V')}`)} ✓`, { tol: .05 }),
+      calc('Determine the frequency of the supply.', 2, f, 'Hz', `One cycle occupies ${N(p)} divisions: ${eq(`<i>T</i> = ${N(p)} × ${N(tb)} = ${A(Tm)} ms`)} ✓<br>${eq(`<i>f</i> = 1 / <i>T</i> = 1 / ${A(Tm * 1e-3)} = ${AV(f, 'Hz')}`)} ✓`, { tol: .05 }),
+      calc(`The resistance of <i>R</i> is ${V(Rr, 'Ω')}.<br>Calculate the mean power dissipated in <i>R</i>.`, 2, P, 'W', `${eq('<i>P</i> = <i>V</i><sub>rms</sub><sup>2</sup> / <i>R</i>')} ✓<br>${eq(`<i>P</i> = (${A(Vr)})<sup>2</sup> / ${N(Rr)} = ${AV(P, 'W')}`)} ✓`, { tol: .09 }),
+      text('The time-base of the oscilloscope is now switched off.<br>Describe the trace that is seen on the screen.', 2, 'A vertical line (through the centre of the screen) ✓<br>' + `of total length ${N(2 * a)} divisions (twice the amplitude; the peak-to-peak voltage) ✓`)
+    ] };
+};
+
+T.AC2 = R => {
+  const [Vr, Ps] = R.pick([[230, rng(200, 3000, 100)], [110, rng(100, 1500, 100)], [24, [12, 24, 36, 48, 60, 72, 84, 96, 120]], [12, rng(6, 72, 6)], [48, [24, 48, 72, 96, 120, 240, 360, 480]], [240, rng(200, 3000, 100)], [120, rng(100, 1800, 100)]]), P = R.pick(Ps), dev = R.pick(P >= 700 ? ['heater', 'kettle element', 'toaster element'] : P > 150 ? ['heater', 'heating element'] : ['lamp', 'soldering iron', 'heater']);
+  const V0 = Vr * Math.SQRT2, I = P / Vr, I0 = I * Math.SQRT2, Rr = Vr / I;
+  const s = new Scene('An ac supply connected to a ' + dev); acLoop(s, { name: dev });
+  return { sf: 2, scenes: [s], data: { Vr, P },
+    stem: `<b>Figure 1</b> shows a ${dev} connected to an ac supply. The supply has a sinusoidal output with an rms voltage of ${V(Vr, 'V')}. The mean power dissipated in the ${dev} is ${V(P, 'W')}.`,
+    parts: [
+      text(`Explain what is meant by an rms voltage of ${V(Vr, 'V')}.`, 2, `It is the value of the steady (direct) voltage ✓<br>that would dissipate energy at the same rate (give the same mean power) in a given resistor ✓`),
+      calc('Calculate the peak voltage of the supply.', 1, V0, 'V', `${eq(`<i>V</i><sub>0</sub> = <i>V</i><sub>rms</sub> × √2 = ${N(Vr)} × √2 = ${AV(V0, 'V')}`)} ✓`),
+      calc(`Calculate the rms current in the ${dev}.`, 1, I, 'A', `${eq(`<i>I</i><sub>rms</sub> = <i>P</i> / <i>V</i><sub>rms</sub> = ${N(P)} / ${N(Vr)} = ${AV(I, 'A')}`)} ✓`),
+      calc(`Calculate the peak current in the ${dev}.`, 1, I0, 'A', `${eq(`<i>I</i><sub>0</sub> = <i>I</i><sub>rms</sub> × √2 = ${A(I)} × √2 = ${AV(I0, 'A')}`)} ✓`),
+      calc(`Calculate the resistance of the ${dev}.`, 1, Rr, 'Ω', `${eq(`<i>R</i> = <i>V</i><sub>rms</sub> / <i>I</i><sub>rms</sub> = ${N(Vr)} / ${A(I)} = ${AV(Rr, 'Ω')}`)} ✓`),
+      calc(`Calculate the maximum instantaneous power dissipated in the ${dev}.`, 2, 2 * P, 'W', `${eq('<i>P</i><sub>max</sub> = <i>V</i><sub>0</sub><i>I</i><sub>0</sub>')} (= 2 × mean power) ✓<br>${eq(`<i>P</i><sub>max</sub> = ${A(V0)} × ${A(I0)} = ${AV(2 * P, 'W')}`)} ✓`)
+    ] };
+};
+
+T.AC3 = R => {
+  const { a, g } = find(() => ({ a: R.pick([2, 2.5, 3, 3.5]), g: R.pick(GAINS.slice(0, 4))[0] }), q => isNice(q.a * q.g, 2)), p = R.pick([2, 2.5, 4, 5]), tb = R.pick(TBS), Rr = R.pick([47, 100, 150, 220, 330, 470, 680, 1000]);
+  const V0 = a * g, Vr = V0 / Math.SQRT2, Tm = p * tb, f = 1000 / Tm, divs = a / Math.SQRT2, I = Vr / Rr * 1e3, sc = scope(sine(a, p));
+  const s = new Scene('An ac supply connected to a resistor, with an oscilloscope across the resistor'); acLoop(s, { rx: 220, scope: true });
+  return { sf: 2, scenes: [s], figs: [sc.svg], scopeBad: sc.bad, data: { a, V0, p, tb, R: Rr },
+    stem: `<b>Figure 1</b> shows an oscilloscope connected across a resistor <i>R</i> that is in series with an ac supply. The supply provides a sinusoidal output of peak voltage ${V(V0, 'V')}. <b>Figure 2</b> shows the trace on the oscilloscope screen.`,
+    parts: [
+      calc('Calculate the rms voltage of the supply.', 1, Vr, 'V', `${eq(`<i>V</i><sub>rms</sub> = <i>V</i><sub>0</sub> / √2 = ${N(V0)} / √2 = ${AV(Vr, 'V')}`)} ✓`),
+      calc('Determine the y-gain setting of the oscilloscope.', 1, g, 'V div<sup>−1</sup>', `Amplitude = ${N(a)} divisions: ${eq(`y-gain = ${N(V0)} / ${N(a)} = ${AV(g, 'V div<sup>−1</sup>')}`)} ✓`, { tol: .05 }),
+      calc(`The time-base is set to ${V(tb, 'ms div<sup>−1</sup>')}.<br>Determine the frequency of the supply.`, 2, f, 'Hz', `One cycle occupies ${N(p)} divisions: ${eq(`<i>T</i> = ${N(p)} × ${N(tb)} = ${A(Tm)} ms`)} ✓<br>${eq(`<i>f</i> = 1 / ${A(Tm * 1e-3)} = ${AV(f, 'Hz')}`)} ✓`, { tol: .05 }),
+      calc('A dc supply gives the same rate of energy dissipation in <i>R</i> as the ac supply. It is connected in place of the ac supply and the oscilloscope settings are not changed.<br>Calculate how many divisions above the centre line the trace of the dc supply appears.', 2, divs, 'divisions', `The dc voltage equals the rms voltage of the ac supply (and the trace is a horizontal line) ✓<br>${eq(`number of divisions = ${A(Vr)} / ${N(g)} = ${A(divs)}`)} ✓`, { tol: .05 }),
+      calc(`The resistance of <i>R</i> is ${V(Rr, 'Ω')}.<br>Calculate the rms current in <i>R</i>.`, 1, I, 'mA', `${eq(`<i>I</i><sub>rms</sub> = <i>V</i><sub>rms</sub> / <i>R</i> = ${A(Vr)} / ${N(Rr)} = ${AV(I * 1e-3, 'A')} = ${AV(I, 'mA')}`)} ✓`)
+    ] };
+};
+
+T.AC4 = R => {
+  const q = find(() => { const a = R.pick([2, 2.5, 3, 3.5]), p = R.pick([2, 2.5, 4, 5]), g = R.pick([.5, 1, 2, 5, 10]), tb = R.pick(TBS), k = R.pick([2, .5]); return { a, p, g, tb, k, cyc: 10 * k / p }; }, q => Number.isInteger(q.cyc * 2) && q.tb * q.k >= .25);
+  const { a, p, g, tb, k, cyc } = q, Vm = a * g, Tm = p * tb, f = 1000 / Tm, tb2 = tb * k, sc = scope(t => ((t / p) % 1) < .5 ? a : 0, { square: true });
+  const s = new Scene('A square-wave generator connected to a resistor, with an oscilloscope across the resistor'); acLoop(s, { rx: 220, scope: true });
+  s.labels.find(l => l.str === 'ac supply').html = 'generator'; s.labels.find(l => l.str === 'ac supply').str = 'generator';
+  return { sf: 2, scenes: [s], figs: [sc.svg], scopeBad: sc.bad, data: { a, p, g, tb, k },
+    stem: `<b>Figure 1</b> shows an oscilloscope connected across a resistor <i>R</i> that is connected to a square-wave generator. The output of the generator switches between 0 and a positive voltage. <b>Figure 2</b> shows the trace on the oscilloscope screen; with no input the trace is a horizontal line along the centre of the screen.<br>The y-gain is set to ${V(g, 'V div<sup>−1</sup>')} and the time-base is set to ${V(tb, 'ms div<sup>−1</sup>')}.`,
+    parts: [
+      calc('Determine the maximum output voltage of the generator.', 1, Vm, 'V', `Height of the trace = ${N(a)} divisions: ${eq(`<i>V</i> = ${N(a)} × ${N(g)} = ${AV(Vm, 'V')}`)} ✓`, { tol: .05 }),
+      calc('Determine the frequency of the square wave.', 2, f, 'Hz', `One cycle occupies ${N(p)} divisions: ${eq(`<i>T</i> = ${N(p)} × ${N(tb)} = ${A(Tm)} ms`)} ✓<br>${eq(`<i>f</i> = 1 / ${A(Tm * 1e-3)} = ${AV(f, 'Hz')}`)} ✓`, { tol: .05 }),
+      calc(`The time-base is changed to ${V(tb2, 'ms div<sup>−1</sup>')}. The screen is 10 divisions wide.<br>Calculate the number of complete cycles of the square wave that now fit across the screen.`, 2, cyc, 'cycles', `Time across the screen ${eq(`= 10 × ${N(tb2)} = ${A(10 * tb2)} ms`)} ✓<br>${eq(`number of cycles = ${A(10 * tb2)} / ${A(Tm)} = ${A(cyc)}`)} ✓`, { tol: .05 }),
+      text(`The time-base is returned to ${V(tb, 'ms div<sup>−1</sup>')} and the y-gain is changed to ${V(2 * g, 'V div<sup>−1</sup>')}.<br>Describe how the trace changes.`, 2, `The height of the trace halves (to ${A(a / 2)} divisions) ✓<br>The length of each cycle on the screen (${N(p)} divisions) is unchanged ✓`)
+    ] };
+};
+
+T.AC5 = R => {
+  const [V0, yM] = R.pick([[12, 4], [10, 5], [8, 2], [6, 2], [15, 5], [20, 5], [4, 1]]), Tm = R.pick([2, 4, 10, 20, 40]), Rr = R.pick([4, 5, 8, 10, 15, 20, 25, 40, 50]), t = R.pick([30, 60, 120, 300]);
+  const Vr = V0 / Math.SQRT2, f = 1000 / Tm, I0 = V0 / Rr, E = Vr * Vr / Rr * t;
+  const s = new Scene('An ac supply connected to a resistor'); acLoop(s);
+  const g = graph({ x: [0, 2 * Tm, Tm / 2], y: [-V0, V0, yM], h: 320, xl: 'time / ms', yl: 'pd / V', curves: [{ f: x => V0 * Math.sin(2 * Math.PI * x / Tm), from: 0, to: 2 * Tm }] });
+  return { sf: 2, scenes: [s], figs: [g], gspec: LAST.g, data: { V0, Tm, R: Rr, t },
+    stem: `<b>Figure 1</b> shows a resistor <i>R</i> of resistance ${V(Rr, 'Ω')} connected to an ac supply. <b>Figure 2</b> shows how the potential difference across <i>R</i> varies with time.`,
+    parts: [
+      calc('State the peak potential difference across <i>R</i>.', 1, V0, 'V', `${AV(V0, 'V')} (read from the graph) ✓`, { abs: yM / 8 }),
+      calc('Calculate the rms potential difference across <i>R</i>.', 1, Vr, 'V', `${eq(`<i>V</i><sub>rms</sub> = <i>V</i><sub>0</sub> / √2 = ${N(V0)} / √2 = ${AV(Vr, 'V')}`)} ✓`, { tol: .04 }),
+      calc('Determine the frequency of the supply.', 2, f, 'Hz', `Period read from graph = ${A(Tm)} ms ✓<br>${eq(`<i>f</i> = 1 / <i>T</i> = 1 / ${A(Tm * 1e-3)} = ${AV(f, 'Hz')}`)} ✓`, { tol: .05 }),
+      calc('Calculate the peak current in <i>R</i>.', 1, I0, 'A', `${eq(`<i>I</i><sub>0</sub> = <i>V</i><sub>0</sub> / <i>R</i> = ${N(V0)} / ${N(Rr)} = ${AV(I0, 'A')}`)} ✓`, { tol: .04 }),
+      calc(`Calculate the energy dissipated in <i>R</i> in ${V(t, 's')}.`, 3, E, 'J', `${eq(`mean power = <i>V</i><sub>rms</sub><sup>2</sup> / <i>R</i> = (${A(Vr)})<sup>2</sup> / ${N(Rr)}`)} ✓<br>${eq(`mean power = ${AV(Vr * Vr / Rr, 'W')}`)} ✓<br>${eq(`<i>E</i> = <i>Pt</i> = ${A(Vr * Vr / Rr)} × ${N(t)} = ${AV(E, 'J')}`)} ✓`, { tol: .08 })
+    ] };
+};
+
+/* ===== transformers ===== */
+const TURNS = [100, 200, 250, 400, 500, 800, 1000, 1200, 2000, 2500, 4000, 5000];
+function transFig(s, o = {}){
+  const t = transformer(s, { np: o.down ? 9 : 5, ns: o.down ? 5 : 9 });
+  s.line(t.px, t.y0, t.px, t.ym - 15).line(t.px, t.ym + 15, t.px, t.y1); acSource(s, t.px, t.ym); s.label(t.px - 22, t.ym + 5, 'ac supply', { anchor: 'end' });
+  if (o.scope){ s.line(t.sx, t.y0, t.sx + 40, t.y0).line(t.sx, t.y1, t.sx + 40, t.y1).line(t.sx + 40, t.y0, t.sx + 40, t.ym - 25).line(t.sx + 40, t.ym + 25, t.sx + 40, t.y1); boxed(s, t.sx - 5, t.ym - 25, 90, 50, 'oscilloscope'); }
+  else if (o.volt){ s.line(t.sx, t.y0, t.sx, t.ym - 15).line(t.sx, t.ym + 15, t.sx, t.y1); meter(s, t.sx, t.ym, 'V'); }
+  else { resistorV(s, t.sx, t.y0, t.y1); s.label(t.sx + 18, t.ym + 5, o.load || '*R*', { anchor: 'start' }); }
+  return t;
+}
+T.TR1 = R => {
+  const q = find(() => { const Np = R.pick(TURNS), Ns = R.pick(TURNS), Vp = R.pick([12, 24, 110, 230, 400]), Rr = R.pick([2, 4, 5, 6, 8, 10, 12, 15, 20, 24, 40, 50, 100, 200, 500]), Vs = Vp * Ns / Np; return { Np, Ns, Vp, Rr, Vs, Is: Vs / Rr }; },
+    q => q.Np !== q.Ns && isNice(q.Vs, 2) && q.Vs >= 1 && q.Vs <= 5000 && q.Is >= .05 && q.Is <= 20);
+  const { Np, Ns, Vp, Rr, Vs, Is } = q, Ip = Vs * Is / Vp;
+  const s = new Scene('A transformer with an ac supply connected to the primary coil and a resistor connected to the secondary coil'); transFig(s, { down: Ns < Np });
+  return { sf: 2, scenes: [s], data: { Np, Ns, Vp, R: Rr },
+    stem: `<b>Figure 1</b> shows a transformer. The primary coil has ${Np} turns and is connected to an ac supply of rms voltage ${V(Vp, 'V')}. The secondary coil has ${Ns} turns and is connected to a resistor <i>R</i> of resistance ${V(Rr, 'Ω')}. Assume that the transformer is 100% efficient.`,
+    parts: [
+      calc('Calculate the rms voltage across the secondary coil.', 2, Vs, 'V', `${eq('<i>V</i><sub>s</sub> / <i>V</i><sub>p</sub> = <i>N</i><sub>s</sub> / <i>N</i><sub>p</sub>')} ✓<br>${eq(`<i>V</i><sub>s</sub> = ${N(Vp)} × ${Ns} / ${Np} = ${AV(Vs, 'V')}`)} ✓`),
+      calc('Calculate the rms current in the resistor.', 1, Is, 'A', `${eq(`<i>I</i><sub>s</sub> = <i>V</i><sub>s</sub> / <i>R</i> = ${A(Vs)} / ${N(Rr)} = ${AV(Is, 'A')}`)} ✓`),
+      calc('Calculate the rms current in the primary coil.', 2, Ip, 'A', `For 100% efficiency ${eq('<i>I</i><sub>p</sub><i>V</i><sub>p</sub> = <i>I</i><sub>s</sub><i>V</i><sub>s</sub>')} ✓<br>${eq(`<i>I</i><sub>p</sub> = ${A(Is)} × ${A(Vs)} / ${N(Vp)} = ${AV(Ip, 'A')}`)} ✓`),
+      text('Explain how an alternating potential difference across the primary coil produces an alternating potential difference across the secondary coil.', 3, 'The alternating current in the primary coil produces a changing (alternating) magnetic flux in the iron core ✓<br>The core links this flux with the secondary coil ✓<br>The changing flux linkage induces an (alternating) emf in the secondary coil (Faraday’s law) ✓')
+    ] };
+};
+
+T.TR2 = R => {
+  const Vp = 230, Vs = R.pick([5, 6, 9, 12, 15, 19, 24, 48]), Is = R.pick(rng(.5, 5, .5).concat([.8, 1.2, 1.6, 2.4])), et = R.pick(rng(.8, .96, .02)), Ip = Number((Vs * Is / (et * Vp)).toPrecision(2)), Pin = Vp * Ip, Pout = Vs * Is, eff = Pout / Pin * 100;
+  const s = new Scene('A step-down transformer with an ac supply connected to the primary coil and a load connected to the secondary coil'); transFig(s, { down: true, load: 'load' });
+  return { sf: 2, scenes: [s], data: { Vp, Ip, Vs, Is },
+    stem: `<b>Figure 1</b> shows a step-down transformer connected to a ${V(Vp, 'V')} rms ac supply. When a load is connected to the secondary coil, the rms current in the primary coil is ${V(Ip, 'A')}, the rms voltage across the load is ${V(Vs, 'V')} and the rms current in the load is ${V(Is, 'A')}.`,
+    parts: [
+      calc('Calculate the power supplied to the primary coil.', 1, Pin, 'W', `${eq(`<i>P</i> = <i>I</i><sub>p</sub><i>V</i><sub>p</sub> = ${N(Ip)} × ${N(Vp)} = ${AV(Pin, 'W')}`)} ✓`),
+      calc('Calculate the efficiency of the transformer. Give your answer as a percentage.', 2, eff, '%', `${eq('efficiency = <i>I</i><sub>s</sub><i>V</i><sub>s</sub> / <i>I</i><sub>p</sub><i>V</i><sub>p</sub>')} ✓<br>${eq(`efficiency = (${N(Is)} × ${N(Vs)}) / ${A(Pin)} = ${A(eff / 100)} = ${A(eff)} %`)} ✓`),
+      calc('Calculate the power wasted in the transformer.', 1, Pin - Pout, 'W', `${eq(`power wasted = ${N(Pin, 4)} − ${N(Pout, 4)} = ${AV(Pin - Pout, 'W')}`)} ✓`, { tol: .05 }),
+      text('State <b>two</b> causes of energy loss in a transformer. For each one, describe a feature of the transformer that reduces the loss.', 4, 'Any two causes, each with a matching feature (max 4):<br>Eddy currents induced in the core (heat the core) ✓ reduced by a laminated core (thin sheets separated by insulator) ✓<br>Resistance of the coils (<i>I</i><sup>2</sup><i>R</i> heating) ✓ reduced by thick copper / low-resistance wire ✓<br>Magnetising and demagnetising the core (hysteresis) ✓ reduced by a core of magnetically soft iron ✓<br>Flux leakage (not all the flux links the secondary) ✓ reduced by winding the coils close together on a closed core ✓')
+    ] };
+};
+
+T.TR3 = R => {
+  const q = find(() => { const P = R.pick([2, 5, 10, 20, 50, 100, 200]), Vk = R.pick([11, 33, 66, 110, 130, 400]), Rc = R.pick([.5, 1, 2, 4, 5, 8, 10, 20]), k = R.pick([2, 5, 10]); const I = P * 1e6 / (Vk * 1e3), loss = I * I * Rc; return { P, Vk, Rc, k, I, loss, pc: loss / (P * 1e6) * 100 }; }, q => q.pc >= .05 && q.pc * q.k * q.k <= 60 && isNice(q.Vk / q.k, 2));
+  const { P, Vk, Rc, k, I, loss, pc } = q, loss2 = loss * k * k;
+  const s = new Scene('A power station connected through a step-up transformer, transmission cables and a step-down transformer to consumers');
+  boxed(s, 0, 80, 84, 56, 'power\nstation'); boxed(s, 118, 80, 96, 56, 'step-up\ntransformer'); boxed(s, 330, 80, 96, 56, 'step-down\ntransformer'); boxed(s, 460, 80, 90, 56, 'consumers');
+  [98, 118].forEach(y => { s.line(84, y, 118, y, { w: 1.3 }).line(214, y, 330, y, { w: 2.2 }).line(426, y, 460, y, { w: 1.3 }); });
+  s.label(272, 70, 'transmission cables');
+  return { sf: 2, scenes: [s], data: { P: P * 1e6, V: Vk * 1e3, R: Rc, k },
+    stem: `<b>Figure 1</b> shows how electrical power is transmitted from a power station to consumers. A power of ${V(P, 'MW')} is transmitted along the cables at an rms voltage of ${V(Vk, 'kV')}. The total resistance of the transmission cables is ${V(Rc, 'Ω')}.`,
+    parts: [
+      calc('Calculate the rms current in the transmission cables.', 1, I, 'A', `${eq(`<i>I</i> = <i>P</i> / <i>V</i> = ${N(P * 1e6)} / ${N(Vk * 1e3)} = ${AV(I, 'A')}`)} ✓`),
+      calc('Calculate the power dissipated in the transmission cables.', 2, loss, 'W', `${eq(`<i>P</i> = <i>I</i><sup>2</sup><i>R</i> = (${A(I)})<sup>2</sup> × ${N(Rc)}`)} ✓<br>${eq(`<i>P</i> = ${AV(loss, 'W')}`)} ✓`),
+      calc('Calculate the percentage of the transmitted power that is dissipated in the cables.', 1, pc, '%', `${eq(`percentage = (${A(loss)} / ${N(P * 1e6)}) × 100 = ${A(pc)} %`)} ✓`),
+      calc(`The same power is instead transmitted along the same cables at ${V(Vk / k, 'kV')}.<br>Calculate the power that would be dissipated in the cables.`, 2, loss2, 'W', `The current is ${k} times larger (${AV(I * k, 'A')}), so the power dissipated is ${k}<sup>2</sup> = ${k * k} times larger ✓<br>${eq(`<i>P</i> = ${k * k} × ${A(loss)} = ${AV(loss2, 'W')}`)} ✓`),
+      text('Explain why alternating current, rather than direct current, is used to transmit electrical power over long distances.', 2, 'Transformers only work with alternating current (a changing flux is needed to induce an emf) ✓<br>Transformers allow the voltage to be stepped up for transmission, giving a small current and small <i>I</i><sup>2</sup><i>R</i> losses, and stepped down again for consumers ✓')
+    ] };
+};
+
+T.TR4 = R => {
+  const Vp = 230, [Np, m] = R.pick([[2300, 10], [4600, 20], [1150, 5], [920, 4], [460, 2]]), Vs = R.pick([5, 6, 9, 12, 19, 20]), Is = R.pick([.5, 1, 1.5, 2, 2.4, 3]), et = R.pick([80, 85, 90, 92, 95]);
+  const Ns = m * Vs, V0 = Vs * Math.SQRT2, Pout = Vs * Is, Pin = Pout / (et / 100), Ip = Pin / Vp;
+  const s = new Scene('A step-down transformer in a charger, with the mains supply connected to the primary coil and a device connected to the secondary coil'); transFig(s, { down: true, load: 'device' });
+  return { sf: 2, scenes: [s], data: { Vp, Np, Vs, Is, et },
+    stem: `<b>Figure 1</b> shows the transformer in a charger. The primary coil has ${Np} turns and is connected to the ${V(Vp, 'V')} rms mains supply. The secondary coil supplies an rms voltage of ${V(Vs, 'V')} to a device, and the rms current in the device is ${V(Is, 'A')}. The efficiency of the transformer is ${et}%.`,
+    parts: [
+      calc('Calculate the number of turns on the secondary coil.', 2, Ns, 'turns', `${eq('<i>N</i><sub>s</sub> / <i>N</i><sub>p</sub> = <i>V</i><sub>s</sub> / <i>V</i><sub>p</sub>')} ✓<br>${eq(`<i>N</i><sub>s</sub> = ${Np} × ${N(Vs)} / ${N(Vp)} = ${Ns}`)} ✓`),
+      calc('Calculate the peak voltage across the secondary coil.', 1, V0, 'V', `${eq(`<i>V</i><sub>0</sub> = <i>V</i><sub>rms</sub> × √2 = ${N(Vs)} × √2 = ${AV(V0, 'V')}`)} ✓`),
+      calc('Calculate the power supplied to the device.', 1, Pout, 'W', `${eq(`<i>P</i> = <i>I</i><sub>s</sub><i>V</i><sub>s</sub> = ${N(Is)} × ${N(Vs)} = ${AV(Pout, 'W')}`)} ✓`),
+      calc('Calculate the rms current in the primary coil.', 3, Ip, 'A', `${eq(`input power = output power / efficiency = ${A(Pout)} / ${N(et / 100)}`)} ✓<br>${eq(`input power = ${AV(Pin, 'W')}`)} ✓<br>${eq(`<i>I</i><sub>p</sub> = ${A(Pin)} / ${N(Vp)} = ${AV(Ip, 'A')}`)} ✓`),
+      text('The iron core of the transformer is laminated.<br>Explain how this improves the efficiency of the transformer.', 3, 'The changing magnetic flux induces eddy currents in the iron core ✓<br>These currents heat the core, wasting energy ✓<br>The laminations (thin sheets separated by insulation) increase the resistance of the core to these currents, so the eddy currents and the energy wasted are reduced ✓')
+    ] };
+};
+
+T.TR5 = R => {
+  const q = find(() => { const a = R.pick([1.5, 2]), g = R.pick([2, 5, 10, 20]), p = R.pick([2, 2.5, 4, 5]), tb = R.pick([2, 5, 10]), Np = R.pick(TURNS), Ns = R.pick(TURNS); return { a, g, p, tb, Np, Ns }; }, q => q.Np > q.Ns && q.Np / q.Ns <= 25);
+  const { a, g, p, tb, Np, Ns } = q, V0 = a * g, Vs = V0 / Math.SQRT2, Vp = Vs * Np / Ns, Tm = p * tb, f = 1000 / Tm, sc = scope(sine(a, p));
+  const s = new Scene('A transformer with an ac supply connected to the primary coil and an oscilloscope connected to the secondary coil'); transFig(s, { down: true, scope: true });
+  return { sf: 2, scenes: [s], figs: [sc.svg], scopeBad: sc.bad, data: { a, g, p, tb, Np, Ns },
+    stem: `<b>Figure 1</b> shows an ideal transformer with an ac supply connected to its primary coil and an oscilloscope connected across its secondary coil. The primary coil has ${Np} turns and the secondary coil has ${Ns} turns. <b>Figure 2</b> shows the trace on the oscilloscope screen.<br>The y-gain is set to ${V(g, 'V div<sup>−1</sup>')} and the time-base is set to ${V(tb, 'ms div<sup>−1</sup>')}.`,
+    parts: [
+      calc('Determine the peak voltage across the secondary coil.', 1, V0, 'V', `Amplitude = ${N(a)} divisions: ${eq(`<i>V</i><sub>0</sub> = ${N(a)} × ${N(g)} = ${AV(V0, 'V')}`)} ✓`, { abs: .12 * g }),
+      calc('Calculate the rms voltage across the secondary coil.', 1, Vs, 'V', `${eq(`<i>V</i><sub>rms</sub> = ${A(V0)} / √2 = ${AV(Vs, 'V')}`)} ✓`, { tol: .06 }),
+      calc('Calculate the rms voltage of the supply.', 2, Vp, 'V', `${eq('<i>V</i><sub>p</sub> / <i>V</i><sub>s</sub> = <i>N</i><sub>p</sub> / <i>N</i><sub>s</sub>')} ✓<br>${eq(`<i>V</i><sub>p</sub> = ${A(Vs)} × ${Np} / ${Ns} = ${AV(Vp, 'V')}`)} ✓`, { tol: .06 }),
+      calc('Determine the frequency of the supply.', 2, f, 'Hz', `One cycle occupies ${N(p)} divisions: ${eq(`<i>T</i> = ${N(p)} × ${N(tb)} = ${A(Tm)} ms`)} ✓<br>${eq(`<i>f</i> = 1 / ${A(Tm * 1e-3)} = ${AV(f, 'Hz')}`)} ✓`, { tol: .05 }),
+      text('The number of turns on the secondary coil is doubled. The supply and the oscilloscope settings are unchanged.<br>Describe how the trace changes.', 2, `The amplitude of the trace doubles (to ${N(2 * a)} divisions), because the secondary voltage is proportional to the number of secondary turns ✓<br>The length of one cycle on the screen is unchanged, because the frequency is the same ✓`)
+    ] };
+};
+
+T.TR6 = R => {
+  const q = find(() => { const Np = R.pick([100, 200, 250, 400, 500, 800]), Vp = R.pick([2, 3, 4, 5, 6, 8, 10, 12]), Nmax = R.pick([50, 100, 200, 500]); return { Np, Vp, Nmax, G: Vp / Np }; }, q => q.G * q.Nmax >= 1 && q.G * q.Nmax <= 30);
+  const { Np, Vp, Nmax, G } = q, Vt = R.pick([1.5, 2, 2.5, 3]) * G * Nmax, Vtd = Number(Vt.toPrecision(2)), Nneed = Vtd / G, [ymax, yM] = axisFor(G * Nmax);
+  const s = new Scene('A transformer with an ac supply connected to the primary coil and a voltmeter connected to the secondary coil'); transFig(s, { volt: true });
+  const g = graph({ x: [0, Nmax, Nmax / 5], y: [0, ymax, yM], xl: 'number of turns on secondary coil', yl: 'secondary voltage / V', curves: [{ f: x => G * x, from: 0, to: Nmax }], crosses: [1, 2, 3, 4, 5].map(i => [i * Nmax / 5, G * i * Nmax / 5]) });
+  return { sf: 2, scenes: [s], figs: [g], gspec: LAST.g, data: { Np, G, Vtd },
+    stem: `A student investigates a transformer using the arrangement in <b>Figure 1</b>. The primary coil has ${Np} turns and is connected to an ac supply of constant rms voltage. The student changes the number of turns on the secondary coil and measures the rms voltage across it with an ac voltmeter. <b>Figure 2</b> shows the results.`,
+    parts: [
+      calc('Determine the gradient of the graph in <b>Figure 2</b>.', 2, G, 'V per turn', `Uses a large triangle, at least half the length of the line ✓<br>${eq(`gradient = ${A(G * Nmax)} / ${Nmax} = ${A(G)} V per turn`)} ✓`, { tol: .04 }),
+      calc('Calculate the rms voltage of the supply. Assume that the transformer is ideal.', 2, Vp, 'V', `${eq('<i>V</i><sub>s</sub> / <i>N</i><sub>s</sub> = <i>V</i><sub>p</sub> / <i>N</i><sub>p</sub>')}, so ${eq('gradient = <i>V</i><sub>p</sub> / <i>N</i><sub>p</sub>')} ✓<br>${eq(`<i>V</i><sub>p</sub> = ${A(G)} × ${Np} = ${AV(Vp, 'V')}`)} ✓`, { tol: .05 }),
+      calc(`Calculate the number of turns needed on the secondary coil to give a secondary voltage of ${V(Vtd, 'V')}.`, 1, Nneed, 'turns', `${eq(`<i>N</i><sub>s</sub> = ${N(Vtd)} / ${A(G)} = ${A(Nneed)}`)} ✓`, { tol: .05 }),
+      text('In practice each measured secondary voltage is slightly smaller than the value predicted for an ideal transformer.<br>Suggest <b>two</b> reasons for this.', 2, 'Any two ✓✓<br>Not all of the magnetic flux produced by the primary coil links the secondary coil (flux leakage)<br>Energy is dissipated by eddy currents in the core<br>Energy is dissipated in the resistance of the coils<br>Energy is dissipated in repeatedly magnetising and demagnetising the core')
+    ] };
+};
+
+
+/* ===== questions without a diagram: calculations and descriptions ===== */
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const ALPHA = { name: 'alpha particle', an: 'an', Q: 2 * QE, m: 6.64e-27, sign: 1, qs: '3.20 × 10<sup>−19</sup>', ms: '6.64 × 10<sup>−27</sup>' };
+
+T.FW7 = R => {
+  const I = R.pick([200, 300, 400, 500, 600, 800]), L = R.pick([20, 25, 30, 40, 50]), B = R.pick([16, 18, 20, 22, 25, 30]), mu = R.pick([.5, .8, 1.2, 1.5, 2]), F = B * 1e-6 * I * L, W = mu * L * GRAV;
+  return NOFIG(2, { I, L, B: B * 1e-6, mu },
+    `A straight horizontal overhead power cable carries a direct current of ${V(I, 'A')}. The cable is at right angles to the horizontal component of the Earth’s magnetic field, which has a flux density of ${V(B, 'μT')}. The mass per unit length of the cable is ${V(mu, 'kg m<sup>−1</sup>')}.`, [
+    text('Define the tesla.', 2, 'The flux density that produces a force of 1 N on each metre of wire ✓<br>when the wire carries a current of 1 A at right angles to the field ✓'),
+    calc(`Calculate the magnetic force on a ${V(L, 'm')} length of the cable.`, 2, F, 'N', `${eq(`<i>F</i> = <i>BIl</i> = ${N(B * 1e-6)} × ${N(I)} × ${N(L)}`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+    calc(`Calculate the weight of a ${V(L, 'm')} length of the cable.`, 1, W, 'N', `${eq(`<i>W</i> = <i>mg</i> = ${N(mu)} × ${N(L)} × 9.81 = ${AV(W, 'N')}`)} ✓`),
+    text('State the direction of the magnetic force on the cable relative to the cable and to the field, and explain whether this force needs to be considered when the cable supports are designed.', 2, 'The force is perpendicular to both the cable (current) and the field, so it is vertical ✓<br>It is very much smaller than the weight of the cable, so it can be ignored ✓')
+  ]);
+};
+T.FW8 = R => {
+  const Nt = R.pick([40, 50, 60, 80, 100, 120]), d = R.pick([20, 25, 30, 40, 50]), B = R.pick([.4, .5, .6, .8, 1, 1.2]), I = R.pick([50, 80, 100, 150, 200, 250, 400]), m = R.pick([5, 8, 10, 12, 15, 20]);
+  const L = Nt * Math.PI * d * 1e-3, F = B * I * 1e-3 * L, a = F / (m * 1e-3);
+  return NOFIG(2, { N: Nt, d: d * 1e-3, B, I: I * 1e-3, m: m * 1e-3 },
+    `The coil of a loudspeaker has ${Nt} turns, each of diameter ${V(d, 'mm')}. The coil is in the gap of a magnet, where the field has a flux density of ${V(B, 'T')} and is at right angles to the wire at every point on the coil. The coil is attached to a paper cone; the total mass of the coil and cone is ${V(m, 'g')}.`, [
+    calc('Calculate the total length of wire in the coil.', 1, L, 'm', `${eq(`length = <i>N</i>π<i>d</i> = ${Nt} × π × ${N(d * 1e-3)} = ${AV(L, 'm')}`)} ✓`),
+    calc(`Calculate the force on the coil when the current in it is ${V(I, 'mA')}.`, 2, F, 'N', `${eq(`<i>F</i> = <i>BIl</i> = ${N(B)} × ${N(I * 1e-3)} × ${A(L)}`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+    calc('Calculate the acceleration of the coil and cone that this force produces. Ignore any other forces.', 1, a, MS2, `${eq(`<i>a</i> = <i>F</i> / <i>m</i> = ${A(F)} / ${N(m * 1e-3)} = ${AV(a, MS2)}`)} ✓`),
+    text('An alternating current is supplied to the coil.<br>Explain why the cone vibrates.', 2, 'The direction of the current reverses repeatedly, so the direction of the force on the coil reverses ✓<br>The coil and cone are pushed alternately one way and then the other, at the frequency of the current ✓')
+  ]);
+};
+T.FW9 = R => {
+  const L = R.pick([3, 4, 5, 6, 8, 10]), Bt = R.pick(rng(.1, .3, .01)), k = R.pick([.5, 1, 1.5, 2]);
+  const cur = [1, 2, 3, 4].map(x => x * k), ms = cur.map(I => Number((Bt * I * L * 1e-2 / GRAV * 1e3).toFixed(2))), B = ms[3] * 1e-3 * GRAV / (cur[3] * L * 1e-2);
+  return NOFIG(2, { L: L * 1e-2, I4: cur[3], m4: ms[3] * 1e-3 },
+    `A student places a magnet on a top-pan balance and clamps a horizontal wire in the uniform field between its poles, at right angles to the field. With no current in the wire the balance is set to read zero. The table shows the balance reading for different currents in the wire. The length of wire in the field is ${V(L, 'cm')}.<table class="data"><tr><th>current / A</th>${cur.map(c => `<td>${c.toFixed(1)}</td>`).join('')}</tr><tr><th>balance reading / g</th>${ms.map(x => `<td>${x.toFixed(2)}</td>`).join('')}</tr></table>`, [
+    text('Explain why the balance reading changes when there is a current in the wire.', 2, 'The field exerts a (vertical) force on the current-carrying wire ✓<br>The wire exerts an equal and opposite force on the magnet (Newton’s third law), which changes the force on the balance ✓'),
+    text('Show that the data are consistent with the force on the wire being directly proportional to the current.', 2, `Calculates reading ÷ current for at least three pairs of values: ${ms.map((x, i) => N(x / cur[i], 3)).join(', ')} (g A<sup>−1</sup>) ✓<br>These are constant (within the precision of the data), so force ∝ current ✓`),
+    calc('Use the data for the largest current to calculate the flux density of the field.', 3, B, 'T', `${eq(`<i>F</i> = ${N(ms[3] * 1e-3, 3)} × 9.81 = ${N(ms[3] * 1e-3 * GRAV, 3)} N`)} ✓<br>${eq(`<i>B</i> = <i>F</i> / <i>Il</i> = ${N(ms[3] * 1e-3 * GRAV, 3)} / (${N(cur[3])} × ${N(L * 1e-2)})`)} ✓<br>${eq(`<i>B</i> = ${AV(B, 'T')}`)} ✓`, { tol: .03 }),
+    text('Suggest <b>one</b> way in which the student could obtain a more reliable value for the flux density from these data.', 1, 'Plot a graph of reading (or force) against current and use the gradient of the best-fit line / calculate <i>B</i> for every current and take the mean ✓')
+  ]);
+};
+T.FW10 = R => {
+  const l = R.pick([5, 8, 10, 12, 15, 20, 25]), I = R.pick(rng(1, 8, .5)), Bt = R.pick([20, 30, 40, 50, 60, 80, 100, 150]), F = Number((Bt * I * l * 1e-2).toPrecision(2)), B = F * 1e-3 / (I * l * 1e-2);
+  const I2 = find(() => R.pick(rng(1, 9, .5)), x => x !== I), l2 = find(() => R.pick([4, 5, 8, 10, 12, 15, 20, 30]), x => x !== l), F2 = B * I2 * l2 * 1e-2 * 1e3;
+  return NOFIG(2, { l: l * 1e-2, I, F: F * 1e-3, I2, l2: l2 * 1e-2 },
+    `A straight wire carries a current of ${V(I, 'A')} at right angles to a uniform magnetic field. The length of wire in the field is ${V(l, 'cm')} and the force on the wire is ${V(F, 'mN')}.`, [
+    calc('Calculate the flux density of the magnetic field.', 2, B, 'T', `${eq(`<i>B</i> = <i>F</i> / <i>Il</i> = ${N(F * 1e-3)} / (${N(I)} × ${N(l * 1e-2)})`)} ✓<br>${eq(`<i>B</i> = ${AV(B, 'T')}`)} ✓`),
+    calc(`The current is changed to ${V(I2, 'A')} and the length of wire in the field is changed to ${V(l2, 'cm')}.<br>Calculate the new force on the wire.`, 2, F2, 'mN', `${eq(`<i>F</i> = <i>BIl</i> = ${A(B)} × ${N(I2)} × ${N(l2 * 1e-2)}`)} ✓<br>${eq(`<i>F</i> = ${AV(F2 * 1e-3, 'N')} = ${AV(F2, 'mN')}`)} ✓`),
+    text('State what happens to the direction of the force on the wire when the direction of the current and the direction of the field are <b>both</b> reversed.', 1, 'The direction of the force is unchanged (each reversal on its own would reverse the force) ✓'),
+    text('State the condition for which the equation <i>F</i> = <i>BIl</i> applies.', 1, 'The current (wire) is perpendicular to the magnetic field ✓')
+  ]);
+};
+
+T.MC8 = R => {
+  const p = R.pick([PARTICLES.electron, PARTICLES.proton, ALPHA]);
+  const q = find(() => { const v = p.sign < 0 ? R.pick(rng(4, 30, 1)) * 1e6 : R.pick(rng(.4, 9, .2)) * 1e6, B = p.sign < 0 ? R.pick(rng(.5, 8, .5)) : R.pick([20, 25, 40, 50, 80, 100, 150, 200, 250, 400, 500]); return { v, B, r: p.m * v / (B * 1e-3 * p.Q) }; }, q => q.r >= .005 && q.r <= 2);
+  const { v, B, r } = q, F = B * 1e-3 * p.Q * v, a = F / p.m;
+  return NOFIG(2, { v, B: B * 1e-3, Q: p.Q, m: p.m },
+    `${p.an === 'an' ? 'An' : 'A'} ${p.name} moves at a speed of ${V(v, MS1)} at right angles to a uniform magnetic field of flux density ${V(B, 'mT')}.<br>mass of ${p.name} = ${p.ms} kg${p === ALPHA ? '<br>charge of alpha particle = +2<i>e</i>' : ''}`, [
+    calc(`Calculate the magnetic force on the ${p.name}.`, 2, F, 'N', `${eq(`<i>F</i> = <i>BQv</i> = ${N(B * 1e-3)} × ${p.qs} × ${N(v)}`)} ✓<br>${eq(`<i>F</i> = ${AV(F, 'N')}`)} ✓`),
+    calc(`Calculate the acceleration of the ${p.name}.`, 1, a, MS2, `${eq(`<i>a</i> = <i>F</i> / <i>m</i> = ${A(F)} / ${p.ms} = ${AV(a, MS2)}`)} ✓`),
+    calc('Calculate the radius of the circular path.', 2, r, 'm', `${eq('<i>a</i> = <i>v</i><sup>2</sup> / <i>r</i>')} (or ${eq('<i>r</i> = <i>mv</i> / <i>BQ</i>')}) ✓<br>${eq(`<i>r</i> = (${N(v)})<sup>2</sup> / ${A(a)} = ${AV(r, 'm')}`)} ✓`),
+    text(`State and explain the effect of the acceleration on the speed and on the direction of motion of the ${p.name}.`, 2, 'The speed does not change but the direction of motion changes continuously ✓<br>The acceleration (force) is always perpendicular to the velocity, towards the centre of the circle ✓')
+  ]);
+};
+T.MC9 = R => {
+  const q = find(() => { const v = R.pick(rng(1, 9, .5)) * 1e6, B = R.pick([1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50]); return { v, B, re: ME * v / (B * 1e-3 * QE) }; }, q => q.re >= 2e-4), { v, B, re } = q, rp = MP * v / (B * 1e-3 * QE);
+  return NOFIG(2, { v, B: B * 1e-3 },
+    `An electron and a proton, each moving at ${V(v, MS1)}, enter the same uniform magnetic field of flux density ${V(B, 'mT')}. Both are moving at right angles to the field and in the same direction as each other.<br>mass of electron = 9.11 × 10<sup>−31</sup> kg<br>mass of proton = 1.67 × 10<sup>−27</sup> kg`, [
+    calc('Calculate the radius of the path of the electron.', 2, re, 'm', `${eq(`<i>r</i> = <i>mv</i> / <i>BQ</i> = 9.11 × 10<sup>−31</sup> × ${N(v)} / (${N(B * 1e-3)} × 1.60 × 10<sup>−19</sup>)`)} ✓<br>${eq(`<i>r</i> = ${AV(re, 'm')}`)} ✓`),
+    calc('Calculate the radius of the path of the proton.', 1, rp, 'm', `${eq(`<i>r</i> = 1.67 × 10<sup>−27</sup> × ${N(v)} / (${N(B * 1e-3)} × 1.60 × 10<sup>−19</sup>) = ${AV(rp, 'm')}`)} ✓`),
+    text('Describe and explain <b>two</b> differences between the path of the electron and the path of the proton in the field.', 3, 'They curve in opposite directions, because the charges have opposite signs so the forces are in opposite directions ✓<br>The path of the proton has a much larger radius ✓<br>because <i>r</i> = <i>mv</i> / <i>BQ</i> and the proton has a much greater mass (same <i>v</i>, <i>B</i> and magnitude of <i>Q</i>) ✓'),
+    text('State how the kinetic energy of each particle changes while it is in the field.', 1, 'It does not change (the magnetic force does no work) ✓')
+  ]);
+};
+T.MC10 = R => {
+  const q = find(() => { const r = R.pick(rng(4, 60, 2)), B = R.pick(rng(.4, 2, .1)); return { r, B, v: B * QE * r * 1e-2 / MP }; }, q => q.v <= 3e7 && q.v >= 2e6);
+  const { r, B, v } = q, mom = B * QE * r * 1e-2, MeV = .5 * MP * v * v / 1.6e-13;
+  return NOFIG(2, { r: r * 1e-2, B },
+    `A proton leaves a curved track in a particle detector. The detector is in a uniform magnetic field of flux density ${V(B, 'T')}, at right angles to the plane of the track. At one point the radius of curvature of the track is ${V(r, 'cm')}.<br>mass of proton = 1.67 × 10<sup>−27</sup> kg`, [
+    text('Show that the momentum <i>p</i> of the proton is given by <i>p</i> = <i>BQr</i>.', 2, `The magnetic force provides the centripetal force: ${eq('<i>BQv</i> = <i>mv</i><sup>2</sup> / <i>r</i>')} ✓<br>${eq('<i>mv</i> = <i>BQr</i>')}, and <i>p</i> = <i>mv</i> ✓`),
+    calc('Calculate the momentum of the proton at this point.', 2, mom, 'kg m s<sup>−1</sup>', `${eq(`<i>p</i> = <i>BQr</i> = ${N(B)} × 1.60 × 10<sup>−19</sup> × ${N(r * 1e-2)}`)} ✓<br>${eq(`<i>p</i> = ${AV(mom, 'kg m s<sup>−1</sup>')}`)} ✓`),
+    calc('Calculate the speed of the proton at this point. Ignore relativistic effects.', 1, v, MS1, `${eq(`<i>v</i> = <i>p</i> / <i>m</i> = ${A(mom)} / 1.67 × 10<sup>−27</sup> = ${AV(v, MS1)}`)} ✓`),
+    calc('Calculate, in MeV, the kinetic energy of the proton at this point.', 2, MeV, 'MeV', `${eq(`<i>E</i><sub>k</sub> = ½<i>mv</i><sup>2</sup> = ½ × 1.67 × 10<sup>−27</sup> × (${A(v)})<sup>2</sup> = ${AV(.5 * MP * v * v, 'J')}`)} ✓<br>${eq(`<i>E</i><sub>k</sub> = ${A(.5 * MP * v * v)} / 1.60 × 10<sup>−13</sup> = ${AV(MeV, 'MeV')}`)} ✓`),
+    text('The track is a spiral of decreasing radius.<br>Explain why.', 2, 'The proton loses kinetic energy (slows down) as it ionises the material of the detector ✓<br><i>r</i> = <i>mv</i> / <i>BQ</i>, so the radius decreases as the speed decreases ✓')
+  ]);
+};
+T.MC11 = R => {
+  const B = R.pick(rng(30, 60, 1)), v = R.pick(rng(1, 9.5, .5)) * 1e5, f = B * 1e-6 * QE / (2 * Math.PI * ME), Tp = 1 / f, r = ME * v / (B * 1e-6 * QE);
+  return NOFIG(2, { B: B * 1e-6, v },
+    `In a region above the Earth the magnetic field can be taken as uniform, with a flux density of ${V(B, 'μT')}. An electron in this region moves at a speed of ${V(v, MS1)}.<br>mass of electron = 9.11 × 10<sup>−31</sup> kg`, [
+    text('State the magnetic force on the electron when it moves parallel to the field lines, and describe its motion.', 2, 'The force is zero ✓<br>The electron continues in a straight line at constant speed ✓'),
+    calc('The electron now moves at right angles to the field.<br>Calculate the radius of its circular path.', 2, r, 'm', `${eq(`<i>r</i> = <i>mv</i> / <i>BQ</i> = 9.11 × 10<sup>−31</sup> × ${N(v)} / (${N(B * 1e-6)} × 1.60 × 10<sup>−19</sup>)`)} ✓<br>${eq(`<i>r</i> = ${AV(r, 'm')}`)} ✓`),
+    calc('Calculate the number of orbits the electron completes each second.', 2, f, 'Hz', `${eq('<i>f</i> = <i>v</i> / 2π<i>r</i> = <i>BQ</i> / 2π<i>m</i>')} ✓<br>${eq(`<i>f</i> = ${N(B * 1e-6)} × 1.60 × 10<sup>−19</sup> / (2π × 9.11 × 10<sup>−31</sup>) = ${AV(f, 'Hz')}`)} ✓`),
+    text('A second electron moves at right angles to the same field at a greater speed.<br>State and explain how the number of orbits it completes each second compares with that of the first electron.', 2, 'The same number ✓<br><i>f</i> = <i>BQ</i> / 2π<i>m</i> does not depend on the speed (a faster electron travels round a proportionally larger circle) ✓')
+  ]);
+};
+
+T.FL5 = R => {
+  const B = R.pick([40, 42, 45, 48, 50, 52, 55]), a = R.pick([.8, 1, 1.2, 1.5, 1.8, 2]), b = R.pick([.5, .6, .8, 1, 1.2]), th = R.pick(rng(20, 70, 5)), Nt = R.pick([20, 50, 80, 100, 150, 200]);
+  const phi = B * 1e-6 * a * b * Math.cos(th * Math.PI / 180), link = phi * Nt;
+  return NOFIG(2, { B: B * 1e-6, A: a * b, th, N: Nt },
+    `A rectangular window frame measures ${V(a, 'm')} by ${V(b, 'm')}. The Earth’s magnetic field at the window has a flux density of ${V(B, 'μT')}, and the field lines make an angle of ${th}° with the normal to the plane of the window.`, [
+    text('Explain the difference between magnetic flux and magnetic flux linkage.', 2, 'Magnetic flux is the product of the flux density normal to an area and the area (<i>Φ</i> = <i>BA</i>) ✓<br>Flux linkage is the flux multiplied by the number of turns of a coil that the flux passes through (<i>NΦ</i>) ✓'),
+    calc('Calculate the magnetic flux through the window.', 3, phi, 'Wb', `${eq(`<i>A</i> = ${N(a)} × ${N(b)} = ${AV(a * b, 'm<sup>2</sup>')}`)} ✓<br>${eq(`<i>Φ</i> = <i>BA</i> cos <i>θ</i> = ${N(B * 1e-6)} × ${A(a * b)} × cos ${th}°`)} ✓<br>${eq(`<i>Φ</i> = ${AV(phi, 'Wb')}`)} ✓`),
+    calc(`A coil of ${Nt} turns of wire is fixed around the edge of the frame.<br>Calculate the flux linkage of this coil.`, 1, link, WBT, `${eq(`<i>NΦ</i> = ${Nt} × ${A(phi)} = ${AV(link, WBT)}`)} ✓`),
+    text('The window is turned until the flux linkage of the coil is a maximum.<br>State the angle between the field lines and the plane of the window in this position.', 1, '90° (the field lines are along the normal to the window) ✓')
+  ]);
+};
+T.FL6 = R => {
+  const q = find(() => { const link = R.pick([2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40]), Nt = R.pick([100, 200, 250, 400, 500, 800]), d = R.pick([20, 25, 30, 40, 50, 60]); return { link, Nt, d, B: link * 1e-3 / Nt / (Math.PI * d * d * 1e-6 / 4) }; }, q => q.B >= .005 && q.B <= 1.5);
+  const { link, Nt, d, B } = q, t = R.pick([5, 8, 10, 20, 25, 40, 50]), phi = link * 1e-3 / Nt, emf = link * 1e-3 / (t * 1e-3);
+  return NOFIG(2, { link: link * 1e-3, N: Nt, d: d * 1e-3, t: t * 1e-3 },
+    `A circular coil of ${Nt} turns and diameter ${V(d, 'mm')} is placed in a uniform magnetic field with its plane at right angles to the field lines. The flux linkage of the coil is ${V(link, 'mWb turns')}.`, [
+    calc('Calculate the magnetic flux through one turn of the coil.', 1, phi, 'Wb', `${eq(`<i>Φ</i> = ${N(link * 1e-3)} / ${Nt} = ${AV(phi, 'Wb')}`)} ✓`),
+    calc('Calculate the flux density of the field.', 3, B, 'T', `${eq(`<i>A</i> = π × (${A(d * 1e-3 / 2)})<sup>2</sup> = ${AV(Math.PI * d * d * 1e-6 / 4, 'm<sup>2</sup>')}`)} ✓<br>${eq(`<i>B</i> = <i>Φ</i> / <i>A</i> = ${A(phi)} / ${A(Math.PI * d * d * 1e-6 / 4)}`)} ✓<br>${eq(`<i>B</i> = ${AV(B, 'T')}`)} ✓`),
+    calc(`The coil is pulled out of the field in ${V(t, 'ms')}.<br>Calculate the mean emf induced in the coil.`, 2, emf, 'V', `${eq(`<i>ε</i> = Δ(<i>NΦ</i>) / Δ<i>t</i> = ${N(link * 1e-3)} / ${N(t * 1e-3)}`)} ✓<br>${eq(`<i>ε</i> = ${AV(emf, 'V')}`)} ✓`),
+    text('State and explain how the mean emf would differ if the coil were pulled out of the field in half the time.', 2, 'The mean emf would be twice as large ✓<br>The change in flux linkage is the same but it happens in half the time, so the rate of change of flux linkage doubles ✓')
+  ]);
+};
+T.FL7 = R => {
+  const B = R.pick([20, 25, 40, 50, 60, 80, 100, 150, 200]), Ac = R.pick([10, 12, 15, 20, 25, 30, 40, 50]), Nt = R.pick([50, 80, 100, 150, 200, 250, 400]), th = R.pick([30, 40, 50, 60, 70]), full = B * 1e-3 * Ac * 1e-4 * Nt, l2 = full * Math.cos(th * Math.PI / 180);
+  return NOFIG(2, { B: B * 1e-3, A: Ac * 1e-4, N: Nt, th },
+    `A flat coil of ${Nt} turns, each of area ${V(Ac, 'cm<sup>2</sup>')}, is in a uniform magnetic field of flux density ${V(B, 'mT')}. The coil can be rotated about an axis that is in the plane of the coil and at right angles to the field. <i>θ</i> is the angle between the normal to the plane of the coil and the field lines.`, [
+    calc('Calculate the flux linkage of the coil when <i>θ</i> = 0°.', 2, full, WBT, `${eq(`<i>NΦ</i> = <i>BAN</i> = ${N(B * 1e-3)} × ${N(Ac * 1e-4)} × ${Nt}`)} ✓<br>${eq(`<i>NΦ</i> = ${AV(full, WBT)}`)} ✓`),
+    calc(`Calculate the flux linkage of the coil when <i>θ</i> = ${th}°.`, 1, l2, WBT, `${eq(`<i>NΦ</i> = <i>BAN</i> cos <i>θ</i> = ${A(full)} × cos ${th}° = ${AV(l2, WBT)}`)} ✓`),
+    calc('State the flux linkage of the coil when <i>θ</i> = 90°.', 1, 0, WBT, 'Zero ✓<br>The plane of the coil is parallel to the field lines, so no flux passes through it.'),
+    text('The coil is rotated at a constant rate through one complete revolution, starting from <i>θ</i> = 0°.<br>Describe how the flux linkage of the coil varies during the revolution.', 3, `It varies as a cosine curve (sinusoidally), starting at its maximum value of ${plain(AV(full, WBT))} ✓<br>It falls to zero at 90°, reaches the same magnitude in the opposite direction (negative) at 180° ✓<br>and returns through zero at 270° to its original value at 360° ✓`)
+  ]);
+};
+
+T.EI9 = R => {
+  const metal = R.pick(['aluminium', 'copper', 'brass']), w = R.pick([2, 3, 4, 5, 6, 8, 10]), v = R.pick(rng(.4, 2, .1)), B = R.pick([.2, .25, .3, .4, .5, .6, .8]), emf = B * w * 1e-2 * v;
+  return NOFIG(2, { w: w * 1e-2, v, B, metal },
+    `A flat ${metal} plate is fixed to the end of a rigid rod to make a pendulum. The plate swings in a vertical plane and passes between the poles of a strong magnet, where the field is horizontal and at right angles to the plate. The pendulum is released and comes to rest after only a few swings.`, [
+    text('Explain why the pendulum comes to rest so quickly.', 4, 'As the plate enters (or leaves) the field the magnetic flux through it changes, so emfs are induced in the plate ✓<br>These drive eddy currents in the plate (it is a conductor) ✓<br>The eddy currents are in a magnetic field, so forces act on the plate that oppose its motion (Lenz’s law) ✓<br>The kinetic energy of the pendulum is transferred to thermal energy in the plate by the eddy currents ✓'),
+    calc(`At one instant the plate is entering the field at ${V(v, MS1)}. The edge of the plate that is in the field is ${V(w, 'cm')} long and the flux density is ${V(B, 'T')}.<br>Calculate the emf induced across this edge.`, 2, emf, 'V', `${eq(`<i>ε</i> = <i>Blv</i> = ${N(B)} × ${N(w * 1e-2)} × ${N(v)}`)} ✓<br>${eq(`<i>ε</i> = ${AV(emf, 'V')}`)} ✓`),
+    text('The plate is replaced by one of the same size that has a series of narrow slots cut in it, like a comb.<br>State and explain the effect on the motion of the pendulum.', 2, 'The pendulum swings for longer (takes more swings to stop) ✓<br>The slots break up the paths for the eddy currents (increase the resistance), so the currents and the opposing forces are smaller ✓'),
+    text(`State and explain what would happen if the ${metal} plate were replaced by a plastic plate of the same size.`, 1, 'There would be (almost) no damping, because plastic is an insulator and no eddy currents can flow ✓')
+  ]);
+};
+T.EI10 = R => {
+  const l = R.pick([20, 25, 30, 40, 50, 60, 80]), B = R.pick([20, 30, 40, 50, 60, 80, 100, 150]), t = R.pick([.2, .3, .4, .5, .6, .8, 1]), v = GRAV * t, emf = B * 1e-3 * l * 1e-2 * v;
+  return NOFIG(2, { l: l * 1e-2, B: B * 1e-3, t },
+    `A straight horizontal metal rod of length ${V(l, 'cm')} is released from rest and falls vertically. As it falls it stays horizontal and at right angles to a uniform horizontal magnetic field of flux density ${V(B, 'mT')}. Air resistance is negligible.`, [
+    calc(`Calculate the speed of the rod ${V(t, 's')} after it is released.`, 1, v, MS1, `${eq(`<i>v</i> = <i>gt</i> = 9.81 × ${N(t)} = ${AV(v, MS1)}`)} ✓`),
+    calc('Calculate the emf induced between the ends of the rod at this time.', 2, emf, 'V', `${eq(`<i>ε</i> = <i>Blv</i> = ${N(B * 1e-3)} × ${N(l * 1e-2)} × ${A(v)}`)} ✓<br>${eq(`<i>ε</i> = ${AV(emf, 'V')}`)} ✓`),
+    text('Describe and explain how the emf varies with time as the rod falls.', 2, 'The emf increases in proportion to the time since release ✓<br>The emf is proportional to the speed (rate of cutting flux) and the rod has constant acceleration ✓'),
+    text('Explain why the magnetic field does not affect the acceleration of the rod.', 2, 'The rod is not part of a complete circuit, so there is no (sustained) induced current ✓<br>With no current there is no magnetic force on the rod, so the only force is its weight ✓')
+  ]);
+};
+T.EI11 = R => {
+  const q = find(() => { const rpm = R.pick([300, 600, 900, 1200, 1500, 3000]), Nt = R.pick([50, 100, 150, 200, 250, 400, 500]), Ac = R.pick([20, 25, 30, 40, 50, 60, 80]), B = R.pick([.05, .08, .1, .15, .2, .25, .3, .4]); const w = 2 * Math.PI * rpm / 60; return { rpm, Nt, Ac, B, w, e0: B * Ac * 1e-4 * Nt * w }; }, q => q.e0 >= 1 && q.e0 <= 400);
+  const { rpm, Nt, Ac, B, w, e0 } = q, th = R.pick([30, 45, 60]), e1 = e0 * Math.sin(th * Math.PI / 180);
+  return NOFIG(2, { rpm, N: Nt, A: Ac * 1e-4, B, th },
+    `The coil of a simple ac generator has ${Nt} turns, each of area ${V(Ac, 'cm<sup>2</sup>')}. The coil rotates at ${rpm} revolutions per minute in a uniform magnetic field of flux density ${V(B, 'T')}. The axis of rotation is at right angles to the field.`, [
+    calc('Calculate the angular speed of the coil.', 1, w, RADS, `${eq(`<i>ω</i> = 2π × ${rpm} / 60 = ${AV(w, RADS)}`)} ✓`),
+    calc('Calculate the peak emf induced in the coil.', 2, e0, 'V', `${eq(`<i>ε</i><sub>max</sub> = <i>BANω</i> = ${N(B)} × ${N(Ac * 1e-4)} × ${Nt} × ${A(w)}`)} ✓<br>${eq(`<i>ε</i><sub>max</sub> = ${AV(e0, 'V')}`)} ✓`),
+    calc(`Calculate the emf at an instant when the coil has turned through ${th}° from a position in which the emf is zero.`, 2, e1, 'V', `${eq('<i>ε</i> = <i>BANω</i> sin <i>ωt</i>')}, with ${eq(`<i>ωt</i> = ${th}°`)} ✓<br>${eq(`<i>ε</i> = ${A(e0)} × sin ${th}° = ${AV(e1, 'V')}`)} ✓`),
+    text('State the position of the coil, relative to the field, when the emf is zero, and explain why the emf is zero in this position.', 2, 'The plane of the coil is at right angles to the field lines ✓<br>The flux linkage is at its maximum, so its rate of change is zero (the sides of the coil are moving parallel to the field lines) ✓'),
+    text('The rate of rotation is unchanged.<br>State <b>two</b> changes to the generator that would each increase the peak emf.', 2, 'Any two ✓✓<br>more turns on the coil<br>a coil of larger area<br>a stronger magnetic field (greater flux density)')
+  ]);
+};
+T.EI12 = R => {
+  const q = find(() => { const f = R.pick([5, 10, 20, 25, 40, 50, 60]), Nt = R.pick([50, 80, 100, 120, 200, 250, 300, 500]), Ac = R.pick([10, 15, 20, 25, 40, 50, 60]), B = R.pick([40, 50, 80, 100, 120, 150, 200, 250, 400]); const link = B * 1e-3 * Ac * 1e-4 * Nt; return { f, Nt, Ac, B, link, e0: link * 2 * Math.PI * f }; }, q => q.e0 >= .5 && q.e0 <= 300);
+  const { f, Nt, Ac, B, link, e0 } = q, er = e0 / Math.SQRT2;
+  return NOFIG(2, { f, N: Nt, A: Ac * 1e-4, B: B * 1e-3 },
+    `A rectangular coil of ${Nt} turns rotates at a constant frequency of ${V(f, 'Hz')} in a uniform magnetic field of flux density ${V(B, 'mT')}. The axis of rotation is in the plane of the coil and at right angles to the field. The area of each turn is ${V(Ac, 'cm<sup>2</sup>')}.`, [
+    calc('Calculate the maximum flux linkage of the coil.', 2, link, WBT, `${eq(`<i>NΦ</i><sub>max</sub> = <i>BAN</i> = ${N(B * 1e-3)} × ${N(Ac * 1e-4)} × ${Nt}`)} ✓<br>${eq(`<i>NΦ</i><sub>max</sub> = ${AV(link, WBT)}`)} ✓`),
+    calc('Calculate the peak emf induced in the coil.', 2, e0, 'V', `${eq(`<i>ε</i><sub>max</sub> = <i>BANω</i> = ${A(link)} × 2π × ${N(f)}`)} ✓<br>${eq(`<i>ε</i><sub>max</sub> = ${AV(e0, 'V')}`)} ✓`),
+    calc('Calculate the rms value of the induced emf.', 1, er, 'V', `${eq(`<i>ε</i><sub>rms</sub> = <i>ε</i><sub>max</sub> / √2 = ${A(e0)} / √2 = ${AV(er, 'V')}`)} ✓`),
+    text('Explain why the induced emf is a maximum at the instants when the flux linkage of the coil is zero.', 2, 'The emf is proportional to the rate of change of flux linkage (the gradient of the flux linkage–time graph) ✓<br>The flux linkage varies sinusoidally and is changing most rapidly as it passes through zero ✓'),
+    text('State the effect on the peak emf and on the frequency of the emf when the frequency of rotation is doubled.', 2, 'The peak emf doubles ✓<br>The frequency of the emf doubles ✓')
+  ]);
+};
+
+T.AC6 = R => {
+  const I0 = R.pick(rng(.5, 8, .5)), Rr = R.pick([4, 5, 8, 10, 12, 15, 20, 25, 40, 50, 100]), tm = R.pick([2, 5, 10, 15, 20, 30]), Ir = I0 / Math.SQRT2, P = Ir * Ir * Rr, V0 = I0 * Rr, E = P * tm * 60;
+  return NOFIG(2, { I0, R: Rr, tm },
+    `A sinusoidal alternating current with a peak value of ${V(I0, 'A')} is in a resistor of resistance ${V(Rr, 'Ω')}.`, [
+    calc('Calculate the rms current in the resistor.', 1, Ir, 'A', `${eq(`<i>I</i><sub>rms</sub> = <i>I</i><sub>0</sub> / √2 = ${N(I0)} / √2 = ${AV(Ir, 'A')}`)} ✓`),
+    calc('Calculate the mean power dissipated in the resistor.', 2, P, 'W', `${eq('<i>P</i> = <i>I</i><sub>rms</sub><sup>2</sup><i>R</i>')} ✓<br>${eq(`<i>P</i> = (${A(Ir)})<sup>2</sup> × ${N(Rr)} = ${AV(P, 'W')}`)} ✓`),
+    calc('Calculate the peak potential difference across the resistor.', 1, V0, 'V', `${eq(`<i>V</i><sub>0</sub> = <i>I</i><sub>0</sub><i>R</i> = ${N(I0)} × ${N(Rr)} = ${AV(V0, 'V')}`)} ✓`),
+    calc(`Calculate the energy dissipated in the resistor in ${V(tm, 'minutes')}.`, 2, E, 'J', `${eq(`<i>t</i> = ${N(tm)} × 60 = ${A(tm * 60)} s`)} ✓<br>${eq(`<i>E</i> = <i>Pt</i> = ${A(P)} × ${A(tm * 60)} = ${AV(E, 'J')}`)} ✓`),
+    text('State the value of the steady direct current that would dissipate energy in the resistor at the same mean rate, and explain your answer.', 2, `${plain(AV(Ir, 'A'))} ✓<br>The rms value of an alternating current is defined as the direct current that gives the same heating effect (mean power) in a resistor ✓`)
+  ]);
+};
+T.AC7 = R => {
+  const Vr = R.pick([230, 240, 110, 120]), f = R.pick([50, 60]), Rr = R.pick([15, 20, 23, 25, 30, 35, 40, 46, 50, 60, 75, 80, 92, 100, 120, 150, 200, 250, 400, 500]), V0 = Vr * Math.SQRT2, Tm = 1000 / f, I0 = V0 / Rr;
+  return NOFIG(2, { Vr, f, R: Rr },
+    `A mains supply provides a sinusoidal alternating voltage with an rms value of ${V(Vr, 'V')} and a frequency of ${V(f, 'Hz')}. An appliance of resistance ${V(Rr, 'Ω')} is connected to the supply.`, [
+    text('Explain why the rms value, and not the mean value, of the voltage is used to describe the supply.', 2, 'The mean value of a sinusoidal voltage over a complete cycle is zero ✓<br>The rms value gives the equivalent steady voltage for calculating power (the heating effect) ✓'),
+    calc('Calculate the peak-to-peak voltage of the supply.', 2, 2 * V0, 'V', `${eq(`<i>V</i><sub>0</sub> = ${N(Vr)} × √2 = ${AV(V0, 'V')}`)} ✓<br>${eq(`peak-to-peak voltage = 2 × ${A(V0)} = ${AV(2 * V0, 'V')}`)} ✓`),
+    calc('Calculate the time for one cycle of the supply.', 1, Tm, 'ms', `${eq(`<i>T</i> = 1 / <i>f</i> = 1 / ${N(f)} = ${AV(Tm * 1e-3, 's')} = ${AV(Tm, 'ms')}`)} ✓`),
+    calc('Calculate the peak current in the appliance.', 1, I0, 'A', `${eq(`<i>I</i><sub>0</sub> = <i>V</i><sub>0</sub> / <i>R</i> = ${A(V0)} / ${N(Rr)} = ${AV(I0, 'A')}`)} ✓`),
+    calc('Calculate the number of times each second that the current in the appliance is zero.', 1, 2 * f, 'times', `The current is zero twice in each cycle: ${eq(`2 × ${N(f)} = ${A(2 * f)}`)} ✓`)
+  ]);
+};
+T.AC8 = R => {
+  const SET = [.5, 1, 2, 5, 10];
+  const q = find(() => { const Vr = R.pick([1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12]), f = R.pick([50, 100, 200, 250, 400, 500, 1000, 2000]), n = R.pick([2, 4, 5]); const V0 = Vr * Math.SQRT2; return { Vr, f, n, V0, need: V0 / 4 }; }, q => q.need <= 10 && SET.every(g => Math.abs(g - q.need) / q.need > .08));
+  const { Vr, f, n, V0, need } = q, ci = SET.findIndex(g => g >= need), Tm = 1000 / f, tb = n * Tm / 10;
+  return NOFIG(2, { Vr, f, n },
+    `A signal generator supplies a sinusoidal voltage of rms value ${V(Vr, 'V')} and frequency ${V(f, 'Hz')}. The voltage is displayed on an oscilloscope. The screen has 8 vertical divisions and 10 horizontal divisions, and with no input the trace is along the centre of the screen.`, [
+    calc('Calculate the peak voltage of the signal.', 1, V0, 'V', `${eq(`<i>V</i><sub>0</sub> = ${N(Vr)} × √2 = ${AV(V0, 'V')}`)} ✓`),
+    opt('The y-gain can be set to the values listed.<br>State the setting that gives the tallest trace that fits completely on the screen.', 2, SET.map(g => plain(N(g)) + ' V per division'), ci, `${N(SET[ci])} V div<sup>−1</sup> ✓<br>The peak voltage must take up no more than 4 divisions: ${eq(`${A(V0)} / 4 = ${A(need)} V div<sup>−1</sup>`)}, so the smallest setting above this value is needed ✓`),
+    calc('Calculate the time for one cycle of the signal.', 1, Tm, 'ms', `${eq(`<i>T</i> = 1 / <i>f</i> = 1 / ${N(f)} = ${AV(Tm * 1e-3, 's')} = ${AV(Tm, 'ms')}`)} ✓`),
+    calc(`Calculate the time-base setting for which exactly ${n} complete cycles fill the width of the screen.`, 2, tb, 'ms div<sup>−1</sup>', `${eq(`time across the screen = ${n} × ${A(Tm)} = ${A(n * Tm)} ms`)} ✓<br>${eq(`time-base = ${A(n * Tm)} / 10 = ${AV(tb, 'ms div<sup>−1</sup>')}`)} ✓`)
+  ]);
+};
+T.AC9 = R => {
+  const V0 = R.pick(rng(4, 24, 1)), f = R.pick([25, 50, 60, 100, 200, 250, 400, 500, 1000]), Vd = V0 / Math.SQRT2;
+  return NOFIG(2, { V0, f },
+    `A student is given a low-voltage ac supply and an oscilloscope. The supply is known to have a sinusoidal output with a peak voltage of about ${V(V0, 'V')} and a frequency of about ${V(f, 'Hz')}.`, [
+    text('Describe how the student should use the oscilloscope to determine the peak voltage and the frequency of the supply.', 5, 'Connects the supply to the y-input and adjusts the time-base and y-gain to give a steady trace of a few cycles that nearly fills the screen ✓<br>Measures the vertical height of the trace in divisions (peak-to-peak, then halves it, or centre line to peak) ✓<br>peak voltage = number of divisions × y-gain setting ✓<br>Measures the horizontal length of one cycle (or several cycles, divided by the number) in divisions and multiplies by the time-base setting to get the period ✓<br>frequency = 1 / period ✓'),
+    calc(`The peak voltage is found to be exactly ${V(V0, 'V')}. The supply is connected to a lamp.<br>Calculate the voltage of the dc supply that would make the lamp equally bright.`, 2, Vd, 'V', `The dc voltage must equal the rms voltage of the ac supply ✓<br>${eq(`<i>V</i> = <i>V</i><sub>0</sub> / √2 = ${N(V0)} / √2 = ${AV(Vd, 'V')}`)} ✓`),
+    text('The frequency of the supply is doubled without changing its peak voltage or the oscilloscope settings.<br>Describe how the trace changes.', 2, 'Twice as many cycles appear on the screen (each cycle is half as wide) ✓<br>The height of the trace is unchanged ✓')
+  ]);
+};
+
+T.TR7 = R => {
+  const Vp = R.pick([11, 22, 25]), Vs = R.pick([110, 220, 400]), Ns = R.pick([8000, 12000, 16000, 20000, 24000, 40000]), P = R.pick([50, 100, 200, 250, 400, 500]), Np = Ns * Vp / Vs, Ip = P * 1e6 / (Vp * 1e3), Is = P * 1e6 / (Vs * 1e3);
+  return NOFIG(2, { Vp: Vp * 1e3, Vs: Vs * 1e3, Ns, P: P * 1e6 },
+    `A generator at a power station has an output of ${V(P, 'MW')} at an rms voltage of ${V(Vp, 'kV')}. A step-up transformer increases the voltage to ${V(Vs, 'kV')} for transmission. The secondary coil of the transformer has ${Ns} turns. Assume that the transformer is ideal.`, [
+    calc('Calculate the number of turns on the primary coil.', 2, Np, 'turns', `${eq('<i>N</i><sub>p</sub> / <i>N</i><sub>s</sub> = <i>V</i><sub>p</sub> / <i>V</i><sub>s</sub>')} ✓<br>${eq(`<i>N</i><sub>p</sub> = ${Ns} × ${N(Vp)} / ${N(Vs)} = ${A(Np)}`)} ✓`),
+    calc('Calculate the rms current in the primary coil.', 1, Ip, 'A', `${eq(`<i>I</i><sub>p</sub> = <i>P</i> / <i>V</i><sub>p</sub> = ${N(P * 1e6)} / ${N(Vp * 1e3)} = ${AV(Ip, 'A')}`)} ✓`),
+    calc('Calculate the rms current in the secondary coil.', 1, Is, 'A', `${eq(`<i>I</i><sub>s</sub> = <i>P</i> / <i>V</i><sub>s</sub> = ${N(P * 1e6)} / ${N(Vs * 1e3)} = ${AV(Is, 'A')}`)} ✓`),
+    text('Explain why the voltage is stepped up before the power is transmitted.', 2, 'For the same power, a higher voltage means a smaller current in the transmission cables ✓<br>The power dissipated in the cables is <i>I</i><sup>2</sup><i>R</i>, so much less energy is wasted heating the cables ✓'),
+    text('State which coil of this transformer should be made of the thicker wire, and explain why.', 2, 'The primary coil ✓<br>It carries the larger current, so a low resistance is needed to keep the <i>I</i><sup>2</sup><i>R</i> heating small ✓')
+  ]);
+};
+T.TR8 = R => {
+  const Vp = R.pick([3, 4.5, 6, 9, 12, 15, 24]), Vs = R.pick([110, 120, 230, 240, 400]), Np = R.pick(rng(40, 200, 10)), ratio = Vs / Vp, Ns = Np * ratio;
+  return NOFIG(2, { Vp, Vs, Np },
+    `A student wants to use a transformer to obtain ${V(Vs, 'V')} from a ${V(Vp, 'V')} supply. The primary coil of the transformer has ${Np} turns.`, [
+    text(`The student first connects a ${V(Vp, 'V')} battery to the primary coil.<br>Explain why there is no steady potential difference across the secondary coil.`, 3, 'The battery gives a steady (direct) current in the primary coil, so the magnetic flux in the core is constant ✓<br>The flux linkage of the secondary coil does not change ✓<br>An emf is induced only when the flux linkage changes (Faraday’s law) ✓'),
+    text('A voltmeter connected to the secondary coil shows a brief reading at the moment the battery is connected.<br>Explain why.', 2, 'As the current in the primary coil rises from zero, the flux in the core is changing ✓<br>so the flux linkage of the secondary coil changes for a short time and an emf is induced ✓'),
+    calc(`The battery is replaced by a ${V(Vp, 'V')} rms ac supply.<br>Calculate the ratio <i>N</i><sub>s</sub> / <i>N</i><sub>p</sub> needed. Assume that the transformer is ideal.`, 1, ratio, '', `${eq(`<i>N</i><sub>s</sub> / <i>N</i><sub>p</sub> = <i>V</i><sub>s</sub> / <i>V</i><sub>p</sub> = ${N(Vs)} / ${N(Vp)} = ${A(ratio)}`)} ✓`),
+    calc('Calculate the number of turns needed on the secondary coil.', 1, Ns, 'turns', `${eq(`<i>N</i><sub>s</sub> = ${A(ratio)} × ${Np} = ${A(Ns)}`)} ✓`)
+  ]);
+};
+T.TR9 = R => {
+  const q = find(() => { const P = R.pick([10, 20, 30, 40, 50, 80, 100, 150, 200, 250, 300, 400, 500]), Vs = R.pick([66, 110, 130, 220, 400]), Rc = R.pick([1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20]); const I = P * 1e6 / (Vs * 1e3), loss = I * I * Rc; return { P, Vs, Rc, I, loss, pc: loss / (P * 1e6) }; }, q => q.pc >= .002 && q.pc <= .12);
+  const { P, Vs, Rc, I, loss } = q, drop = I * Rc, eff = (P * 1e6 - loss) / (P * 1e6) * 100;
+  return NOFIG(2, { P: P * 1e6, Vs: Vs * 1e3, R: Rc },
+    `A power station supplies ${V(P, 'MW')} of electrical power to transmission cables at an rms voltage of ${V(Vs, 'kV')}. The total resistance of the cables is ${V(Rc, 'Ω')}.`, [
+    calc('Calculate the rms current in the cables.', 1, I, 'A', `${eq(`<i>I</i> = <i>P</i> / <i>V</i> = ${N(P * 1e6)} / ${N(Vs * 1e3)} = ${AV(I, 'A')}`)} ✓`),
+    calc('Calculate the rms potential difference across the resistance of the cables.', 1, drop, 'V', `${eq(`<i>V</i> = <i>IR</i> = ${A(I)} × ${N(Rc)} = ${AV(drop, 'V')}`)} ✓`),
+    calc('Calculate the power dissipated in the cables.', 2, loss, 'W', `${eq(`<i>P</i> = <i>I</i><sup>2</sup><i>R</i> = (${A(I)})<sup>2</sup> × ${N(Rc)}`)} ✓<br>${eq(`<i>P</i> = ${AV(loss, 'W')}`)} ✓`),
+    calc('Calculate the efficiency of the transmission. Give your answer as a percentage.', 2, eff, '%', `${eq(`power delivered = ${N(P * 1e6, 4)} − ${N(loss, 4)} = ${N(P * 1e6 - loss, 4)} W`)} ✓<br>${eq(`efficiency = (${N(P * 1e6 - loss, 4)} / ${N(P * 1e6)}) × 100 = ${A(eff)} %`)} ✓`, { abs: .15 }),
+    text('State and explain <b>one</b> change, other than using a different transmission voltage, that would reduce the power dissipated in the cables.', 2, 'Use cables of lower resistance, for example thicker cables or a material of lower resistivity ✓<br>The power dissipated is <i>I</i><sup>2</sup><i>R</i>, which is proportional to the resistance for the same current ✓')
+  ]);
+};
+T.TR10 = R => {
+  const Po = R.pick([2, 4, 5, 8, 10, 15, 20, 25, 40, 50, 80, 100, 150, 200, 250, 400, 500]), et = R.pick(rng(92, 99, 1)), hrs = R.pick([6, 8, 12, 24]), Pin = Po / (et / 100), Pw = Pin - Po, E = Pw * 1e3 * hrs * 3600;
+  return NOFIG(2, { Po: Po * 1e3, et, hrs },
+    `A transformer in a substation delivers an output power of ${V(Po, 'kW')} with an efficiency of ${et}%.`, [
+    calc('Calculate the input power to the transformer.', 2, Pin, 'kW', `${eq('efficiency = output power / input power')} ✓<br>${eq(`input power = ${N(Po)} / ${N(et / 100)} = ${AV(Pin, 'kW')}`)} ✓`),
+    calc('Calculate the power wasted in the transformer.', 1, Pw, 'kW', `${eq(`power wasted = ${N(Pin, 5)} − ${N(Po, 5)} = ${AV(Pw, 'kW')}`)} ✓`, { tol: .06 }),
+    calc(`Calculate the energy wasted in the transformer in ${V(hrs, 'hours')}.`, 2, E, 'J', `${eq(`<i>t</i> = ${N(hrs)} × 3600 = ${AV(hrs * 3600, 's')}`)} ✓<br>${eq(`<i>E</i> = <i>Pt</i> = ${A(Pw * 1e3)} × ${A(hrs * 3600)} = ${AV(E, 'J')}`)} ✓`, { tol: .06 }),
+    text('State what happens to the wasted energy, and suggest why large transformers are often cooled with oil.', 2, 'It is transferred to thermal energy in the core and the coils (heating the transformer) ✓<br>The oil carries this thermal energy away, preventing the transformer from overheating (which would damage the insulation) ✓'),
+    text('Describe how eddy currents arise in the core of the transformer.', 2, 'The alternating current in the primary coil produces a changing magnetic flux in the iron core ✓<br>The core is a conductor, so the changing flux induces emfs that drive currents circulating within the core ✓')
+  ]);
+};
+
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    if (p.ans !== undefined && !p.options && (p.abs !== undefined || p.tol)){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${N(Math.max(lo, 0), 3)} to ${N(hi, 3)} ${p.unit}${q.figs ? ' (values read from Figure 2)' : ''}.`);
+    }
+    if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0) continue; const a = plain(A(pj.ans)); if (plain(p.ms).includes(a) && !given.includes(a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length) g.push('Allow ecf from their answer' + (ecf.length > 1 ? 's' : '') + ' to ' + ecf.join(' and ') + '.');
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['T', ['t', 'tesla', 'wbm-2', 'na-1m-1', 'n/am'], 'Accept Wb m<sup>−2</sup> or N A<sup>−1</sup> m<sup>−1</sup>.'], ['N', ['n', 'newton', 'newtons'], ''], ['Wb', ['wb', 'weber', 'webers', 'tm2', 'vs'], 'Accept T m<sup>2</sup> or V s.'], [WBT, ['wbturns', 'wbturn', 'wb', 'weberturns'], 'Accept Wb.'],
+ ['V', ['v', 'volt', 'volts', 'jc-1', 'j/c', 'wbs-1'], 'Accept J C<sup>−1</sup> or Wb s<sup>−1</sup>.'], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['J', ['j', 'joule', 'joules', 'nm', 'ws'], 'Accept N m or W s.'],
+ ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], ['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'],
+ [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'nkg-1', 'n/kg'], 'Accept N kg<sup>−1</sup>.'], ['N m', ['nm'], ''], [RADS, ['rads-1', 'rad/s'], ''], [CKG, ['ckg-1', 'c/kg'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && p.ans !== 0 && /Calculate/.test(p.q) && !/^(%|turns|cycles|divisions|V per turn)$/.test(p.unit);
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  if (rnd() < 0.5){ sfPart = rnd.pick(cands); const p = sfPart.p, n = q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown} ${p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  INEXACT.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, forceDir, T };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${o}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : ENGINE.disp(p.ans)} ${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.abs === undefined && !p.tol ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like MC3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>
