@@ -130,7 +130,7 @@ function makeRand(seed){
 function sig(x, n = 2){
   if (!isFinite(x)) return 'NaN';
   if (Math.abs(x) < 1e-12) return '0';
-  x = Number(x.toPrecision(n));
+  x = Number((x * (1 + 1e-9)).toPrecision(n));      // tiny nudge: an exact half always rounds up
   const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
   const d = n - 1 - e;
   const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
@@ -1268,10 +1268,10 @@ function checkAnswer(part, x){
   const a = part.ans; if (!isFinite(x)) return false;
   if (Math.abs(a) < 1e-12) return Math.abs(x) < 1e-9;
   if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-9;
-  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) + 1e-12 || Number(x.toPrecision(2)) === Number(a.toPrecision(2));
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) + 1e-12 || Number(x.toPrecision(2)) === Number((a * (1 + 1e-9)).toPrecision(2));
 }
-function stdForm(x){ const e = Math.floor(Math.log10(Math.abs(x)) + 1e-12), m = x / Math.pow(10, e); return (isNice(m, 2) ? sig(m, 2) : sig(m, 3)) + ' × 10<sup>' + e + '</sup>'; }
-function disp(x){ return Math.abs(x) >= 1e4 ? stdForm(Number(x.toPrecision(3))) : ansStr(x); }
+function stdForm(x){ const e = Math.floor(Math.log10(Math.abs(x)) + 1e-12), m = Number((x / Math.pow(10, e)).toPrecision(12)); return (isNice(m, 2) ? sig(m, 2) : sig(m, 3)) + ' × 10<sup>' + e + '</sup>'; }
+function disp(x){ return Math.abs(x) >= 1e4 ? stdForm(Number((x * (1 + 1e-9)).toPrecision(3))) : ansStr(x); }
 const CPD = 'Do not credit explanations that confuse current and pd, such as “current across” or “pd through”.';
 const LOST = 'Condone “lost volts” for the pd across the internal resistance.';
 const REVERSE = 'Allow one mark for a correct argument about the opposite change.';
@@ -1342,7 +1342,7 @@ function addSkillMarks(q, rnd){
   const sfCands = cands.map(x => { const toks = (x.p.ms.replace(/<sup>.*?<\/sup>/g, ' ').replace(/<[^>]+>/g, ' ').match(/\d+(?:\.\d+)?/g) || []).filter(t => givenTok.has(t));
     const sfs = toks.map(dataSf).filter(v => v); return Object.assign({ n: sfs.length ? Math.min(...sfs) : 0 }, x); }).filter(x => x.n >= 2 && x.n <= 3);
   let sfPart = null;
-  if (sfCands.length && rnd() < 0.5){ sfPart = rnd.pick(sfCands); const p = sfPart.p, n = sfPart.n, accept = n === 2 ? [2] : [2, 3], shown = Math.abs(p.ans) >= 1e4 ? stdForm(Number(p.ans.toPrecision(n))).replace(/^[\d.]+/, m => Number(m).toFixed(n - 1)) : sig(p.ans, n);
+  if (sfCands.length && rnd() < 0.5){ sfPart = rnd.pick(sfCands); const p = sfPart.p, n = sfPart.n, accept = n === 2 ? [2] : [2, 3], shown = Math.abs(p.ans) >= 1e4 ? stdForm(Number((p.ans * (1 + 1e-9)).toPrecision(n))).replace(/^[\d.]+/, m => Number(m).toFixed(n - 1)) : sig(p.ans, n);
     p.q += '<br>Give your answer to an appropriate number of significant figures.';
     p.marks += 1; p.sfMark = { n, accept, shown };
     p.ms += `<br>Answer given to ${n} significant figures (${shown} ${p.unit}) ✓`;
@@ -1360,6 +1360,11 @@ if (typeof module !== 'undefined') module.exports = ENGINE;
 
 </script>
 <script>
+// a drop-down option can only hold plain text, so superscripts and subscripts are written with Unicode characters
+const SUPC = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '−': '⁻', '-': '⁻', '+': '⁺' }, SUBC = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', e: 'ₑ' };
+const uni = (s, map, mark) => [...s].every(c => map[c]) ? [...s].map(c => map[c]).join('') : mark + '(' + s + ')';
+const optText = h => String(h).replace(/<sup>(.*?)<\/sup>/g, (m, s) => uni(s, SUPC, '^')).replace(/<sub>(.*?)<\/sub>/g, (m, s) => uni(s, SUBC, '_')).replace(/<[^>]+>/g, '');
+
 (function(){
   const $ = id => document.getElementById(id);
   const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
@@ -1397,7 +1402,7 @@ if (typeof module !== 'undefined') module.exports = ENGINE;
       const k = v + n, parts = q.parts.map((p, i) => {
         const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
         let work;
-        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${o}</option>`).join('')}</select>${btn}${fb}</div>`;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${optText(o)}</option>`).join('')}</select>${btn}${fb}</div>`;
         else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" inputmode="decimal" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
         else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
         return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : ENGINE.disp(p.ans)} ${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.abs === undefined && !p.tol ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;

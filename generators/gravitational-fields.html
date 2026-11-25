@@ -133,7 +133,7 @@ function makeRand(seed){
 function sig(x, n = 2){
   if (!isFinite(x)) return 'NaN';
   if (Math.abs(x) < 1e-12) return '0';
-  x = Number(x.toPrecision(n));
+  x = Number((x * (1 + 1e-9)).toPrecision(n));      // tiny nudge: an exact half always rounds up
   const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
   const d = n - 1 - e;
   const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
@@ -152,7 +152,8 @@ function N(x, n = 2){                       // n significant figures, standard f
   if (Math.abs(x) < 1e-300) return '0';
   const a = Math.abs(x);
   if (a >= 1e4 || a < 1e-2){
-    let e = Math.floor(Math.log10(a) + 1e-12), m = Number((x / Math.pow(10, e)).toPrecision(n));
+    const r = Number((x * (1 + 1e-9)).toPrecision(n));      // round the value itself first, with a tiny nudge so that an exact half (2.25, 9.375) always rounds up
+    let e = Math.floor(Math.log10(Math.abs(r)) + 1e-12), m = r / Math.pow(10, e);
     if (Math.abs(m) >= 10){ m /= 10; e += 1; }
     return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
   }
@@ -168,7 +169,7 @@ const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]
 const eq = s => `<span class="eq">${s}</span>`;
 const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
 const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
-const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x * (1 + 1e-9)).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
 const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
 const tight = u => u === '°' || u === '%';
 const GRAV = 9.81, C0 = 3.00e8;
@@ -1198,8 +1199,8 @@ function checkAnswer(part, x){
   if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
   if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
   if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
-  if (part.u && Math.abs(x - Number(a.toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
-  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+  if (part.u && Math.abs(x - Number((a * (1 + 1e-9)).toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number((a * (1 + 1e-9)).toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
 }
 const disp = A;
 function finishMarkScheme(q){

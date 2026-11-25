@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Further Mechanics Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+.nuc{display:inline-flex;flex-direction:column;vertical-align:-0.42em;font-size:.68em;line-height:1.02;text-align:right;margin-right:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Further Mechanics Question Generator</h1>
+    <p>AQA-style practice on section 3.6.1 (Periodic motion): circular motion, simple harmonic motion, simple harmonic systems, forced vibrations and resonance. 50 question types and many thousands of different questions with mark schemes, including diagrams, displacement, velocity, energy and resonance graphs, and practical questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="PE3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number((x * (1 + 1e-9)).toPrecision(n));      // tiny nudge: an exact half always rounds up
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    const r = Number((x * (1 + 1e-9)).toPrecision(n));      // round the value itself first, with a tiny nudge so that an exact half (2.25, 9.375) always rounds up
+    let e = Math.floor(Math.log10(Math.abs(r)) + 1e-12), m = r / Math.pow(10, e);
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+let ASF = 2;                                          // significant figures of the data in the question being built
+const A = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : N(x, 3);      // answers: 3 sf (2 sf when exact and the data are given to 2 sf)
+const AV = (x, unit) => A(x) + ' ' + unit;
+const I3 = x => isNice(x, 3) ? N(x, 3) : N(x, 4);      // a working value from data given to 3 sf
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x * (1 + 1e-9)).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? 1 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside, halo: !!o.halo });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}${l.halo ? ' stroke="#fff" stroke-width="4" paint-order="stroke"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+// axis label: ^{..} superscript, _{..} subscript
+const axl = s => esc(s).replace(/\^\{([^}]*)\}/g, '<tspan dy="-6" font-size="10">$1</tspan><tspan dy="6">\u200b</tspan>').replace(/_\{([^}]*)\}/g, '<tspan dy="4" font-size="10">$1</tspan><tspan dy="-4">\u200b</tspan>');
+const axp = s => String(s).replace(/[\^_]\{([^}]*)\}/g, '$1');
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = g.top ? 16 : 52, mt = g.top ? 52 : 16, mr = 22;      // top: the r axis is at the top (all values negative)
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(Math.abs(m)) + 1e-9));      // y may run downwards (magnitude scales): then yM is negative
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${g.top ? mt - 10 : mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(xa <= 0 && xb >= 0 ? 0 : xa), ay0 = Y(ya <= 0 && yb >= 0 ? 0 : ya);
+  let marks = '';
+  (g.shade || []).forEach(c => { const pts = []; for (let i = 0; i <= 120; i++){ const x = c.from + (c.to - c.from) * i / 120; pts.push(n2(X(x)) + ',' + n2(Y(Math.min(c.f(x), yb)))); } pts.push(n2(X(c.to)) + ',' + n2(Y(Math.max(ya, 0))), n2(X(c.from)) + ',' + n2(Y(Math.max(ya, 0)))); marks += `<polygon points="${pts.join(' ')}" fill="#c9cfd4" fill-opacity="0.65" stroke="none"/>`; });
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    if (c.pts) c.pts.forEach(p => pts.push(n2(X(p[0])) + ',' + n2(Y(p[1]))));      // straight-line sections: exact corners
+    else for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= Math.min(ya, yb) - 1e-9 && y <= Math.max(ya, yb) + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.dots || []).forEach(d => { marks += `<circle cx="${n2(X(d.x))}" cy="${n2(Y(d.y))}" r="4.2" fill="#000"/><text x="${n2(X(d.x) + (d.dx || 9))}" y="${n2(Y(d.y) + (d.dy || 5))}" font-weight="700" font-size="15" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(d.t)}</text>`; });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(axp(g.yl))} against ${esc(axp(g.xl))}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${g.top ? 20 : th - 8}" text-anchor="middle">${axl(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${axl(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [y1, y2] = g.y, ya = Math.min(y1, y2), yb = Math.max(y1, y2), inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.dots || []).forEach(p => { if (!inX(p.x) || !inY(p.y)) e.push('marked nuclide outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+/* ---------- further mechanics: shared helpers ---------- */
+const TOPICS = { CM: 'Circular motion', CA: 'Circular motion in context', SH: 'Simple harmonic motion', SS: 'Simple harmonic systems', FR: 'Forced vibrations and resonance' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const NS = { noSkill: true };
+const I = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join(' ')}</tr> ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join(' ')}</tr>`).join(' ')}</table>`;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const rad = d => d * Math.PI / 180, sn = d => Math.sin(rad(d)), cs = d => Math.cos(rad(d)), tn = d => Math.tan(rad(d)), deg = x => x * 180 / Math.PI;
+const g = GRAV, GS = '9.81';
+const M = (...a) => a.map(x => x + ' ✓').join('<br>');      // one marking point per line
+const E = eq;
+const DG = x => N(x) + '°';
+const AD = x => A(x) + '°';
+const LB = (x, u, sf = 2) => N(x, sf).replace(/<sup>(.*?)<\/sup>/g, '^{$1}') + (u ? (u === '°' ? '°' : ' ' + u) : '');      // a value as a diagram label
+const KG = 'kg', NU = 'N', JU = 'J', WU = 'W', SU = 's', MU = 'm', NMU = 'N m', NSU = 'N s', KGMS = 'kg m s<sup>−1</sup>';
+const VECS = ['velocity', 'displacement', 'acceleration', 'force', 'momentum', 'weight'], SCALS = ['speed', 'distance', 'mass', 'kinetic energy', 'time', 'power', 'work done', 'temperature'];
+const PRINC = ['For a body in equilibrium ✓', 'the sum of the clockwise moments about any point equals the sum of the anticlockwise moments about that point ✓'];
+const COUPLE = ['A pair of equal and opposite (parallel) forces ✓', 'that do not act along the same line ✓'];
+/* ---------- drawing helpers ---------- */
+const hatchH = (s, x1, x2, y, below = true) => { s.line(x1, y, x2, y, { tag: 'surface' }); const d = below ? 8 : -8; for (let x = x1 + 10; x <= x2; x += 12) s.line(x, y, x - 8, y + d, { w: 1, free: true }); s.ext(x1, y + d); };
+const hatchV = (s, x, y1, y2, left = true) => { s.line(x, y1, x, y2, { tag: 'wall' }); const d = left ? -8 : 8; for (let y = y1 + 10; y <= y2; y += 12) s.line(x, y, x + d, y - 8, { w: 1, free: true }); s.ext(x + d, y1); };
+// a force (or velocity) arrow with its label just beyond the tip
+function force(s, x, y, dx, dy, lab, o = {}){
+  s.arrow(x, y, x + dx, y + dy, { w: 2.2, tag: 'arrow' }); if (!lab) return s;
+  const l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, tx = x + dx, ty = y + dy;
+  if (o.at) return s.label(tx + o.at[0], ty + o.at[1], lab, { anchor: o.anchor || 'middle' });
+  if (Math.abs(ux) > .75) s.label(tx + ux * 8, ty + 5, lab, { anchor: ux > 0 ? 'start' : 'end' }); else s.label(tx + ux * 10, ty + (uy > 0 ? 19 : -8), lab);
+  return s;
+}
+const blob = (s, x, y, r = 4) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+// a horizontal beam; positions are given in metres and mapped on to the drawing
+function beamFig(aria, L, o = {}){
+  const s = new Scene(aria), x0 = 0, W = o.W || 440, y = 0, th = 14, X = p => x0 + p / L * W;
+  s.rect(X(o.from || 0), y - th / 2, X(o.to === undefined ? L : o.to) - X(o.from || 0), th, { fill: '#d9dde1', tag: 'beam' });
+  return { s, X, y, top: y - th / 2, bot: y + th / 2,
+    pivot: (p, lab) => { const x = X(p); s.poly([[x, y + th / 2], [x - 13, y + th / 2 + 24], [x + 13, y + th / 2 + 24]], { close: true, fill: '#fff', tag: 'pivot' }); if (lab) s.label(x, y + th / 2 + 43, lab, { bold: true }); },
+    down: (p, lab, len = 62, o2) => force(s, X(p), y + th / 2, 0, len, lab, o2),
+    up: (p, lab, len = 62, o2) => force(s, X(p), y - th / 2, 0, -len, lab, o2),
+    dim: (a, b, lab, lev = 1, below = false) => { const yy = below ? y + th / 2 + 22 + lev * 30 : y - th / 2 - 4 - lev * 30; [a, b].forEach(p => s.line(X(p), below ? y + th / 2 + 3 : y - th / 2 - 3, X(p), yy + (below ? 6 : -6), { w: .9, dash: '3 3', free: true })); s.dim(X(a), yy, X(b), yy, lab, { below }); } };
+}
+// a slope rising to the right at th degrees with a block on it
+function slopeFig(aria, th, o = {}){
+  const s = new Scene(aria), L = o.L || 380, a = rad(th), x1 = L * Math.cos(a), y1 = -L * Math.sin(a), u = [Math.cos(a), -Math.sin(a)], n = [-Math.sin(a), -Math.cos(a)];
+  s.poly([[0, 0], [x1, 0], [x1, y1]], { close: true, tag: 'slope' });
+  s.arc(0, 0, 58, 0, th, { w: 1.1, tag: 'angle arc' }); s.label(th < 14 ? 122 : th < 18 ? 84 : 70, -4.5, o.lab || DG(th), { anchor: 'start' });
+  const f = o.f === undefined ? .6 : o.f, bw = o.bw || 58, bh = o.bh || 34, P = [L * f * u[0], L * f * u[1]], c = (du, dn) => [P[0] + du * u[0] + dn * n[0], P[1] + du * u[1] + dn * n[1]];
+  if (!o.noBlock) s.poly([c(-bw / 2, 0), c(bw / 2, 0), c(bw / 2, bh), c(-bw / 2, bh)], { close: true, fill: '#d9dde1', tag: 'block' });
+  return { s, a, u, n, P, C: c(0, bh / 2), c, x1, y1, bw, bh };
+}
+const box = (s, x, y, w, h, lab) => { s.rect(x, y, w, h, { fill: '#d9dde1', tag: 'block' }); if (lab) s.label(x + w / 2, y + h / 2 + 5, lab, { inside: true }); };
+
+const RADS = 'rad s<sup>−1</sup>', HZ = 'Hz', PI = Math.PI, TWO_PI = 2 * Math.PI;
+const pwl = pts => ({ pts, from: pts[0][0], to: pts[pts.length - 1][0], f: x => { for (let i = 0; i + 1 < pts.length; i++){ const a = pts[i], b = pts[i + 1]; if (b[0] > a[0] && x >= a[0] - 1e-12 && x <= b[0] + 1e-12) return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return pts[pts.length - 1][1]; } });
+const dashedPoly = (s, pts, tag) => s.poly(pts, { dash: '6 4', w: 1.2, tag: tag || 'path' });
+const CENT = 'The resultant force acts towards the centre of the circle ✓';
+const WHYACC = ['The direction of the velocity is continually changing, so the velocity is changing ✓', 'a changing velocity means the object is accelerating, so (by Newton’s first or second law) a resultant force must act ✓'];
+
+/* ===== Circular motion ===== */
+T.CM1 = R => {
+  const r = R.pick([0.15, 0.20, 0.25, 0.30]), w = R.pick([1.5, 1.8, 2.0, 2.4, 3.0]), m = R.pick([0.080, 0.10, 0.12, 0.15, 0.20]), Tp = TWO_PI / w, v = w * r, a = w * w * r, F = m * a;
+  const s = new Scene('A block on a rotating turntable, seen from above'), Rr = 120, bx = Rr * .62; s.circle(0, 0, Rr, { tag: 'turntable' }); blob(s, 0, 0, 3.5); s.rect(bx - 11, -11, 22, 22, { fill: '#d9dde1', tag: 'block' });
+  s.dim(0, 30, bx, 30, LB(r, 'm'), { below: true }); s.line(0, 0, 0, 36, { w: .9, dash: '3 3', free: true }); s.line(bx, 11, bx, 36, { w: .9, dash: '3 3', free: true }); s.label(bx, -22, 'block'); s.label(0, -Rr - 10, 'turntable');
+  return { sf: 2, scenes: [s], data: { r, w, m }, stem: `<b>Figure 1</b> shows a plan view of a block of mass ${V(m, 'kg')} on a horizontal turntable. The centre of the block is ${V(r, 'm')} from the centre of the turntable. The turntable rotates at a constant angular speed of ${V(w, RADS)} and the block does not slip.`, parts: [
+    calc('Calculate the time taken for one revolution.', 2, Tp, 's', M(E('<i>T</i> = 2π / ω'), E(`= 2π / ${N(w)} = ${AV(Tp, 's')}`))),
+    calc('Calculate the speed of the block.', 1, v, MS1, M(E(`<i>v</i> = ω<i>r</i> = ${N(w)} × ${N(r)} = ${AV(v, MS1)}`))),
+    calc('Calculate the magnitude of the resultant force on the block.', 2, F, 'N', M(E('<i>F</i> = <i>m</i>ω<sup>2</sup><i>r</i>'), E(`= ${N(m)} × ${N(w)}<sup>2</sup> × ${N(r)} = ${AV(F, 'N')}`))),
+    choose(R, 'In which direction does the resultant force on the block act?', 1, 'towards the centre of the turntable', ['away from the centre of the turntable', 'along the direction of motion', 'opposite to the direction of motion'], CENT),
+    text('Explain how you can tell that a resultant force acts on the block, even though its speed is constant.', 2, WHYACC.join('<br>')),
+    text('State the force that provides the resultant force on the block.', 1, 'Friction between the block and the turntable ✓')
+  ] };
+};
+T.CM2 = R => {
+  const rpm = R.pick([600, 800, 1000, 1200, 1400]), r = R.pick([0.22, 0.24, 0.25, 0.28, 0.30]), m = R.pick([0.050, 0.080, 0.10, 0.25]), f = rpm / 60, w = TWO_PI * f, v = w * r, a = w * w * r;
+  return NOFIG(2, { rpm, r, m }, `The drum of a washing machine has a radius of ${V(r, 'm')}. During the spin cycle the drum rotates at ${rpm} revolutions per minute. A wet sock of mass ${V(m, 'kg')} is pressed against the inside of the drum.`, [
+    calc('Calculate the frequency of rotation of the drum.', 1, f, 'Hz', M(E(`${rpm} / 60 = ${AV(f, 'Hz')}`)), NS),
+    calc('Calculate the angular speed of the drum.', 1, w, RADS, M(E(`ω = 2π<i>f</i> = 2π × ${I(f)} = ${AV(w, RADS)}`))),
+    calc('Calculate the speed of the sock.', 1, v, MS1, M(E(`<i>v</i> = ω<i>r</i> = ${I(w)} × ${N(r)} = ${AV(v, MS1)}`))),
+    calc('Calculate the centripetal acceleration of the sock.', 2, a, MS2, M(E('<i>a</i> = ω<sup>2</sup><i>r</i>'), E(`= ${I(w)}<sup>2</sup> × ${N(r)} = ${AV(a, MS2)}`))),
+    calc('Calculate the centripetal force on the sock.', 1, m * a, 'N', M(E(`<i>F</i> = <i>ma</i> = ${N(m)} × ${I(a)} = ${AV(m * a, 'N')}`))),
+    text('Explain why water leaves the clothes through the holes in the drum.', 2, M('At a hole there is no contact force from the drum to provide the centripetal force on the water', 'so the water continues in a straight line (along a tangent) and passes out through the hole'))
+  ]);
+};
+T.CM3 = R => {
+  const v0 = find(() => ({ m: R.pick([900, 1000, 1200, 1500]), r: R.pick([20, 25, 30, 40, 50]), v: R.pick([8.0, 10, 12, 14]), Fk: R.pick([6.0, 7.5, 8.0, 9.0, 10]) }), o => o.m * o.v * o.v / o.r < .8 * o.Fk * 1e3);
+  const { m, r, v, Fk } = v0, F = m * v * v / r, vm = Math.sqrt(Fk * 1e3 * r / m);
+  return NOFIG(2, { m, r, v, Fk }, `A car of mass ${V(m, 'kg')} travels at a constant speed of ${V(v, MS1)} around a horizontal circular roundabout of radius ${V(r, 'm')}.`, [
+    calc('Calculate the centripetal force on the car.', 2, F, 'N', M(E('<i>F</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`= ${N(m)} × ${N(v)}<sup>2</sup> / ${N(r)} = ${AV(F, 'N')}`))),
+    text('State the force that provides this centripetal force and its direction.', 2, M('Friction between the tyres and the road', 'acting towards the centre of the roundabout')),
+    calc(`The maximum frictional force available is ${V(Fk, 'kN')}. Calculate the maximum speed at which the car can travel around the roundabout.`, 2, vm, MS1, M(E(`<i>v</i> = √(<i>Fr</i> / <i>m</i>) = √(${N(Fk * 1e3)} × ${N(r)} / ${N(m)})`), E(`= ${AV(vm, MS1)}`))),
+    choose(R, 'The road is wet, so the maximum frictional force is smaller. What happens to the maximum safe speed?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases ✓'),
+    choose(R, 'The car travels at the same speed around a roundabout of twice the radius. What happens to the centripetal force?', 1, 'it halves', ['it doubles', 'it becomes a quarter as large', 'it stays the same'], 'It halves (<i>F</i> ∝ 1/<i>r</i> at constant speed) ✓')
+  ]);
+};
+T.CM4 = R => {
+  const pl = R.pick([['the Earth', 6.37e6, 24.0, 86400], ['Mars', 3.39e6, 24.6, 88560], ['Jupiter', 7.15e7, 9.93, 35748]]), Rp = pl[1], Ts = pl[3], w = TWO_PI / Ts, v = w * Rp, a = w * w * Rp;
+  return NOFIG(3, { Rp, Ts }, `${cap(pl[0])} rotates about its axis once every ${V(pl[2], 'hours', 3)}. The radius of ${pl[0]} at the equator is ${V(Rp, 'm', 3)}.`, [
+    calc('Calculate the period of rotation in seconds.', 1, Ts, 's', M(E(`${N(pl[2], 3)} × 3600 = ${AV(Ts, 's')}`)), NS),
+    calc(`Calculate the angular speed of ${pl[0]}.`, 2, w, RADS, M(E('ω = 2π / <i>T</i>'), E(`= 2π / ${I3(Ts)} = ${AV(w, RADS)}`))),
+    calc('Calculate the speed of a point on the equator.', 1, v, MS1, M(E(`<i>v</i> = ω<i>r</i> = ${I3(w)} × ${N(Rp, 3)} = ${AV(v, MS1)}`))),
+    calc('Calculate the centripetal acceleration of a point on the equator.', 1, a, MS2, M(E(`<i>a</i> = ω<sup>2</sup><i>r</i> = (${I3(w)})<sup>2</sup> × ${N(Rp, 3)} = ${AV(a, MS2)}`))),
+    choose(R, 'How does the centripetal acceleration of a point nearer to a pole compare with that of a point on the equator?', 1, 'it is smaller', ['it is greater', 'it is the same'], 'Smaller: the angular speed is the same but the radius of the circle is smaller ✓')
+  ]);
+};
+T.CM5 = R => {
+  const m = R.pick([4.0, 6.0, 7.3]), r = R.pick([1.6, 1.8, 2.0]), Tp = R.pick([0.50, 0.60, 0.80, 1.0]), w = TWO_PI / Tp, v = w * r, F = m * v * v / r;
+  return NOFIG(2, { m, r, Tp }, `An athlete whirls a hammer in a horizontal circle before releasing it. The hammer is a ball of mass ${V(m, 'kg')} that moves in a circle of radius ${V(r, 'm')}. Just before release the ball completes one revolution in ${V(Tp, 's')}.`, [
+    calc('Calculate the angular speed of the ball.', 1, w, RADS, M(E(`ω = 2π / <i>T</i> = 2π / ${N(Tp)} = ${AV(w, RADS)}`))),
+    calc('Calculate the speed of the ball.', 1, v, MS1, M(E(`<i>v</i> = ω<i>r</i> = ${I(w)} × ${N(r)} = ${AV(v, MS1)}`))),
+    calc('Calculate the centripetal force on the ball.', 2, F, 'N', M(E('<i>F</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`= ${N(m)} × ${I(v)}<sup>2</sup> / ${N(r)} = ${AV(F, 'N')}`))),
+    choose(R, 'In which direction does the ball move immediately after it is released?', 1, 'along a tangent to the circle', ['directly away from the centre of the circle', 'towards the centre of the circle', 'it continues around the circle'], 'Along a tangent to the circle ✓'),
+    text('Explain your answer.', 1, 'After release there is no centripetal force, so the ball continues in a straight line in the direction of its velocity at that instant (Newton’s first law) ✓')
+  ]);
+};
+T.CM6 = R => {
+  const L = R.pick([30, 40, 45, 50, 60]), th = R.pick([30, 45, 60, 90, 120]), t = R.pick([0.50, 0.80, 1.0, 1.5, 2.0]), thr = th * PI / 180, w = thr / t, arc = L * thr, Tp = TWO_PI / w;
+  return NOFIG(2, { L, th, t }, `Each blade of a wind turbine is ${V(L, 'm')} long. The blades rotate at a constant rate and turn through an angle of ${DG(th)} in ${V(t, 's')}.`, [
+    calc(`Calculate ${DG(th)} in radians.`, 1, thr, 'rad', M(E(`${N(th)} × π / 180 = ${AV(thr, 'rad')}`)), NS),
+    calc('Calculate the angular speed of the blades.', 1, w, RADS, M(E(`ω = θ / <i>t</i> = ${I(thr)} / ${N(t)} = ${AV(w, RADS)}`))),
+    calc('Calculate the distance moved by the tip of a blade in this time.', 1, arc, 'm', M(E(`arc length = <i>r</i>θ = ${N(L)} × ${I(thr)} = ${AV(arc, 'm')}`))),
+    calc('Calculate the time taken for one complete revolution.', 1, Tp, 's', M(E(`<i>T</i> = 2π / ω = 2π / ${I(w)} = ${AV(Tp, 's')}`))),
+    calc('Calculate the centripetal acceleration of the tip of a blade.', 1, w * w * L, MS2, M(E(`<i>a</i> = ω<sup>2</sup><i>r</i> = ${I(w)}<sup>2</sup> × ${N(L)} = ${AV(w * w * L, MS2)}`)))
+  ]);
+};
+T.CM7 = R => {
+  const m = R.pick([0.20, 0.25, 0.40, 0.50]), v = R.pick([3.0, 4.0, 5.0, 6.0]), r = R.pick([0.50, 0.60, 0.80, 1.0, 1.2]), F = m * v * v / r, Ek = .5 * m * v * v;
+  return NOFIG(2, { m, v, r }, `A puck of mass ${V(m, 'kg')} slides on a frictionless horizontal table. A string attached to the puck keeps it moving in a circle of radius ${V(r, 'm')} at a constant speed of ${V(v, MS1)}.`, [
+    calc('Calculate the tension in the string.', 2, F, 'N', M(E('the tension provides the centripetal force: <i>T</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`= ${N(m)} × ${N(v)}<sup>2</sup> / ${N(r)} = ${AV(F, 'N')}`))),
+    calc('Calculate the kinetic energy of the puck.', 1, Ek, 'J', M(E(`½ × ${N(m)} × ${N(v)}<sup>2</sup> = ${AV(Ek, 'J')}`))),
+    text('Explain why the tension does no work on the puck.', 2, M('The tension (centripetal force) is always at right angles to the velocity (direction of motion)', 'so there is no displacement in the direction of the force (and the kinetic energy stays constant)')),
+    text('Explain why the puck is accelerating even though its speed is constant.', 1, 'Its velocity is changing because its direction is changing ✓'),
+    choose(R, 'The speed of the puck is doubled and the radius is unchanged. What happens to the tension?', 1, 'it becomes four times as large', ['it doubles', 'it halves', 'it stays the same'], 'Four times as large (<i>F</i> ∝ <i>v</i><sup>2</sup>) ✓')
+  ]);
+};
+T.CM8 = R => {
+  const mb = R.pick([0.020, 0.025, 0.040, 0.050]), r = R.pick([0.40, 0.50, 0.80]), k = mb / r, vs = [4, 8, 12, 16, 20], cr = vs.map(x => [x, k * x * (1 + (R() - .5) * .06)]), ya = axisFor(k * 20 * 1.08), xr = 16;
+  const fig = graph({ x: [0, 20, 5], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'v^{2} / m^{2} s^{−2}', yl: 'F / N', curves: [{ f: x => k * x, from: 0, to: 20 }], crosses: cr, reads: [[xr, k * xr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { mb, r }, stem: `A student whirls a rubber bung in a horizontal circle of radius ${V(r, 'm')} on the end of a string. The string passes down through a glass tube to a hanging weight, which provides the centripetal force <i>F</i>. The student measures the speed <i>v</i> of the bung for different values of <i>F</i>. <b>Figure 1</b> shows a graph of <i>F</i> against <i>v</i><sup>2</sup> with a line of best fit.`, parts: [
+    text('Explain why the graph is expected to be a straight line through the origin.', 2, M(E('<i>F</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), 'so <i>F</i> is directly proportional to <i>v</i><sup>2</sup> when the mass and radius are constant (gradient = <i>m</i> / <i>r</i>)')),
+    calc('Determine the gradient of the line of best fit.', 2, k, 'kg m<sup>−1</sup>', M(`uses a large triangle, for example from (0, 0) to (${xr}, ${fx(k * xr, 2)})`, E(`gradient = ${fx(k * xr, 2)} / ${xr} = ${A(k)} kg m<sup>−1</sup>`)), { tol: .05, noSkill: true }),
+    calc('Determine the mass of the bung.', 2, mb, 'kg', M('gradient = <i>m</i> / <i>r</i>', E(`<i>m</i> = ${I(k)} × ${N(r)} = ${AV(mb, 'kg')}`)), { tol: .05, noSkill: true }),
+    text('Describe how the student could find the speed of the bung.', 2, M('Time a number of revolutions (for example 10) and divide to find the period <i>T</i>', E('<i>v</i> = 2π<i>r</i> / <i>T</i>')))
+  ] };
+};
+T.CM9 = R => {
+  const rA = R.pick([0.040, 0.050, 0.060]), kq = R.pick([2, 3]), rB = +(rA * kq).toFixed(3), rpm = R.pick([33, 45, 78]), w = TWO_PI * rpm / 60, vA = w * rA, vB = w * rB;
+  return NOFIG(2, { rA, rB, rpm }, `Two small objects <b>A</b> and <b>B</b> rest on a horizontal disc that rotates at ${rpm} revolutions per minute. <b>A</b> is ${V(rA, 'm')} from the centre of the disc and <b>B</b> is ${V(rB, 'm')} from the centre. Neither object slips.`, [
+    calc('Calculate the angular speed of the disc.', 2, w, RADS, M(E(`frequency = ${rpm} / 60 = ${I(rpm / 60)} Hz`), E(`ω = 2π × ${I(rpm / 60)} = ${AV(w, RADS)}`))),
+    choose(R, 'How does the angular speed of <b>B</b> compare with the angular speed of <b>A</b>?', 1, 'it is the same', [`it is ${kq} times as large`, `it is ${kq * kq} times as large`, 'it is smaller'], 'The same: both objects turn through the same angle in the same time ✓'),
+    calc('Calculate the speed of <b>A</b>.', 1, vA, MS1, M(E(`<i>v</i> = ω<i>r</i> = ${I(w)} × ${N(rA)} = ${AV(vA, MS1)}`))),
+    calc('Calculate the speed of <b>B</b>.', 1, vB, MS1, M(E(`${I(w)} × ${N(rB)} = ${AV(vB, MS1)}`))),
+    calc('Calculate the ratio centripetal acceleration of <b>B</b> / centripetal acceleration of <b>A</b>.', 1, kq, '', M(E(`<i>a</i> = ω<sup>2</sup><i>r</i> and ω is the same, so ratio = ${N(rB)} / ${N(rA)} = ${kq}`)), { int: true, noSkill: true }),
+    choose(R, 'The speed of rotation is slowly increased. Which object slips first?', 1, 'B', ['A', 'both at the same time'], '<b>B</b>: it needs the larger centripetal force per unit mass ✓')
+  ]);
+};
+
+/* ===== Circular motion in context ===== */
+T.CA1 = R => {
+  const r = R.pick([6.0, 8.0, 10, 12, 15]), m = R.pick([400, 500, 600, 800]), kv = R.pick([1.5, 2.0]), vmin = Math.sqrt(g * r), vt = +(vmin * kv).toPrecision(2), Nt = m * vt * vt / r - m * g, vb = Math.sqrt(vt * vt + 4 * g * r), Nb = m * vb * vb / r + m * g;
+  const s = new Scene('A roller-coaster car on a vertical circular loop'), Rr = 110; s.circle(0, 0, Rr, { w: 2.4, tag: 'track' }); s.rect(-16, -Rr + 4, 32, 18, { fill: '#d9dde1', tag: 'car' }); s.rect(-16, Rr - 22, 32, 18, { fill: '#d9dde1', tag: 'car' });
+  s.label(0, -Rr - 12, 'top', { bold: true }); s.label(0, Rr + 22, 'bottom', { bold: true }); blob(s, 0, 0, 3); s.dim(0, 0, Rr - 2, 0, LB(r, 'm'));
+  return { sf: 2, scenes: [s], data: { r, m, vt }, stem: `<b>Figure 1</b> shows a roller-coaster car of total mass ${V(m, 'kg')} on the inside of a vertical circular loop of radius ${V(r, 'm')}. The positions of the car at the top and at the bottom of the loop are shown. Friction and air resistance are negligible.`, parts: [
+    calc('Calculate the minimum speed at the top of the loop for the car to stay in contact with the track.', 2, vmin, MS1, M('at the minimum speed the weight alone provides the centripetal force: ' + E('<i>mg</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`<i>v</i> = √(${GS} × ${N(r)}) = ${AV(vmin, MS1)}`))),
+    calc(`The car passes the top of the loop at ${V(vt, MS1)}. Calculate the contact force that the track exerts on the car at the top.`, 3, Nt, 'N', M(E('<i>N</i> + <i>mg</i> = <i>mv</i><sup>2</sup> / <i>r</i>') + ' (both forces act towards the centre)', E(`<i>mv</i><sup>2</sup> / <i>r</i> = ${N(m)} × ${N(vt)}<sup>2</sup> / ${N(r)} = ${I(m * vt * vt / r)} N`), E(`<i>N</i> = ${I(m * vt * vt / r)} − ${N(m)} × ${GS} = ${AV(Nt, 'N')}`)), { tol: .03 }),
+    calc('Calculate the speed of the car at the bottom of the loop.', 2, vb, MS1, M(E('gain in kinetic energy = loss of gravitational potential energy: <i>v</i><sup>2</sup> = <i>u</i><sup>2</sup> + 2<i>g</i>(2<i>r</i>)'), E(`<i>v</i> = √(${N(vt)}<sup>2</sup> + 4 × ${GS} × ${N(r)}) = ${AV(vb, MS1)}`))),
+    calc('Calculate the contact force that the track exerts on the car at the bottom of the loop.', 2, Nb, 'N', M(E('<i>N</i> − <i>mg</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`<i>N</i> = ${N(m)} × ${I(vb)}<sup>2</sup> / ${N(r)} + ${N(m)} × ${GS} = ${AV(Nb, 'N')}`)))
+  ] };
+};
+T.CA2 = R => {
+  const r = R.pick([20, 25, 30, 40, 50]), m = R.pick([900, 1000, 1200, 1500]), vmax = Math.sqrt(g * r), v = +(vmax * R.pick([.5, .6, .7])).toPrecision(2), Nn = m * g - m * v * v / r;
+  const s = new Scene('A car at the top of a hump-backed bridge'), Rr = 240, pts = []; for (let a = 55; a <= 125; a += 2.5) pts.push([Rr * Math.cos(a * PI / 180), Rr - Rr * Math.sin(a * PI / 180)]);
+  s.poly(pts, { w: 2.4, tag: 'bridge' }); cart(s, -28, 56, 24, ''); const e = pts[0]; s.line(0, Rr, e[0], e[1], { dash: '5 4', w: 1, tag: 'radius' }); s.line(0, Rr, -e[0], e[1], { dash: '5 4', w: 1, tag: 'radius' }); blob(s, 0, Rr, 3);
+  s.label(e[0] / 2 + 12, (Rr + e[1]) / 2 + 5, LB(r, 'm'), { anchor: 'start' }); s.label(0, Rr + 20, 'centre of curvature'); s.label(0, -50, 'car');
+  return { sf: 2, scenes: [s], data: { r, m, v }, stem: `<b>Figure 1</b> shows a car of mass ${V(m, 'kg')} at the top of a hump-backed bridge. The road surface is an arc of a circle of radius ${V(r, 'm')}. The car travels at a constant speed of ${V(v, MS1)}.`, parts: [
+    calc('Calculate the centripetal force on the car at the top of the bridge.', 2, m * v * v / r, 'N', M(E('<i>F</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`= ${N(m)} × ${N(v)}<sup>2</sup> / ${N(r)} = ${AV(m * v * v / r, 'N')}`))),
+    calc('Calculate the contact force that the road exerts on the car at the top of the bridge.', 2, Nn, 'N', M(E('<i>mg</i> − <i>N</i> = <i>mv</i><sup>2</sup> / <i>r</i>') + ' (the resultant force is downwards, towards the centre)', E(`<i>N</i> = ${N(m)} × ${GS} − ${I(m * v * v / r)} = ${AV(Nn, 'N')}`)), { tol: .03 }),
+    calc('Calculate the maximum speed at which the car can cross the top of the bridge without losing contact with the road.', 2, vmax, MS1, M('contact is lost when <i>N</i> = 0, so ' + E('<i>mg</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`<i>v</i> = √(${GS} × ${N(r)}) = ${AV(vmax, MS1)}`))),
+    choose(R, 'How does the contact force at the top of the bridge compare with the weight of the car?', 1, 'it is less than the weight', ['it is greater than the weight', 'it is equal to the weight'], 'Less than the weight ✓')
+  ] };
+};
+const wheel = (s, x, y, r = 7) => s.circle(x, y, r, { fill: '#fff', tag: 'wheel' });
+const cart = (s, x, w, h, lab) => { box(s, x, -h - 14, w, h, lab); wheel(s, x + w * .22, -7); wheel(s, x + w * .78, -7); };
+T.CA3 = R => {
+  const L = R.pick([0.60, 0.80, 1.0, 1.2, 1.5]), th = R.pick([20, 25, 30, 35, 40]), m = R.pick([0.10, 0.15, 0.20, 0.25]), Tn = m * g / cs(th), r = L * sn(th), v = Math.sqrt(g * r * tn(th)), Tp = TWO_PI * r / v;
+  const s = new Scene('A conical pendulum'), l = 220, bx = l * sn(th), by = l * cs(th); hatchH(s, -90, 90, 0, false); s.line(0, 0, bx, by, { tag: 'string' }); s.line(0, 0, 0, by + 30, { dash: '5 4', w: 1, tag: 'vertical axis' });
+  const ell = []; for (let a = 0; a <= 360; a += 10) ell.push([bx * Math.cos(a * PI / 180), by + 20 * Math.sin(a * PI / 180)]); dashedPoly(s, ell, 'circular path'); s.circle(bx, by, 11, { fill: '#d9dde1', tag: 'bob' });
+  const rl = th <= 20 ? 150 : th <= 25 ? 128 : 104; s.arc(0, 0, rl - 26, 270, 270 + th, { w: 1.1, tag: 'angle arc' }); s.label(rl * sn(th / 2), rl * cs(th / 2) + 2, DG(th)); s.label(bx * .55 + 14, by * .55 - 6, LB(L, 'm'), { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { L, th, m }, stem: `<b>Figure 1</b> shows a ball of mass ${V(m, 'kg')} on a string of length ${V(L, 'm')}. The ball moves at constant speed in a horizontal circle, with the string at ${DG(th)} to the vertical.`, parts: [
+    calc('Calculate the tension in the string.', 2, Tn, 'N', M(E('the vertical component of the tension balances the weight: <i>T</i> cos θ = <i>mg</i>'), E(`<i>T</i> = ${N(m)} × ${GS} / cos ${N(th)}° = ${AV(Tn, 'N')}`))),
+    calc('Calculate the radius of the circle.', 1, r, 'm', M(E(`<i>r</i> = ${N(L)} × sin ${N(th)}° = ${AV(r, 'm')}`))),
+    calc('Calculate the centripetal force on the ball.', 1, Tn * sn(th), 'N', M(E(`horizontal component of the tension = ${I(Tn)} × sin ${N(th)}° = ${AV(Tn * sn(th), 'N')}`))),
+    calc('Calculate the speed of the ball.', 2, v, MS1, M(E('<i>F</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`<i>v</i> = √(${I(Tn * sn(th))} × ${I(r)} / ${N(m)}) = ${AV(v, MS1)}`))),
+    calc('Calculate the time taken for one revolution.', 1, Tp, 's', M(E(`<i>T</i> = 2π<i>r</i> / <i>v</i> = 2π × ${I(r)} / ${I(v)} = ${AV(Tp, 's')}`)))
+  ] };
+};
+T.CA4 = R => {
+  const v0 = find(() => ({ r: R.pick([50, 80, 100, 120, 150]), v: R.pick([15, 20, 25, 30]) }), o => { const t = deg(Math.atan(o.v * o.v / (o.r * g))); return t > 9 && t < 40; }), { r, v } = v0, m = R.pick([900, 1200, 1500]), th = deg(Math.atan(v * v / (r * g))), Nn = m * g / cs(th);
+  const f = slopeFig('A car on a banked track, seen from behind', 25, { f: .55, L: 340, lab: 'θ' }), s = f.s, tp = f.c(0, f.bh); force(s, tp[0], tp[1], 90 * f.n[0], 90 * f.n[1], '*N*', { at: [-14, 4], anchor: 'end' }); force(s, f.C[0], f.C[1], 0, 64, 'weight');
+  return { sf: 2, scenes: [s], data: { r, v, m }, stem: `<b>Figure 1</b> shows a car on a banked track, seen from behind. A car of mass ${V(m, 'kg')} travels at ${V(v, MS1)} around a banked bend of horizontal radius ${V(r, 'm')}. The track is banked at an angle θ so that the car needs no sideways friction at this speed. <i>N</i> is the normal contact force.`, parts: [
+    text('State which component of <i>N</i> provides the centripetal force.', 1, 'The horizontal component, <i>N</i> sin θ ✓'),
+    calc('Calculate the centripetal force on the car.', 2, m * v * v / r, 'N', M(E('<i>F</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`= ${N(m)} × ${N(v)}<sup>2</sup> / ${N(r)} = ${AV(m * v * v / r, 'N')}`))),
+    calc('Calculate the angle θ of the banking.', 3, th, '°', M(E('<i>N</i> cos θ = <i>mg</i> and <i>N</i> sin θ = <i>mv</i><sup>2</sup> / <i>r</i>'), E('tan θ = <i>v</i><sup>2</sup> / (<i>rg</i>)'), E(`θ = tan<sup>−1</sup>(${N(v)}<sup>2</sup> / (${N(r)} × ${GS})) = ${AD(th)}`))),
+    calc('Calculate <i>N</i>.', 1, Nn, 'N', M(E(`<i>N</i> = ${N(m)} × ${GS} / cos ${I(th)}° = ${AV(Nn, 'N')}`))),
+    choose(R, 'A car travels around the same bend at a higher speed. In which direction must friction act on the car?', 1, 'down the slope, towards the inside of the bend', ['up the slope, towards the outside of the bend', 'no friction is needed'], 'Down the slope: a larger centripetal force is needed ✓')
+  ] };
+};
+T.CA5 = R => {
+  const m = R.pick([0.10, 0.20, 0.25, 0.50]), r = R.pick([0.50, 0.60, 0.80, 1.0]), vt = +(Math.sqrt(g * r) * R.pick([1.3, 1.6, 2.0])).toPrecision(2), Tt = m * vt * vt / r - m * g, vb = Math.sqrt(vt * vt + 4 * g * r), Tb = m * vb * vb / r + m * g;
+  return NOFIG(2, { m, r, vt }, `A ball of mass ${V(m, 'kg')} is whirled in a vertical circle of radius ${V(r, 'm')} on the end of a string. The speed of the ball at the top of the circle is ${V(vt, MS1)}. Air resistance is negligible.`, [
+    calc('Calculate the tension in the string when the ball is at the top of the circle.', 3, Tt, 'N', M(E('<i>T</i> + <i>mg</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`<i>mv</i><sup>2</sup> / <i>r</i> = ${N(m)} × ${N(vt)}<sup>2</sup> / ${N(r)} = ${I(m * vt * vt / r)} N`), E(`<i>T</i> = ${I(m * vt * vt / r)} − ${N(m)} × ${GS} = ${AV(Tt, 'N')}`)), { tol: .03 }),
+    calc('Calculate the speed of the ball at the bottom of the circle.', 2, vb, MS1, M('the ball falls through a height of 2<i>r</i>: ' + E('½<i>mv</i><sup>2</sup> = ½<i>mu</i><sup>2</sup> + <i>mg</i>(2<i>r</i>)'), E(`<i>v</i> = √(${N(vt)}<sup>2</sup> + 4 × ${GS} × ${N(r)}) = ${AV(vb, MS1)}`))),
+    calc('Calculate the tension in the string when the ball is at the bottom of the circle.', 2, Tb, 'N', M(E('<i>T</i> − <i>mg</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`<i>T</i> = ${N(m)} × ${I(vb)}<sup>2</sup> / ${N(r)} + ${N(m)} × ${GS} = ${AV(Tb, 'N')}`))),
+    choose(R, 'At which point is the string most likely to break?', 1, 'the bottom of the circle', ['the top of the circle', 'when the string is horizontal', 'it is equally likely at every point'], 'The bottom: the tension is greatest there ✓')
+  ]);
+};
+T.CA6 = R => {
+  const r = R.pick([2.0, 2.5, 3.0, 4.0]), m = R.pick([50, 60, 70, 80]), rpm = R.pick([24, 30, 36]), w = TWO_PI * rpm / 60, Nn = m * w * w * r;
+  return NOFIG(2, { r, m, rpm }, `In a fairground ride a person of mass ${V(m, 'kg')} stands against the inside wall of a vertical cylinder of radius ${V(r, 'm')}. The cylinder rotates about its vertical axis at ${rpm} revolutions per minute. The floor is then lowered and the person remains in place against the wall.`, [
+    calc('Calculate the angular speed of the cylinder.', 1, w, RADS, M(E(`ω = 2π × ${rpm} / 60 = ${AV(w, RADS)}`))),
+    calc('Calculate the normal contact force that the wall exerts on the person.', 2, Nn, 'N', M(E('the contact force provides the centripetal force: <i>N</i> = <i>m</i>ω<sup>2</sup><i>r</i>'), E(`= ${N(m)} × ${I(w)}<sup>2</sup> × ${N(r)} = ${AV(Nn, 'N')}`))),
+    calc('State the magnitude of the frictional force on the person when the floor has been lowered.', 1, m * g, 'N', M(E(`equal to the weight = ${N(m)} × ${GS} = ${AV(m * g, 'N')}`)), NS),
+    choose(R, 'In which direction does this frictional force act on the person?', 1, 'vertically upwards', ['vertically downwards', 'towards the axis', 'away from the axis'], 'Vertically upwards, balancing the weight ✓'),
+    text('Explain why the person may slide down the wall if the cylinder rotates more slowly.', 2, M('The contact force from the wall is smaller at a lower angular speed', 'so the maximum frictional force is smaller and may become less than the weight'))
+  ]);
+};
+T.CA7 = R => {
+  const L = R.pick([0.80, 1.0, 1.2, 1.5, 2.0]), h = +(L * R.pick([.1, .2, .25])).toPrecision(2), m = R.pick([0.10, 0.20, 0.50]), v = Math.sqrt(2 * g * h), Tn = m * g + m * v * v / L;
+  const s = new Scene('A pendulum released from a height above its lowest position'), l = 230, hp = l * h / L, th = Math.acos(1 - h / L), bx = -l * Math.sin(th), by = l * Math.cos(th); hatchH(s, -110, 110, 0, false);
+  s.line(0, 0, bx, by, { dash: '5 4', w: 1.1, tag: 'release position' }); s.circle(bx, by, 11, { dash: '4 3', w: 1.1, tag: 'release position' }); s.line(0, 0, 0, l, { tag: 'string' }); s.circle(0, l, 11, { fill: '#d9dde1', tag: 'bob' });
+  s.line(bx + 11, by, 74, by, { dash: '3 3', w: .9, tag: 'level' }); s.line(11, l, 74, l, { dash: '3 3', w: .9, tag: 'level' }); s.dim(60, by, 60, l, LB(h, 'm')); s.label(10, l * .45, LB(L, 'm'), { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { L, h, m }, stem: `<b>Figure 1</b> shows a pendulum that consists of a bob of mass ${V(m, 'kg')} on a string of length ${V(L, 'm')}. The bob is released from rest at a height of ${V(h, 'm')} above its lowest position. The bob is shown at its lowest position. Air resistance is negligible.`, parts: [
+    calc('Calculate the speed of the bob at its lowest position.', 2, v, MS1, M(E('<i>mgh</i> = ½<i>mv</i><sup>2</sup>'), E(`<i>v</i> = √(2 × ${GS} × ${N(h)}) = ${AV(v, MS1)}`))),
+    calc('Calculate the centripetal force on the bob at its lowest position.', 1, m * v * v / L, 'N', M(E(`<i>mv</i><sup>2</sup> / <i>r</i> = ${N(m)} × ${I(v)}<sup>2</sup> / ${N(L)} = ${AV(m * v * v / L, 'N')}`))),
+    calc('Calculate the tension in the string at the lowest position.', 2, Tn, 'N', M(E('<i>T</i> − <i>mg</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`<i>T</i> = ${N(m)} × ${GS} + ${I(m * v * v / L)} = ${AV(Tn, 'N')}`))),
+    text('Explain why the tension at the lowest position is greater than the weight of the bob.', 1, 'The bob is moving in a circle, so there must be a resultant force upwards (towards the centre): the tension exceeds the weight ✓')
+  ] };
+};
+T.CA8 = R => {
+  const sat = R.pick([['The International Space Station', 6.78e6, 5560], ['A weather satellite', 7.23e6, 6120], ['A navigation satellite', 2.66e7, 43100], ['A geostationary satellite', 4.22e7, 86200]]), r = sat[1], Tp = sat[2], w = TWO_PI / Tp, v = w * r, a = v * v / r, m = R.pick([850, 1200, 1630, 2400]);
+  return NOFIG(3, { r, Tp, m }, `${sat[0]} moves in a circular orbit of radius ${V(r, 'm', 3)} around the Earth. Its orbital period is ${V(Tp, 's', 3)}.`, [
+    calc('Calculate the angular speed of the satellite.', 1, w, RADS, M(E(`ω = 2π / <i>T</i> = 2π / ${N(Tp, 3)} = ${AV(w, RADS)}`))),
+    calc('Calculate the speed of the satellite.', 1, v, MS1, M(E(`<i>v</i> = ω<i>r</i> = ${I3(w)} × ${N(r, 3)} = ${AV(v, MS1)}`))),
+    calc('Calculate the centripetal acceleration of the satellite.', 2, a, MS2, M(E('<i>a</i> = <i>v</i><sup>2</sup> / <i>r</i>'), E(`= ${I3(v)}<sup>2</sup> / ${N(r, 3)} = ${AV(a, MS2)}`))),
+    text('State the force that provides the centripetal force on the satellite.', 1, 'The gravitational force of the Earth on the satellite (its weight) ✓'),
+    calc(`The satellite has a mass of ${V(m, 'kg', 3)}. Calculate the gravitational force on it.`, 1, m * a, 'N', M(E(`<i>F</i> = <i>ma</i> = ${N(m, 3)} × ${I3(a)} = ${AV(m * a, 'N')}`)))
+  ]);
+};
+T.CA9 = R => {
+  const v = R.pick([60, 80, 100, 120]), th = R.pick([20, 25, 30, 40]), m = R.pick([1200, 2500, 6000]), r = v * v / (g * tn(th)), Lf = m * g / cs(th), Tp = TWO_PI * r / v;
+  return NOFIG(2, { v, th, m }, `An aircraft of mass ${V(m, 'kg')} flies at a constant speed of ${V(v, MS1)} in a horizontal circle. To turn, the aircraft banks so that the lift force is at ${DG(th)} to the vertical.`, [
+    calc('Calculate the lift force.', 2, Lf, 'N', M(E('the vertical component of the lift balances the weight: <i>L</i> cos θ = <i>mg</i>'), E(`<i>L</i> = ${N(m)} × ${GS} / cos ${N(th)}° = ${AV(Lf, 'N')}`))),
+    calc('Calculate the centripetal force on the aircraft.', 1, Lf * sn(th), 'N', M(E(`horizontal component of the lift = ${I(Lf)} × sin ${N(th)}° = ${AV(Lf * sn(th), 'N')}`))),
+    calc('Calculate the radius of the circle.', 2, r, 'm', M(E('<i>F</i> = <i>mv</i><sup>2</sup> / <i>r</i>'), E(`<i>r</i> = ${N(m)} × ${N(v)}<sup>2</sup> / ${I(Lf * sn(th))} = ${AV(r, 'm')}`))),
+    calc('Calculate the time taken to complete one circle.', 1, Tp, 's', M(E(`2π × ${I(r)} / ${N(v)} = ${AV(Tp, 's')}`))),
+    choose(R, 'The aircraft banks at a larger angle at the same speed. What happens to the radius of the circle?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases: the horizontal component of the lift is larger ✓')
+  ]);
+};
+T.CA10 = R => {
+  const r = R.pick([6.0, 8.0, 9.0, 12]), k = R.pick([3.0, 4.0, 5.0, 6.0, 8.0]), m = R.pick([65, 70, 75, 80]), a = k * g, w = Math.sqrt(a / r), rpm = w * 60 / TWO_PI;
+  return NOFIG(2, { r, k, m }, `Astronauts are tested in a centrifuge. An astronaut of mass ${V(m, 'kg')} sits in a cabin that moves in a horizontal circle of radius ${V(r, 'm')}. The centripetal acceleration of the astronaut is ${N(k)}<i>g</i>, where <i>g</i> is 9.81 m s<sup>−2</sup>.`, [
+    calc('Calculate the centripetal acceleration in m s<sup>−2</sup>.', 1, a, MS2, M(E(`${N(k)} × ${GS} = ${AV(a, MS2)}`))),
+    calc('Calculate the angular speed of the centrifuge.', 2, w, RADS, M(E('<i>a</i> = ω<sup>2</sup><i>r</i>'), E(`ω = √(${I(a)} / ${N(r)}) = ${AV(w, RADS)}`))),
+    calc('Calculate the number of revolutions made each minute.', 2, rpm, '', M(E(`frequency = ${I(w)} / (2π) = ${I(w / TWO_PI)} Hz`), E(`${I(w / TWO_PI)} × 60 = ${A(rpm)} revolutions per minute`)), NS),
+    calc('Calculate the horizontal force that the seat exerts on the astronaut.', 1, m * a, 'N', M(E(`<i>F</i> = <i>ma</i> = ${N(m)} × ${I(a)} = ${AV(m * a, 'N')}`)))
+  ]);
+};
+/* ===== Simple harmonic motion ===== */
+const SHMDEF = ['The acceleration is directly proportional to the displacement from the equilibrium position ✓', 'and is always directed towards the equilibrium position (in the opposite direction to the displacement) ✓'];
+const TS = 'time / s';
+T.SH1 = R => {
+  const v0 = find(() => ({ A: R.pick([0.020, 0.030, 0.040, 0.050]), f: R.pick([0.50, 1.0, 2.0, 2.5, 4.0, 5.0]), t: R.pick([0.020, 0.050, 0.10, 0.15, 0.30]) }), o => Math.cos(TWO_PI * o.f * o.t) > .2 && Math.cos(TWO_PI * o.f * o.t) < .98);
+  const { A: Am, f, t } = v0, w = TWO_PI * f, x = Am * Math.cos(w * t);
+  return NOFIG(2, { Am, f, t }, `An object oscillates with simple harmonic motion of amplitude ${V(Am, 'm')} and frequency ${V(f, 'Hz')}. At time <i>t</i> = 0 the object is at its maximum positive displacement.`, [
+    text('State the conditions for simple harmonic motion.', 2, SHMDEF.join('<br>')),
+    calc('Calculate the angular frequency ω of the oscillation.', 1, w, RADS, M(E(`ω = 2π<i>f</i> = 2π × ${N(f)} = ${AV(w, RADS)}`))),
+    calc('Calculate the maximum speed of the object.', 1, w * Am, MS1, M(E(`<i>v</i><sub>max</sub> = ω<i>A</i> = ${I(w)} × ${N(Am)} = ${AV(w * Am, MS1)}`))),
+    calc('Calculate the maximum acceleration of the object.', 1, w * w * Am, MS2, M(E(`<i>a</i><sub>max</sub> = ω<sup>2</sup><i>A</i> = ${I(w)}<sup>2</sup> × ${N(Am)} = ${AV(w * w * Am, MS2)}`))),
+    calc(`Calculate the displacement of the object at <i>t</i> = ${V(t, 's')}.`, 2, x, 'm', M(E(`ω<i>t</i> = ${I(w)} × ${N(t)} = ${I(w * t)} rad`), E(`<i>x</i> = <i>A</i> cos ω<i>t</i> = ${N(Am)} × cos(${I(w * t)} rad) = ${AV(x, 'm')}`) + ' (calculator in radian mode)'), { tol: .03 })
+  ]);
+};
+T.SH2 = R => {
+  const Tp = R.pick([0.40, 0.50, 0.80, 1.0, 2.0, 4.0]), Ac = R.pick([2.0, 3.0, 4.0, 5.0, 6.0]), xa = axisFor(2.5 * Tp), ya = axisFor(Ac * 1.1), w = TWO_PI / Tp, f = 1 / Tp, vm = w * Ac / 100, am = w * w * Ac / 100;
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [-ya[0], ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 320, w: 440, xl: TS, yl: 'displacement / cm', curves: [{ f: t => Ac * Math.cos(w * t), from: 0, to: xa[0] }], reads: [[0, Ac], [Tp, Ac], [Tp / 2, -Ac]] });
+  const tq = [0, Tp / 4, Tp / 2, Tp].map(x => `${+x.toPrecision(3)} s`);
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Tp, Ac }, stem: `<b>Figure 1</b> shows how the displacement of an object varies with time. The object moves with simple harmonic motion.`, parts: [
+    calc('State the amplitude of the oscillation.', 1, Ac, 'cm', M(`${N(Ac)} cm`), { abs: ya[1] / 5, noSkill: true }),
+    calc('Determine the time period of the oscillation.', 1, Tp, 's', M(`${N(Tp)} s (the time for one complete cycle)`), { tol: .06, noSkill: true }),
+    calc('Calculate the frequency of the oscillation.', 1, f, 'Hz', M(E(`<i>f</i> = 1 / <i>T</i> = 1 / ${N(Tp)} = ${AV(f, 'Hz')}`)), { tol: .06 }),
+    calc('Calculate the maximum speed of the object.', 2, vm, MS1, M(E(`<i>v</i><sub>max</sub> = 2π<i>fA</i> = 2π × ${I(f)} × ${N(Ac / 100)}`) + ' (amplitude in metres)', E(`= ${AV(vm, MS1)}`)), { tol: .08 }),
+    choose(R, 'At which of these times is the speed of the object greatest?', 1, tq[1], [tq[0], tq[2], tq[3]], `${tq[1]}: the object passes through the equilibrium position (the gradient of the graph is steepest) ✓`),
+    calc('Calculate the maximum acceleration of the object.', 1, am, MS2, M(E(`<i>a</i><sub>max</sub> = (2π<i>f</i>)<sup>2</sup><i>A</i> = (2π × ${I(f)})<sup>2</sup> × ${N(Ac / 100)} = ${AV(am, MS2)}`)), { tol: .1 })
+  ] };
+};
+T.SH3 = R => {
+  const v0 = find(() => ({ A: R.pick([0.040, 0.050, 0.080, 0.10]), f: R.pick([1.5, 2.0, 2.5, 4.0]), x: R.pick([0.020, 0.030, 0.040, 0.060]) }), o => o.x < .85 * o.A), { A: Am, f, x } = v0, w = TWO_PI * f, v = w * Math.sqrt(Am * Am - x * x), a = w * w * x;
+  return NOFIG(2, { Am, f, x }, `A mass oscillates with simple harmonic motion of amplitude ${V(Am, 'm')} and frequency ${V(f, 'Hz')}.`, [
+    calc('Calculate the maximum speed of the mass.', 1, w * Am, MS1, M(E(`<i>v</i><sub>max</sub> = 2π<i>fA</i> = 2π × ${N(f)} × ${N(Am)} = ${AV(w * Am, MS1)}`))),
+    calc(`Calculate the speed of the mass when its displacement is ${V(x, 'm')}.`, 2, v, MS1, M(E('<i>v</i> = 2π<i>f</i>√(<i>A</i><sup>2</sup> − <i>x</i><sup>2</sup>)'), E(`= 2π × ${N(f)} × √(${N(Am)}<sup>2</sup> − ${N(x)}<sup>2</sup>) = ${AV(v, MS1)}`))),
+    calc('Calculate the magnitude of the acceleration of the mass at this displacement.', 2, a, MS2, M(E('<i>a</i> = (2π<i>f</i>)<sup>2</sup><i>x</i>') + ' (magnitude)', E(`= (2π × ${N(f)})<sup>2</sup> × ${N(x)} = ${AV(a, MS2)}`))),
+    choose(R, 'The displacement at this instant is positive. In which direction is the acceleration?', 1, 'negative (towards the equilibrium position)', ['positive (away from the equilibrium position)', 'it depends on the direction of the velocity'], 'Negative: the acceleration is always directed towards the equilibrium position ✓'),
+    choose(R, 'Where is the mass when its acceleration is zero?', 1, 'at the equilibrium position', ['at maximum displacement', 'half-way between equilibrium and maximum displacement'], 'At the equilibrium position (<i>x</i> = 0) ✓')
+  ]);
+};
+T.SH4 = R => {
+  const Ac = R.pick([2, 4, 5]), f = R.pick([0.50, 1.0, 1.5, 2.0]), w = TWO_PI * f, am = w * w * Ac / 100, xa = axisFor(Ac), ya = axisFor(am * 1.1), c = pwl([[-Ac, am], [Ac, -am]]);
+  const fig = graph({ x: [-xa[0], xa[0], xa[1]], y: [-ya[0], ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 320, w: 440, xl: 'displacement / cm', yl: 'acceleration / m s^{−2}', curves: [c], reads: [[Ac, -am], [-Ac, am]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Ac, f }, stem: `<b>Figure 1</b> shows how the acceleration of an oscillating object varies with its displacement from the equilibrium position.`, parts: [
+    text('Explain how the graph shows that the motion is simple harmonic.', 2, M('It is a straight line through the origin, so acceleration is directly proportional to displacement', 'the gradient is negative, so the acceleration is always in the opposite direction to the displacement (towards equilibrium)')),
+    calc('State the amplitude of the oscillation.', 1, Ac, 'cm', M(`${N(Ac)} cm (where the line ends)`), { abs: xa[1] / 5, noSkill: true }),
+    calc('Determine the maximum acceleration of the object.', 1, am, MS2, M(`${A(am)} m s<sup>−2</sup>`), { tol: .06, noSkill: true }),
+    calc('Determine the angular frequency ω of the oscillation.', 2, w, RADS, M(E('<i>a</i><sub>max</sub> = ω<sup>2</sup><i>A</i>') + ' (or gradient = −ω<sup>2</sup>, with displacement in metres)', E(`ω = √(${I(am)} / ${N(Ac / 100)}) = ${AV(w, RADS)}`)), { tol: .05, noSkill: true }),
+    calc('Calculate the frequency of the oscillation.', 1, f, 'Hz', M(E(`<i>f</i> = ω / (2π) = ${I(w)} / (2π) = ${AV(f, 'Hz')}`)), { tol: .05 })
+  ] };
+};
+T.SH5 = R => {
+  const vm = R.pick([0.20, 0.30, 0.50, 0.80, 1.2]), Tp = R.pick([0.50, 0.80, 1.0, 2.0]), w = TWO_PI / Tp, xa = axisFor(2.5 * Tp), ya = axisFor(vm * 1.1), Am = vm / w, am = vm * w;
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [-ya[0], ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 320, w: 440, xl: TS, yl: 'velocity / m s^{−1}', curves: [{ f: t => -vm * Math.sin(w * t), from: 0, to: xa[0] }], reads: [[.75 * Tp, vm], [.25 * Tp, -vm], [Tp, 0]] });
+  const tq = [Tp / 4, Tp / 2, 3 * Tp / 4].map(x => `${+x.toPrecision(3)} s`);
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { vm, Tp }, stem: `<b>Figure 1</b> shows how the velocity of an object that moves with simple harmonic motion varies with time.`, parts: [
+    calc('State the maximum speed of the object.', 1, vm, MS1, M(`${N(vm)} m s<sup>−1</sup>`), { abs: ya[1] / 5, noSkill: true }),
+    calc('Determine the time period of the oscillation.', 1, Tp, 's', M(`${N(Tp)} s`), { tol: .06, noSkill: true }),
+    calc('Calculate the amplitude of the oscillation.', 2, Am, 'm', M(E(`ω = 2π / <i>T</i> = 2π / ${N(Tp)} = ${I(w)} rad s<sup>−1</sup>`), E(`<i>A</i> = <i>v</i><sub>max</sub> / ω = ${N(vm)} / ${I(w)} = ${AV(Am, 'm')}`)), { tol: .08 }),
+    calc('Calculate the maximum acceleration of the object.', 1, am, MS2, M(E(`<i>a</i><sub>max</sub> = ω<sup>2</sup><i>A</i> = ω<i>v</i><sub>max</sub> = ${I(w)} × ${N(vm)} = ${AV(am, MS2)}`)), { tol: .08 }),
+    choose(R, 'At which of these times is the object at a maximum displacement?', 1, tq[1], [tq[0], tq[2]], `${tq[1]}: the velocity is zero ✓`),
+    text('State how the acceleration could be found from the graph at any instant.', 1, 'It is the gradient of the velocity–time graph at that instant ✓')
+  ] };
+};
+T.SH6 = R => {
+  const Am = R.pick([0.020, 0.050, 0.080, 0.12]), Tp = R.pick([0.40, 0.80, 1.2, 2.0]), w = TWO_PI / Tp;
+  return NOFIG(2, { Am, Tp }, `A trolley attached to two springs oscillates along a track with simple harmonic motion. The amplitude is ${V(Am, 'm')} and the time period is ${V(Tp, 's')}.`, [
+    choose(R, 'What is the velocity of the trolley when its displacement is a maximum?', 1, 'zero', ['a maximum', 'half of its maximum value'], 'Zero ✓'),
+    choose(R, 'Which describes the acceleration of the trolley when its displacement is at its maximum positive value?', 1, 'a maximum, in the negative direction', ['a maximum, in the positive direction', 'zero', 'half of its maximum value'], 'Maximum, in the negative direction ✓'),
+    choose(R, 'What is the phase difference between the displacement and the velocity of the trolley?', 1, 'π/2 rad (a quarter of a cycle)', ['zero', 'π rad (half a cycle)', '2π rad (a whole cycle)'], 'π/2 rad ✓'),
+    calc('Calculate the maximum acceleration of the trolley.', 2, w * w * Am, MS2, M(E(`ω = 2π / ${N(Tp)} = ${I(w)} rad s<sup>−1</sup>`), E(`<i>a</i><sub>max</sub> = ω<sup>2</sup><i>A</i> = ${I(w)}<sup>2</sup> × ${N(Am)} = ${AV(w * w * Am, MS2)}`))),
+    calc('Calculate the shortest time between the trolley being at maximum displacement and being at maximum speed.', 1, Tp / 4, 's', M(E(`a quarter of a period = ${N(Tp)} / 4 = ${AV(Tp / 4, 's')}`))),
+    calc('Calculate the total distance travelled by the trolley in one complete oscillation.', 1, 4 * Am, 'm', M(E(`4 × ${N(Am)} = ${AV(4 * Am, 'm')}`)))
+  ]);
+};
+T.SH7 = R => {
+  const v0 = find(() => ({ d0: R.pick([6.0, 8.0, 10]), Am: R.pick([2.0, 2.5, 3.0, 4.0]), t: R.pick([1.0, 2.0, 4.0, 5.0]), c: R.pick([.8, .6, .4, .2]) }), o => isNice(o.d0 + o.c * o.Am, 2));
+  const { d0, Am, t, c } = v0, Tp = 12, ang = 360 * t / Tp, dep = d0 + Am * cs(ang), D = +(d0 + c * Am).toPrecision(2), th = deg(Math.acos((D - d0) / Am)), tD = th / 360 * Tp;
+  return NOFIG(2, { d0, Am, t, D }, `The depth of water in a harbour varies with simple harmonic motion. The mean depth is ${V(d0, 'm')}, the amplitude of the variation is ${V(Am, 'm')} and the time period is 12 hours. High tide is at time <i>t</i> = 0.`, [
+    calc('State the depth of water at high tide.', 1, d0 + Am, 'm', M(E(`${N(d0)} + ${N(Am)} = ${AV(d0 + Am, 'm')}`)), NS),
+    calc('State the depth of water at low tide.', 1, d0 - Am, 'm', M(E(`${N(d0)} − ${N(Am)} = ${AV(d0 - Am, 'm')}`)), NS),
+    calc(`Calculate the depth of water ${V(t, 'hours')} after high tide.`, 3, dep, 'm', M(E(`fraction of a cycle = ${N(t)} / 12, so the phase angle = 360° × ${N(t)} / 12 = ${I(ang)}°`), E(`displacement from the mean depth = ${N(Am)} × cos ${I(ang)}° = ${I(Am * cs(ang))} m`), E(`depth = ${N(d0)} + ${I(Am * cs(ang))} = ${AV(dep, 'm')}`)), { tol: .02 }),
+    calc(`A ship needs a depth of at least ${V(D, 'm')}. Calculate the time after high tide at which the depth first falls to this value.`, 3, tD, 'hours', M(E(`displacement from the mean depth = ${N(D)} − ${N(d0)} = ${I(D - d0)} m`), E(`cos θ = ${I(D - d0)} / ${N(Am)}, so θ = cos<sup>−1</sup>(${I((D - d0) / Am)}) = ${I(th)}°`), E(`time = ${I(th)} / 360 × 12 = ${AV(tD, 'hours')}`)), { tol: .03 })
+  ]);
+};
+T.SH8 = R => {
+  const st = R.pick([0.080, 0.090, 0.10]), rpm = R.pick([3000, 4200, 6000]), m = R.pick([0.40, 0.50, 0.60]), Am = st / 2, f = rpm / 60, w = TWO_PI * f, vm = w * Am, am = w * w * Am;
+  return NOFIG(2, { st, rpm, m }, `A piston of mass ${V(m, 'kg')} in a car engine moves up and down with a motion that is approximately simple harmonic. The distance between the highest and lowest positions of the piston is ${V(st, 'm')}. The engine runs at ${rpm} revolutions per minute, and the piston makes one oscillation for each revolution.`, [
+    calc('State the amplitude of the oscillation.', 1, Am, 'm', M(E(`${N(st)} / 2 = ${AV(Am, 'm')}`)), NS),
+    calc('Calculate the frequency of the oscillation.', 1, f, 'Hz', M(E(`${rpm} / 60 = ${AV(f, 'Hz')}`)), NS),
+    calc('Calculate the maximum speed of the piston.', 2, vm, MS1, M(E('<i>v</i><sub>max</sub> = 2π<i>fA</i>'), E(`= 2π × ${I(f)} × ${I(Am)} = ${AV(vm, MS1)}`))),
+    calc('Calculate the maximum acceleration of the piston.', 2, am, MS2, M(E('<i>a</i><sub>max</sub> = (2π<i>f</i>)<sup>2</sup><i>A</i>'), E(`= (2π × ${I(f)})<sup>2</sup> × ${I(Am)} = ${AV(am, MS2)}`))),
+    calc('Calculate the maximum resultant force on the piston.', 1, m * am, 'N', M(E(`<i>F</i> = <i>ma</i> = ${N(m)} × ${I(am)} = ${AV(m * am, 'N')}`))),
+    choose(R, 'Where is the piston when the resultant force on it is greatest?', 1, 'at its highest or lowest position', ['at the midpoint of its motion', 'the force is the same everywhere'], 'At the highest or lowest position (maximum displacement) ✓')
+  ]);
+};
+T.SH9 = R => {
+  const f = R.pick([50, 100, 200, 250]), Amm = R.pick([0.50, 1.0, 2.0]), w = TWO_PI * f, vm = w * Amm * 1e-3, am = w * w * Amm * 1e-3, xh = Amm * Math.sqrt(3) / 2;
+  return NOFIG(2, { f, Amm }, `The cone of a loudspeaker oscillates with simple harmonic motion at a frequency of ${V(f, 'Hz')} with an amplitude of ${V(Amm, 'mm')}.`, [
+    calc('Calculate the maximum speed of the cone.', 2, vm, MS1, M(E('<i>v</i><sub>max</sub> = 2π<i>fA</i>'), E(`= 2π × ${N(f)} × ${N(Amm * 1e-3)} = ${AV(vm, MS1)}`))),
+    calc('Calculate the maximum acceleration of the cone.', 2, am, MS2, M(E('<i>a</i><sub>max</sub> = (2π<i>f</i>)<sup>2</sup><i>A</i>'), E(`= (2π × ${N(f)})<sup>2</sup> × ${N(Amm * 1e-3)} = ${AV(am, MS2)}`))),
+    calc('Calculate the ratio maximum acceleration of the cone / acceleration of free fall.', 1, am / g, '', M(E(`${I(am)} / ${GS} = ${A(am / g)}`)), NS),
+    calc('Calculate the displacement of the cone, in mm, when its speed is half of the maximum speed.', 3, xh, 'mm', M(E('<i>v</i> = 2π<i>f</i>√(<i>A</i><sup>2</sup> − <i>x</i><sup>2</sup>) = ½ × 2π<i>fA</i>, so <i>A</i><sup>2</sup> − <i>x</i><sup>2</sup> = ¼<i>A</i><sup>2</sup>'), E('<i>x</i><sup>2</sup> = ¾<i>A</i><sup>2</sup>'), E(`<i>x</i> = √(0.75) × ${N(Amm)} = ${AV(xh, 'mm')}`)))
+  ]);
+};
+T.SH10 = R => {
+  const m = R.pick([0.20, 0.50, 0.80]), f = R.pick([1.0, 2.0, 2.5]), Am = R.pick([0.040, 0.050, 0.10]), w = TWO_PI * f, Et = .5 * m * w * w * Am * Am;
+  return NOFIG(2, { m, f, Am }, `A mass of ${V(m, 'kg')} oscillates with simple harmonic motion of frequency ${V(f, 'Hz')} and amplitude ${V(Am, 'm')}. Energy losses are negligible.`, [
+    calc('Calculate the maximum kinetic energy of the mass.', 3, Et, 'J', M(E(`<i>v</i><sub>max</sub> = 2π<i>fA</i> = 2π × ${N(f)} × ${N(Am)} = ${I(w * Am)} m s<sup>−1</sup>`), E(`<i>E</i><sub>k</sub> = ½<i>mv</i><sub>max</sub><sup>2</sup> = ½ × ${N(m)} × ${I(w * Am)}<sup>2</sup>`), E(`= ${AV(Et, 'J')}`))),
+    calc('State the total energy of the oscillation.', 1, Et, 'J', M(`${AV(Et, 'J')} (equal to the maximum kinetic energy)`), NS),
+    calc('Calculate the kinetic energy of the mass when its displacement is half of the amplitude.', 2, .75 * Et, 'J', M('potential energy ∝ <i>x</i><sup>2</sup>, so at half the amplitude the potential energy is ¼ of the total', E(`<i>E</i><sub>k</sub> = 0.75 × ${I(Et)} = ${AV(.75 * Et, 'J')}`))),
+    choose(R, 'The amplitude is doubled and the frequency is unchanged. What happens to the total energy?', 1, 'it becomes four times as large', ['it doubles', 'it stays the same', 'it becomes eight times as large'], 'Four times as large (energy ∝ <i>A</i><sup>2</sup>) ✓'),
+    text('Describe the energy changes during one half-oscillation, starting at maximum displacement.', 2, M('Potential energy is transferred to kinetic energy as the mass moves to the equilibrium position, where the kinetic energy is a maximum', 'kinetic energy is then transferred back to potential energy as it moves to the opposite maximum displacement; the total energy is constant'))
+  ]);
+};
+T.SH11 = R => {
+  const Tp = R.pick([1.2, 2.4, 3.0, 6.0]), Ac = R.pick([4.0, 6.0, 8.0, 10]);
+  return NOFIG(2, { Tp, Ac }, `A mass on a spring is pulled down ${V(Ac, 'cm')} from its equilibrium position and released at time <i>t</i> = 0. It then oscillates with simple harmonic motion of time period ${V(Tp, 's')}.`, [
+    calc('Calculate the time at which the mass first passes through the equilibrium position.', 1, Tp / 4, 's', M(E(`a quarter of a period = ${N(Tp)} / 4 = ${AV(Tp / 4, 's')}`))),
+    calc('Calculate the time at which the mass first reaches its highest point.', 1, Tp / 2, 's', M(E(`half a period = ${N(Tp)} / 2 = ${AV(Tp / 2, 's')}`))),
+    calc(`Calculate the time at which the displacement of the mass is first ${V(Ac / 2, 'cm')} below the equilibrium position.`, 3, Tp / 6, 's', M(E(`<i>x</i> = <i>A</i> cos θ, so cos θ = ${N(Ac / 2)} / ${N(Ac)} = 0.50`), E('θ = cos<sup>−1</sup>(0.50) = 60°') + ', which is one sixth of a cycle', E(`<i>t</i> = ${N(Tp)} / 6 = ${AV(Tp / 6, 's')}`))),
+    calc('Calculate the distance travelled by the mass in the first 1.5 oscillations.', 1, 6 * Ac, 'cm', M(E(`6 × ${N(Ac)} = ${AV(6 * Ac, 'cm')}`))),
+    choose(R, 'A larger initial displacement is used. What happens to the time period?', 1, 'it stays the same', ['it increases', 'it decreases'], 'It stays the same: the period of simple harmonic motion does not depend on the amplitude ✓')
+  ]);
+};
+
+/* ===== Simple harmonic systems ===== */
+T.SS1 = R => {
+  const m = R.pick([0.20, 0.30, 0.40, 0.50]), e = R.pick([0.040, 0.050, 0.080, 0.10]), k = m * g / e, Tp = TWO_PI * Math.sqrt(m / k);
+  return NOFIG(2, { m, e }, `A spring hangs vertically from a clamp. When a mass of ${V(m, 'kg')} is attached to the spring, the spring extends by ${V(e, 'm')} and the mass hangs at rest. The mass is then pulled down a small distance and released.`, [
+    calc('Calculate the spring constant of the spring.', 2, k, 'N m<sup>−1</sup>', M(E('<i>k</i> = <i>F</i> / Δ<i>L</i> = <i>mg</i> / Δ<i>L</i>'), E(`= ${N(m)} × ${GS} / ${N(e)} = ${AV(k, 'N m<sup>−1</sup>')}`))),
+    calc('Calculate the time period of the oscillations.', 2, Tp, 's', M(E('<i>T</i> = 2π√(<i>m</i> / <i>k</i>)'), E(`= 2π√(${N(m)} / ${I(k)}) = ${AV(Tp, 's')}`))),
+    calc('Calculate the frequency of the oscillations.', 1, 1 / Tp, 'Hz', M(E(`<i>f</i> = 1 / ${I(Tp)} = ${AV(1 / Tp, 'Hz')}`))),
+    choose(R, 'The mass is replaced by one of four times the mass. What happens to the time period?', 1, 'it doubles', ['it becomes four times as large', 'it halves', 'it stays the same'], 'It doubles (<i>T</i> ∝ √<i>m</i>) ✓'),
+    choose(R, 'The original mass is released from a larger displacement. What happens to the time period?', 1, 'it stays the same', ['it increases', 'it decreases'], 'It stays the same ✓')
+  ]);
+};
+T.SS2 = R => {
+  const L = R.pick([0.25, 0.50, 0.80, 1.0, 1.5]), Tt = R.pick([1.0, 2.0, 3.0]), Tp = TWO_PI * Math.sqrt(L / g), l2 = g * Tt * Tt / (4 * PI * PI), gm = R.pick([1.6, 3.7]), Tm = TWO_PI * Math.sqrt(L / gm);
+  return NOFIG(2, { L, Tt, gm }, `A simple pendulum has a length of ${V(L, 'm')}.`, [
+    calc('Calculate the time period of the pendulum for small oscillations.', 2, Tp, 's', M(E('<i>T</i> = 2π√(<i>l</i> / <i>g</i>)'), E(`= 2π√(${N(L)} / ${GS}) = ${AV(Tp, 's')}`))),
+    calc('Calculate the frequency of the pendulum.', 1, 1 / Tp, 'Hz', M(E(`<i>f</i> = 1 / ${I(Tp)} = ${AV(1 / Tp, 'Hz')}`))),
+    calc(`Calculate the length of a simple pendulum that has a time period of ${V(Tt, 's')}.`, 2, l2, 'm', M(E('<i>l</i> = <i>gT</i><sup>2</sup> / (4π<sup>2</sup>)'), E(`= ${GS} × ${N(Tt)}<sup>2</sup> / (4 × π<sup>2</sup>) = ${AV(l2, 'm')}`))),
+    calc(`The original pendulum is taken to a planet where the acceleration of free fall is ${V(gm, MS2)}. Calculate its time period there.`, 1, Tm, 's', M(E(`2π√(${N(L)} / ${N(gm)}) = ${AV(Tm, 's')}`))),
+    choose(R, 'The pendulum bob is replaced by one of twice the mass. What happens to the time period?', 1, 'it stays the same', ['it doubles', 'it halves', 'it increases by a factor of √2'], 'It stays the same: the period does not depend on the mass ✓')
+  ]);
+};
+T.SS3 = R => {
+  const ge = R.pick([9.6, 9.7, 9.9, 10.0]), k = 4 * PI * PI / ge, ls = [0.20, 0.40, 0.60, 0.80, 1.00], cr = ls.map(l => [l, k * l * (1 + (R() - .5) * .04)]), xr = 0.80;
+  const fig = graph({ x: [0, 1, .2], y: [0, 5, 1], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'l / m', yl: 'T^{2} / s^{2}', curves: [{ f: x => k * x, from: 0, to: 1 }], crosses: cr, reads: [[xr, k * xr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { ge }, stem: `A student measures the time period <i>T</i> of a simple pendulum for different lengths <i>l</i>. <b>Figure 1</b> shows a graph of <i>T</i><sup>2</sup> against <i>l</i> with a line of best fit.`, parts: [
+    calc('Determine the gradient of the line of best fit.', 2, k, 's<sup>2</sup> m<sup>−1</sup>', M(`uses a large triangle, for example from (0, 0) to (${fx(xr, 2)}, ${fx(k * xr, 2)})`, E(`gradient = ${fx(k * xr, 2)} / ${fx(xr, 2)} = ${A(k)} s<sup>2</sup> m<sup>−1</sup>`)), { tol: .05, noSkill: true }),
+    calc('Determine the value of <i>g</i> given by the graph.', 2, ge, MS2, M(E('<i>T</i><sup>2</sup> = 4π<sup>2</sup><i>l</i> / <i>g</i>, so gradient = 4π<sup>2</sup> / <i>g</i>'), E(`<i>g</i> = 4 × π<sup>2</sup> / ${I(k)} = ${AV(ge, MS2)}`)), { tol: .05, noSkill: true }),
+    text('Explain why the student times at least 10 oscillations for each length.', 1, 'To reduce the percentage uncertainty in the time period (the uncertainty in the timing is spread over many oscillations) ✓'),
+    text('The student uses a fiducial marker at the centre of the oscillation. Explain why the centre is the best position for the marker.', 1, 'The bob moves fastest there, so the time at which it passes the marker can be judged most precisely ✓'),
+    choose(R, 'Why must the amplitude of the oscillations be small?', 1, 'the equation for the period only applies for small angles', ['to reduce air resistance to zero', 'so that the period is longer', 'so that the string stays taut'], 'The equation (and simple harmonic motion) only applies for small angles, less than about 10° ✓')
+  ] };
+};
+T.SS4 = R => {
+  const ks = R.pick([15, 20, 25, 40]), k = 4 * PI * PI / ks, ms = [0.10, 0.20, 0.30, 0.40, 0.50], cr = ms.map(m => [m, k * m * (1 + (R() - .5) * .04)]), ya = axisFor(k * .5 * 1.08), xr = 0.40;
+  const fig = graph({ x: [0, .5, .1], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'm / kg', yl: 'T^{2} / s^{2}', curves: [{ f: x => k * x, from: 0, to: .5 }], crosses: cr, reads: [[xr, k * xr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { ks }, stem: `A student measures the time period <i>T</i> of a mass–spring system for different masses <i>m</i>. <b>Figure 1</b> shows a graph of <i>T</i><sup>2</sup> against <i>m</i> with a line of best fit.`, parts: [
+    text('Explain why a graph of <i>T</i><sup>2</sup> against <i>m</i> is expected to be a straight line through the origin.', 2, M(E('<i>T</i> = 2π√(<i>m</i> / <i>k</i>), so <i>T</i><sup>2</sup> = 4π<sup>2</sup><i>m</i> / <i>k</i>'), '<i>T</i><sup>2</sup> is directly proportional to <i>m</i> (gradient = 4π<sup>2</sup> / <i>k</i>)')),
+    calc('Determine the gradient of the line of best fit.', 2, k, 's<sup>2</sup> kg<sup>−1</sup>', M(`uses a large triangle, for example from (0, 0) to (${fx(xr, 2)}, ${fx(k * xr, 3)})`, E(`gradient = ${fx(k * xr, 3)} / ${fx(xr, 2)} = ${A(k)} s<sup>2</sup> kg<sup>−1</sup>`)), { tol: .05, noSkill: true }),
+    calc('Determine the spring constant of the spring.', 2, ks, 'N m<sup>−1</sup>', M('gradient = 4π<sup>2</sup> / <i>k</i>', E(`<i>k</i> = 4 × π<sup>2</sup> / ${I(k)} = ${AV(ks, 'N m<sup>−1</sup>')}`)), { tol: .05, noSkill: true }),
+    text('In practice the line of best fit does not pass exactly through the origin. Suggest why.', 1, 'The spring itself has mass, which is not included in <i>m</i> ✓')
+  ] };
+};
+T.SS5 = R => {
+  const k = R.pick([20, 40, 50, 80]), m = R.pick([0.20, 0.50, 0.80]), Am = R.pick([0.040, 0.050, 0.10]), Et = .5 * k * Am * Am, vm = Am * Math.sqrt(k / m), vh = vm * Math.sqrt(3) / 2, Tp = TWO_PI * Math.sqrt(m / k);
+  return NOFIG(2, { k, m, Am }, `A trolley of mass ${V(m, 'kg')} is attached to a spring of spring constant ${V(k, 'N m<sup>−1</sup>')} and oscillates on a frictionless horizontal track with an amplitude of ${V(Am, 'm')}.`, [
+    calc('Calculate the time period of the oscillations.', 2, Tp, 's', M(E('<i>T</i> = 2π√(<i>m</i> / <i>k</i>)'), E(`= 2π√(${N(m)} / ${N(k)}) = ${AV(Tp, 's')}`))),
+    calc('Calculate the maximum elastic potential energy stored in the spring.', 2, Et, 'J', M(E('<i>E</i> = ½<i>kA</i><sup>2</sup>'), E(`= ½ × ${N(k)} × ${N(Am)}<sup>2</sup> = ${AV(Et, 'J')}`))),
+    calc('Calculate the maximum speed of the trolley.', 2, vm, MS1, M(E('maximum kinetic energy = maximum potential energy: ½<i>mv</i><sup>2</sup> = ½<i>kA</i><sup>2</sup>'), E(`<i>v</i> = √(2 × ${I(Et)} / ${N(m)}) = ${AV(vm, MS1)}`))),
+    calc('Calculate the speed of the trolley when its displacement is half of the amplitude.', 2, vh, MS1, M('the potential energy is then ¼ of the total, so the kinetic energy is ¾ of the total', E(`<i>v</i> = √(2 × 0.75 × ${I(Et)} / ${N(m)}) = ${AV(vh, MS1)}`)))
+  ]);
+};
+T.SS6 = R => {
+  const k = R.pick([20, 40, 50, 80, 100]), Ac = R.pick([4, 5, 8, 10]), Em = 500 * k * (Ac / 100) ** 2, xa = axisFor(Ac), ya = axisFor(Em * 1.1), swap = R.chance(.5), fp = x => Em * (x / Ac) ** 2, fk = x => Em - fp(x), xe = Ac / Math.SQRT2;
+  const fig = graph({ x: [-xa[0], xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'displacement / cm', yl: 'energy / mJ', curves: [{ f: fp, from: -Ac, to: Ac, name: swap ? 'B' : 'A', at: [.62 * Ac, fp(.62 * Ac)] }, { f: fk, from: -Ac, to: Ac, name: swap ? 'A' : 'B', at: [-.62 * Ac, fk(.62 * Ac)], dash: '7 4' }], reads: [[Ac, Em], [0, Em]] });
+  const ke = swap ? 'A' : 'B';
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { k, Ac, swap }, stem: `<b>Figure 1</b> shows how the kinetic energy and the potential energy of a mass–spring system vary with displacement during an oscillation. The two curves are labelled <b>A</b> and <b>B</b>.`, parts: [
+    choose(R, 'Which curve shows the kinetic energy?', 1, ke, [ke === 'A' ? 'B' : 'A'], `${ke}: the kinetic energy is a maximum at zero displacement and zero at maximum displacement ✓`),
+    calc('State the amplitude of the oscillation.', 1, Ac, 'cm', M(`${N(Ac)} cm`), { abs: xa[1] / 5, noSkill: true }),
+    calc('State the total energy of the oscillation.', 1, Em, 'mJ', M(`${A(Em)} mJ (the maximum of either curve)`), { tol: .05, noSkill: true }),
+    calc('Calculate the spring constant of the spring.', 2, k, 'N m<sup>−1</sup>', M(E('<i>E</i> = ½<i>kA</i><sup>2</sup>'), E(`<i>k</i> = 2 × ${I(Em * 1e-3)} / ${N(Ac / 100)}<sup>2</sup> = ${AV(k, 'N m<sup>−1</sup>')}`)), { tol: .06 }),
+    calc('Determine the displacement, in cm, at which the kinetic energy equals the potential energy.', 1, xe, 'cm', M(`${A(xe)} cm (where the curves cross; <i>x</i> = <i>A</i> / √2)`), { tol: .08, noSkill: true })
+  ] };
+};
+T.SS7 = R => {
+  const L = R.pick([0.50, 0.80, 1.0, 2.0]), Ac = R.pick([3.0, 4.0, 5.0, 8.0]), m = R.pick([0.050, 0.10, 0.20]), Tp = TWO_PI * Math.sqrt(L / g), vm = TWO_PI * Ac / 100 / Tp, Ek = .5 * m * vm * vm, h = vm * vm / (2 * g);
+  return NOFIG(2, { L, Ac, m }, `A simple pendulum of length ${V(L, 'm')} has a bob of mass ${V(m, 'kg')}. The bob oscillates with an amplitude of ${V(Ac, 'cm')}.`, [
+    calc('Calculate the time period of the pendulum.', 1, Tp, 's', M(E(`<i>T</i> = 2π√(${N(L)} / ${GS}) = ${AV(Tp, 's')}`))),
+    calc('Calculate the maximum speed of the bob.', 2, vm, MS1, M(E('<i>v</i><sub>max</sub> = 2π<i>fA</i> = 2π<i>A</i> / <i>T</i>'), E(`= 2π × ${N(Ac / 100)} / ${I(Tp)} = ${AV(vm, MS1)}`))),
+    calc('Calculate the maximum kinetic energy of the bob.', 1, Ek, 'J', M(E(`½ × ${N(m)} × ${I(vm)}<sup>2</sup> = ${AV(Ek, 'J')}`))),
+    calc('Calculate the maximum height of the bob above its lowest position.', 2, h, 'm', M(E('<i>mg</i>Δ<i>h</i> = maximum kinetic energy'), E(`Δ<i>h</i> = ${I(Ek)} / (${N(m)} × ${GS}) = ${AV(h, 'm')}`))),
+    choose(R, 'Where is the bob when its kinetic energy is a maximum?', 1, 'at the lowest point of its swing', ['at the highest points of its swing', 'half-way between the lowest and highest points'], 'At the lowest point (the equilibrium position) ✓')
+  ]);
+};
+T.SS8 = R => {
+  const k = R.pick([20, 25, 40, 50]), m = R.pick([0.20, 0.40, 0.50]), T1 = TWO_PI * Math.sqrt(m / k), Tpar = TWO_PI * Math.sqrt(m / (2 * k)), Tser = TWO_PI * Math.sqrt(2 * m / k);
+  return NOFIG(2, { k, m }, `A student has two identical springs, each of spring constant ${V(k, 'N m<sup>−1</sup>')}, and a mass of ${V(m, 'kg')}.`, [
+    calc('Calculate the time period when the mass oscillates on one spring.', 2, T1, 's', M(E('<i>T</i> = 2π√(<i>m</i> / <i>k</i>)'), E(`= 2π√(${N(m)} / ${N(k)}) = ${AV(T1, 's')}`))),
+    calc('The mass now hangs from the two springs side by side (in parallel). Calculate the time period.', 2, Tpar, 's', M(E(`combined spring constant = 2 × ${N(k)} = ${I(2 * k)} N m<sup>−1</sup>`), E(`<i>T</i> = 2π√(${N(m)} / ${I(2 * k)}) = ${AV(Tpar, 's')}`))),
+    calc('The mass now hangs from the two springs joined end to end (in series). Calculate the time period.', 2, Tser, 's', M(E(`combined spring constant = ${N(k)} / 2 = ${I(k / 2)} N m<sup>−1</sup>`), E(`<i>T</i> = 2π√(${N(m)} / ${I(k / 2)}) = ${AV(Tser, 's')}`))),
+    choose(R, 'What is the ratio time period in series / time period in parallel?', 1, '2', ['√2', '4', '½'], '2: the spring constant in parallel is four times that in series, and <i>T</i> ∝ 1/√<i>k</i> ✓')
+  ]);
+};
+T.SS9 = R => {
+  const Mc = R.pick([1000, 1200, 1600]), k1 = R.pick([2.0e4, 2.5e4, 3.0e4, 4.0e4]), mp = R.pick([200, 300, 400]), kt = 4 * k1, f = Math.sqrt(kt / Mc) / TWO_PI, f2 = Math.sqrt(kt / (Mc + mp)) / TWO_PI;
+  return NOFIG(2, { Mc, k1, mp }, `The body of a car has a mass of ${V(Mc, 'kg')} and is supported by four identical springs, each of spring constant ${V(k1, 'N m<sup>−1</sup>')}. The body can oscillate vertically on the springs.`, [
+    calc('Calculate the combined spring constant of the four springs.', 1, kt, 'N m<sup>−1</sup>', M(E(`4 × ${N(k1)} = ${AV(kt, 'N m<sup>−1</sup>')}`))),
+    calc('Calculate the natural frequency of vertical oscillations of the car body.', 2, f, 'Hz', M(E('<i>T</i> = 2π√(<i>m</i> / <i>k</i>), so <i>f</i> = (1 / (2π))√(<i>k</i> / <i>m</i>)'), E(`<i>f</i> = √(${I(kt)} / ${N(Mc)}) / (2π) = ${AV(f, 'Hz')}`))),
+    calc(`Passengers of total mass ${V(mp, 'kg')} get into the car. Calculate the new natural frequency.`, 2, f2, 'Hz', M(E(`total mass = ${N(Mc)} + ${N(mp)} = ${I(Mc + mp)} kg`), E(`<i>f</i> = √(${I(kt)} / ${I(Mc + mp)}) / (2π) = ${AV(f2, 'Hz')}`))),
+    choose(R, 'What is the purpose of the shock absorbers (dampers) fitted alongside the springs?', 1, 'to remove energy from the oscillation so that it dies away quickly', ['to increase the natural frequency', 'to store more elastic potential energy', 'to increase the amplitude of the oscillation'], 'To dissipate the energy of the oscillation so that it dies away quickly ✓')
+  ]);
+};
+T.SS10 = R => {
+  const g2 = R.pick([9.76, 9.78, 9.79]), l = g * 4 / (4 * PI * PI), T2 = 2 * Math.sqrt(g / g2), lost = 86400 * (1 - Math.sqrt(g2 / g));
+  return NOFIG(3, { g2 }, `The pendulum of a clock is designed to have a time period of ${V(2.00, 's', 3)} where the acceleration of free fall is ${V(9.81, MS2, 3)}. The pendulum can be treated as a simple pendulum.`, [
+    calc('Calculate the length of the pendulum.', 2, l, 'm', M(E('<i>l</i> = <i>gT</i><sup>2</sup> / (4π<sup>2</sup>)'), E(`= 9.81 × 2.00<sup>2</sup> / (4 × π<sup>2</sup>) = ${AV(l, 'm')}`))),
+    calc(`The clock is taken to the top of a mountain where the acceleration of free fall is ${V(g2, MS2, 3)}. Calculate the new time period, giving your answer to four significant figures.`, 2, T2, 's', M(E('<i>T</i> ∝ 1 / √<i>g</i>'), E(`<i>T</i> = 2.00 × √(9.81 / ${N(g2, 3)}) = ${fx(T2, 4)} s`)), { tol: .0006, noSkill: true, fx: 4 }),
+    choose(R, 'What happens to the time shown by the clock on the mountain?', 1, 'the clock runs slow', ['the clock runs fast', 'the clock keeps correct time'], 'It runs slow: each oscillation takes longer ✓'),
+    calc('Calculate the time, in seconds, that the clock loses in one day.', 2, lost, 's', M('the clock counts oscillations, so the fraction of time lost = 1 − (old period / new period)', E(`86400 × (1 − √(${N(g2, 3)} / 9.81)) = ${A(lost)} s`)), { tol: .04, noSkill: true })
+  ]);
+};
+T.SS11 = R => {
+  const L = R.pick([0.500, 0.800, 1.000]), gt = R.pick([9.72, 9.80, 9.88]), t20 = Math.round(20 * TWO_PI * Math.sqrt(L / gt) * 5) / 5, Tp = t20 / 20, ge = 4 * PI * PI * L / (Tp * Tp), pT = .2 / t20 * 100, pL = .002 / L * 100, pg = pL + 2 * pT;
+  return NOFIG(3, { L, t20 }, `A student determines <i>g</i> using a simple pendulum of length ${V(L, 'm', 3)} ± 0.002 m. The time for 20 oscillations is ${V(t20, 's', 3)} ± 0.2 s.`, [
+    calc('Calculate the time period of the pendulum.', 1, Tp, 's', M(E(`${N(t20, 3)} / 20 = ${AV(Tp, 's')}`))),
+    calc('Calculate the value of <i>g</i> from these measurements.', 2, ge, MS2, M(E('<i>g</i> = 4π<sup>2</sup><i>l</i> / <i>T</i><sup>2</sup>'), E(`= 4 × π<sup>2</sup> × ${N(L, 3)} / ${N(Tp, 4)}<sup>2</sup> = ${AV(ge, MS2)}`))),
+    calc('Calculate the percentage uncertainty in the time period.', 1, pT, '%', M(E(`0.2 / ${N(t20, 3)} × 100 = ${U(pT)}%`)), { u: true, noSkill: true, tol: .06 }),
+    calc('Calculate the percentage uncertainty in the length.', 1, pL, '%', M(E(`0.002 / ${N(L, 3)} × 100 = ${U(pL)}%`)), { u: true, noSkill: true, tol: .06 }),
+    calc('Calculate the percentage uncertainty in <i>g</i>.', 2, pg, '%', M('percentage uncertainty in <i>T</i><sup>2</sup> = 2 × percentage uncertainty in <i>T</i>', E(`${N(pL, 3)} + 2 × ${N(pT, 3)} = ${U(pg)}%`)), { u: true, noSkill: true, tol: .08 })
+  ]);
+};
+T.SS12 = R => {
+  const f = R.pick([2.0, 2.5, 4.0, 5.0]), Amm = R.pick([2.0, 5.0, 8.0, 10]), w = TWO_PI * f, Amax = g / (w * w), fm = Math.sqrt(g / (Amm * 1e-3)) / TWO_PI;
+  return NOFIG(2, { f, Amm }, `A small block rests on a horizontal platform. The platform oscillates vertically with simple harmonic motion.`, [
+    text('Explain why the block loses contact with the platform if the maximum acceleration of the platform is greater than <i>g</i>.', 2, M('When the platform accelerates downwards, the greatest downward acceleration the block can have is <i>g</i> (when the contact force is zero)', 'if the platform’s downward acceleration exceeds <i>g</i>, the platform falls away from the block')),
+    choose(R, 'At which point in the oscillation does the block first lose contact?', 1, 'at the top of the oscillation', ['at the bottom of the oscillation', 'at the equilibrium position, moving up', 'at the equilibrium position, moving down'], 'At the top: the acceleration there is a maximum and directed downwards ✓'),
+    calc(`The platform oscillates at ${V(f, 'Hz')}. Calculate the maximum amplitude for which the block stays in contact.`, 2, Amax, 'm', M(E('(2π<i>f</i>)<sup>2</sup><i>A</i> = <i>g</i>'), E(`<i>A</i> = ${GS} / (2π × ${N(f)})<sup>2</sup> = ${AV(Amax, 'm')}`))),
+    calc(`The amplitude is now set to ${V(Amm, 'mm')}. Calculate the maximum frequency for which the block stays in contact.`, 2, fm, 'Hz', M(E('<i>f</i> = (1 / (2π))√(<i>g</i> / <i>A</i>)'), E(`= √(${GS} / ${N(Amm * 1e-3)}) / (2π) = ${AV(fm, 'Hz')}`)))
+  ]);
+};
+/* ===== Forced vibrations and resonance ===== */
+const RESDEF = ['Resonance occurs when the frequency of the driving force equals the natural frequency of the system ✓', 'the amplitude of the oscillations is then a maximum (energy is transferred most efficiently from the driver) ✓'];
+const resp = (f, f0, z) => 1 / Math.sqrt((1 - (f / f0) ** 2) ** 2 + (2 * z * f / f0) ** 2);
+T.FR1 = R => {
+  const m = R.pick([0.20, 0.40, 0.50]), k = R.pick([20, 40, 50, 80]), f0 = Math.sqrt(k / m) / TWO_PI;
+  return NOFIG(2, { m, k }, `A mass of ${V(m, 'kg')} hangs from a spring of spring constant ${V(k, 'N m<sup>−1</sup>')}. The top of the spring is attached to a vibration generator that moves it up and down with a small amplitude at a frequency that can be varied.`, [
+    text('State the difference between free vibrations and forced vibrations.', 2, M('Free vibrations: the system oscillates at its natural frequency with no periodic external force acting', 'forced vibrations: a periodic external (driving) force acts and the system oscillates at the frequency of the driver')),
+    calc('Calculate the natural frequency of the mass–spring system.', 2, f0, 'Hz', M(E('<i>f</i> = (1 / (2π))√(<i>k</i> / <i>m</i>)'), E(`= √(${N(k)} / ${N(m)}) / (2π) = ${AV(f0, 'Hz')}`))),
+    calc('State the frequency of the vibration generator that gives the largest amplitude of oscillation of the mass.', 1, f0, 'Hz', M(`${AV(f0, 'Hz')} (equal to the natural frequency)`), NS),
+    text('State what is meant by resonance.', 2, RESDEF.join('<br>')),
+    choose(R, 'At resonance, what is the phase difference between the displacement of the driver and the displacement of the mass?', 1, 'π/2 rad (the mass lags by a quarter of a cycle)', ['zero (they are in phase)', 'π rad (they are in antiphase)'], 'π/2 rad, with the driven system lagging behind the driver ✓')
+  ]);
+};
+T.FR2 = R => {
+  const f0 = R.pick([2.0, 2.5, 4.0, 5.0, 8.0]), A0 = R.pick([0.50, 1.0, 2.0]), m = R.pick([0.10, 0.20, 0.50]), z = .08, fr = f0 * Math.sqrt(1 - 2 * z * z), Ap = A0 * resp(fr, f0, z), xa = axisFor(2 * f0), ya = axisFor(Ap * 1.1), k = 4 * PI * PI * f0 * f0 * m;
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'driving frequency / Hz', yl: 'amplitude / cm', curves: [{ f: f => A0 * resp(f, f0, z), from: 0, to: xa[0] }], reads: [[fr, Ap]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { f0, A0, m }, stem: `A mass of ${V(m, 'kg')} on a spring is driven by a vibration generator. <b>Figure 1</b> shows how the amplitude of the oscillations of the mass varies with the driving frequency. The damping is light.`, parts: [
+    calc('Determine the resonant frequency of the system.', 1, f0, 'Hz', M(`${N(f0)} Hz (the frequency at which the amplitude is a maximum)`), { tol: .05, noSkill: true }),
+    calc('Determine the maximum amplitude of the oscillations.', 1, Ap, 'cm', M(`${A(Ap)} cm`), { tol: .06, noSkill: true }),
+    calc('Calculate the spring constant of the spring. Assume that the resonant frequency equals the natural frequency.', 2, k, 'N m<sup>−1</sup>', M(E('<i>T</i> = 2π√(<i>m</i> / <i>k</i>), so <i>k</i> = 4π<sup>2</sup><i>f</i><sup>2</sup><i>m</i>'), E(`= 4 × π<sup>2</sup> × ${N(f0)}<sup>2</sup> × ${N(m)} = ${AV(k, 'N m<sup>−1</sup>')}`)), { tol: .1 }),
+    choose(R, 'The damping is increased. What happens to the maximum amplitude?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases ✓'),
+    choose(R, 'With the increased damping, how does the shape of the resonance peak change?', 1, 'it becomes broader', ['it becomes sharper', 'its shape does not change'], 'Broader (and the peak moves to a slightly lower frequency) ✓'),
+    text('State the amplitude of the mass when the driving frequency is very low, in terms of the driver.', 1, 'It is equal to the amplitude of the driver (the mass moves in phase with the driver) ✓')
+  ] };
+};
+T.FR3 = R => {
+  const f0 = R.pick([2.0, 4.0, 5.0, 10]), A0 = 1.0, zl = .07, zh = .2, swap = R.chance(.5), xa = axisFor(2 * f0), ya = axisFor(resp(f0, f0, zl) * 1.08), heavy = swap ? 'A' : 'B', light = swap ? 'B' : 'A';
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'driving frequency / Hz', yl: 'amplitude / cm', curves: [{ f: f => A0 * resp(f, f0, zl), from: 0, to: xa[0], name: light, at: [f0 * 1.17, A0 * resp(f0 * 1.07, f0, zl)] }, { f: f => A0 * resp(f, f0, zh), from: 0, to: xa[0], name: heavy, at: [f0 * 1.45, A0 * resp(f0 * 1.32, f0, zh)] }], reads: [[f0, A0 * resp(f0, f0, zl)]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { f0, swap }, stem: `<b>Figure 1</b> shows how the amplitude of a driven oscillator varies with the driving frequency for two different amounts of damping, <b>A</b> and <b>B</b>.`, parts: [
+    choose(R, 'Which curve is for the greater damping?', 1, heavy, [light], `${heavy}: the peak is lower and broader ✓`),
+    calc('Determine the natural frequency of the oscillator.', 1, f0, 'Hz', M(`about ${N(f0)} Hz (the frequency of the peak for the lighter damping)`), { tol: .06, noSkill: true }),
+    text('State two ways in which increased damping changes the resonance curve.', 2, M('The maximum amplitude is smaller', 'the peak is broader (and occurs at a slightly lower frequency)')),
+    text('Explain what is meant by damping.', 2, M('A resistive (dissipative) force acts on the oscillating system', 'so energy is transferred from the oscillation to the surroundings and the amplitude decreases')),
+    choose(R, 'Which type of damping returns a system to equilibrium in the shortest time without oscillating?', 1, 'critical damping', ['light damping', 'heavy damping (overdamping)'], 'Critical damping ✓')
+  ] };
+};
+T.FR4 = R => {
+  const LS = [0.16, 0.25, 0.36, 0.49, 0.64], Ld = R.pick(LS.slice(1, 4)), names = ['P', 'Q', 'R', 'S', 'T'], lens = shuffleR(R, LS), ix = lens.indexOf(Ld), fd = Math.sqrt(g / Ld) / TWO_PI;
+  return NOFIG(2, { Ld, lens }, `In a demonstration, five light pendulums <b>P</b> to <b>T</b> hang from a horizontal string. A heavy driver pendulum of length ${V(Ld, 'm')} hangs from the same string and is set swinging.<br>` + tableH('Table 1', ['Pendulum', 'Length / m'], names.map((n, i) => [n, N(lens[i])])), [
+    calc('Calculate the frequency of the driver pendulum.', 2, fd, 'Hz', M(E('<i>T</i> = 2π√(<i>l</i> / <i>g</i>), so <i>f</i> = (1 / (2π))√(<i>g</i> / <i>l</i>)'), E(`= √(${GS} / ${N(Ld)}) / (2π) = ${AV(fd, 'Hz')}`))),
+    choose(R, 'Which pendulum oscillates with the largest amplitude?', 1, names[ix], names.filter((n, i) => i !== ix).slice(0, 3), `${names[ix]}: it has the same length, and so the same natural frequency, as the driver, so it resonates ✓`),
+    choose(R, 'At what frequency do the other light pendulums oscillate?', 1, 'the frequency of the driver', ['their own natural frequencies', 'they do not oscillate'], 'The frequency of the driver (forced vibrations) ✓'),
+    text('Explain why one pendulum has a much larger amplitude than the others.', 2, RESDEF.join('<br>')),
+    text('Describe the phase relationship between the driver and the pendulum with the largest amplitude.', 1, 'The pendulum lags behind the driver by a quarter of a cycle (π/2 rad) ✓')
+  ]);
+};
+T.FR5 = R => {
+  const Mb = R.pick([2.0e4, 4.0e4, 5.0e4]), kb = R.pick([2.0e6, 3.2e6, 5.0e6, 8.0e6]), f0 = Math.sqrt(kb / Mb) / TWO_PI;
+  return NOFIG(2, { Mb, kb }, `A footbridge can be modelled as a mass–spring system with an effective mass of ${V(Mb, 'kg')} and an effective spring constant of ${V(kb, 'N m<sup>−1</sup>')}.`, [
+    calc('Calculate the natural frequency of the bridge.', 2, f0, 'Hz', M(E('<i>f</i> = (1 / (2π))√(<i>k</i> / <i>m</i>)'), E(`= √(${N(kb)} / ${N(Mb)}) / (2π) = ${AV(f0, 'Hz')}`))),
+    text('Explain what could happen if a large group of people walk across the bridge in step at this frequency.', 2, M('The footsteps provide a periodic driving force at the natural frequency of the bridge, so the bridge resonates', 'and oscillates with a large (possibly dangerous) amplitude')),
+    calc('Engineers stiffen the bridge so that the effective spring constant doubles. Calculate the new natural frequency.', 2, f0 * Math.SQRT2, 'Hz', M(E('<i>f</i> ∝ √<i>k</i>'), E(`${I(f0)} × √(2) = ${AV(f0 * Math.SQRT2, 'Hz')}`))),
+    text('State one other way to reduce the amplitude of the oscillations of the bridge.', 1, 'Add dampers (shock absorbers) to dissipate the energy of the oscillations ✓'),
+    choose(R, 'The effective mass of the bridge is increased and the stiffness is unchanged. What happens to the natural frequency?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases (<i>f</i> ∝ 1/√<i>m</i>) ✓')
+  ]);
+};
+T.FR6 = R => {
+  const f0 = R.pick([1.2, 1.5, 2.0]), d = R.pick([8.0, 10, 12, 15]), v = f0 * d;
+  return NOFIG(2, { f0, d }, `The body of a car oscillates vertically on its suspension with a natural frequency of ${V(f0, 'Hz')}. The car travels along a road that has small bumps every ${V(d, 'm')}.`, [
+    calc('Calculate the time between bumps that would make the car body resonate.', 1, 1 / f0, 's', M(E(`equal to the natural period = 1 / ${N(f0)} = ${AV(1 / f0, 's')}`))),
+    calc('Calculate the speed of the car at which the body resonates.', 2, v, MS1, M('one bump must be met in each natural period', E(`<i>v</i> = ${N(d)} × ${N(f0)} = ${AV(v, MS1)}`))),
+    text('Explain why the vertical oscillations of the car are large at this speed.', 2, RESDEF.join('<br>')),
+    text('Explain the purpose of the shock absorbers in the suspension.', 2, M('They provide damping: a resistive force that dissipates the energy of the oscillations', 'so the amplitude at resonance is much smaller and oscillations die away quickly')),
+    choose(R, 'The car carries a heavy load. What happens to the speed at which resonance occurs?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases: the natural frequency is lower for a greater mass ✓')
+  ]);
+};
+T.FR7 = R => {
+  const rr = R.pick([0.60, 0.70, 0.80]), A0 = R.pick([4.0, 5.0, 8.0]), Tp = R.pick([0.50, 1.0, 2.0]), lam = -Math.log(rr) / Tp, xa = axisFor(4 * Tp), ya = axisFor(A0 * 1.05), f = t => A0 * Math.exp(-lam * t) * Math.cos(TWO_PI * t / Tp);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [-ya[0], ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 320, w: 440, xl: TS, yl: 'displacement / cm', curves: [{ f, from: 0, to: xa[0] }], reads: [[0, A0], [Tp, A0 * rr], [2 * Tp, A0 * rr * rr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { rr, A0, Tp }, stem: `<b>Figure 1</b> shows how the displacement of a damped oscillator varies with time.`, parts: [
+    calc('Determine the time period of the oscillations.', 1, Tp, 's', M(`${N(Tp)} s`), { tol: .06, noSkill: true }),
+    calc('State the initial amplitude.', 1, A0, 'cm', M(`${N(A0)} cm`), { abs: ya[1] / 5, noSkill: true }),
+    calc('Determine the amplitude after one complete oscillation.', 1, A0 * rr, 'cm', M(`${A(A0 * rr)} cm (the displacement at the next peak)`), { tol: .06, noSkill: true }),
+    calc('Calculate the ratio amplitude after one oscillation / initial amplitude.', 1, rr, '', M(E(`${I(A0 * rr)} / ${N(A0)} = ${A(rr)}`)), { tol: .06, noSkill: true }),
+    calc('The ratio of successive amplitudes is constant. Calculate the amplitude after five complete oscillations.', 2, A0 * rr ** 5, 'cm', M(E(`amplitude = ${N(A0)} × ${N(rr)}<sup>5</sup>`), E(`= ${AV(A0 * rr ** 5, 'cm')}`)), { tol: .15, noSkill: true }),
+    calc('Calculate the fraction of the energy of the oscillator that remains after one complete oscillation.', 2, rr * rr, '', M('energy ∝ amplitude<sup>2</sup>', E(`${N(rr)}<sup>2</sup> = ${A(rr * rr)}`)), { tol: .1, noSkill: true }),
+    choose(R, 'Which describes the damping of this oscillator?', 1, 'light damping', ['critical damping', 'heavy damping (overdamping)'], 'Light damping: the system oscillates with a gradually decreasing amplitude ✓')
+  ] };
+};
+T.FR8 = R => {
+  const f0 = R.pick([20, 25, 40, 50]), rpm2 = R.pick([600, 900, 3600, 4500].filter(x => Math.abs(x / 60 - f0) > 4)), fd = rpm2 / 60;
+  return NOFIG(2, { f0, rpm2 }, `A metal panel on a machine has a natural frequency of vibration of ${V(f0, 'Hz')}. The panel is driven by vibrations from a motor that makes one vibration for each revolution.`, [
+    calc('Calculate the motor speed, in revolutions per minute, at which the panel resonates.', 1, f0 * 60, '', M(E(`${N(f0)} × 60 = ${A(f0 * 60)} revolutions per minute`)), NS),
+    calc(`The motor runs at ${rpm2} revolutions per minute. Calculate the frequency at which the panel vibrates.`, 1, fd, 'Hz', M(E(`${rpm2} / 60 = ${AV(fd, 'Hz')}`) + ' (forced vibrations are at the driving frequency)'), NS),
+    calc('Calculate the natural time period of the panel.', 1, 1 / f0, 's', M(E(`1 / ${N(f0)} = ${AV(1 / f0, 's')}`))),
+    text('State what is meant by resonance.', 2, RESDEF.join('<br>')),
+    text('Suggest two ways to reduce the vibration of the panel at resonance.', 2, M('Add damping, for example fix a rubber or foam layer to the panel', 'change the natural frequency of the panel (change its mass or stiffness) or avoid running the motor at the resonant speed'))
+  ]);
+};
+// working carried from earlier parts, set by hand where the automatic detection depends on the numbers
+const ECF = { CM6: { b: 'a', c: 'a', d: 'b', e: 'b' }, SH1: { e: 'b' }, SH2: { c: 'b', d: 'ac', f: 'ac' }, SH5: { d: 'ab' }, SH7: { c: '' }, SS5: { c: 'b', d: 'b' } };
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number((a * (1 + 1e-9)).toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number((a * (1 + 1e-9)).toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  const E0 = typeof ECF !== 'undefined' && ECF[q.id], ECFX = E0 ? (typeof E0 === 'function' ? E0(q.data) : E0) : {};   // ecf links set by hand where numbers alone mislead
+  const ecfNote = l => 'Allow ecf from their answer' + (l.length > 1 ? 's' : '') + ' to ' + (l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0]) + '.';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(p.ans < 0 ? lo : Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    const fixed = ECFX[L[i]];
+    if (fixed !== undefined){ if (fixed && !g.some(x => /ecf/.test(x))) g.push(ecfNote([...fixed].map(c => '(' + c + ')'))); }
+    else if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      const findNum = (m, a) => { for (let k = m.indexOf(a); k >= 0; k = m.indexOf(a, k + 1)){ const b = m[k - 1] || '', b2 = m[k - 2] || '', c = m[k + a.length] || '';
+          if (/[\d.^]/.test(b) || (b === '−' && b2 === '^')) continue;                       // inside another number or an exponent
+          if (c === '^' && a === '10') continue;                                              // a power of ten, not a value
+          if (a.includes('×')){ if (/\d/.test(c)) continue; return [k, a.length]; }          // a different power of ten
+          const full = m.slice(k).match(/^\d*\.?\d+/)[0].replace(/\.$/, ''), dp = a.includes('.') ? a.split('.')[1].length : 0;
+          if (full === a || Number(full).toFixed(dp) === a) return [k, full.length];          // the same value, perhaps shown to more figures
+        } return null; };
+      const hasNum = (m, a) => !!findNum(m, a);
+      let own = plain(p.ms);                                                                  // the part's own result is not a carried value
+      for (const a of [plain(I(Math.abs(p.ans))), plain(A(Math.abs(p.ans)))]) for (let f = findNum(own, a); f; f = findNum(own, a)) own = own.slice(0, f[0]) + '#' + own.slice(f[0] + f[1]);
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0 || pj.int) continue; const a = plain(A(Math.abs(pj.ans))), a4 = plain(I(Math.abs(pj.ans))), m = own; if ((hasNum(m, a) || hasNum(m, a4)) && !hasNum(given, a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length && !g.some(x => /ecf/.test(x))) g.push(ecfNote(ecf));
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], ''], ['Bq', ['bq', 'becquerel', 'becquerels', 's-1'], 'Accept s<sup>−1</sup>.'], ['s<sup>−1</sup>', ['s-1', '/s', 'persecond'], ''], ['T', ['t', 'tesla'], ''], ['N kg<sup>−1</sup>', ['nkg-1', 'n/kg', 'ms-2', 'm/s2'], 'Accept m s<sup>−2</sup>.'], ['J kg<sup>−1</sup>', ['jkg-1', 'j/kg'], ''], ['N m<sup>2</sup> kg<sup>−2</sup>', ['nm2kg-2', 'nm^2kg^-2'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  ASF = 2; ASF = T[tpl](makeRand(seedFor(tpl, seed))).sf || 2;      // a first pass finds the significant figures of the data
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : p.s3 ? N(p.ans, 3) : A(p.ans); });      // s3: shown to 3 sf, like the table it completes
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+// a drop-down option can only hold plain text, so superscripts and subscripts are written with Unicode characters
+const SUPC = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '−': '⁻', '-': '⁻', '+': '⁺' }, SUBC = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', e: 'ₑ' };
+const uni = (s, map, mark) => [...s].every(c => map[c]) ? [...s].map(c => map[c]).join('') : mark + '(' + s + ')';
+const optText = h => String(h).replace(/<sup>(.*?)<\/sup>/g, (m, s) => uni(s, SUPC, '^')).replace(/<sub>(.*?)<\/sub>/g, (m, s) => uni(s, SUBC, '_')).replace(/<[^>]+>/g, '');
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${optText(o)}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like SH2-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>

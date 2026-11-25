@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Thermal Physics Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+.nuc{display:inline-flex;flex-direction:column;vertical-align:-0.42em;font-size:.68em;line-height:1.02;text-align:right;margin-right:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Thermal Physics Question Generator</h1>
+    <p>AQA-style practice on section 3.6.2 (Thermal physics): thermal energy transfer, change of state, the gas laws, the ideal gas equation and molecular kinetic theory. 50 question types and many thousands of different questions with mark schemes, including heating and cooling curves, gas-law graphs, apparatus diagrams and practical questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="PE3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number((x * (1 + 1e-9)).toPrecision(n));      // tiny nudge: an exact half always rounds up
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    const r = Number((x * (1 + 1e-9)).toPrecision(n));      // round the value itself first, with a tiny nudge so that an exact half (2.25, 9.375) always rounds up
+    let e = Math.floor(Math.log10(Math.abs(r)) + 1e-12), m = r / Math.pow(10, e);
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+let ASF = 2;                                          // significant figures of the data in the question being built
+const A = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : N(x, 3);      // answers: 3 sf (2 sf when exact and the data are given to 2 sf)
+const AV = (x, unit) => A(x) + ' ' + unit;
+const I3 = x => isNice(x, 3) ? N(x, 3) : N(x, 4);      // a working value from data given to 3 sf
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x * (1 + 1e-9)).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? 1 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside, halo: !!o.halo });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}${l.halo ? ' stroke="#fff" stroke-width="4" paint-order="stroke"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+// axis label: ^{..} superscript, _{..} subscript
+const axl = s => esc(s).replace(/\^\{([^}]*)\}/g, '<tspan dy="-6" font-size="10">$1</tspan><tspan dy="6">\u200b</tspan>').replace(/_\{([^}]*)\}/g, '<tspan dy="4" font-size="10">$1</tspan><tspan dy="-4">\u200b</tspan>');
+const axp = s => String(s).replace(/[\^_]\{([^}]*)\}/g, '$1');
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = g.top ? 16 : 52, mt = g.top ? 52 : 16, mr = 22;      // top: the r axis is at the top (all values negative)
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(Math.abs(m)) + 1e-9));      // y may run downwards (magnitude scales): then yM is negative
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${g.top ? mt - 10 : mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(xa <= 0 && xb >= 0 ? 0 : xa), ay0 = Y(ya <= 0 && yb >= 0 ? 0 : ya);
+  let marks = '';
+  (g.shade || []).forEach(c => { const pts = []; for (let i = 0; i <= 120; i++){ const x = c.from + (c.to - c.from) * i / 120; pts.push(n2(X(x)) + ',' + n2(Y(Math.min(c.f(x), yb)))); } pts.push(n2(X(c.to)) + ',' + n2(Y(Math.max(ya, 0))), n2(X(c.from)) + ',' + n2(Y(Math.max(ya, 0)))); marks += `<polygon points="${pts.join(' ')}" fill="#c9cfd4" fill-opacity="0.65" stroke="none"/>`; });
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    if (c.pts) c.pts.forEach(p => pts.push(n2(X(p[0])) + ',' + n2(Y(p[1]))));      // straight-line sections: exact corners
+    else for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= Math.min(ya, yb) - 1e-9 && y <= Math.max(ya, yb) + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.dots || []).forEach(d => { marks += `<circle cx="${n2(X(d.x))}" cy="${n2(Y(d.y))}" r="4.2" fill="#000"/><text x="${n2(X(d.x) + (d.dx || 9))}" y="${n2(Y(d.y) + (d.dy || 5))}" font-weight="700" font-size="15" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(d.t)}</text>`; });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(axp(g.yl))} against ${esc(axp(g.xl))}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${g.top ? 20 : th - 8}" text-anchor="middle">${axl(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${axl(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [y1, y2] = g.y, ya = Math.min(y1, y2), yb = Math.max(y1, y2), inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.dots || []).forEach(p => { if (!inX(p.x) || !inY(p.y)) e.push('marked nuclide outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+/* ---------- thermal physics: shared helpers ---------- */
+const TOPICS = { TE: 'Thermal energy transfer', LH: 'Change of state', GL: 'The gas laws', IG: 'Ideal gas equation', KT: 'Molecular kinetic theory' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const NS = { noSkill: true };
+const I = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join(' ')}</tr> ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join(' ')}</tr>`).join(' ')}</table>`;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const rad = d => d * Math.PI / 180, sn = d => Math.sin(rad(d)), cs = d => Math.cos(rad(d)), tn = d => Math.tan(rad(d)), deg = x => x * 180 / Math.PI;
+const g = GRAV, GS = '9.81';
+const BR = x => x.replace(/\/ (\d[\d.]* × 10<sup>[−\d]+<\/sup>)(?!\))/g, '/ ($1)');
+const M = (...a) => a.map(x => BR(x) + ' ✓').join('<br>');      // one marking point per line
+const E = eq;
+const DG = x => N(x) + '°';
+const AD = x => A(x) + '°';
+const LB = (x, u, sf = 2) => N(x, sf).replace(/<sup>(.*?)<\/sup>/g, '^{$1}') + (u ? (u === '°' ? '°' : ' ' + u) : '');      // a value as a diagram label
+const KG = 'kg', NU = 'N', JU = 'J', WU = 'W', SU = 's', MU = 'm', NMU = 'N m', NSU = 'N s', KGMS = 'kg m s<sup>−1</sup>';
+const VECS = ['velocity', 'displacement', 'acceleration', 'force', 'momentum', 'weight'], SCALS = ['speed', 'distance', 'mass', 'kinetic energy', 'time', 'power', 'work done', 'temperature'];
+const PRINC = ['For a body in equilibrium ✓', 'the sum of the clockwise moments about any point equals the sum of the anticlockwise moments about that point ✓'];
+const COUPLE = ['A pair of equal and opposite (parallel) forces ✓', 'that do not act along the same line ✓'];
+/* ---------- drawing helpers ---------- */
+const hatchH = (s, x1, x2, y, below = true) => { s.line(x1, y, x2, y, { tag: 'surface' }); const d = below ? 8 : -8; for (let x = x1 + 10; x <= x2; x += 12) s.line(x, y, x - 8, y + d, { w: 1, free: true }); s.ext(x1, y + d); };
+const hatchV = (s, x, y1, y2, left = true) => { s.line(x, y1, x, y2, { tag: 'wall' }); const d = left ? -8 : 8; for (let y = y1 + 10; y <= y2; y += 12) s.line(x, y, x + d, y - 8, { w: 1, free: true }); s.ext(x + d, y1); };
+// a force (or velocity) arrow with its label just beyond the tip
+function force(s, x, y, dx, dy, lab, o = {}){
+  s.arrow(x, y, x + dx, y + dy, { w: 2.2, tag: 'arrow' }); if (!lab) return s;
+  const l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, tx = x + dx, ty = y + dy;
+  if (o.at) return s.label(tx + o.at[0], ty + o.at[1], lab, { anchor: o.anchor || 'middle' });
+  if (Math.abs(ux) > .75) s.label(tx + ux * 8, ty + 5, lab, { anchor: ux > 0 ? 'start' : 'end' }); else s.label(tx + ux * 10, ty + (uy > 0 ? 19 : -8), lab);
+  return s;
+}
+const blob = (s, x, y, r = 4) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+// a horizontal beam; positions are given in metres and mapped on to the drawing
+function beamFig(aria, L, o = {}){
+  const s = new Scene(aria), x0 = 0, W = o.W || 440, y = 0, th = 14, X = p => x0 + p / L * W;
+  s.rect(X(o.from || 0), y - th / 2, X(o.to === undefined ? L : o.to) - X(o.from || 0), th, { fill: '#d9dde1', tag: 'beam' });
+  return { s, X, y, top: y - th / 2, bot: y + th / 2,
+    pivot: (p, lab) => { const x = X(p); s.poly([[x, y + th / 2], [x - 13, y + th / 2 + 24], [x + 13, y + th / 2 + 24]], { close: true, fill: '#fff', tag: 'pivot' }); if (lab) s.label(x, y + th / 2 + 43, lab, { bold: true }); },
+    down: (p, lab, len = 62, o2) => force(s, X(p), y + th / 2, 0, len, lab, o2),
+    up: (p, lab, len = 62, o2) => force(s, X(p), y - th / 2, 0, -len, lab, o2),
+    dim: (a, b, lab, lev = 1, below = false) => { const yy = below ? y + th / 2 + 22 + lev * 30 : y - th / 2 - 4 - lev * 30; [a, b].forEach(p => s.line(X(p), below ? y + th / 2 + 3 : y - th / 2 - 3, X(p), yy + (below ? 6 : -6), { w: .9, dash: '3 3', free: true })); s.dim(X(a), yy, X(b), yy, lab, { below }); } };
+}
+// a slope rising to the right at th degrees with a block on it
+function slopeFig(aria, th, o = {}){
+  const s = new Scene(aria), L = o.L || 380, a = rad(th), x1 = L * Math.cos(a), y1 = -L * Math.sin(a), u = [Math.cos(a), -Math.sin(a)], n = [-Math.sin(a), -Math.cos(a)];
+  s.poly([[0, 0], [x1, 0], [x1, y1]], { close: true, tag: 'slope' });
+  s.arc(0, 0, 58, 0, th, { w: 1.1, tag: 'angle arc' }); s.label(th < 14 ? 122 : th < 18 ? 84 : 70, -4.5, o.lab || DG(th), { anchor: 'start' });
+  const f = o.f === undefined ? .6 : o.f, bw = o.bw || 58, bh = o.bh || 34, P = [L * f * u[0], L * f * u[1]], c = (du, dn) => [P[0] + du * u[0] + dn * n[0], P[1] + du * u[1] + dn * n[1]];
+  if (!o.noBlock) s.poly([c(-bw / 2, 0), c(bw / 2, 0), c(bw / 2, bh), c(-bw / 2, bh)], { close: true, fill: '#d9dde1', tag: 'block' });
+  return { s, a, u, n, P, C: c(0, bh / 2), c, x1, y1, bw, bh };
+}
+const box = (s, x, y, w, h, lab) => { s.rect(x, y, w, h, { fill: '#d9dde1', tag: 'block' }); if (lab) s.label(x + w / 2, y + h / 2 + 5, lab, { inside: true }); };
+
+const pwl = pts => ({ pts, from: pts[0][0], to: pts[pts.length - 1][0], f: x => { for (let i = 0; i + 1 < pts.length; i++){ const a = pts[i], b = pts[i + 1]; if (b[0] > a[0] && x >= a[0] - 1e-12 && x <= b[0] + 1e-12) return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return pts[pts.length - 1][1]; } });
+const KB = 1.38e-23, RG = 8.31, NAV = 6.02e23, CW = 4200, LF = 3.3e5, LV = 2.26e6, DC = '°C', KU = 'K';
+const SHC = 'J kg<sup>−1</sup> K<sup>−1</sup>', SLH = 'J kg<sup>−1</sup>', PA = 'Pa', M3 = 'm<sup>3</sup>', MOL = 'mol';
+const DCW = 'specific heat capacity of water = 4200 J kg<sup>−1</sup> K<sup>−1</sup>', DLF = 'specific latent heat of fusion of water = 3.3 × 10<sup>5</sup> J kg<sup>−1</sup>', DLV = 'specific latent heat of vaporisation of water = 2.26 × 10<sup>6</sup> J kg<sup>−1</sup>';
+const TC = (x, sf) => (sf || !Number.isInteger(x) ? N(x, sf) : CI(x)) + ' °C';
+const METALS = [['copper', 390], ['iron', 450], ['aluminium', 900], ['brass', 380]];
+const IEDEF = ['The sum of the randomly distributed kinetic energies ✓', 'and potential energies of the particles (molecules) of the system ✓'];
+const WHYCONST = 'The energy changes the potential energy of the molecules (bonds are broken or formed) and not their kinetic energy, so the temperature stays constant ✓';
+
+/* ===== Thermal energy transfer ===== */
+T.TE1 = R => {
+  const v0 = find(() => ({ Pk: R.pick([1.5, 2.0, 2.4, 3.0]), t: R.pick([60, 90, 120, 180]), m: R.pick([0.80, 1.0, 1.2, 1.5, 2.0]), th0: R.pick([15, 18, 20, 25]) }), o => o.th0 + o.Pk * 1e3 * o.t / (o.m * CW) < 92 && o.Pk * 1e3 * o.t / (o.m * CW) > 15);
+  const { Pk, t, m, th0 } = v0, Q = Pk * 1e3 * t, dT = Q / (m * CW);
+  return NOFIG(2, { Pk, t, m, th0 }, `A kettle contains ${V(m, 'kg')} of water at ${TC(th0)}. The heating element has a power of ${V(Pk, 'kW')} and is switched on for ${V(t, 's')}.<br>${DCW}`, [
+    calc('Calculate the energy supplied by the heating element.', 1, Q, 'J', M(E(`<i>E</i> = <i>Pt</i> = ${N(Pk * 1e3)} × ${N(t)} = ${AV(Q, 'J')}`))),
+    calc('Calculate the rise in temperature of the water. Assume all of the energy is transferred to the water.', 2, dT, 'K', M(E('<i>Q</i> = <i>mc</i>Δθ'), E(`Δθ = ${I(Q)} / (${N(m)} × 4200) = ${AV(dT, 'K')}`))),
+    calc('Calculate the final temperature of the water.', 1, th0 + dT, '°C', M(E(`${N(th0)} + ${I(dT)} = ${A(th0 + dT)} °C`))),
+    text('Give two reasons why the actual final temperature is lower than this.', 2, M('Energy is also needed to heat the kettle itself (the element and the container)', 'energy is transferred to the surroundings')),
+    choose(R, 'What happens to the molecules of the water as its temperature rises?', 1, 'their mean kinetic energy increases', ['their mean kinetic energy decreases', 'only their potential energy increases', 'they become larger'], 'Their mean kinetic energy increases ✓')
+  ]);
+};
+T.TE2 = R => {
+  const Vv = 12.0, v0 = find(() => ({ mt: R.pick(METALS), Ic: R.pick([3.00, 4.00, 5.00]), t: R.pick([300, 400, 600]), m: R.pick([0.800, 1.00, 1.20]) }), o => { const d = Vv * o.Ic * o.t * .9 / (o.m * o.mt[1]); return d > 10 && d < 80; }), { mt, Ic, t, m } = v0, dT = +(Vv * Ic * t * .9 / (m * mt[1])).toFixed(1), c = Vv * Ic * t / (m * dT);
+  const s = new Scene('A metal block with an electric heater and a thermometer'); s.rect(-110, -20, 220, 170, { dash: '5 4', w: 1.1, tag: 'insulation' }); s.rect(-80, 0, 160, 130, { fill: '#d9dde1', tag: 'block' });
+  s.rect(-52, -50, 20, 140, { fill: '#fff', tag: 'heater' }); s.line(-47, -50, -47, -74, { tag: 'lead' }); s.line(-37, -50, -37, -74, { tag: 'lead' }); s.rect(34, -70, 8, 150, { fill: '#fff', tag: 'thermometer' }); s.circle(38, 84, 7, { fill: '#fff', tag: 'thermometer bulb' });
+  s.label(-42, -82, 'heater'); s.label(52, -60, 'thermometer', { anchor: 'start' }); s.label(0, 118, 'metal block', { inside: true }); s.label(0, 170, 'insulation');
+  return { sf: 3, scenes: [s], data: { Vv, Ic, t, m, dT }, stem: `<b>Figure 1</b> shows apparatus used to find the specific heat capacity of ${mt[0]}. An insulated ${mt[0]} block of mass ${V(m, 'kg', 3)} is heated by an electric heater. The potential difference across the heater is ${V(Vv, 'V', 3)} and the current in it is ${V(Ic, 'A', 3)}. After ${V(t, 's', 3)} the temperature of the block has risen by ${V(dT, 'K', 3)}.`, parts: [
+    calc('Calculate the energy supplied by the heater.', 2, Vv * Ic * t, 'J', M(E('<i>E</i> = <i>VIt</i>'), E(`= ${N(Vv, 3)} × ${N(Ic, 3)} × ${N(t, 3)} = ${AV(Vv * Ic * t, 'J')}`))),
+    calc(`Calculate the value of the specific heat capacity of ${mt[0]} given by these results.`, 2, c, SHC, M(E('<i>c</i> = <i>Q</i> / (<i>m</i>Δθ)'), E(`= ${I3(Vv * Ic * t)} / (${N(m, 3)} × ${N(dT, 3)}) = ${AV(c, SHC)}`))),
+    choose(R, 'How does this value compare with the true specific heat capacity?', 1, 'it is larger than the true value', ['it is smaller than the true value', 'it is equal to the true value'], 'Larger than the true value ✓'),
+    text('Explain your answer.', 2, M('Some of the energy supplied is transferred to the surroundings (and to the heater and thermometer)', 'so the temperature rise is smaller than it should be for the energy supplied, which makes the calculated value too large')),
+    text('The temperature of the block continues to rise for a short time after the heater is switched off. Explain why.', 1, 'It takes time for energy to be conducted from the heater through the block to the thermometer ✓')
+  ] };
+};
+T.TE3 = R => {
+  const v0 = find(() => ({ P: R.pick([20, 40, 50, 60]), m: R.pick([0.50, 1.0, 1.2]), mt: R.pick(METALS) }), o => { const d = o.P * 600 / (o.m * o.mt[1]); return d > 14 && d < 70; });
+  const { P, m, mt } = v0, th0 = 20, gr = P / (m * mt[1]), th1 = th0 + gr * 600, ya = axisFor(th1 * 1.05), c = pwl([[0, th0], [600, th1]]);
+  const fig = graph({ x: [0, 600, 100], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'time / s', yl: 'temperature / °C', curves: [c], reads: [[0, th0], [600, th1]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { P, m, c: mt[1] }, stem: `A well-insulated metal block of mass ${V(m, 'kg')} is heated by a ${V(P, 'W')} electric heater. <b>Figure 1</b> shows how the temperature of the block varies with time.`, parts: [
+    calc('Determine the gradient of the graph.', 2, gr, 'K s<sup>−1</sup>', M(E(`gradient = (${fx(th1, 1)} − ${th0}) / 600`), E(`= ${A(gr)} K s<sup>−1</sup>`)), { tol: .06, noSkill: true }),
+    calc('Determine the specific heat capacity of the metal.', 2, mt[1], SHC, M(E('<i>P</i> = <i>mc</i> × (Δθ / Δ<i>t</i>), so <i>c</i> = <i>P</i> / (<i>m</i> × gradient)'), E(`= ${N(P)} / (${N(m)} × ${I(gr)}) = ${AV(mt[1], SHC)}`)), { tol: .06, noSkill: true }),
+    calc('Calculate the energy supplied to the block in the 600 s shown.', 1, P * 600, 'J', M(E(`${N(P)} × 600 = ${AV(P * 600, 'J')}`)), NS),
+    text('The insulation is removed and the experiment is repeated. Describe and explain how the graph changes.', 2, M('The temperature rises more slowly and the graph becomes a curve of decreasing gradient', 'because energy is transferred to the surroundings at a rate that increases as the block gets hotter'))
+  ] };
+};
+T.TE4 = R => {
+  const mt = R.pick(METALS), m1 = R.pick([0.20, 0.25, 0.50]), m2 = R.pick([0.20, 0.30, 0.50]), th2 = R.pick([15, 18, 20]), tf = (m1 * mt[1] * 100 + m2 * CW * th2) / (m1 * mt[1] + m2 * CW), Qw = m2 * CW * (tf - th2);
+  return NOFIG(2, { m1, c1: mt[1], m2, th2 }, `A block of ${mt[0]} of mass ${V(m1, 'kg')} is heated to 100 °C in boiling water. It is then quickly transferred to an insulated beaker containing ${V(m2, 'kg')} of water at ${TC(th2)}. The specific heat capacity of ${mt[0]} is ${mt[1]} J kg<sup>−1</sup> K<sup>−1</sup>.<br>${DCW}`, [
+    calc('Calculate the final temperature of the water and the block.', 3, tf, '°C', M('energy lost by the block = energy gained by the water', E(`${N(m1)} × ${mt[1]} × (100 − θ) = ${N(m2)} × 4200 × (θ − ${N(th2)})`), E(`θ = (${N(m1)} × ${mt[1]} × 100 + ${N(m2)} × 4200 × ${N(th2)}) / (${N(m1)} × ${mt[1]} + ${N(m2)} × 4200) = ${A(tf)} °C`)), { tol: .02 }),
+    calc('Calculate the energy gained by the water.', 1, Qw, 'J', M(E(`${N(m2)} × 4200 × (${I(tf)} − ${N(th2)}) = ${AV(Qw, 'J')}`)), { tol: .04 }),
+    text('State one assumption made in the calculation.', 1, 'No energy is transferred to the surroundings or to the beaker (or: no water is carried over with the block) ✓'),
+    choose(R, 'Energy flows from the block to the water until they reach thermal equilibrium. What is then the same for the block and the water?', 1, 'temperature', ['internal energy', 'specific heat capacity', 'mass'], 'Temperature ✓')
+  ]);
+};
+T.TE5 = R => {
+  const mt = R.pick(METALS), m1 = R.pick([0.150, 0.200, 0.250]), m2 = R.pick([0.200, 0.250, 0.300]), th2 = R.pick([16.0, 18.0, 20.0]), tf = +((m1 * mt[1] * 100 + m2 * CW * th2) / (m1 * mt[1] + m2 * CW)).toFixed(1), Qw = m2 * CW * (tf - th2), c = Qw / (m1 * (100 - tf));
+  return NOFIG(3, { m1, m2, th2, tf }, `A student finds the specific heat capacity of a metal. A metal block of mass ${V(m1, 'kg', 3)} is heated to ${V(100, '°C', 3)} and transferred to an insulated cup containing ${V(m2, 'kg', 3)} of water at ${TC(th2, 3)}. The final temperature of the water and the block is ${TC(tf, 3)}.<br>${DCW}`, [
+    calc('Calculate the energy gained by the water.', 2, Qw, 'J', M(E('<i>Q</i> = <i>mc</i>Δθ'), E(`= ${N(m2, 3)} × 4200 × (${N(tf, 3)} − ${N(th2, 3)}) = ${AV(Qw, 'J')}`))),
+    calc('Calculate the specific heat capacity of the metal.', 2, c, SHC, M(E(`temperature fall of the block = 100 − ${N(tf, 3)} = ${I3(100 - tf)} K`), E(`<i>c</i> = ${I3(Qw)} / (${N(m1, 3)} × ${I3(100 - tf)}) = ${AV(c, SHC)}`))),
+    text('Some energy is transferred to the surroundings while the block is moved. State and explain the effect on the calculated value.', 2, M('The calculated specific heat capacity is too small', 'because the block is cooler than 100 °C when it enters the water, so the water gains less energy (its temperature rise is smaller)'))
+  ]);
+};
+T.TE6 = R => {
+  const v0 = find(() => ({ Pk: R.pick([7.5, 8.5, 9.5, 11]), fl: R.pick([0.050, 0.060, 0.080, 0.10]), ti: R.pick([10, 12, 15]) }), o => { const d = o.Pk * 1e3 / (o.fl * CW); return d > 18 && d < 40; });
+  const { Pk, fl, ti } = v0, dT = Pk * 1e3 / (fl * CW), P40 = fl * CW * (40 - ti);
+  return NOFIG(2, { Pk, fl, ti }, `An electric shower heats water as it flows past a ${V(Pk, 'kW')} heating element. Water enters the shower at ${TC(ti)} and flows at a rate of ${V(fl, 'kg s<sup>−1</sup>')}.<br>${DCW}`, [
+    calc('Calculate the energy supplied to the water each second.', 1, Pk * 1e3, 'J', M(`${AV(Pk * 1e3, 'J')} (power = energy transferred per second)`), NS),
+    calc('Calculate the temperature rise of the water.', 2, dT, 'K', M(E('<i>P</i> = (mass per second) × <i>c</i> × Δθ'), E(`Δθ = ${N(Pk * 1e3)} / (${N(fl)} × 4200) = ${AV(dT, 'K')}`))),
+    calc('Calculate the temperature of the water that leaves the shower.', 1, ti + dT, '°C', M(E(`${N(ti)} + ${I(dT)} = ${A(ti + dT)} °C`))),
+    calc('Calculate the power needed to give an outlet temperature of 40 °C at the same flow rate.', 2, P40, 'W', M(E(`Δθ = 40 − ${N(ti)} = ${I(40 - ti)} K`), E(`<i>P</i> = ${N(fl)} × 4200 × ${I(40 - ti)} = ${AV(P40, 'W')}`)), NS),
+    choose(R, 'The flow rate is reduced and the power is unchanged. What happens to the outlet temperature?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases: each kilogram of water receives more energy ✓')
+  ]);
+};
+T.TE7 = R => {
+  const m = R.pick([900, 1200, 1500]), v = R.pick([20, 25, 30]), md = R.pick([4.0, 5.0, 6.0]), Ek = .5 * m * v * v, dT = Ek / (4 * md * 460);
+  return NOFIG(2, { m, v, md }, `A car of mass ${V(m, 'kg')} travelling at ${V(v, MS1)} is brought to rest by its brakes. The car has four brake discs, each of mass ${V(md, 'kg')}, made from iron of specific heat capacity 460 J kg<sup>−1</sup> K<sup>−1</sup>.`, [
+    calc('Calculate the kinetic energy of the car before braking.', 1, Ek, 'J', M(E(`½ × ${N(m)} × ${N(v)}<sup>2</sup> = ${AV(Ek, 'J')}`))),
+    calc('Calculate the temperature rise of the brake discs. Assume that all of the kinetic energy is transferred to internal energy of the discs.', 3, dT, 'K', M(E(`total mass of the discs = 4 × ${N(md)} = ${I(4 * md)} kg`), E('<i>Q</i> = <i>mc</i>Δθ'), E(`Δθ = ${I(Ek)} / (${I(4 * md)} × 460) = ${AV(dT, 'K')}`))),
+    text('Give one reason why the actual temperature rise is smaller.', 1, 'Energy is transferred to the surroundings (the air) and to other parts of the car during braking ✓'),
+    choose(R, 'The car brakes from twice the speed. What happens to the temperature rise of the discs, with the same assumption?', 1, 'it becomes four times as large', ['it doubles', 'it stays the same', 'it becomes eight times as large'], 'Four times as large: the kinetic energy is four times as large ✓')
+  ]);
+};
+T.TE8 = R => {
+  const h = R.pick([0.80, 1.0, 1.2]), n = R.pick([50, 80, 100]), dT = n * g * h / 130;
+  return NOFIG(2, { h, n }, `Lead shot is sealed in a cardboard tube of length ${V(h, 'm')}. The tube is turned upside down ${n} times so that the lead shot falls the length of the tube each time. The specific heat capacity of lead is 130 J kg<sup>−1</sup> K<sup>−1</sup>.`, [
+    choose(R, 'Which energy transfer takes place each time the lead shot falls and hits the end of the tube?', 1, 'gravitational potential energy to internal energy', ['internal energy to gravitational potential energy', 'elastic potential energy to kinetic energy', 'kinetic energy to gravitational potential energy'], 'Gravitational potential energy (via kinetic energy) to internal energy ✓'),
+    calc('Calculate the temperature rise of the lead shot. Assume that no energy is transferred to the tube or the surroundings.', 3, dT, 'K', M(E(`loss of gravitational potential energy = ${n} × <i>mgh</i>`), E(`${n} × <i>mgh</i> = <i>mc</i>Δθ, so Δθ = ${n} × <i>gh</i> / <i>c</i>`), E(`Δθ = ${n} × ${GS} × ${N(h)} / 130 = ${AV(dT, 'K')}`))),
+    text('Explain why the mass of the lead shot is not needed.', 1, 'The mass appears on both sides of the energy equation and cancels ✓'),
+    text('Explain why lead is a good choice of material for this experiment.', 1, 'It has a low specific heat capacity, so the temperature rise is large enough to measure ✓')
+  ]);
+};
+T.TE9 = R => {
+  const mt = R.pick(METALS), m = R.pick([0.20, 0.50, 2.0]), dT = R.pick([15, 20, 40, 60]), Q = m * mt[1] * dT;
+  return NOFIG(2, { m, c: mt[1], dT }, `A block of ${mt[0]} of mass ${V(m, 'kg')} is heated so that its temperature rises by ${V(dT, 'K')}. The specific heat capacity of ${mt[0]} is ${mt[1]} J kg<sup>−1</sup> K<sup>−1</sup>.`, [
+    text('State what is meant by the internal energy of the block.', 2, IEDEF.join('<br>')),
+    calc('Calculate the increase in the internal energy of the block.', 1, Q, 'J', M(E(`<i>Q</i> = <i>mc</i>Δθ = ${N(m)} × ${mt[1]} × ${N(dT)} = ${AV(Q, 'J')}`))),
+    choose(R, 'Which energy of the atoms increases the most as the temperature of the solid block rises?', 1, 'their kinetic energy', ['their gravitational potential energy', 'their nuclear energy'], 'Their (vibrational) kinetic energy ✓'),
+    choose(R, 'Which is another way to increase the internal energy of the block, without heating it?', 1, 'doing work on it, for example by hammering it', ['raising it to a greater height', 'making it move faster as a whole'], 'Doing work on it ✓'),
+    text('State what is meant by the specific heat capacity of a substance.', 1, 'The energy needed to raise the temperature of 1 kg of the substance by 1 K (without a change of state) ✓')
+  ]);
+};
+T.TE10 = R => {
+  const Pk = R.pick([2.2, 2.5, 3.0]), m = R.pick([0.50, 1.0, 1.5, 1.7]), th0 = R.pick([15, 20]), ef = R.pick([.8, .85, .9]), Qw = m * CW * (100 - th0), t = +(Qw / (Pk * 1e3 * ef)).toPrecision(2), Es = Pk * 1e3 * t, eff = Qw / Es * 100;
+  return NOFIG(2, { Pk, m, th0, t }, `A ${V(Pk, 'kW')} kettle takes ${V(t, 's')} to heat ${V(m, 'kg')} of water from ${TC(th0)} to 100 °C.<br>${DCW}`, [
+    calc('Calculate the energy supplied to the kettle.', 1, Es, 'J', M(E(`${N(Pk * 1e3)} × ${N(t)} = ${AV(Es, 'J')}`))),
+    calc('Calculate the energy transferred to the water.', 2, Qw, 'J', M(E('<i>Q</i> = <i>mc</i>Δθ'), E(`= ${N(m)} × 4200 × (100 − ${N(th0)}) = ${AV(Qw, 'J')}`))),
+    calc('Calculate the efficiency of the kettle as a percentage.', 1, eff, '%', M(E(`${I(Qw)} / ${I(Es)} × 100 = ${A(eff)}%`)), { tol: .03, noSkill: true }),
+    calc('Calculate the energy that is not transferred to the water.', 1, Es - Qw, 'J', M(E(`${I(Es)} − ${I(Qw)} = ${AV(Es - Qw, 'J')}`)), { tol: .1, noSkill: true }),
+    text('State where this energy goes.', 1, 'To heat the kettle itself and the surroundings ✓')
+  ]);
+};
+T.TE11 = R => {
+  const In = R.pick([600, 800, 1000]), Ar = R.pick([2.0, 3.0, 4.0]), ef = R.pick([40, 50, 60]), dT = R.pick([20, 25, 30]), Pu = In * Ar * ef / 100, fl = Pu / (CW * dT);
+  return NOFIG(2, { In, Ar, ef, dT }, `A solar water heater has panels of total area ${V(Ar, 'm<sup>2</sup>')}. Sunlight of intensity ${V(In, 'W m<sup>−2</sup>')} falls on the panels, and ${N(ef)}% of this energy is transferred to water flowing through the panels.<br>${DCW}`, [
+    calc('Calculate the power transferred to the water.', 2, Pu, 'W', M(E(`power incident on the panels = ${N(In)} × ${N(Ar)} = ${I(In * Ar)} W`), E(`${N(ef / 100)} × ${I(In * Ar)} = ${AV(Pu, 'W')}`))),
+    calc(`Calculate the mass of water that can be heated each second if its temperature rises by ${V(dT, 'K')}.`, 2, fl, 'kg', M(E('<i>P</i> = (mass per second) × <i>c</i> × Δθ'), E(`mass per second = ${I(Pu)} / (4200 × ${N(dT)}) = ${AV(fl, 'kg')}`))),
+    calc('Calculate the mass of water heated in one hour.', 1, fl * 3600, 'kg', M(E(`${I(fl)} × 3600 = ${AV(fl * 3600, 'kg')}`))),
+    choose(R, 'The water flows through the panels more slowly. What happens to its temperature rise?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases ✓')
+  ]);
+};
+
+/* ===== Change of state ===== */
+T.LH1 = R => {
+  const m = R.pick([0.050, 0.10, 0.20, 0.25]), th = R.pick([20, 25, 40]), P = R.pick([50, 100, 200]), Q1 = m * LF, Q2 = m * CW * th;
+  return NOFIG(2, { m, th, P }, `Ice of mass ${V(m, 'kg')} at 0 °C is heated by a ${V(P, 'W')} heater until it has all become water at ${TC(th)}.<br>${DLF}<br>${DCW}`, [
+    calc('Calculate the energy needed to melt the ice.', 1, Q1, 'J', M(E(`<i>Q</i> = <i>ml</i> = ${N(m)} × 3.3 × 10<sup>5</sup> = ${AV(Q1, 'J')}`))),
+    calc(`Calculate the energy needed to heat the melted ice from 0 °C to ${TC(th)}.`, 1, Q2, 'J', M(E(`<i>Q</i> = <i>mc</i>Δθ = ${N(m)} × 4200 × ${N(th)} = ${AV(Q2, 'J')}`))),
+    calc('Calculate the total time taken. Assume all the energy from the heater is transferred to the ice and water.', 2, (Q1 + Q2) / P, 's', M(E(`total energy = ${I(Q1)} + ${I(Q2)} = ${I(Q1 + Q2)} J`), E(`<i>t</i> = ${I(Q1 + Q2)} / ${N(P)} = ${AV((Q1 + Q2) / P, 's')}`))),
+    choose(R, 'What happens to the temperature while the ice is melting?', 1, 'it stays at 0 °C', ['it rises steadily', 'it falls'], 'It stays at 0 °C ✓'),
+    text('Explain your answer in terms of the energy of the molecules.', 1, WHYCONST)
+  ]);
+};
+T.LH2 = R => {
+  const tm = R.pick([55, 60, 69, 80]), t1 = R.pick([2, 4]), du = R.pick([6, 8, 10]), P = R.pick([10, 15, 20]), m = R.pick([0.050, 0.10]), t2 = t1 + du, t3 = t2 + 4, xa = axisFor(t3), ya = axisFor((tm + 20) * 1.03), c = pwl([[0, tm + 20], [t1, tm], [t2, tm], [t3, tm - 15]]), L = P * du * 60 / m;
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'time / minutes', yl: 'temperature / °C', curves: [c], reads: [[t1, tm], [t2, tm]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { tm, t1, t2, P, m }, stem: `A liquid of mass ${V(m, 'kg')} cools in a test tube and solidifies. <b>Figure 1</b> shows how its temperature varies with time. While it solidifies, the substance transfers energy to the surroundings at a constant rate of ${V(P, 'W')}.`, parts: [
+    calc('Determine the freezing point of the substance.', 1, tm, '°C', M(`${tm} °C (the temperature of the horizontal section)`), { abs: ya[1] / 5, noSkill: true }),
+    calc('Determine the time, in minutes, for which the substance is solidifying.', 1, du, 'minutes', M(E(`${t2} − ${t1} = ${N(du)} minutes`)), { abs: xa[1] / 5 * 1.01, noSkill: true }),
+    calc('Calculate the specific latent heat of fusion of the substance.', 3, L, SLH, M(E(`energy transferred = ${N(P)} × ${du} × 60 = ${I(P * du * 60)} J`), E('<i>l</i> = <i>Q</i> / <i>m</i>'), E(`= ${I(P * du * 60)} / ${N(m)} = ${AV(L, SLH)}`)), { tol: .12, noSkill: true }),
+    choose(R, 'What happens to the mean kinetic energy of the molecules while the substance solidifies?', 1, 'it stays the same', ['it decreases', 'it increases'], 'It stays the same (the temperature is constant) ✓'),
+    choose(R, 'What happens to the potential energy of the molecules while the substance solidifies?', 1, 'it decreases', ['it stays the same', 'it increases'], 'It decreases (bonds form) ✓')
+  ] };
+};
+T.LH3 = R => {
+  const m = R.pick([0.10, 0.20]), P = R.pick([50, 100]), t1 = R.pick([100, 200]), d1 = R.pick([20, 40]), du = R.pick([200, 300, 400]), th0 = 20, tm = th0 + d1, t2 = t1 + du, t3 = t2 + t1, xa = axisFor(t3), ya = axisFor((tm + d1 / 2) * 1.05), cs = P * t1 / (m * d1), L = P * du / m;
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'time / s', yl: 'temperature / °C', curves: [pwl([[0, th0], [t1, tm], [t2, tm], [t3, tm + d1 / 2]])], reads: [[t1, tm], [t2, tm], [t3, tm + d1 / 2]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { m, P, t1, d1, du }, stem: `A solid of mass ${V(m, 'kg')} is heated in an insulated container by a ${V(P, 'W')} heater. <b>Figure 1</b> shows how the temperature of the substance varies with time as it warms, melts and then warms as a liquid.`, parts: [
+    calc('Determine the melting point of the substance.', 1, tm, '°C', M(`${tm} °C`), { abs: ya[1] / 5, noSkill: true }),
+    calc('Determine the specific heat capacity of the solid.', 3, cs, SHC, M(E(`energy supplied while the solid warms = ${N(P)} × ${t1} = ${I(P * t1)} J`), E(`temperature rise = ${tm} − ${th0} = ${d1} K`), E(`<i>c</i> = ${I(P * t1)} / (${N(m)} × ${d1}) = ${AV(cs, SHC)}`)), { tol: .1, noSkill: true }),
+    calc('Determine the specific latent heat of fusion of the substance.', 2, L, SLH, M(E(`energy supplied while melting = ${N(P)} × (${t2} − ${t1}) = ${I(P * du)} J`), E(`<i>l</i> = ${I(P * du)} / ${N(m)} = ${AV(L, SLH)}`)), { tol: .1, noSkill: true }),
+    choose(R, 'How does the specific heat capacity of the liquid compare with that of the solid?', 1, 'it is greater', ['it is smaller', 'it is the same'], 'Greater: the gradient is smaller for the liquid, so more energy is needed for each kelvin ✓'),
+    text('Explain why the temperature does not change while the substance melts.', 1, WHYCONST)
+  ] };
+};
+T.LH4 = R => {
+  const v0 = find(() => ({ mi: R.pick([0.020, 0.030, 0.050]), mw: R.pick([0.20, 0.25, 0.30]), th: R.pick([20, 25, 30]) }), o => (o.mw * CW * o.th - o.mi * LF) / ((o.mw + o.mi) * CW) > 3);
+  const { mi, mw, th } = v0, Qm = mi * LF, tf = (mw * CW * th - Qm) / ((mw + mi) * CW);
+  return NOFIG(2, { mi, mw, th }, `Ice of mass ${V(mi, 'kg')} at 0 °C is added to ${V(mw, 'kg')} of water at ${TC(th)} in an insulated cup. All of the ice melts.<br>${DLF}<br>${DCW}`, [
+    calc('Calculate the energy needed to melt the ice.', 1, Qm, 'J', M(E(`${N(mi)} × 3.3 × 10<sup>5</sup> = ${AV(Qm, 'J')}`))),
+    calc('Calculate the final temperature of the water.', 3, tf, '°C', M('energy lost by the warm water = energy to melt the ice + energy to warm the melted ice', E(`${N(mw)} × 4200 × (${N(th)} − θ) = ${I(Qm)} + ${N(mi)} × 4200 × θ`), E(`θ = (${N(mw)} × 4200 × ${N(th)} − ${I(Qm)}) / ((${N(mw)} + ${N(mi)}) × 4200) = ${A(tf)} °C`)), { tol: .04 }),
+    text('State one assumption made.', 1, 'No energy is transferred from the surroundings or the cup ✓'),
+    choose(R, 'The same mass of water at 0 °C is added instead of the ice. How does the final temperature compare?', 1, 'it is higher', ['it is lower', 'it is the same'], 'Higher: no energy is needed to melt ice ✓')
+  ]);
+};
+T.LH5 = R => {
+  const Pk = R.pick([2.0, 2.5, 3.0]), t = R.pick([60, 120, 180]), m = R.pick([0.50, 1.0, 1.5]), mb = Pk * 1e3 * t / LV, tb = m * LV / (Pk * 1e3);
+  return NOFIG(2, { Pk, t, m }, `A ${V(Pk, 'kW')} kettle contains ${V(m, 'kg')} of water at 100 °C. The automatic switch fails and the kettle continues to boil the water.<br>${DLV}`, [
+    calc(`Calculate the mass of water that turns to steam in ${V(t, 's')}.`, 2, mb, 'kg', M(E('<i>Q</i> = <i>ml</i>'), E(`<i>m</i> = ${N(Pk * 1e3)} × ${N(t)} / (2.26 × 10<sup>6</sup>) = ${AV(mb, 'kg')}`))),
+    calc('Calculate the time taken for all of the water to turn to steam.', 2, tb, 's', M(E(`energy needed = ${N(m)} × 2.26 × 10<sup>6</sup> = ${I(m * LV)} J`), E(`<i>t</i> = ${I(m * LV)} / ${N(Pk * 1e3)} = ${AV(tb, 's')}`))),
+    text('Explain why the temperature of the water stays at 100 °C while it boils.', 2, M('The energy supplied is used to separate the molecules (increase their potential energy) as the water changes to steam', 'the mean kinetic energy of the molecules does not change, so the temperature is constant')),
+    choose(R, 'Why is the specific latent heat of vaporisation of water much greater than its specific latent heat of fusion?', 1, 'the molecules must be separated completely, and work is done pushing back the atmosphere', ['steam molecules move more slowly than water molecules', 'water has a high specific heat capacity', 'ice is less dense than water'], 'Vaporisation separates the molecules completely (and the vapour does work against the atmosphere) ✓')
+  ]);
+};
+T.LH6 = R => {
+  const P = R.pick([48, 60, 100]), t = R.pick([300, 600]), dmg = +(P * t * .92 / LV * 1000).toPrecision(2), L = P * t / (dmg * 1e-3);
+  return NOFIG(2, { P, t, dmg }, `A student measures the specific latent heat of vaporisation of water. A ${V(P, 'W')} immersion heater keeps water boiling in a beaker that stands on a balance. In ${V(t, 's')} the balance reading decreases by ${V(dmg, 'g')}.`, [
+    calc('Calculate the energy supplied by the heater in this time.', 1, P * t, 'J', M(E(`${N(P)} × ${N(t)} = ${AV(P * t, 'J')}`))),
+    calc('Calculate the specific latent heat of vaporisation of water given by these results.', 2, L, SLH, M(E('<i>l</i> = <i>Q</i> / <i>m</i>'), E(`= ${I(P * t)} / ${N(dmg * 1e-3)} = ${AV(L, SLH)}`))),
+    choose(R, 'How does this value compare with the true value?', 1, 'it is larger than the true value', ['it is smaller than the true value', 'it is equal to the true value'], 'Larger than the true value ✓'),
+    text('Explain your answer.', 2, M('Some of the energy supplied is transferred to the surroundings', 'so less water is vaporised than the energy supplied should produce, making <i>Q</i> / <i>m</i> too large')),
+    text('Suggest one improvement to the experiment.', 1, 'Insulate the beaker (or repeat with a different heater power and use the difference between the two sets of results to allow for the energy lost) ✓')
+  ]);
+};
+T.LH7 = R => {
+  const mg = R.pick([1.0, 2.0, 5.0]), ts = R.pick([35, 37, 40]), m = mg * 1e-3, Q1 = m * LV, Q2 = m * CW * (100 - ts);
+  return NOFIG(2, { mg, ts }, `Steam of mass ${V(mg, 'g')} at 100 °C condenses on a person’s skin and the water formed cools to the skin temperature of ${TC(ts)}.<br>${DLV}<br>${DCW}`, [
+    calc('Calculate the energy transferred to the skin as the steam condenses.', 1, Q1, 'J', M(E(`<i>Q</i> = <i>ml</i> = ${N(m)} × 2.26 × 10<sup>6</sup> = ${AV(Q1, 'J')}`))),
+    calc('Calculate the energy transferred to the skin as the condensed water cools.', 2, Q2, 'J', M(E('<i>Q</i> = <i>mc</i>Δθ'), E(`= ${N(m)} × 4200 × (100 − ${N(ts)}) = ${AV(Q2, 'J')}`))),
+    calc('Calculate the total energy transferred to the skin.', 1, Q1 + Q2, 'J', M(E(`${I(Q1)} + ${I(Q2)} = ${AV(Q1 + Q2, 'J')}`))),
+    calc('Calculate the ratio total energy transferred by the steam / energy transferred by the same mass of water at 100 °C.', 1, (Q1 + Q2) / Q2, '', M(E(`${I(Q1 + Q2)} / ${I(Q2)} = ${A((Q1 + Q2) / Q2)}`)), NS),
+    text('Explain why a scald from steam at 100 °C is worse than a scald from the same mass of water at 100 °C.', 1, 'The steam also transfers its latent heat of vaporisation as it condenses, which is much more energy than is released by the water cooling ✓')
+  ]);
+};
+T.LH8 = R => {
+  const P = R.pick([600, 800, 1000]), fr = R.pick([50, 60, 80]), Ps = P * fr / 100, ms = Ps / 2.4e6;
+  return NOFIG(2, { P, fr }, `A runner generates thermal energy at a rate of ${V(P, 'W')}. ${N(fr)}% of this energy is removed by the evaporation of sweat. The specific latent heat of vaporisation of sweat at skin temperature is 2.4 × 10<sup>6</sup> J kg<sup>−1</sup>.`, [
+    calc('Calculate the rate at which energy is removed by evaporation.', 1, Ps, 'W', M(E(`${N(fr / 100)} × ${N(P)} = ${AV(Ps, 'W')}`))),
+    calc('Calculate the mass of sweat that evaporates each second.', 2, ms, 'kg', M(E('<i>P</i> = (mass per second) × <i>l</i>'), E(`mass per second = ${I(Ps)} / (2.4 × 10<sup>6</sup>) = ${AV(ms, 'kg')}`))),
+    calc('Calculate the mass of sweat that evaporates in one hour.', 1, ms * 3600, 'kg', M(E(`${I(ms)} × 3600 = ${AV(ms * 3600, 'kg')}`))),
+    text('Explain, in terms of molecules, why evaporation cools the skin.', 2, M('The most energetic (fastest) molecules escape from the surface of the liquid', 'so the mean kinetic energy of the remaining molecules, and therefore the temperature, decreases (energy is taken from the skin)'))
+  ]);
+};
+T.LH9 = R => {
+  const sb = R.pick([['water', 2.26e6, '2.26 × 10<sup>6</sup>'], ['ethanol', 8.5e5, '8.5 × 10<sup>5</sup>'], ['nitrogen', 2.0e5, '2.0 × 10<sup>5</sup>']]), mg = R.pick([20, 50, 80, 150]), Q = mg * 1e-3 * sb[1];
+  return NOFIG(2, { mg, L: sb[1] }, `Liquid ${sb[0]} is at its boiling point. The specific latent heat of vaporisation of ${sb[0]} is ${sb[2]} J kg<sup>−1</sup>.`, [
+    text('State what is meant by the specific latent heat of vaporisation.', 2, M('The energy needed to change 1 kg of a substance from liquid to gas (vapour)', 'without a change in temperature')),
+    calc(`Calculate the energy needed to vaporise ${V(mg, 'g')} of the liquid.`, 1, Q, 'J', M(E(`<i>Q</i> = <i>ml</i> = ${N(mg * 1e-3)} × ${sb[2]} = ${AV(Q, 'J')}`))),
+    choose(R, 'What happens to the potential energy of the molecules as the liquid vaporises?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases ✓'),
+    choose(R, 'What happens to the mean kinetic energy of the molecules as the liquid vaporises at its boiling point?', 1, 'it stays the same', ['it increases', 'it decreases'], 'It stays the same ✓'),
+    text('State what happens to the internal energy of the substance as it vaporises.', 1, 'It increases (because the potential energy of the molecules increases) ✓')
+  ]);
+};
+/* ===== The gas laws ===== */
+const CI = x => (x < 0 ? '−' + (-x) : '' + x), KEL = th => th + 273, KS = th => `(${CI(th)} + 273)`;
+const MOLEX_V = ['The molecules hit the walls of the container more often (the same number of molecules in a smaller volume) ✓', 'so the total force on the walls, and therefore the pressure (force per unit area), is greater; the mean speed of the molecules is unchanged ✓'];
+const MOLEX_T = ['The mean kinetic energy (speed) of the molecules increases ✓', 'so the molecules hit the walls more often and with a greater change of momentum in each collision ✓', 'giving a greater force on the walls and therefore a greater pressure ✓'];
+function pistonFig(aria, frac){
+  const s = new Scene(aria), xp = 300 * frac; s.poly([[320, 0], [0, 0], [0, 90], [320, 90]], { w: 2.2, tag: 'cylinder' }); s.rect(xp, 2, 14, 86, { fill: '#d9dde1', tag: 'piston' }); s.line(xp + 14, 45, 370, 45, { w: 3, tag: 'piston rod' });
+  s.label(xp / 2, 50, 'gas'); s.label(xp + 7, -10, 'piston'); return s;
+}
+T.GL1 = R => {
+  const V1 = R.pick([40, 50, 60, 80]), V2 = R.pick([20, 25, 30]), p1 = 1.0e5, p2 = p1 * V1 / V2, s = pistonFig('A gas trapped in a cylinder by a piston', .6);
+  return { sf: 2, scenes: [s], data: { p1, p2, V1, V2 }, stem: `<b>Figure 1</b> shows a fixed mass of gas trapped in a cylinder by a piston. The gas has a volume of ${V(V1, 'cm<sup>3</sup>')} at a pressure of ${V(p1, 'Pa')}. The piston is pushed in slowly until the volume is ${V(V2, 'cm<sup>3</sup>')}. The temperature of the gas stays constant.`, parts: [
+    calc('Calculate the new pressure of the gas.', 2, p2, 'Pa', M(E('<i>p</i><sub>1</sub><i>V</i><sub>1</sub> = <i>p</i><sub>2</sub><i>V</i><sub>2</sub>'), E(`<i>p</i><sub>2</sub> = ${N(p1)} × ${N(V1)} / ${N(V2)} = ${AV(p2, 'Pa')}`))),
+    text('Explain, in terms of molecules, why the pressure increases.', 2, MOLEX_V.join('<br>')),
+    text('Explain why the piston is pushed in slowly.', 1, 'So that the temperature of the gas stays constant (energy from the work done can be transferred to the surroundings) ✓'),
+    choose(R, 'Which graph is a straight line through the origin for a fixed mass of gas at constant temperature?', 1, 'pressure against 1/volume', ['pressure against volume', 'pressure against volume squared', 'volume against 1/temperature'], 'Pressure against 1/volume ✓'),
+    choose(R, 'What happens to the product <i>pV</i> during the compression?', 1, 'it stays the same', ['it increases', 'it decreases'], 'It stays the same ✓')
+  ] };
+};
+T.GL2 = R => {
+  const V1 = R.pick([30, 40, 50, 60]), t1 = R.pick([10, 15, 20, 27]), t2 = R.pick([60, 77, 87, 100]), V2 = V1 * KEL(t2) / KEL(t1);
+  return NOFIG(2, { V1, t1, t2 }, `A fixed mass of air is trapped in a gas syringe at ${TC(t1)}. Its volume is ${V(V1, 'cm<sup>3</sup>')}. The air is heated to ${TC(t2)} at constant pressure.`, [
+    calc(`Convert ${TC(t1)} to kelvin.`, 1, KEL(t1), 'K', M(E(`${N(t1)} + 273 = ${KEL(t1)} K`)), { int: true, noSkill: true }),
+    calc('Calculate the new volume of the air.', 2, V2, 'cm<sup>3</sup>', M(E('<i>V</i><sub>1</sub> / <i>T</i><sub>1</sub> = <i>V</i><sub>2</sub> / <i>T</i><sub>2</sub>') + ' (temperatures in kelvin)', E(`<i>V</i><sub>2</sub> = ${N(V1)} × ${KEL(t2)} / ${KEL(t1)} = ${AV(V2, 'cm<sup>3</sup>')}`))),
+    text('Explain why temperatures must be in kelvin in this calculation.', 1, 'Volume is directly proportional to absolute (kelvin) temperature, not to Celsius temperature ✓'),
+    text('Explain, in terms of molecules, why the gas expands when it is heated at constant pressure.', 2, M('The molecules move faster, so each collision with the piston exerts a greater force', 'the volume increases so that collisions are less frequent and the pressure stays the same')),
+    choose(R, 'At what temperature would the volume of an ideal gas be zero, according to this law?', 1, '−273 °C', ['0 °C', '−100 °C', '273 °C'], '−273 °C (absolute zero, 0 K) ✓')
+  ]);
+};
+T.GL3 = R => {
+  const p1 = R.pick([2.0e5, 2.2e5, 2.4e5]), t1 = R.pick([10, 15, 20]), t2 = R.pick([35, 40, 50]), p2 = p1 * KEL(t2) / KEL(t1);
+  return NOFIG(2, { p1, t1, t2 }, `The air in a car tyre is at a pressure of ${V(p1, 'Pa')} when its temperature is ${TC(t1)}. After a long journey the temperature of the air in the tyre is ${TC(t2)}. The volume of the tyre does not change.`, [
+    calc('Calculate the pressure of the air in the tyre after the journey.', 3, p2, 'Pa', M(E(`<i>T</i><sub>1</sub> = ${KEL(t1)} K and <i>T</i><sub>2</sub> = ${KEL(t2)} K`), E('<i>p</i><sub>1</sub> / <i>T</i><sub>1</sub> = <i>p</i><sub>2</sub> / <i>T</i><sub>2</sub>'), E(`<i>p</i><sub>2</sub> = ${N(p1)} × ${KEL(t2)} / ${KEL(t1)} = ${AV(p2, 'Pa')}`))),
+    text('Explain, in terms of molecules, why the pressure increases.', 3, MOLEX_T.join('<br>')),
+    choose(R, 'A student uses the Celsius temperatures in the calculation by mistake. How does the calculated pressure compare with the correct value?', 1, 'it is much too large', ['it is too small', 'it is the same'], 'Much too large: the ratio of the Celsius temperatures is far greater than the ratio of the kelvin temperatures ✓')
+  ]);
+};
+T.GL4 = R => {
+  const C0 = R.pick([3000, 4000, 5000, 6000]), xs = [.01, .02, .03, .04, .05], cr = xs.map(x => [x, C0 * x * (1 + (R() - .5) * .04)]), ya = axisFor(C0 * .05 * 1.06), xr = .04, pq = R.pick([120, 150, 160]);
+  const fig = graph({ x: [0, .05, .01], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: '(1 / V) / cm^{−3}', yl: 'p / kPa', curves: [{ f: x => C0 * x, from: 0, to: .05 }], crosses: cr, reads: [[xr, C0 * xr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { C0, pq }, stem: `A student investigates how the pressure <i>p</i> of a fixed mass of air varies with its volume <i>V</i> at constant temperature. <b>Figure 1</b> shows a graph of <i>p</i> against 1/<i>V</i> with a line of best fit.`, parts: [
+    text('State what the graph shows about the relationship between <i>p</i> and <i>V</i>.', 1, 'Pressure is inversely proportional to volume (the line is straight and passes through the origin), so <i>pV</i> is constant ✓'),
+    calc('Determine the gradient of the line of best fit.', 2, C0, 'kPa cm<sup>3</sup>', M(`uses a large triangle, for example from (0, 0) to (${fx(xr, 2)}, ${fx(C0 * xr, 0)})`, E(`gradient = ${fx(C0 * xr, 0)} / ${fx(xr, 2)} = ${A(C0)} kPa cm<sup>3</sup>`)), { tol: .05, noSkill: true }),
+    calc(`Determine the volume of the air when the pressure is ${V(pq, 'kPa')}.`, 2, C0 / pq, 'cm<sup>3</sup>', M('gradient = <i>pV</i>', E(`<i>V</i> = ${I(C0)} / ${N(pq)} = ${AV(C0 / pq, 'cm<sup>3</sup>')}`)), { tol: .05, noSkill: true }),
+    text('Explain why the student waits before taking each reading after changing the volume.', 1, 'Compressing the air heats it, so time is needed for it to return to room temperature (the temperature must be constant) ✓'),
+    choose(R, 'The experiment is repeated at a higher constant temperature with the same mass of air. How does the graph change?', 1, 'it is a steeper straight line through the origin', ['it is a less steep straight line through the origin', 'it is unchanged', 'it becomes a curve'], 'Steeper: <i>pV</i> is larger at a higher temperature ✓')
+  ] };
+};
+T.GL5 = R => {
+  const T0 = R.pick([-262, -268, -273, -280]), V0 = R.pick([40, 50, 60]), gr = V0 / -T0, ya = axisFor(V0 * (1 + 100 / -T0) * 1.05), V100 = V0 + gr * 100, cr = [10, 30, 50, 70, 90].map(x => [x, (V0 + gr * x) * (1 + (R() - .5) * .012)]);
+  const fig = graph({ x: [0, 100, 20], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'temperature / °C', yl: 'volume / cm^{3}', curves: [{ f: x => V0 + gr * x, from: 0, to: 100 }], crosses: cr, reads: [[0, V0], [100, V100]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { T0, V0 }, stem: `A student measures the volume of a fixed mass of air at different temperatures and constant pressure. <b>Figure 1</b> shows the results with a line of best fit.`, parts: [
+    calc('State the volume of the air at 0 °C.', 1, V0, 'cm<sup>3</sup>', M(`${N(V0)} cm<sup>3</sup> (the intercept on the volume axis)`), { abs: ya[1] / 5, noSkill: true }),
+    calc('Determine the gradient of the line of best fit.', 2, gr, 'cm<sup>3</sup> K<sup>−1</sup>', M(E(`gradient = (${fx(V100, 1)} − ${N(V0)}) / (100 − 0)`), E(`= ${A(gr)} cm<sup>3</sup> K<sup>−1</sup>`)), { tol: .08, noSkill: true }),
+    calc('Use your answers to determine the temperature, in °C, at which the line would meet the temperature axis. Give the magnitude of your answer.', 2, -T0, '°C', M(E('the volume falls from its value at 0 °C to zero, so temperature change = volume at 0 °C / gradient'), E(`${N(V0)} / ${I(gr)} = ${A(-T0)}, so the line meets the axis at −${A(-T0)} °C`)), { tol: .08, noSkill: true }),
+    text('State the significance of this temperature.', 1, 'It is an estimate of absolute zero, the temperature at which the volume (and the kinetic energy of the molecules) of an ideal gas would be zero ✓'),
+    text('Suggest why the value from this experiment may differ from −273 °C.', 1, 'The line is extrapolated a long way beyond the measured range, so a small uncertainty in the gradient gives a large uncertainty in the intercept ✓')
+  ] };
+};
+T.GL6 = R => {
+  const V1 = R.pick([2.0, 3.0, 5.0]), t1 = R.pick([15, 20, 27]), p2 = R.pick([2.0e4, 3.0e4, 5.0e4]), t2 = R.pick([-23, -40, -50]), p1 = 1.0e5, V2 = p1 * V1 * KEL(t2) / (KEL(t1) * p2);
+  return NOFIG(2, { p1, V1, t1, p2, t2 }, `A weather balloon contains ${V(V1, M3)} of helium at a pressure of ${V(p1, 'Pa')} and a temperature of ${TC(t1)} when it is released. It rises to a height where the pressure is ${V(p2, 'Pa')} and the temperature is ${TC(t2)}.`, [
+    calc('Calculate the temperature of the helium at release, in kelvin.', 1, KEL(t1), 'K', M(`${KEL(t1)} K at release and ${KEL(t2)} K at height`), { int: true, noSkill: true }),
+    calc('Calculate the volume of the helium at this height.', 3, V2, M3, M(E('<i>p</i><sub>1</sub><i>V</i><sub>1</sub> / <i>T</i><sub>1</sub> = <i>p</i><sub>2</sub><i>V</i><sub>2</sub> / <i>T</i><sub>2</sub>'), E(`<i>V</i><sub>2</sub> = ${N(p1)} × ${N(V1)} × ${KEL(t2)} / (${KEL(t1)} × ${N(p2)})`), E(`= ${AV(V2, M3)}`))),
+    text('State one assumption made in this calculation.', 1, 'The amount (mass) of helium in the balloon is constant (and helium behaves as an ideal gas) ✓'),
+    choose(R, 'Which change has the greater effect on the volume of the balloon as it rises?', 1, 'the decrease in pressure', ['the decrease in temperature', 'they have equal effects'], 'The decrease in pressure: the pressure falls by a much larger factor than the kelvin temperature ✓')
+  ]);
+};
+T.GL7 = R => {
+  const h = R.pick([10, 20, 30, 40]), V1 = R.pick([1.0, 2.0, 5.0]), p0 = 1.0e5, pd = p0 + 1000 * g * h, V2 = pd * V1 / p0;
+  const s = new Scene('An air bubble at a depth below the surface of a lake'); s.line(-20, 0, 300, 0, { w: 2, tag: 'water surface' }); s.label(296, -8, 'water surface', { anchor: 'end' }); s.circle(110, 180, 9, { fill: '#fff', tag: 'bubble' }); s.label(96, 185, 'bubble', { anchor: 'end' });
+  s.line(119, 180, 190, 180, { dash: '3 3', w: .9, tag: 'level' }); s.dim(176, 0, 176, 180, LB(h, 'm')); for (const y of [50, 110, 170, 215]) s.line(-12, y, 12, y, { w: .8, dash: '6 5', free: true }); s.label(0, 240, 'water'); s.ext(300, 250);
+  return { sf: 2, scenes: [s], data: { p0, h, V1 }, stem: `<b>Figure 1</b> shows an air bubble of volume ${V(V1, 'cm<sup>3</sup>')} that is released ${V(h, 'm')} below the surface of a lake. Atmospheric pressure is ${V(p0, 'Pa')} and the temperature of the water is the same at all depths.<br>density of water = 1000 kg m<sup>−3</sup>`, parts: [
+    calc('Calculate the pressure of the air in the bubble when it is released.', 2, pd, 'Pa', M(E(`pressure due to the water = ρ<i>gh</i> = 1000 × ${GS} × ${N(h)} = ${I(1000 * g * h)} Pa`), E(`total pressure = ${N(p0)} + ${I(1000 * g * h)} = ${AV(pd, 'Pa')}`))),
+    calc('Calculate the volume of the bubble just before it reaches the surface.', 2, V2, 'cm<sup>3</sup>', M(E('<i>p</i><sub>1</sub><i>V</i><sub>1</sub> = <i>p</i><sub>2</sub><i>V</i><sub>2</sub>'), E(`<i>V</i><sub>2</sub> = ${I(pd)} × ${N(V1)} / ${N(p0)} = ${AV(V2, 'cm<sup>3</sup>')}`))),
+    text('State the gas law used and the condition for it to apply.', 2, M('Boyle’s law: pressure is inversely proportional to volume', 'for a fixed mass of gas at constant temperature')),
+    choose(R, 'What happens to the number of air molecules in the bubble as it rises?', 1, 'it stays the same', ['it increases', 'it decreases'], 'It stays the same (fixed mass of gas) ✓')
+  ] };
+};
+T.GL8 = R => {
+  const tc = R.pick([-196, -78, 37, 100, 327]), tk = R.pick([4, 77, 300, 500, 1000]), t1 = R.pick([7, 17, 27]), t2 = 2 * KEL(t1) - 273;
+  return NOFIG(2, { tc, tk, t1 }, `The absolute (kelvin) scale of temperature starts at absolute zero.`, [
+    text('Explain what is meant by absolute zero.', 2, M('The lowest possible temperature, 0 K (−273 °C)', 'at which the particles of a substance have their minimum possible kinetic energy (the pressure or volume of an ideal gas would be zero)')),
+    calc(`Convert ${CI(tc)} °C to kelvin.`, 1, KEL(tc), 'K', M(E(`${CI(tc)} + 273 = ${KEL(tc)} K`)), { int: true, noSkill: true }),
+    calc(`Convert ${tk} K to °C. ${tk < 273 ? 'Give the magnitude of your answer.' : ''}`.trim(), 1, Math.abs(tk - 273), '°C', M(E(`${tk} − 273 = ${CI(tk - 273)} °C`)), { int: true, noSkill: true }),
+    calc(`A fixed mass of gas in a rigid container is at ${TC(t1)}. Calculate the temperature, in °C, at which its pressure is doubled.`, 2, t2, '°C', M(E(`the kelvin temperature must double: 2 × ${KEL(t1)} = ${2 * KEL(t1)} K`), E(`${2 * KEL(t1)} − 273 = ${t2} °C`)), { int: true, noSkill: true }),
+    choose(R, 'A temperature rises by 10 °C. What is the rise in kelvin?', 1, '10 K', ['283 K', '−263 K', '0.10 K'], '10 K: the two scales have the same size of degree ✓')
+  ]);
+};
+T.GL9 = R => {
+  const p = R.pick([1.0e5, 1.2e5, 1.5e5]), V1 = R.pick([2.0e-3, 3.0e-3, 5.0e-3]), t1 = R.pick([20, 27]), t2 = R.pick([80, 100, 127]), V2 = V1 * KEL(t2) / KEL(t1), W = p * (V2 - V1), s = pistonFig('A gas in a cylinder with a piston that is free to move', .5);
+  return { sf: 2, scenes: [s], data: { p, V1, t1, t2 }, stem: `<b>Figure 1</b> shows a gas in a cylinder fitted with a frictionless piston that is free to move, so the pressure of the gas stays at ${V(p, 'Pa')}. The gas has a volume of ${V(V1, M3)} at ${TC(t1)}. The gas is heated to ${TC(t2)}.`, parts: [
+    calc('Calculate the new volume of the gas.', 2, V2, M3, M(E('<i>V</i><sub>1</sub> / <i>T</i><sub>1</sub> = <i>V</i><sub>2</sub> / <i>T</i><sub>2</sub>'), E(`<i>V</i><sub>2</sub> = ${N(V1)} × ${KEL(t2)} / ${KEL(t1)} = ${AV(V2, M3)}`))),
+    calc('Calculate the work done by the gas as it expands.', 2, W, 'J', M(E('work done = <i>p</i>Δ<i>V</i>'), E(`= ${N(p)} × (${I(V2)} − ${N(V1)}) = ${AV(W, 'J')}`)), { tol: .04 }),
+    choose(R, 'What happens to the internal energy of the gas during the heating?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases: the temperature rises, so the kinetic energy of the molecules increases ✓'),
+    text('Explain why the energy supplied by heating is greater than the increase in internal energy of the gas.', 1, 'Some of the energy supplied is used to do work on the piston (and surroundings) as the gas expands ✓')
+  ] };
+};
+T.GL10 = R => {
+  const p0 = R.pick([95.0, 100, 101, 105]), ths = [0, 20, 50, 80], ps = ths.map(t => +(p0 * KEL(t) / 273).toPrecision(3)), tq = R.pick([100, 120, 150]), k1 = ps[0] / 273, k2 = ps[3] / 353, pq = (k1 + k2) / 2 * KEL(tq);
+  return NOFIG(3, { ths, ps, tq }, `A student measures the pressure of a fixed mass of air in a sealed flask at different temperatures. The volume of the air is constant.<br>` + tableH('Table 1', ['Temperature / °C', 'Pressure / kPa'], ths.map((t, i) => [t, N(ps[i], 3)])), [
+    calc('Calculate the value of pressure / kelvin temperature for the reading at 0 °C.', 1, k1, 'kPa K<sup>−1</sup>', M(E(`${N(ps[0], 3)} / 273 = ${A(k1)} kPa K<sup>−1</sup>`)), { tol: .01, noSkill: true }),
+    calc('Calculate the value of pressure / kelvin temperature for the reading at 80 °C.', 1, k2, 'kPa K<sup>−1</sup>', M(E(`${N(ps[3], 3)} / (80 + 273) = ${A(k2)} kPa K<sup>−1</sup>`)), { tol: .01, noSkill: true }),
+    text('State what these values show.', 1, 'The pressure is directly proportional to the kelvin temperature (the ratio is constant, within experimental uncertainty) ✓'),
+    calc(`Predict the pressure of the air at ${TC(tq, 3)}.`, 2, pq, 'kPa', M(E(`<i>p</i> = constant × <i>T</i> = ${N((k1 + k2) / 2, 4)} × (${tq} + 273)`), E(`= ${AV(pq, 'kPa')}`)), { tol: .01, noSkill: true }),
+    text('Explain, in terms of molecules, why the pressure increases with temperature.', 3, MOLEX_T.join('<br>'))
+  ]);
+};
+
+/* ===== Ideal gas equation ===== */
+const GASES = [['nitrogen', 0.028], ['oxygen', 0.032], ['helium', 0.0040], ['carbon dioxide', 0.044], ['argon', 0.040]];
+const DR = 'molar gas constant <i>R</i> = 8.31 J mol<sup>−1</sup> K<sup>−1</sup>', DK = 'Boltzmann constant <i>k</i> = 1.38 × 10<sup>−23</sup> J K<sup>−1</sup>', DNA = 'Avogadro constant <i>N</i><sub>A</sub> = 6.02 × 10<sup>23</sup> mol<sup>−1</sup>';
+const MM = M0 => N(M0) + ' kg mol<sup>−1</sup>';
+T.IG1 = R => {
+  const gs = R.pick(GASES), Vv = R.pick([0.020, 0.050, 0.10]), p = R.pick([2.0e5, 5.0e5, 1.0e6, 2.0e6]), th = R.pick([15, 20, 27]), n = p * Vv / (RG * KEL(th));
+  return NOFIG(2, { M0: gs[1], Vv, p, th }, `A cylinder of volume ${V(Vv, M3)} contains ${gs[0]} at a pressure of ${V(p, 'Pa')} and a temperature of ${TC(th)}. The molar mass of ${gs[0]} is ${MM(gs[1])}.`, [
+    calc('Calculate the amount of gas in the cylinder, in mol.', 2, n, 'mol', M(E('<i>pV</i> = <i>nRT</i>'), E(`<i>n</i> = ${N(p)} × ${N(Vv)} / (8.31 × ${KEL(th)}) = ${AV(n, 'mol')}`))),
+    calc('Calculate the number of molecules in the cylinder.', 1, n * NAV, '', M(E(`<i>N</i> = <i>nN</i><sub>A</sub> = ${I(n)} × 6.02 × 10<sup>23</sup> = ${A(n * NAV)}`)), NS),
+    calc('Calculate the mass of gas in the cylinder.', 1, n * gs[1], 'kg', M(E(`${I(n)} × ${N(gs[1])} = ${AV(n * gs[1], 'kg')}`))),
+    choose(R, 'The kelvin temperature of the gas is doubled and its volume is unchanged. What happens to the pressure?', 1, 'it doubles', ['it halves', 'it becomes four times as large', 'it stays the same'], 'It doubles ✓'),
+    text('State what is meant by one mole of a substance.', 1, 'The amount of substance that contains 6.02 × 10<sup>23</sup> particles (the Avogadro constant) ✓')
+  ]);
+};
+T.IG2 = R => {
+  const Vv = R.pick([1.0e-4, 2.0e-4, 5.0e-4]), p = R.pick([50, 100, 200, 500]), th = R.pick([20, 27]), Nn = p * Vv / (KB * KEL(th));
+  return NOFIG(2, { Vv, p, th }, `A glass bulb of volume ${V(Vv, M3)} contains gas at a low pressure of ${V(p, 'Pa')} and a temperature of ${TC(th)}.`, [
+    calc('Calculate the number of molecules of gas in the bulb.', 2, Nn, '', M(E('<i>pV</i> = <i>NkT</i>'), E(`<i>N</i> = ${N(p)} × ${N(Vv)} / (1.38 × 10<sup>−23</sup> × ${KEL(th)}) = ${A(Nn)}`)), NS),
+    calc('Calculate the number of molecules in each cubic metre of the gas.', 1, Nn / Vv, 'm<sup>−3</sup>', M(E(`${I(Nn)} / ${N(Vv)} = ${AV(Nn / Vv, 'm<sup>−3</sup>')}`))),
+    calc('Calculate the amount of gas in the bulb, in mol.', 1, Nn / NAV, 'mol', M(E(`${I(Nn)} / (6.02 × 10<sup>23</sup>) = ${AV(Nn / NAV, 'mol')}`))),
+    text('State how the Boltzmann constant <i>k</i> is related to the molar gas constant <i>R</i>.', 1, '<i>k</i> = <i>R</i> / <i>N</i><sub>A</sub> (the gas constant for one molecule) ✓')
+  ]);
+};
+T.IG3 = R => {
+  const gs = R.pick(GASES.slice(0, 4)), Vv = R.pick([0.0500, 0.0600, 0.0800]), th = R.pick([20.0, 27.0]), p1 = 1.01e5, p2 = R.pick([1.81e5, 2.11e5, 2.51e5]), dnT = (p2 - p1) * Vv / (RG * KEL(th)), dm = +(dnT * gs[1]).toPrecision(3), dn = dnT, Mm = dm / dn;
+  return NOFIG(3, { p1, Vv, th, p2, dm }, `A tyre contains gas at a pressure of ${V(p1, 'Pa', 3)}. More of the same gas is pumped into the tyre until the pressure is ${V(p2, 'Pa', 3)}. The mass of the wheel increases by ${V(dm, 'kg', 3)}. The volume of the gas is ${V(Vv, M3, 3)} and its temperature is ${TC(th, 3)} throughout.`, [
+    calc('Calculate the increase in pressure.', 1, p2 - p1, 'Pa', M(E(`${N(p2, 3)} − ${N(p1, 3)} = ${AV(p2 - p1, 'Pa')}`)), NS),
+    calc('Calculate the amount of gas, in mol, that is added to the tyre.', 2, dn, 'mol', M(E('Δ<i>n</i> = Δ<i>p</i> <i>V</i> / (<i>RT</i>)') + ' (volume and temperature constant)', E(`= ${I3(p2 - p1)} × ${N(Vv, 3)} / (8.31 × ${KEL(th)}) = ${AV(dn, 'mol')}`))),
+    calc('Calculate the molar mass of the gas.', 2, Mm, 'kg mol<sup>−1</sup>', M('molar mass = mass added / amount added', E(`= ${N(dm, 3)} / ${I3(dn)} = ${AV(Mm, 'kg mol<sup>−1</sup>')}`))),
+    text('Explain why the temperature must be the same for both pressure measurements.', 1, 'The pressure also depends on temperature, so a change in temperature would change the pressure even with no gas added ✓')
+  ]);
+};
+T.IG4 = R => {
+  const gs = R.pick(GASES), th = R.pick([0, 20, 27]), p = 1.0e5, Vb = R.pick([0.010, 0.50, 2.0, 15]), rho = p * gs[1] / (RG * KEL(th));
+  return NOFIG(2, { p, M0: gs[1], th, Vb }, `A balloon is filled with ${gs[0]} at a pressure of ${V(p, 'Pa')} and a temperature of ${TC(th)}. The molar mass of ${gs[0]} is ${MM(gs[1])}.`, [
+    calc('Calculate the volume occupied by one mole of the gas under these conditions.', 2, RG * KEL(th) / p, M3, M(E('<i>pV</i> = <i>nRT</i> with <i>n</i> = 1'), E(`<i>V</i> = 8.31 × ${KEL(th)} / ${N(p)} = ${AV(RG * KEL(th) / p, M3)}`))),
+    calc('Calculate the density of the gas.', 2, rho, 'kg m<sup>−3</sup>', M('density = mass of one mole / volume of one mole', E(`= ${N(gs[1])} / ${I(RG * KEL(th) / p)} = ${AV(rho, 'kg m<sup>−3</sup>')}`))),
+    calc(`The balloon has a volume of ${V(Vb, M3)}. Calculate the mass of gas in the balloon.`, 1, rho * Vb, 'kg', M(E(`${I(rho)} × ${N(Vb)} = ${AV(rho * Vb, 'kg')}`))),
+    choose(R, 'A second balloon contains a gas of greater molar mass at the same pressure and temperature. How does its density compare?', 1, 'it is greater', ['it is smaller', 'it is the same'], 'Greater: the same number of moles per unit volume, but each mole has more mass ✓')
+  ]);
+};
+T.IG5 = R => {
+  const gs = R.pick(GASES), Vv = R.pick([0.010, 0.020, 0.050]), th = 20, p1 = R.pick([2.0e6, 1.5e6]), p2 = R.pick([1.2e6, 1.0e6, 8.0e5]), n1 = p1 * Vv / (RG * 293), n2 = p2 * Vv / (RG * 293);
+  return NOFIG(2, { M0: gs[1], Vv, p1, p2 }, `A gas cylinder of volume ${V(Vv, M3)} contains ${gs[0]} at a pressure of ${V(p1, 'Pa')} and a temperature of 20 °C. Some gas is used, and the pressure falls to ${V(p2, 'Pa')} at the same temperature. The molar mass of ${gs[0]} is ${MM(gs[1])}.`, [
+    calc('Calculate the amount of gas, in mol, in the cylinder at the start.', 2, n1, 'mol', M(E('<i>n</i> = <i>pV</i> / (<i>RT</i>)'), E(`= ${N(p1)} × ${N(Vv)} / (8.31 × 293) = ${AV(n1, 'mol')}`))),
+    calc('Calculate the amount of gas, in mol, that remains in the cylinder.', 1, n2, 'mol', M(E(`${N(p2)} × ${N(Vv)} / (8.31 × 293) = ${AV(n2, 'mol')}`))),
+    calc('Calculate the mass of gas that has been used.', 2, (n1 - n2) * gs[1], 'kg', M(E(`amount used = ${I(n1)} − ${I(n2)} = ${I(n1 - n2)} mol`), E(`mass = ${I(n1 - n2)} × ${N(gs[1])} = ${AV((n1 - n2) * gs[1], 'kg')}`)), { tol: .03 }),
+    calc('Calculate the fraction of the original gas that remains.', 1, p2 / p1, '', M(E(`${N(p2)} / ${N(p1)} = ${A(p2 / p1)}`) + ' (the amount is proportional to the pressure)'), NS)
+  ]);
+};
+T.IG6 = R => {
+  const Vv = R.pick([2.0e-3, 5.0e-3, 0.010]), p1 = R.pick([1.0e5, 1.5e5, 2.0e5]), t1 = R.pick([17, 27]), t2 = R.pick([77, 127, 177]), n = p1 * Vv / (RG * KEL(t1)), p2 = p1 * KEL(t2) / KEL(t1), n2 = n * KEL(t1) / KEL(t2);
+  return NOFIG(2, { Vv, p1, t1, t2 }, `A rigid container of volume ${V(Vv, M3)} holds an ideal gas at a pressure of ${V(p1, 'Pa')} and a temperature of ${TC(t1)}. The container is heated to ${TC(t2)}.`, [
+    calc('Calculate the amount of gas in the container, in mol.', 2, n, 'mol', M(E('<i>n</i> = <i>pV</i> / (<i>RT</i>)'), E(`= ${N(p1)} × ${N(Vv)} / (8.31 × ${KEL(t1)}) = ${AV(n, 'mol')}`))),
+    calc(`Calculate the pressure of the gas at ${TC(t2)}.`, 2, p2, 'Pa', M(E('<i>p</i><sub>1</sub> / <i>T</i><sub>1</sub> = <i>p</i><sub>2</sub> / <i>T</i><sub>2</sub>'), E(`<i>p</i><sub>2</sub> = ${N(p1)} × ${KEL(t2)} / ${KEL(t1)} = ${AV(p2, 'Pa')}`))),
+    calc(`A valve is opened and gas escapes until the pressure returns to ${V(p1, 'Pa')}, with the temperature still at ${TC(t2)}. Calculate the amount of gas, in mol, that remains.`, 2, n2, 'mol', M('at the original pressure and volume, <i>nT</i> is constant', E(`<i>n</i> = ${I(n)} × ${KEL(t1)} / ${KEL(t2)} = ${AV(n2, 'mol')}`)))
+  ]);
+};
+T.IG7 = R => {
+  const gs = R.pick([['water', 0.018], ...GASES.slice(0, 4)]), mg = R.pick([1.0, 5.0, 10, 20]), m1 = gs[1] / NAV, Nn = mg * 1e-3 / gs[1] * NAV, Vm = RG * 273 / 1.01e5;
+  return NOFIG(2, { M0: gs[1], mg }, `The molar mass of ${gs[0]} is ${MM(gs[1])}.<br>${DNA}`, [
+    calc(`Calculate the mass of one molecule of ${gs[0]}.`, 1, m1, 'kg', M(E(`${N(gs[1])} / (6.02 × 10<sup>23</sup>) = ${AV(m1, 'kg')}`))),
+    calc(`Calculate the number of molecules in ${V(mg, 'g')} of ${gs[0]}.`, 2, Nn, '', M(E(`amount = ${N(mg * 1e-3)} / ${N(gs[1])} = ${I(mg * 1e-3 / gs[1])} mol`), E(`number = ${I(mg * 1e-3 / gs[1])} × 6.02 × 10<sup>23</sup> = ${A(Nn)}`)), NS),
+    calc('Calculate the volume of one mole of an ideal gas at a temperature of 273 K and a pressure of 1.01 × 10<sup>5</sup> Pa.', 2, Vm, M3, M(E('<i>V</i> = <i>nRT</i> / <i>p</i>'), E(`= 1 × 8.31 × 273 / (1.01 × 10<sup>5</sup>) = ${AV(Vm, M3)}`)), NS),
+    choose(R, 'How does the number of molecules in one mole of helium compare with the number in one mole of carbon dioxide?', 1, 'it is the same', ['it is smaller', 'it is greater'], 'The same: one mole of any substance contains the Avogadro number of particles ✓')
+  ]);
+};
+T.IG8 = R => {
+  const p1 = R.pick([2.0e5, 3.0e5, 4.0e5]), V1 = R.pick([1.0e-3, 2.0e-3, 3.0e-3]), p2 = 1.0e5, V2 = R.pick([2.0e-3, 4.0e-3, 5.0e-3]), pf = (p1 * V1 + p2 * V2) / (V1 + V2);
+  return NOFIG(2, { p1, p2, V1, V2 }, `Two containers are joined by a narrow tube fitted with a closed tap. Container <b>X</b> has a volume of ${V(V1, M3)} and holds gas at a pressure of ${V(p1, 'Pa')}. Container <b>Y</b> has a volume of ${V(V2, M3)} and holds the same gas at a pressure of ${V(p2, 'Pa')}. Both are at the same temperature. The tap is opened and the temperature does not change.`, [
+    choose(R, 'In which direction is the net flow of gas when the tap is opened?', 1, 'from X to Y', ['from Y to X', 'there is no net flow'], 'From <b>X</b> to <b>Y</b> (from higher to lower pressure) ✓'),
+    calc('Calculate the final pressure of the gas.', 3, pf, 'Pa', M('the total amount of gas is constant, and <i>n</i> ∝ <i>pV</i> at constant temperature', E(`<i>p</i> × (${N(V1)} + ${N(V2)}) = ${N(p1)} × ${N(V1)} + ${N(p2)} × ${N(V2)}`), E(`<i>p</i> = (${N(p1)} × ${N(V1)} + ${N(p2)} × ${N(V2)}) / (${N(V1)} + ${N(V2)}) = ${AV(pf, 'Pa')}`))),
+    calc('Calculate the fraction of all the gas that is in <b>X</b> at the end.', 1, V1 / (V1 + V2), '', M(E(`${N(V1)} / (${N(V1)} + ${N(V2)}) = ${A(V1 / (V1 + V2))}`) + ' (same pressure and temperature, so amount ∝ volume)'), NS),
+    text('State one assumption made about the gas.', 1, 'It behaves as an ideal gas (or: the volume of the connecting tube is negligible) ✓')
+  ]);
+};
+T.IG9 = R => {
+  const Vl = R.pick([4.0e-4, 5.0e-4, 6.0e-4, 3.0e-3]), p = 1.0e5, n = p * Vl / (RG * 310), Nn = n * NAV;
+  return NOFIG(2, { p, Vl }, `A person breathes in ${V(Vl, M3)} of air. In the lungs the air is at a pressure of ${V(p, 'Pa')} and a temperature of 37 °C. 21% of the molecules in air are oxygen molecules.`, [
+    calc('Calculate the amount of air breathed in, in mol.', 2, n, 'mol', M(E('<i>n</i> = <i>pV</i> / (<i>RT</i>) with <i>T</i> = 37 + 273 = 310 K'), E(`= ${N(p)} × ${N(Vl)} / (8.31 × 310) = ${AV(n, 'mol')}`))),
+    calc('Calculate the number of molecules of air breathed in.', 1, Nn, '', M(E(`${I(n)} × 6.02 × 10<sup>23</sup> = ${A(Nn)}`)), NS),
+    calc('Calculate the number of oxygen molecules breathed in.', 1, .21 * Nn, '', M(E(`0.21 × ${I(Nn)} = ${A(.21 * Nn)}`)), NS),
+    choose(R, 'The same volume of air is breathed in on a colder day and warms to 37 °C in the lungs at constant pressure. What happens to its volume?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases (volume ∝ kelvin temperature at constant pressure) ✓')
+  ]);
+};
+T.IG10 = R => {
+  const Vv = R.pick([1.0e-3, 2.0e-3]), n = R.pick([0.050, 0.10, 0.20]), k = n * RG / Vv / 1e3, ya = axisFor(k * 400 * 1.05), cr = [280, 300, 320, 340, 360, 380].map(x => [x, k * x * (1 + (R() - .5) * .02)]), xr = 400;
+  const fig = graph({ x: [0, 400, 100], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'T / K', yl: 'p / kPa', curves: [{ f: x => k * x, from: 0, to: 400 }], crosses: cr, reads: [[xr, k * xr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Vv, n }, stem: `A fixed mass of gas is sealed in a rigid container of volume ${V(Vv, M3)}. <b>Figure 1</b> shows how the pressure <i>p</i> of the gas varies with its kelvin temperature <i>T</i>, with a line of best fit that has been extended to the origin.`, parts: [
+    calc('Determine the gradient of the line of best fit.', 2, k, 'kPa K<sup>−1</sup>', M(`uses a large triangle, for example from (0, 0) to (${xr}, ${fx(k * xr, 1)})`, E(`gradient = ${fx(k * xr, 1)} / ${xr} = ${A(k)} kPa K<sup>−1</sup>`)), { tol: .05, noSkill: true }),
+    calc('Determine the amount of gas in the container, in mol.', 3, n, 'mol', M(E('<i>p</i> = (<i>nR</i> / <i>V</i>) × <i>T</i>, so gradient = <i>nR</i> / <i>V</i>'), E(`gradient = ${I(k * 1e3)} Pa K<sup>−1</sup>`), E(`<i>n</i> = ${I(k * 1e3)} × ${N(Vv)} / 8.31 = ${AV(n, 'mol')}`)), { tol: .05, noSkill: true }),
+    text('Explain why the line is expected to pass through the origin.', 1, 'For an ideal gas at constant volume, pressure is directly proportional to kelvin temperature; at absolute zero the molecules would exert no pressure ✓'),
+    choose(R, 'The experiment is repeated with twice the amount of gas in the same container. How does the gradient change?', 1, 'it doubles', ['it halves', 'it stays the same'], 'It doubles (gradient = <i>nR</i> / <i>V</i>) ✓')
+  ] };
+};
+/* ===== Molecular kinetic theory ===== */
+const MOLS = [['helium', 6.6e-27], ['nitrogen', 4.7e-26], ['oxygen', 5.3e-26], ['argon', 6.6e-26]];
+const ASSUME = ['The molecules are in continual random motion and collisions are (perfectly) elastic ✓', 'the volume of the molecules is negligible compared with the volume of the gas ✓', 'there are no forces between molecules except during collisions, and the time of a collision is negligible compared with the time between collisions ✓'];
+const KS1 = 'kg', CRMS = '<i>c</i><sub>rms</sub>';
+T.KT1 = R => {
+  const ml = R.pick(MOLS), th = R.pick([20, 27, 100, 500]), Tk = th + 273, Ek = 1.5 * KB * Tk, c = Math.sqrt(2 * Ek / ml[1]);
+  return NOFIG(2, { m: ml[1], th }, `A sample of ${ml[0]} gas is at a temperature of ${TC(th)}. The mass of one ${ml[0]} ${ml[0] === 'helium' || ml[0] === 'argon' ? 'atom' : 'molecule'} is ${V(ml[1], 'kg')}.<br>${DK}`, [
+    calc('Calculate the mean kinetic energy of a particle of the gas.', 2, Ek, 'J', M(E('mean kinetic energy = (3/2)<i>kT</i>') + ` with <i>T</i> = ${Tk} K`, E(`= 1.5 × 1.38 × 10<sup>−23</sup> × ${Tk} = ${AV(Ek, 'J')}`))),
+    calc('Calculate the root mean square speed of the particles.', 2, c, MS1, M(E('½<i>m</i>(<i>c</i><sub>rms</sub>)<sup>2</sup> = (3/2)<i>kT</i>'), E(`<i>c</i><sub>rms</sub> = √(2 × ${I(Ek)} / ${N(ml[1])}) = ${AV(c, MS1)}`))),
+    choose(R, 'The kelvin temperature of the gas is doubled. What happens to the root mean square speed?', 1, 'it increases by a factor of √2', ['it doubles', 'it becomes four times as large', 'it stays the same'], 'It increases by a factor of √2 (<i>c</i><sub>rms</sub> ∝ √<i>T</i>) ✓'),
+    text('State what is meant by the root mean square speed.', 1, 'The square root of the mean of the squares of the speeds of the molecules ✓'),
+    choose(R, 'A different gas is at the same temperature. How does the mean kinetic energy of its molecules compare?', 1, 'it is the same', ['it is greater for the gas with heavier molecules', 'it is greater for the gas with lighter molecules'], 'The same: mean kinetic energy depends only on the temperature ✓')
+  ]);
+};
+T.KT2 = R => {
+  const gs = R.pick([['helium', 0.18], ['air', 1.2], ['carbon dioxide', 2.0], ['hydrogen', 0.090]]), p = R.pick([1.0e5, 1.5e5, 2.0e5]), c = Math.sqrt(3 * p / gs[1]), Vv = R.pick([0.010, 0.050, 0.20]);
+  return NOFIG(2, { rho: gs[1], p, Vv }, `A container holds ${gs[0]} at a pressure of ${V(p, 'Pa')}. The density of the gas is ${V(gs[1], 'kg m<sup>−3</sup>')}.`, [
+    text('The kinetic theory equation is <i>pV</i> = ⅓<i>Nm</i>(<i>c</i><sub>rms</sub>)<sup>2</sup>. Show that this can be written as <i>p</i> = ⅓ρ(<i>c</i><sub>rms</sub>)<sup>2</sup>, where ρ is the density of the gas.', 2, M('<i>Nm</i> is the total mass of the gas', 'density ρ = <i>Nm</i> / <i>V</i>, so <i>p</i> = ⅓(<i>Nm</i> / <i>V</i>)(<i>c</i><sub>rms</sub>)<sup>2</sup> = ⅓ρ(<i>c</i><sub>rms</sub>)<sup>2</sup>')),
+    calc('Calculate the root mean square speed of the molecules.', 2, c, MS1, M(E('<i>c</i><sub>rms</sub> = √(3<i>p</i> / ρ)'), E(`= √(3 × ${N(p)} / ${N(gs[1])}) = ${AV(c, MS1)}`))),
+    calc(`The container has a volume of ${V(Vv, M3)}. Calculate the total kinetic energy of the molecules.`, 2, 1.5 * p * Vv, 'J', M(E('total kinetic energy = ½<i>Nm</i>(<i>c</i><sub>rms</sub>)<sup>2</sup> = (3/2)<i>pV</i>'), E(`= 1.5 × ${N(p)} × ${N(Vv)} = ${AV(1.5 * p * Vv, 'J')}`))),
+    choose(R, 'The gas is compressed to half its volume at constant temperature. What happens to the root mean square speed?', 1, 'it stays the same', ['it doubles', 'it halves', 'it increases by a factor of √2'], 'It stays the same: the temperature is unchanged ✓')
+  ]);
+};
+T.KT3 = R => {
+  const sp = find(() => pickN(R, [300, 350, 400, 450, 500, 550, 600, 650, 700, 800], 5), a => Math.max(...a) - Math.min(...a) >= 250), mean = sp.reduce((a, b) => a + b, 0) / 5, ms = sp.reduce((a, b) => a + b * b, 0) / 5, rms = Math.sqrt(ms);
+  return NOFIG(3, { sp }, `Table 1 shows the speeds of five molecules of a gas at one instant.<br>` + tableH('Table 1', ['Molecule', 'Speed / m s<sup>−1</sup>'], sp.map((x, i) => [i + 1, x])), [
+    calc('Calculate the mean speed of the five molecules.', 1, mean, MS1, M(E(`(${sp.join(' + ')}) / 5 = ${AV(mean, MS1)}`)), NS),
+    calc('Calculate the mean square speed of the five molecules.', 2, ms, 'm<sup>2</sup> s<sup>−2</sup>', M(E(`(${sp.map(x => x + '<sup>2</sup>').join(' + ')}) / 5`), E(`= ${AV(ms, 'm<sup>2</sup> s<sup>−2</sup>')}`)), NS),
+    calc('Calculate the root mean square speed of the five molecules.', 1, rms, MS1, M(E(`√(${I3(ms)}) = ${AV(rms, MS1)}`)), NS),
+    choose(R, 'How does the root mean square speed compare with the mean speed when the molecules have different speeds?', 1, 'it is greater than the mean speed', ['it is less than the mean speed', 'it is equal to the mean speed'], 'Greater: squaring gives more weight to the higher speeds ✓'),
+    text('Explain why the mean velocity of the molecules of a gas in a container is zero.', 1, 'The molecules move in random directions, so their velocities (which are vectors) cancel out ✓')
+  ]);
+};
+T.KT4 = R => {
+  const ml = R.pick(MOLS), l = R.pick([0.10, 0.20, 0.30, 0.50]), c = R.pick([400, 500, 600, 1200]), m = ml[1], dp = 2 * m * c, tc = 2 * l / c, F = m * c * c / l, pr = F / (l * l);
+  const s = new Scene('A gas particle moving towards one wall of a hollow cube'); s.rect(0, 0, 200, 200, { w: 2.2, tag: 'cube' }); blob(s, 60, 100, 6); force(s, 66, 100, 80, 0, '*c*', { at: [0, -10] }); s.label(214, 105, 'W', { bold: true, anchor: 'start' }); s.label(52, 122, 'P', { bold: true }); s.dim(0, 226, 200, 226, '*l*', { below: true });
+  return { sf: 2, scenes: [s], data: { m, l, c }, stem: `<b>Figure 1</b> shows a single particle <b>P</b> of an ideal gas inside a hollow cube of side length <i>l</i> = ${V(l, 'm')}. <b>P</b> has a mass of ${V(m, 'kg')} and travels at a velocity <i>c</i> = ${V(c, MS1)} perpendicular to wall <b>W</b>. It collides elastically with <b>W</b> and with the opposite wall.`, parts: [
+    calc('Calculate the magnitude of the change in momentum of <b>P</b> during one collision with <b>W</b>.', 2, dp, 'kg m s<sup>−1</sup>', M('the velocity reverses, so the change in momentum is −<i>mc</i> − <i>mc</i> = −2<i>mc</i>', E(`2 × ${N(m)} × ${N(c)} = ${AV(dp, 'kg m s<sup>−1</sup>')}`))),
+    calc('Calculate the time between successive collisions of <b>P</b> with <b>W</b>.', 1, tc, 's', M(E(`distance travelled = 2<i>l</i>, so time = 2 × ${N(l)} / ${N(c)} = ${AV(tc, 's')}`))),
+    calc('Calculate the average force that <b>P</b> exerts on <b>W</b>.', 2, F, 'N', M('force = rate of change of momentum (Newton’s second law), and the force on the wall is equal and opposite to the force on the particle (Newton’s third law)', E(`<i>F</i> = ${I(dp)} / ${I(tc)} = ${AV(F, 'N')}`))),
+    calc('Calculate the contribution of <b>P</b> to the pressure on <b>W</b>.', 1, pr, 'Pa', M(E(`<i>p</i> = <i>F</i> / <i>A</i> = ${I(F)} / ${N(l)}<sup>2</sup> = ${AV(pr, 'Pa')}`))),
+    text('Explain why a real gas exerts a steady pressure on the wall even though each collision is brief.', 1, 'There is a very large number of molecules, so collisions with the wall are extremely frequent and the force averages to a steady value ✓')
+  ] };
+};
+T.KT5 = R => {
+  const n = R.pick([0.50, 1.0, 2.0, 5.0]), th = R.pick([20, 27, 100]), U = 1.5 * n * RG * (th + 273);
+  return NOFIG(2, { n, th }, `A container holds ${V(n, 'mol')} of an ideal monatomic gas at ${TC(th)}.<br>${DR}`, [
+    text('State three assumptions of the kinetic theory of an ideal gas.', 3, ASSUME.join('<br>')),
+    choose(R, 'What does the internal energy of an ideal gas consist of?', 1, 'the kinetic energy of the molecules only', ['the potential energy of the molecules only', 'equal amounts of kinetic and potential energy'], 'Kinetic energy only ✓'),
+    text('Explain your answer.', 1, 'There are no forces between the molecules of an ideal gas (except during collisions), so they have no potential energy ✓'),
+    calc('Calculate the internal energy of the gas.', 2, U, 'J', M(E('total kinetic energy = (3/2)<i>nRT</i>') + ` with <i>T</i> = ${th + 273} K`, E(`= 1.5 × ${N(n)} × 8.31 × ${th + 273} = ${AV(U, 'J')}`)))
+  ]);
+};
+T.KT6 = R => {
+  const th = R.pick([17, 20, 27]), ms = R.pick([1.0e-15, 2.0e-16, 5.0e-16]), Ek = 1.5 * KB * (th + 273), c = Math.sqrt(2 * Ek / ms);
+  return NOFIG(2, { th, ms }, `Smoke particles suspended in air are observed through a microscope. The air is at ${TC(th)} and each smoke particle has a mass of ${V(ms, 'kg')}.<br>${DK}`, [
+    text('Describe the motion of the smoke particles.', 1, 'Each particle moves randomly, with frequent, unpredictable changes of direction (a jittery, zig-zag motion) ✓'),
+    text('Explain what this observation shows about air molecules.', 2, M('The smoke particles are hit by fast-moving air molecules that are too small to be seen', 'the collisions are random and uneven, so the air molecules must be in rapid random motion')),
+    calc('Calculate the mean kinetic energy of an air molecule.', 1, Ek, 'J', M(E(`mean kinetic energy = 1.5 × 1.38 × 10<sup>−23</sup> × ${th + 273} = ${AV(Ek, 'J')}`))),
+    calc('The smoke particles have the same mean kinetic energy as the air molecules. Calculate the root mean square speed of a smoke particle.', 2, c, MS1, M(E('½<i>m</i>(<i>c</i><sub>rms</sub>)<sup>2</sup> = mean kinetic energy'), E(`<i>c</i><sub>rms</sub> = √(2 × ${I(Ek)} / ${N(ms)}) = ${AV(c, MS1)}`))),
+    choose(R, 'The temperature of the air increases. What happens to the motion of the smoke particles?', 1, 'it becomes more vigorous', ['it becomes less vigorous', 'it does not change'], 'More vigorous: the air molecules have more kinetic energy ✓')
+  ]);
+};
+T.KT7 = R => {
+  const g2 = R.pick([['nitrogen', 0.028], ['oxygen', 0.032], ['argon', 0.040], ['carbon dioxide', 0.044]]), th = R.pick([0, 20, 27]), Tk = th + 273, cHe = Math.sqrt(3 * RG * Tk / 0.0040), ratio = Math.sqrt(g2[1] / 0.0040);
+  return NOFIG(2, { M2: g2[1], th }, `A mixture of helium and ${g2[0]} is at a temperature of ${TC(th)}. The molar mass of helium is 0.0040 kg mol<sup>−1</sup> and the molar mass of ${g2[0]} is ${MM(g2[1])}.<br>${DR}`, [
+    choose(R, 'How does the mean kinetic energy of a helium atom compare with that of ' + (g2[0]==='argon'?'an argon atom':(g2[0]==='oxygen'?'an ':'a ') + g2[0] + ' molecule') + '?', 1, 'they are equal', ['it is greater for helium', 'it is smaller for helium'], 'Equal: both gases are at the same temperature ✓'),
+    calc('Calculate the root mean square speed of the helium atoms.', 3, cHe, MS1, M(E('for one mole, ½<i>M</i>(<i>c</i><sub>rms</sub>)<sup>2</sup> = (3/2)<i>RT</i>, where <i>M</i> is the molar mass'), E(`<i>c</i><sub>rms</sub> = √(3 × 8.31 × ${Tk} / 0.0040)`), E(`= ${AV(cHe, MS1)}`))),
+    calc(`Calculate the ratio root mean square speed of helium atoms / root mean square speed of ${g2[0]} ${g2[0]==='argon'?'atoms':'molecules'}.`, 2, ratio, '', M('at the same temperature <i>c</i><sub>rms</sub> ∝ 1/√<i>M</i>', E(`ratio = √(${N(g2[1])} / 0.0040) = ${A(ratio)}`)), NS),
+    text('Suggest why there is very little helium in the Earth’s atmosphere.', 1, 'Helium atoms have a high speed, and the fastest can exceed the escape velocity and leave the atmosphere ✓')
+  ]);
+};
+T.KT8 = R => {
+  const n = R.pick([0.50, 1.0, 2.0]), t1 = R.pick([17, 27]), t2 = R.pick([127, 227, 327]), dU = 1.5 * n * RG * (t2 - t1), rat = Math.sqrt((t2 + 273) / (t1 + 273));
+  return NOFIG(2, { n, t1, t2 }, `A rigid container holds ${V(n, 'mol')} of an ideal monatomic gas. The gas is heated from ${TC(t1)} to ${TC(t2)}.<br>${DR}`, [
+    calc('Calculate the increase in the internal energy of the gas.', 2, dU, 'J', M(E('Δ<i>U</i> = (3/2)<i>nR</i>Δ<i>T</i>'), E(`= 1.5 × ${N(n)} × 8.31 × (${t2} − ${t1}) = ${AV(dU, 'J')}`))),
+    calc('State the energy that must be supplied to the gas by heating.', 1, dU, 'J', M(`${AV(dU, 'J')} (no work is done because the volume is constant)`), NS),
+    calc('Calculate the ratio root mean square speed after heating / root mean square speed before heating.', 2, rat, '', M(E('<i>c</i><sub>rms</sub> ∝ √<i>T</i> (kelvin temperature)'), E(`ratio = √(${t2 + 273} / ${t1 + 273}) = ${A(rat)}`)), NS),
+    calc('Calculate the ratio pressure after heating / pressure before heating.', 1, (t2 + 273) / (t1 + 273), '', M(E(`${t2 + 273} / ${t1 + 273} = ${A((t2 + 273) / (t1 + 273))}`)), NS)
+  ]);
+};
+T.KT9 = R => {
+  const p1 = R.pick([1.0e5, 1.2e5, 2.0e5]), t1 = R.pick([17, 20, 27]), t2 = R.pick([80, 100, 150]), p2 = p1 * (t2 + 273) / (t1 + 273);
+  return NOFIG(2, { p1, t1, t2 }, `A sealed, rigid container holds an ideal gas at a pressure of ${V(p1, 'Pa')} and a temperature of ${TC(t1)}. The gas is heated to ${TC(t2)}.`, [
+    text('Use the kinetic theory to explain why the pressure of the gas increases.', 3, MOLEX_T.join('<br>')),
+    calc('Calculate the new pressure of the gas.', 2, p2, 'Pa', M(E('<i>p</i> ∝ <i>T</i> at constant volume'), E(`<i>p</i> = ${N(p1)} × ${t2 + 273} / ${t1 + 273} = ${AV(p2, 'Pa')}`))),
+    calc('Calculate the factor by which the mean kinetic energy of the molecules increases.', 1, (t2 + 273) / (t1 + 273), '', M(E(`mean kinetic energy ∝ <i>T</i>: ${t2 + 273} / ${t1 + 273} = ${A((t2 + 273) / (t1 + 273))}`)), NS),
+    choose(R, 'What happens to the density of the gas during the heating?', 1, 'it stays the same', ['it increases', 'it decreases'], 'It stays the same: the mass and the volume are unchanged ✓')
+  ]);
+};
+T.KT10 = R => {
+  const a1 = 400, a2 = 600, swap = R.chance(.5), f = a => v => a1 * Math.E * v * v / (a * a * a) * Math.exp(-v * v / (a * a)), hot = swap ? 'A' : 'B', cold = swap ? 'B' : 'A', ml = R.pick(MOLS), th = R.pick([27, 127, 327]), c = Math.sqrt(3 * KB * (th + 273) / ml[1]);
+  const fig = graph({ x: [0, 2000, 500], y: [0, 1.2, .2], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'speed / m s^{−1}', yl: 'relative number of molecules', curves: [{ f: f(a1), from: 0, to: 2000, name: cold, at: [300, 1.08] }, { f: f(a2), from: 0, to: 2000, name: hot, at: [1050, .46] }], reads: [[a1, 1]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { swap, m: ml[1], th }, stem: `<b>Figure 1</b> shows the distribution of molecular speeds in the same sample of gas at two different temperatures, <b>A</b> and <b>B</b>.`, parts: [
+    choose(R, 'Which curve is for the higher temperature?', 1, hot, [cold], `${hot}: the peak is at a higher speed (and is lower and broader) ✓`),
+    text('State two ways in which the distribution changes when the temperature is increased.', 2, M('The most probable speed (the peak) moves to a higher speed', 'the peak is lower and the curve is more spread out, with more molecules at high speeds')),
+    choose(R, 'How do the areas under the two curves compare?', 1, 'they are equal', ['the area is greater at the higher temperature', 'the area is smaller at the higher temperature'], 'Equal: the area represents the total number of molecules, which is the same ✓'),
+    calc(`The molecules each have a mass of ${V(ml[1], 'kg')}. Calculate the root mean square speed of the molecules at ${TC(th)}.`, 2, c, MS1, M(E('½<i>m</i>(<i>c</i><sub>rms</sub>)<sup>2</sup> = (3/2)<i>kT</i>') + ` with <i>T</i> = ${th + 273} K`, E(`<i>c</i><sub>rms</sub> = √(3 × 1.38 × 10<sup>−23</sup> × ${th + 273} / ${N(ml[1])}) = ${AV(c, MS1)}`))),
+    text('Explain why the molecules of a gas have a range of speeds.', 1, 'The molecules collide randomly with each other, and energy (momentum) is exchanged in each collision ✓')
+  ] };
+};
+const ECF = { TE11: { b: 'a' }, LH1: { c: 'ab' }, LH2: { c: 'b' }, GL7: { b: 'a' }, GL10: { d: 'ab' } };
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number((a * (1 + 1e-9)).toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number((a * (1 + 1e-9)).toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  const E0 = typeof ECF !== 'undefined' && ECF[q.id], ECFX = E0 ? (typeof E0 === 'function' ? E0(q.data) : E0) : {};   // ecf links set by hand where numbers alone mislead
+  const ecfNote = l => 'Allow ecf from their answer' + (l.length > 1 ? 's' : '') + ' to ' + (l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0]) + '.';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(p.ans < 0 ? lo : Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    const fixed = ECFX[L[i]];
+    if (fixed !== undefined){ if (fixed && !g.some(x => /ecf/.test(x))) g.push(ecfNote([...fixed].map(c => '(' + c + ')'))); }
+    else if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      const findNum = (m, a) => { for (let k = m.indexOf(a); k >= 0; k = m.indexOf(a, k + 1)){ const b = m[k - 1] || '', b2 = m[k - 2] || '', c = m[k + a.length] || '';
+          if (/[\d.^]/.test(b) || (b === '−' && b2 === '^')) continue;                       // inside another number or an exponent
+          if (c === '^' && a === '10') continue;                                              // a power of ten, not a value
+          if (a.includes('×')){ if (/\d/.test(c)) continue; return [k, a.length]; }          // a different power of ten
+          const full = m.slice(k).match(/^\d*\.?\d+/)[0].replace(/\.$/, ''), dp = a.includes('.') ? a.split('.')[1].length : 0;
+          if (full === a || Number(full).toFixed(dp) === a) return [k, full.length];          // the same value, perhaps shown to more figures
+        } return null; };
+      const hasNum = (m, a) => !!findNum(m, a);
+      let own = plain(p.ms);                                                                  // the part's own result is not a carried value
+      for (const a of [plain(I(Math.abs(p.ans))), plain(A(Math.abs(p.ans)))]) for (let f = findNum(own, a); f; f = findNum(own, a)) own = own.slice(0, f[0]) + '#' + own.slice(f[0] + f[1]);
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0 || pj.int) continue; const a = plain(A(Math.abs(pj.ans))), a4 = plain(I(Math.abs(pj.ans))), m = own; if ((hasNum(m, a) || hasNum(m, a4)) && !hasNum(given, a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length && !g.some(x => /ecf/.test(x))) g.push(ecfNote(ecf));
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], ''], ['Bq', ['bq', 'becquerel', 'becquerels', 's-1'], 'Accept s<sup>−1</sup>.'], ['s<sup>−1</sup>', ['s-1', '/s', 'persecond'], ''], ['T', ['t', 'tesla'], ''], ['N kg<sup>−1</sup>', ['nkg-1', 'n/kg', 'ms-2', 'm/s2'], 'Accept m s<sup>−2</sup>.'], ['J kg<sup>−1</sup>', ['jkg-1', 'j/kg'], ''], ['N m<sup>2</sup> kg<sup>−2</sup>', ['nm2kg-2', 'nm^2kg^-2'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  ASF = 2; ASF = T[tpl](makeRand(seedFor(tpl, seed))).sf || 2;      // a first pass finds the significant figures of the data
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : p.s3 ? N(p.ans, 3) : A(p.ans); });      // s3: shown to 3 sf, like the table it completes
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+// a drop-down option can only hold plain text, so superscripts and subscripts are written with Unicode characters
+const SUPC = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '−': '⁻', '-': '⁻', '+': '⁺' }, SUBC = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', e: 'ₑ' };
+const uni = (s, map, mark) => [...s].every(c => map[c]) ? [...s].map(c => map[c]).join('') : mark + '(' + s + ')';
+const optText = h => String(h).replace(/<sup>(.*?)<\/sup>/g, (m, s) => uni(s, SUPC, '^')).replace(/<sub>(.*?)<\/sub>/g, (m, s) => uni(s, SUBC, '_')).replace(/<[^>]+>/g, '');
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${optText(o)}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like GL3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>
