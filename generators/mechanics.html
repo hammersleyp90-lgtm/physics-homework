@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Mechanics Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+.nuc{display:inline-flex;flex-direction:column;vertical-align:-0.42em;font-size:.68em;line-height:1.02;text-align:right;margin-right:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Mechanics Question Generator</h1>
+    <p>AQA-style practice on section 3.4.1 (Force, energy and momentum). 79 question types and many thousands of different questions with mark schemes: force, beam, slope, pulley and projectile diagrams, motion and force–time graphs, tables of results, plus calculation and description questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="PE3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number(x.toPrecision(n));
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    const r = Number(x.toPrecision(n));      // round the value itself first: dividing by a power of ten can turn 1.95 into 1.9499…
+    let e = Math.floor(Math.log10(Math.abs(r)) + 1e-12), m = r / Math.pow(10, e);
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+let ASF = 2;                                          // significant figures of the data in the question being built
+const A = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : N(x, 3);      // answers: 3 sf (2 sf when exact and the data are given to 2 sf)
+const AV = (x, unit) => A(x) + ' ' + unit;
+const I3 = x => isNice(x, 3) ? N(x, 3) : N(x, 4);      // a working value from data given to 3 sf
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? 1 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside, halo: !!o.halo });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}${l.halo ? ' stroke="#fff" stroke-width="4" paint-order="stroke"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+// axis label: ^{..} superscript, _{..} subscript
+const axl = s => esc(s).replace(/\^\{([^}]*)\}/g, '<tspan dy="-6" font-size="10">$1</tspan><tspan dy="6">\u200b</tspan>').replace(/_\{([^}]*)\}/g, '<tspan dy="4" font-size="10">$1</tspan><tspan dy="-4">\u200b</tspan>');
+const axp = s => String(s).replace(/[\^_]\{([^}]*)\}/g, '$1');
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = g.top ? 16 : 52, mt = g.top ? 52 : 16, mr = 22;      // top: the r axis is at the top (all values negative)
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(Math.abs(m)) + 1e-9));      // y may run downwards (magnitude scales): then yM is negative
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${g.top ? mt - 10 : mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(xa <= 0 && xb >= 0 ? 0 : xa), ay0 = Y(ya <= 0 && yb >= 0 ? 0 : ya);
+  let marks = '';
+  (g.shade || []).forEach(c => { const pts = []; for (let i = 0; i <= 120; i++){ const x = c.from + (c.to - c.from) * i / 120; pts.push(n2(X(x)) + ',' + n2(Y(Math.min(c.f(x), yb)))); } pts.push(n2(X(c.to)) + ',' + n2(Y(Math.max(ya, 0))), n2(X(c.from)) + ',' + n2(Y(Math.max(ya, 0)))); marks += `<polygon points="${pts.join(' ')}" fill="#c9cfd4" fill-opacity="0.65" stroke="none"/>`; });
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    if (c.pts) c.pts.forEach(p => pts.push(n2(X(p[0])) + ',' + n2(Y(p[1]))));      // straight-line sections: exact corners
+    else for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= Math.min(ya, yb) - 1e-9 && y <= Math.max(ya, yb) + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.dots || []).forEach(d => { marks += `<circle cx="${n2(X(d.x))}" cy="${n2(Y(d.y))}" r="4.2" fill="#000"/><text x="${n2(X(d.x) + (d.dx || 9))}" y="${n2(Y(d.y) + (d.dy || 5))}" font-weight="700" font-size="15" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(d.t)}</text>`; });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(axp(g.yl))} against ${esc(axp(g.xl))}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${g.top ? 20 : th - 8}" text-anchor="middle">${axl(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${axl(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [y1, y2] = g.y, ya = Math.min(y1, y2), yb = Math.max(y1, y2), inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.dots || []).forEach(p => { if (!inX(p.x) || !inY(p.y)) e.push('marked nuclide outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+/* ---------- mechanics: shared helpers ---------- */
+const TOPICS = { SV: 'Scalars and vectors', MO: 'Moments', SL: 'Motion along a straight line', PR: 'Projectile motion', NL: 'Newton’s laws of motion', MM: 'Momentum', WE: 'Work, energy and power', CE: 'Conservation of energy' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const NS = { noSkill: true };
+const I = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join(' ')}</tr> ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join(' ')}</tr>`).join(' ')}</table>`;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const rad = d => d * Math.PI / 180, sn = d => Math.sin(rad(d)), cs = d => Math.cos(rad(d)), tn = d => Math.tan(rad(d)), deg = x => x * 180 / Math.PI;
+const g = GRAV, GS = '9.81';
+const M = (...a) => a.map(x => x + ' ✓').join('<br>');      // one marking point per line
+const E = eq;
+const DG = x => N(x) + '°';
+const AD = x => A(x) + '°';
+const LB = (x, u, sf = 2) => N(x, sf).replace(/<sup>(.*?)<\/sup>/g, '^{$1}') + (u ? (u === '°' ? '°' : ' ' + u) : '');      // a value as a diagram label
+const KG = 'kg', NU = 'N', JU = 'J', WU = 'W', SU = 's', MU = 'm', NMU = 'N m', NSU = 'N s', KGMS = 'kg m s<sup>−1</sup>';
+const VECS = ['velocity', 'displacement', 'acceleration', 'force', 'momentum', 'weight'], SCALS = ['speed', 'distance', 'mass', 'kinetic energy', 'time', 'power', 'work done', 'temperature'];
+const PRINC = ['For a body in equilibrium ✓', 'the sum of the clockwise moments about any point equals the sum of the anticlockwise moments about that point ✓'];
+const COUPLE = ['A pair of equal and opposite (parallel) forces ✓', 'that do not act along the same line ✓'];
+/* ---------- drawing helpers ---------- */
+const hatchH = (s, x1, x2, y, below = true) => { s.line(x1, y, x2, y, { tag: 'surface' }); const d = below ? 8 : -8; for (let x = x1 + 10; x <= x2; x += 12) s.line(x, y, x - 8, y + d, { w: 1, free: true }); s.ext(x1, y + d); };
+const hatchV = (s, x, y1, y2, left = true) => { s.line(x, y1, x, y2, { tag: 'wall' }); const d = left ? -8 : 8; for (let y = y1 + 10; y <= y2; y += 12) s.line(x, y, x + d, y - 8, { w: 1, free: true }); s.ext(x + d, y1); };
+// a force (or velocity) arrow with its label just beyond the tip
+function force(s, x, y, dx, dy, lab, o = {}){
+  s.arrow(x, y, x + dx, y + dy, { w: 2.2, tag: 'arrow' }); if (!lab) return s;
+  const l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, tx = x + dx, ty = y + dy;
+  if (o.at) return s.label(tx + o.at[0], ty + o.at[1], lab, { anchor: o.anchor || 'middle' });
+  if (Math.abs(ux) > .75) s.label(tx + ux * 8, ty + 5, lab, { anchor: ux > 0 ? 'start' : 'end' }); else s.label(tx + ux * 10, ty + (uy > 0 ? 19 : -8), lab);
+  return s;
+}
+const blob = (s, x, y, r = 4) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+// a horizontal beam; positions are given in metres and mapped on to the drawing
+function beamFig(aria, L, o = {}){
+  const s = new Scene(aria), x0 = 0, W = o.W || 440, y = 0, th = 14, X = p => x0 + p / L * W;
+  s.rect(X(o.from || 0), y - th / 2, X(o.to === undefined ? L : o.to) - X(o.from || 0), th, { fill: '#d9dde1', tag: 'beam' });
+  return { s, X, y, top: y - th / 2, bot: y + th / 2,
+    pivot: (p, lab) => { const x = X(p); s.poly([[x, y + th / 2], [x - 13, y + th / 2 + 24], [x + 13, y + th / 2 + 24]], { close: true, fill: '#fff', tag: 'pivot' }); if (lab) s.label(x, y + th / 2 + 43, lab, { bold: true }); },
+    down: (p, lab, len = 62, o2) => force(s, X(p), y + th / 2, 0, len, lab, o2),
+    up: (p, lab, len = 62, o2) => force(s, X(p), y - th / 2, 0, -len, lab, o2),
+    dim: (a, b, lab, lev = 1, below = false) => { const yy = below ? y + th / 2 + 22 + lev * 30 : y - th / 2 - 4 - lev * 30; [a, b].forEach(p => s.line(X(p), below ? y + th / 2 + 3 : y - th / 2 - 3, X(p), yy + (below ? 6 : -6), { w: .9, dash: '3 3', free: true })); s.dim(X(a), yy, X(b), yy, lab, { below }); } };
+}
+// a slope rising to the right at th degrees with a block on it
+function slopeFig(aria, th, o = {}){
+  const s = new Scene(aria), L = o.L || 380, a = rad(th), x1 = L * Math.cos(a), y1 = -L * Math.sin(a), u = [Math.cos(a), -Math.sin(a)], n = [-Math.sin(a), -Math.cos(a)];
+  s.poly([[0, 0], [x1, 0], [x1, y1]], { close: true, tag: 'slope' });
+  s.arc(0, 0, 58, 0, th, { w: 1.1, tag: 'angle arc' }); s.label(th < 14 ? 122 : th < 18 ? 84 : 70, -4.5, DG(th), { anchor: 'start' });
+  const f = o.f === undefined ? .6 : o.f, bw = o.bw || 58, bh = o.bh || 34, P = [L * f * u[0], L * f * u[1]], c = (du, dn) => [P[0] + du * u[0] + dn * n[0], P[1] + du * u[1] + dn * n[1]];
+  if (!o.noBlock) s.poly([c(-bw / 2, 0), c(bw / 2, 0), c(bw / 2, bh), c(-bw / 2, bh)], { close: true, fill: '#d9dde1', tag: 'block' });
+  return { s, a, u, n, P, C: c(0, bh / 2), c, x1, y1, bw, bh };
+}
+const box = (s, x, y, w, h, lab) => { s.rect(x, y, w, h, { fill: '#d9dde1', tag: 'block' }); if (lab) s.label(x + w / 2, y + h / 2 + 5, lab, { inside: true }); };
+
+/* ===== Scalars and vectors ===== */
+T.SV1 = R => {
+  const PL = [3.0, 4.0, 5.0, 6.0, 8.0, 9.0, 12, 15, 20, 24], v = find(() => ({ F1: R.pick(PL), F2: R.pick(PL), m: R.pick([2.0, 2.5, 4.0, 5.0, 8.0]) }), o => o.F1 !== o.F2 && o.F1 / o.F2 < 4 && o.F2 / o.F1 < 4);
+  const { F1, F2, m } = v, F = Math.hypot(F1, F2), th = deg(Math.atan(F2 / F1)), a = F / m, k = 190 / Math.max(F1, F2);
+  const s = new Scene('Two perpendicular forces acting on an object'); blob(s, 0, 0, 5);
+  force(s, 0, 0, F1 * k, 0, LB(F1, 'N')); force(s, 0, 0, 0, -F2 * k, LB(F2, 'N')); s.poly([[14, 0], [14, -14], [0, -14]], { w: 1, tag: 'right angle' });
+  return { sf: 2, scenes: [s], data: { F1, F2, m }, stem: `<b>Figure 1</b> shows the only two forces that act on an object of mass ${V(m, 'kg')}. The forces are at right angles to each other.`, parts: [
+    choose(R, 'Which of these is a vector quantity?', 1, R.pick(VECS), pickN(R, SCALS, 3), 'A vector has both magnitude and direction ✓'),
+    calc('Calculate the magnitude of the resultant force on the object.', 2, F, 'N', M(E(`<i>F</i><sup>2</sup> = ${N(F1)}<sup>2</sup> + ${N(F2)}<sup>2</sup>`), E(`<i>F</i> = √(${N(F1)}<sup>2</sup> + ${N(F2)}<sup>2</sup>) = ${AV(F, 'N')}`))),
+    calc(`Calculate the angle between the resultant force and the ${N(F1)} N force.`, 1, th, '°', M(E(`θ = tan<sup>−1</sup>(${N(F2)} / ${N(F1)}) = ${AD(th)}`))),
+    calc('Calculate the magnitude of the acceleration of the object.', 1, a, MS2, M(E(`<i>a</i> = <i>F</i> / <i>m</i> = ${I(F)} / ${N(m)} = ${AV(a, MS2)}`))),
+    text('State the direction of the acceleration.', 1, 'In the direction of the resultant force ✓')
+  ] };
+};
+T.SV2 = R => {
+  const m = R.pick([20, 25, 30, 40, 50]), Tn = R.pick([40, 50, 60, 80, 100]), th = R.pick([20, 25, 30, 35, 40]), H = Tn * cs(th), Vv = Tn * sn(th), W = m * g, Nr = W - Vv;
+  const s = new Scene('A sledge pulled by a rope at an angle to the horizontal'); hatchH(s, -40, 380, 0); box(s, 40, -46, 110, 46, 'sledge');
+  const ax = 150, ay = -23, l = 150; force(s, ax, ay, l * cs(th), -l * sn(th), LB(Tn, 'N')); s.line(ax, ay, ax + 120, ay, { dash: '5 4', w: 1, tag: 'horizontal' });
+  s.arc(ax, ay, 62, 0, th, { w: 1.1, tag: 'angle arc' }); s.label(ax + 72, ay - 62 * sn(th / 2) + 6, DG(th), { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { m, Tn, th }, stem: `<b>Figure 1</b> shows a sledge of total mass ${V(m, 'kg')} being pulled at constant velocity across horizontal ground. The rope is at ${DG(th)} to the horizontal and the tension in the rope is ${V(Tn, 'N')}.`, parts: [
+    calc('Calculate the horizontal component of the tension.', 1, H, 'N', M(E(`${N(Tn)} × cos ${N(th)}° = ${AV(H, 'N')}`))),
+    calc('Calculate the vertical component of the tension.', 1, Vv, 'N', M(E(`${N(Tn)} × sin ${N(th)}° = ${AV(Vv, 'N')}`))),
+    calc('Calculate the frictional force on the sledge.', 1, H, 'N', M(`Equal to the horizontal component of the tension = ${AV(H, 'N')}`), NS),
+    text('Explain your answer for the frictional force.', 1, 'The velocity is constant, so the resultant (horizontal) force is zero ✓'),
+    calc('Calculate the normal contact force that the ground exerts on the sledge.', 2, Nr, 'N', M(E(`weight = ${N(m)} × ${GS} = ${I(W)} N`), E(`normal contact force = ${I(W)} − ${I(Vv)} = ${AV(Nr, 'N')}`)))
+  ] };
+};
+T.SV3 = R => {
+  const W = R.pick([120, 150, 200, 250, 300, 400]), th = R.pick([20, 25, 30, 35, 40, 50, 60]), Tn = W / (2 * cs(th)), H = Tn * sn(th), ob = R.pick(['lamp', 'sign', 'box']);
+  const s = new Scene('An object hung from two cables'), l = 170, dx = l * sn(th), dy = l * cs(th); hatchH(s, -dx - 40, dx + 40, -dy, false);
+  s.line(-dx, -dy, 0, 0, { tag: 'cable' }); s.line(dx, -dy, 0, 0, { tag: 'cable' }); s.line(0, 0, 0, -Math.min(150, dy), { dash: '5 4', w: 1, tag: 'vertical' });
+  const rl = th <= 25 ? 122 : th <= 35 ? 96 : 74; s.arc(0, 0, rl - 26, 90, 90 + th, { w: 1.1, tag: 'angle arc' }); s.arc(0, 0, rl - 26, 90 - th, 90, { w: 1.1, tag: 'angle arc' });
+  s.label(-rl * sn(th / 2), -rl * cs(th / 2) + 9, DG(th)); s.label(rl * sn(th / 2), -rl * cs(th / 2) + 9, DG(th));
+  s.line(0, 0, 0, 18, { tag: 'cable' }); box(s, -34, 18, 68, 40, ob); force(s, 0, 58, 0, 56, LB(W, 'N'));
+  return { sf: 2, scenes: [s], data: { W, th }, stem: `<b>Figure 1</b> shows a ${ob} of weight ${V(W, 'N')} hanging at rest from two cables. Each cable is at ${DG(th)} to the vertical.`, parts: [
+    text('State the resultant force on the ' + ob + '.', 1, 'Zero (it is in equilibrium) ✓'),
+    calc('Calculate the tension in each cable.', 2, Tn, 'N', M(E(`2<i>T</i> cos ${N(th)}° = ${N(W)}`), E(`<i>T</i> = ${N(W)} / (2 × cos ${N(th)}°) = ${AV(Tn, 'N')}`))),
+    calc('Calculate the horizontal component of the tension in one cable.', 1, H, 'N', M(E(`${I(Tn)} × sin ${N(th)}° = ${AV(H, 'N')}`))),
+    choose(R, 'The cables are replaced by longer cables that make a smaller angle with the vertical. What happens to the tension in each cable?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases ✓'),
+    text('Explain your answer.', 1, 'The vertical components must still add up to the weight, and cos θ is larger at a smaller angle, so a smaller tension is needed ✓')
+  ] };
+};
+T.SV4 = R => {
+  const m = R.pick([0.10, 0.15, 0.20, 0.25, 0.50]), th = R.pick([15, 20, 25, 30, 35]), W = m * g, Tn = W / cs(th), F = W * tn(th), a = g * sn(th);
+  const s = new Scene('A ball on a string pulled to one side by a horizontal force'), l = 190, bx = l * sn(th), by = l * cs(th); hatchH(s, -70, 150, 0, false);
+  s.line(0, 0, bx, by, { tag: 'string' }); const rl = th <= 20 ? 150 : th <= 25 ? 128 : 104; s.line(0, 0, 0, 185, { dash: '5 4', w: 1, tag: 'vertical' }); s.arc(0, 0, rl - 26, 270, 270 + th, { w: 1.1, tag: 'angle arc' }); s.label(rl * sn(th / 2), rl * cs(th / 2) + 2, DG(th));
+  s.circle(bx, by, 11, { fill: '#d9dde1', tag: 'ball' }); force(s, bx + 11, by, 80, 0, '*F*'); force(s, bx, by + 11, 0, 62, 'weight');
+  return { sf: 2, scenes: [s], data: { m, th }, stem: `<b>Figure 1</b> shows a ball of mass ${V(m, 'kg')} hanging from a string. A horizontal force <i>F</i> holds the ball at rest with the string at ${DG(th)} to the vertical.`, parts: [
+    calc('Calculate the weight of the ball.', 1, W, 'N', M(E(`<i>W</i> = <i>mg</i> = ${N(m)} × ${GS} = ${AV(W, 'N')}`))),
+    calc('Calculate the tension in the string.', 2, Tn, 'N', M(E(`<i>T</i> cos ${N(th)}° = ${I(W)}`) + ' (vertical components balance)', E(`<i>T</i> = ${I(W)} / cos ${N(th)}° = ${AV(Tn, 'N')}`))),
+    calc('Calculate <i>F</i>.', 1, F, 'N', M(E(`<i>F</i> = <i>T</i> sin ${N(th)}° = ${I(Tn)} × sin ${N(th)}° = ${AV(F, 'N')}`) + ` (or ${E(`<i>W</i> tan ${N(th)}°`)})`)),
+    calc('The force <i>F</i> is removed. Calculate the initial acceleration of the ball.', 2, a, MS2, M('The resultant force is the component of the weight at right angles to the string, <i>mg</i> sin θ', E(`<i>a</i> = <i>g</i> sin θ = ${GS} × sin ${N(th)}° = ${AV(a, MS2)}`)))
+  ] };
+};
+T.SV5 = R => {
+  const m = R.pick([2.0, 3.0, 4.0, 5.0, 8.0, 12]), th = R.pick([15, 20, 25, 30, 35]), W = m * g, par = W * sn(th), per = W * cs(th);
+  const f = slopeFig('A block at rest on a slope', th), s = f.s; force(s, f.C[0], f.C[1], 0, Math.max(36, Math.min(80, -f.C[1] - 34)), 'weight');
+  return { sf: 2, scenes: [s], data: { m, th }, stem: `<b>Figure 1</b> shows a block of mass ${V(m, 'kg')} at rest on a rough slope. The slope is at ${DG(th)} to the horizontal.`, parts: [
+    calc('Calculate the component of the weight of the block parallel to the slope.', 2, par, 'N', M(E(`<i>W</i> = ${N(m)} × ${GS} = ${I(W)} N`), E(`${I(W)} × sin ${N(th)}° = ${AV(par, 'N')}`))),
+    calc('Calculate the component of the weight of the block perpendicular to the slope.', 1, per, 'N', M(E(`${I(W)} × cos ${N(th)}° = ${AV(per, 'N')}`))),
+    calc('State the magnitude of the frictional force on the block.', 1, par, 'N', M(`${AV(par, 'N')} (equal to the component of the weight parallel to the slope)`), NS),
+    choose(R, 'In which direction does the frictional force act on the block?', 1, 'up the slope', ['down the slope', 'vertically upwards', 'perpendicular to the slope'], 'Up the slope ✓'),
+    calc('State the magnitude of the normal contact force on the block.', 1, per, 'N', M(`${AV(per, 'N')} (equal to the component of the weight perpendicular to the slope)`), NS),
+    text('The three forces on the block are drawn to scale, tip to tail. State the shape formed.', 1, 'A closed triangle (because the resultant force is zero) ✓')
+  ] };
+};
+T.SV6 = R => {
+  const vb = R.pick([2.0, 2.5, 3.0, 4.0, 5.0]), vc = R.pick([0.50, 1.0, 1.5, 2.0]), w = R.pick([40, 60, 80, 120, 150]), v = Math.hypot(vb, vc), th = deg(Math.atan(vc / vb)), t = w / vb, d = vc * t;
+  const s = new Scene('A boat crossing a river'); s.line(-150, 0, 250, 0, { tag: 'bank' }); s.line(-150, -230, 250, -230, { tag: 'bank' }); s.label(-146, 21, 'bank', { anchor: 'start' }); s.label(-146, -238, 'bank', { anchor: 'start' });
+  blob(s, 0, -20, 5); s.label(-12, -15, 'boat', { anchor: 'end' }); force(s, 0, -20, 0, -130, LB(vb, 'm s^{−1}')); force(s, 0, -20, 130 * vc / vb, 0, LB(vc, 'm s^{−1}'));
+  s.dim(-110, -228, -110, -2, LB(w, 'm'), { left: true });
+  return { sf: 2, scenes: [s], data: { vb, vc, w }, stem: `<b>Figure 1</b> shows a boat crossing a river that is ${V(w, 'm')} wide. The boat is steered straight across the river at ${V(vb, MS1)} relative to the water. The water flows parallel to the banks at ${V(vc, MS1)}.`, parts: [
+    calc('Calculate the magnitude of the resultant velocity of the boat.', 2, v, MS1, M(E(`<i>v</i><sup>2</sup> = ${N(vb)}<sup>2</sup> + ${N(vc)}<sup>2</sup>`), E(`<i>v</i> = √(${N(vb)}<sup>2</sup> + ${N(vc)}<sup>2</sup>) = ${AV(v, MS1)}`))),
+    calc('Calculate the angle between the resultant velocity and the direction straight across the river.', 1, th, '°', M(E(`θ = tan<sup>−1</sup>(${N(vc)} / ${N(vb)}) = ${AD(th)}`))),
+    calc('Calculate the time taken to cross the river.', 1, t, 's', M(E(`<i>t</i> = ${N(w)} / ${N(vb)} = ${AV(t, 's')}`))),
+    calc('Calculate how far downstream the boat is carried during the crossing.', 1, d, 'm', M(E(`${N(vc)} × ${I(t)} = ${AV(d, 'm')}`))),
+    choose(R, 'The water now flows faster. The boat is steered as before. What happens to the time taken to cross?', 1, 'it stays the same', ['it increases', 'it decreases'], 'It stays the same: the component of velocity across the river is unchanged ✓')
+  ] };
+};
+T.SV7 = R => {
+  const PL = [300, 400, 500, 600, 800, 900, 1200], v = find(() => ({ a: R.pick(PL), b: R.pick(PL), tm: R.pick([10, 15, 20, 25]) }), o => o.a !== o.b), { a, b, tm } = v, t = tm * 60, dist = a + b, dis = Math.hypot(a, b), th = deg(Math.atan(b / a)), sp = dist / t, ve = dis / t;
+  return NOFIG(2, { a, b, tm }, `A walker travels ${V(a, 'm')} due north and then ${V(b, 'm')} due east. The whole journey takes ${V(tm, 'minutes')}.`, [
+    calc('State the total distance travelled.', 1, dist, 'm', M(E(`${N(a)} + ${N(b)} = ${AV(dist, 'm')}`)), NS),
+    calc('Calculate the magnitude of the displacement of the walker from the starting point.', 2, dis, 'm', M(E(`<i>s</i><sup>2</sup> = ${N(a)}<sup>2</sup> + ${N(b)}<sup>2</sup>`), E(`<i>s</i> = √(${N(a)}<sup>2</sup> + ${N(b)}<sup>2</sup>) = ${AV(dis, 'm')}`))),
+    calc('Calculate the angle between the displacement and due north.', 1, th, '°', M(E(`θ = tan<sup>−1</sup>(${N(b)} / ${N(a)}) = ${AD(th)}`) + ' (east of north)')),
+    calc('Calculate the average speed of the walker.', 1, sp, MS1, M(E(`${I(dist)} / (${N(tm)} × 60) = ${AV(sp, MS1)}`))),
+    calc('Calculate the magnitude of the average velocity of the walker.', 1, ve, MS1, M(E(`${I(dis)} / (${N(tm)} × 60) = ${AV(ve, MS1)}`))),
+    choose(R, 'Which of these is a scalar quantity?', 1, R.pick(SCALS), pickN(R, VECS, 3), 'A scalar has magnitude only ✓')
+  ]);
+};
+T.SV8 = R => {
+  const Tk = R.pick([40, 50, 60, 80]), th = R.pick([15, 20, 25, 30]), Mm = R.pick([2.0e6, 4.0e6, 5.0e6, 8.0e6]), Dk = R.pick([20, 30, 40]), Fk = 2 * Tk * cs(th), a = (Fk - Dk) * 1e3 / Mm;
+  const s = new Scene('Two tugs pulling a ship'); s.poly([[-150, -30], [-20, -30], [10, 0], [-20, 30], [-150, 30]], { close: true, fill: '#d9dde1', tag: 'ship' }); s.label(-85, 5, 'ship', { inside: true });
+  const l = 190; force(s, 10, 0, l * cs(th), -l * sn(th), LB(Tk, 'kN')); force(s, 10, 0, l * cs(th), l * sn(th), LB(Tk, 'kN')); s.line(10, 0, 150, 0, { dash: '5 4', w: 1, tag: 'direction of travel' });
+  s.arc(10, 0, 78, 0, th, { w: 1.1, tag: 'angle arc' }); s.arc(10, 0, 78, -th, 0, { w: 1.1, tag: 'angle arc' }); s.label(10 + 92, -92 * tn(th / 2) + 3, DG(th), { anchor: 'start' }); s.label(10 + 92, 92 * tn(th / 2) + 9, DG(th), { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { Tk, th, Mm, Dk }, stem: `<b>Figure 1</b> shows a ship of mass ${V(Mm, 'kg')} viewed from above. Two tugs pull the ship forwards with cables that are each at ${DG(th)} to the direction of travel. The tension in each cable is ${V(Tk, 'kN')}. A resistive force of ${V(Dk, 'kN')} acts on the ship.`, parts: [
+    calc('Calculate the total forward force that the two cables exert on the ship.', 2, Fk, 'kN', M(E(`forward component of one tension = ${N(Tk)} × cos ${N(th)}°`), E(`total = 2 × ${N(Tk)} × cos ${N(th)}° = ${AV(Fk, 'kN')}`))),
+    text('Explain why the cables exert no resultant sideways force on the ship.', 1, 'The sideways components of the two tensions are equal and opposite ✓'),
+    calc('Calculate the acceleration of the ship.', 2, a, MS2, M(E(`resultant force = ${I(Fk)} − ${N(Dk)} = ${I(Fk - Dk)} kN`), E(`<i>a</i> = ${I((Fk - Dk) * 1e3)} / ${N(Mm)} = ${AV(a, MS2)}`))),
+    choose(R, 'The tugs move closer together so that the angle of each cable to the direction of travel is smaller. The tensions are unchanged. What happens to the total forward force?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases (cos θ is larger) ✓')
+  ] };
+};
+T.SV9 = R => {
+  const v = R.pick([60, 75, 80, 90, 120]), th = R.pick([8.0, 10, 12, 15, 20]), h = R.pick([600, 900, 1200, 1500]), vv = v * sn(th), vh = v * cs(th), t = h / vv, d = vh * t;
+  return NOFIG(2, { v, th, h }, `An aircraft climbs at a constant velocity of ${V(v, MS1)} at an angle of ${DG(th)} above the horizontal.`, [
+    calc('Calculate the vertical component of the velocity.', 1, vv, MS1, M(E(`${N(v)} × sin ${N(th)}° = ${AV(vv, MS1)}`))),
+    calc('Calculate the horizontal component of the velocity.', 1, vh, MS1, M(E(`${N(v)} × cos ${N(th)}° = ${AV(vh, MS1)}`))),
+    calc(`Calculate the time taken for the aircraft to gain ${V(h, 'm')} in height.`, 1, t, 's', M(E(`<i>t</i> = ${N(h)} / ${I(vv)} = ${AV(t, 's')}`))),
+    calc('Calculate the horizontal distance travelled in this time.', 1, d, 'm', M(E(`${I(vh)} × ${I(t)} = ${AV(d, 'm')}`))),
+    text('State the resultant force on the aircraft during the climb. Give a reason.', 2, M('Zero', 'because the velocity is constant (there is no acceleration)'))
+  ]);
+};
+
+/* ===== Moments ===== */
+T.MO1 = R => {
+  const v = find(() => ({ W1: R.pick([250, 300, 350, 400, 450]), W2: R.pick([300, 400, 450, 500, 600]), d1: R.pick([1.2, 1.5, 1.8, 2.0]), x: R.pick([0.20, 0.30, 0.40]) }), o => o.W1 !== o.W2 && o.W1 * o.d1 / o.W2 <= 2.3 && o.W1 * o.d1 / o.W2 >= .8);
+  const { W1, W2, d1, x } = v, d2 = W1 * d1 / W2, mom = W1 * x, b = beamFig('A plank pivoted at its centre with a child on each side', 5), s = b.s;
+  b.pivot(2.5); b.down(2.5 - d1, LB(W1, 'N')); b.down(2.5 + d2, LB(W2, 'N')); b.dim(2.5 - d1, 2.5, LB(d1, 'm')); b.dim(2.5, 2.5 + d2, '*d*');
+  return { sf: 2, scenes: [s], data: { W1, W2, d1, x }, stem: `<b>Figure 1</b> shows a uniform plank pivoted at its centre. A child of weight ${V(W1, 'N')} sits ${V(d1, 'm')} from the pivot. A second child of weight ${V(W2, 'N')} sits a distance <i>d</i> from the pivot on the other side so that the plank balances horizontally.`, parts: [
+    text('State the principle of moments.', 2, PRINC.join('<br>')),
+    calc('Calculate <i>d</i>.', 2, d2, 'm', M(E(`${N(W1)} × ${N(d1)} = ${N(W2)} × <i>d</i>`), E(`<i>d</i> = ${N(W1)} × ${N(d1)} / ${N(W2)} = ${AV(d2, 'm')}`))),
+    text('Explain why the weight of the plank does not need to be included.', 1, 'The plank is uniform so its weight acts at the centre, which is at the pivot, and so has no moment about the pivot ✓'),
+    calc(`The ${N(W1)} N child moves ${V(x, 'm')} closer to the pivot. Calculate the resultant moment about the pivot.`, 2, mom, 'N m', M(E(`new moment of this child = ${N(W1)} × (${N(d1)} − ${N(x)}) = ${I(W1 * (d1 - x))} N m`), E(`resultant moment = ${I(W1 * d1)} − ${I(W1 * (d1 - x))} = ${AV(mom, 'N m')}`))),
+    choose(R, `Which end of the plank now moves downwards?`, 1, `the end with the ${N(W2)} N child`, [`the end with the ${N(W1)} N child`, 'neither end'], `The end with the ${N(W2)} N child ✓`)
+  ] };
+};
+T.MO2 = R => {
+  const L = R.pick([20, 24, 30, 40]), Wb = R.pick([150, 200, 250, 300]), Wl = R.pick([60, 80, 120, 150]), fr = R.pick([0.20, 0.25, 0.30, 0.40]), x = +(L * fr).toFixed(2), FB = (Wb * L / 2 + Wl * x) / L, FA = Wb + Wl - FB;
+  const b = beamFig('A bridge supported at each end with a lorry on it', L), s = b.s; b.pivot(0, 'A'); b.pivot(L, 'B'); b.down(x, LB(Wl, 'kN'), 56); b.down(L / 2, LB(Wb, 'kN'), 84); b.dim(0, x, LB(x, 'm')); b.dim(0, L, LB(L, 'm'), 2);
+  return { sf: 2, scenes: [s], data: { L, Wb, Wl, x }, stem: `<b>Figure 1</b> shows a uniform bridge of length ${V(L, 'm')} and weight ${V(Wb, 'kN')} that rests on supports <b>A</b> and <b>B</b> at its ends. A lorry of weight ${V(Wl, 'kN')} is ${V(x, 'm')} from <b>A</b>.`, parts: [
+    calc('Calculate the force that support <b>B</b> exerts on the bridge.', 3, FB, 'kN', M(E(`clockwise moments about <b>A</b> = ${N(Wl)} × ${N(x)} + ${N(Wb)} × ${I(L / 2)} = ${I(Wb * L / 2 + Wl * x)} kN m`), E(`<i>F</i><sub>B</sub> × ${N(L)} = ${I(Wb * L / 2 + Wl * x)}`), E(`<i>F</i><sub>B</sub> = ${I(Wb * L / 2 + Wl * x)} / ${N(L)} = ${AV(FB, 'kN')}`))),
+    calc('Calculate the force that support <b>A</b> exerts on the bridge.', 1, FA, 'kN', M(E(`${N(Wb)} + ${N(Wl)} − ${I(FB)} = ${AV(FA, 'kN')}`))),
+    text('Explain why taking moments about <b>A</b> is a sensible first step.', 1, 'The force at <b>A</b> has no moment about <b>A</b>, so the equation contains only one unknown force ✓'),
+    choose(R, 'The lorry moves towards <b>B</b>. What happens to the force at <b>A</b>?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases ✓')
+  ] };
+};
+T.MO3 = R => {
+  const a = R.pick([0.10, 0.15, 0.20]), span = 1 - 2 * a, Wr = R.pick([1.0, 1.1, 1.2, 1.4]), W = R.pick([0.50, 1.0, 1.5, 2.0]), d = R.pick([0.15, 0.20, 0.25, 0.45, 0.50].filter(x => x < span - .05 && Math.abs(x - span / 2) > .04)), RB = (Wr * span / 2 + W * d) / span, RA = Wr + W - RB;
+  const b = beamFig('A metre rule hanging from two newtonmeters', 1), s = b.s;
+  [[a, 'A'], [1 - a, 'B']].forEach(([p, n]) => { const x = b.X(p); s.line(x, b.top, x, b.top - 40, { tag: 'thread' }); s.rect(x - 11, b.top - 96, 22, 56, { tag: 'newtonmeter' }); s.label(x, b.top - 104, n, { bold: true }); });
+  b.down(a + d, LB(W, 'N'), 62, { at: [9, -6], anchor: 'start' }); b.dim(a, a + d, LB(d, 'm'), 3, true); b.dim(0, a, LB(a, 'm'), 4, true); b.dim(1 - a, 1, LB(a, 'm'), 4, true);
+  return { sf: 2, scenes: [s], data: { a, Wr, W, d }, stem: `<b>Figure 1</b> shows a uniform metre rule of weight ${V(Wr, 'N')} hanging horizontally from two vertical newtonmeters <b>A</b> and <b>B</b>. Each newtonmeter is attached ${V(a, 'm')} from an end of the rule. An object of weight ${V(W, 'N')} hangs from the rule ${V(d, 'm')} from <b>A</b>.`, parts: [
+    calc('State the distance between <b>A</b> and <b>B</b>.', 1, span, 'm', M(E(`1.00 − 2 × ${N(a)} = ${AV(span, 'm')}`)), NS),
+    calc('Calculate the reading on <b>B</b>.', 3, RB, 'N', M(E(`moments about <b>A</b>: ${N(Wr)} × ${I(span / 2)} + ${N(W)} × ${N(d)} = ${I(Wr * span / 2 + W * d)} N m`), E(`reading on <b>B</b> × ${I(span)} = ${I(Wr * span / 2 + W * d)}`), E(`reading on <b>B</b> = ${I(Wr * span / 2 + W * d)} / ${I(span)} = ${AV(RB, 'N')}`))),
+    calc('Calculate the reading on <b>A</b>.', 1, RA, 'N', M(E(`${N(Wr)} + ${N(W)} − ${I(RB)} = ${AV(RA, 'N')}`))),
+    text('A student suggests that the forces from <b>A</b> and <b>B</b> act as a couple. Explain why the student is wrong.', 2, M('The forces of a couple act in opposite directions', 'but these two forces act in the same direction (and are not equal)'))
+  ] };
+};
+T.MO4 = R => {
+  const v = find(() => ({ L: R.pick([4.0, 5.0, 6.0]), x: R.pick([1.0, 1.5, 2.0]), Wp: R.pick([200, 250, 300, 400]), Wm: R.pick([600, 700, 750, 800]) }), o => o.x < o.L / 2 - .3 && o.Wp * (o.L / 2 - o.x) / o.Wm < o.x - .1 && o.Wp * (o.L / 2 - o.x) / o.Wm > .25);
+  const { L, x, Wp, Wm } = v, mom = Wp * (L / 2 - x), d = mom / Wm, b = beamFig('A plank overhanging the edge of a platform', L), s = b.s, xe = b.X(L - x);
+  s.rect(b.X(0) - 20, b.bot, xe - b.X(0) + 20, 70, { fill: '#fff', tag: 'platform' }); s.label((b.X(0) + xe) / 2 - 10, b.bot + 41, 'platform', { inside: true });
+  b.down(L - x + d, LB(Wm, 'N'), 62, { at: [9, -6], anchor: 'start' }); b.dim(L - x, L, LB(x, 'm')); b.dim(L - x, L - x + d, '*d*', 3, true); b.dim(0, L, LB(L, 'm'), 2);
+  return { sf: 2, scenes: [s], data: { L, x, Wp, Wm }, stem: `<b>Figure 1</b> shows a uniform plank of length ${V(L, 'm')} and weight ${V(Wp, 'N')} resting on a platform. The plank overhangs the edge of the platform by ${V(x, 'm')}. A person of weight ${V(Wm, 'N')} walks along the plank and is a distance <i>d</i> beyond the edge when the plank is just about to tip.`, parts: [
+    choose(R, 'About which point does the plank turn when it tips?', 1, 'the edge of the platform', ['the centre of the plank', 'the end of the plank on the platform', 'the position of the person'], 'The edge of the platform ✓'),
+    calc('Calculate the moment of the weight of the plank about this point.', 2, mom, 'N m', M(E(`distance of centre of mass from the edge = ${I(L / 2)} − ${N(x)} = ${I(L / 2 - x)} m`), E(`moment = ${N(Wp)} × ${I(L / 2 - x)} = ${AV(mom, 'N m')}`))),
+    calc('Calculate <i>d</i>.', 1, d, 'm', M(E(`<i>d</i> = ${I(mom)} / ${N(Wm)} = ${AV(d, 'm')}`))),
+    text('Explain why the contact force from the platform has no moment about this point when the plank is about to tip.', 1, 'The plank is about to lose contact everywhere except at the edge, so the contact force acts at the edge (zero distance from the pivot) ✓')
+  ] };
+};
+T.MO5 = R => {
+  const D = R.pick([0.36, 0.38, 0.40, 0.42]), F = R.pick([8.0, 10, 12, 15, 20]), mom = F * D, r = 90;
+  const s = new Scene('A steering wheel with two equal and opposite forces'); s.circle(0, 0, r, { tag: 'wheel' }); 
+  force(s, -r, 0, 0, -80, LB(F, 'N')); force(s, r, 0, 0, 80, LB(F, 'N')); s.arrow(-r + 2, 0, r - 2, 0, { both: true, w: 1.1, s: 7 }); s.label(0, r + 24, `diameter ${LB(D, 'm')}`);
+  return { sf: 2, scenes: [s], data: { D, F }, stem: `<b>Figure 1</b> shows a steering wheel of diameter ${V(D, 'm')}. A driver turns the wheel by applying two forces, each of ${V(F, 'N')}, at opposite sides of the rim. The forces are equal and opposite and act along tangents to the rim.`, parts: [
+    text('State what is meant by a couple.', 2, COUPLE.join('<br>')),
+    calc('Calculate the moment of the couple.', 2, mom, 'N m', M('moment of a couple = force × perpendicular distance between the lines of action of the forces', E(`${N(F)} × ${N(D)} = ${AV(mom, 'N m')}`))),
+    calc('The driver now uses one hand only. Calculate the force, tangential to the rim, that gives the same moment about the centre of the wheel.', 1, 2 * F, 'N', M(E(`${I(mom)} / (${N(D)} / 2) = ${AV(2 * F, 'N')}`))),
+    choose(R, 'What is the resultant force of a couple?', 1, 'zero', ['twice one of the forces', 'equal to one of the forces'], 'Zero (a couple produces rotation only) ✓')
+  ] };
+};
+T.MO6 = R => {
+  const L = R.pick([1.2, 1.5, 2.0]), W = R.pick([40, 50, 60, 80]), Ws = R.pick([100, 120, 150, 200]), th = R.pick([30, 35, 40, 45, 50]), Tn = (W / 2 + Ws) / sn(th), Vt = Tn * sn(th), Hh = Tn * cs(th);
+  const s = new Scene('A beam hinged to a wall and held by a cable'), bl = 300, hy = bl * tn(th); hatchV(s, 0, -hy - 30, 90); s.rect(0, -7, bl, 14, { fill: '#d9dde1', tag: 'beam' });
+  s.line(bl, -7, 0, -hy - 7, { tag: 'cable' }); s.arc(bl, -7, 60, 180 - th, 180, { w: 1.1, tag: 'angle arc' }); s.label(bl - 72, -7 - 72 * tn(th / 2) + 5, DG(th), { anchor: 'end' });
+  s.label(bl * .42, -hy * .58 - 22, 'cable', { anchor: 'start' }); s.label(12, 26, 'hinge', { anchor: 'start' });
+  force(s, bl / 2, 7, 0, 82, LB(W, 'N')); force(s, bl, 7, 0, 60, LB(Ws, 'N'));
+  return { sf: 2, scenes: [s], data: { L, W, Ws, th }, stem: `<b>Figure 1</b> shows a uniform horizontal beam of length ${V(L, 'm')} and weight ${V(W, 'N')} hinged to a wall. A sign of weight ${V(Ws, 'N')} hangs from the free end of the beam. A cable from the free end to the wall is at ${DG(th)} to the beam.`, parts: [
+    calc('Calculate the total clockwise moment of the two weights about the hinge.', 2, W * L / 2 + Ws * L, 'N m', M(E(`${N(W)} × ${I(L / 2)} + ${N(Ws)} × ${N(L)}`), E(`= ${AV(W * L / 2 + Ws * L, 'N m')}`))),
+    calc('Calculate the tension in the cable.', 2, Tn, 'N', M(E(`<i>T</i> sin ${N(th)}° × ${N(L)} = ${I(W * L / 2 + Ws * L)}`), E(`<i>T</i> = ${I(W * L / 2 + Ws * L)} / (${N(L)} × sin ${N(th)}°) = ${AV(Tn, 'N')}`))),
+    calc('Calculate the horizontal component of the tension.', 1, Hh, 'N', M(E(`${I(Tn)} × cos ${N(th)}° = ${AV(Hh, 'N')}`))),
+    choose(R, 'In which direction is the horizontal force that the hinge exerts on the beam?', 1, 'away from the wall', ['towards the wall', 'there is no horizontal force'], 'Away from the wall, to balance the horizontal component of the tension ✓')
+  ] };
+};
+T.MO7 = R => {
+  const W = R.pick([400, 500, 600, 750, 900]), d1 = R.pick([0.30, 0.40, 0.45, 0.50]), d2 = R.pick([1.2, 1.4, 1.5, 1.6]), F = W * d1 / d2, G = W - F;
+  const b = beamFig('A wheelbarrow drawn as a lever', d2 + .1, { W: 400 }), s = b.s; s.circle(b.X(0), b.bot + 24, 24, { fill: '#fff', tag: 'wheel' }); hatchH(s, b.X(0) - 50, b.X(d2) + 60, b.bot + 48);
+  blob(s, b.X(0), b.bot + 24, 4); s.label(b.X(0) - 32, b.bot + 30, 'axle', { anchor: 'end' }); b.down(d1, LB(W, 'N'), 30, { at: [10, -6], anchor: 'start' }); b.up(d2, '*F*', 62, { at: [12, 14], anchor: 'start' }); b.dim(0, d1, LB(d1, 'm')); b.dim(0, d2, LB(d2, 'm'), 2);
+  return { sf: 2, scenes: [s], data: { W, d1, d2 }, stem: `<b>Figure 1</b> shows a simplified diagram of a loaded wheelbarrow that is held at rest. The total weight of the wheelbarrow and its load is ${V(W, 'N')} and acts ${V(d1, 'm')} horizontally from the axle of the wheel. A vertical force <i>F</i> is applied to the handles ${V(d2, 'm')} horizontally from the axle.`, parts: [
+    calc('Calculate <i>F</i>.', 2, F, 'N', M(E(`<i>F</i> × ${N(d2)} = ${N(W)} × ${N(d1)}`) + ' (moments about the axle)', E(`<i>F</i> = ${N(W)} × ${N(d1)} / ${N(d2)} = ${AV(F, 'N')}`))),
+    calc('Calculate the force that the ground exerts on the wheel.', 1, G, 'N', M(E(`${N(W)} − ${I(F)} = ${AV(G, 'N')}`))),
+    choose(R, 'The load is moved closer to the wheel. What happens to <i>F</i>?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases ✓'),
+    text('Explain your answer.', 1, 'The weight acts closer to the axle so its moment about the axle is smaller, and a smaller force at the handles balances it ✓')
+  ] };
+};
+T.MO8 = R => {
+  const v = find(() => ({ m: R.pick([50.0, 100, 150, 200]), x1: R.pick([5.0, 10.0, 15.0]), p: R.pick([30.0, 32.0, 35.0, 38.0, 40.0, 42.0]) }), o => o.m * (o.p - o.x1) / (50 - o.p) > 60 && o.m * (o.p - o.x1) / (50 - o.p) < 220);
+  const { m, x1, p } = v, da = p - x1, db = 50 - p, Mr = m * da / db, pu = .2 / db * 100;
+  return NOFIG(3, { m, x1, p }, `A student finds the mass of a uniform metre rule. The rule balances on a pivot at the ${V(50.0, 'cm', 3)} mark. A ${V(m, 'g', 3)} mass is then hung from the ${V(x1, 'cm', 3)} mark and the pivot is moved until the rule balances again. The pivot is now at the ${V(p, 'cm', 3)} mark.`, [
+    text('State what the first measurement shows about the rule.', 1, 'Its centre of mass is at the 50.0 cm mark ✓'),
+    calc('Calculate the distance from the pivot to the hung mass.', 1, da, 'cm', M(E(`${N(p, 3)} − ${N(x1, 3)} = ${AV(da, 'cm')}`)), NS),
+    calc('Calculate the mass of the rule.', 3, Mr, 'g', M(E(`distance from the pivot to the centre of mass of the rule = 50.0 − ${N(p, 3)} = ${I3(db)} cm`), E(`<i>M</i> × ${I3(db)} = ${N(m, 3)} × ${I3(da)}`) + ' (<i>g</i> cancels)', E(`<i>M</i> = ${N(m, 3)} × ${I3(da)} / ${I3(db)} = ${AV(Mr, 'g')}`))),
+    calc('Each position on the rule is read to ±0.1 cm. Calculate the percentage uncertainty in the distance from the pivot to the centre of mass of the rule.', 2, pu, '%', M('absolute uncertainty in a distance found from two readings = 0.2 cm', E(`0.2 / ${I3(db)} × 100 = ${U(pu)}%`)), { u: true, noSkill: true, tol: .06 })
+  ]);
+};
+T.MO9 = R => {
+  const w = R.pick([2.3, 2.4, 2.5]), h = R.pick([1.2, 1.4, 1.5, 1.6]), h2 = +(h + R.pick([0.30, 0.40, 0.50])).toFixed(2), th = deg(Math.atan(w / 2 / h)), th2 = deg(Math.atan(w / 2 / h2));
+  return NOFIG(2, { w, h, h2 }, `A bus is tested on a platform that can be tilted sideways. The wheels of the bus are ${V(w, 'm')} apart, measured across the bus. The centre of mass of the empty bus is ${V(h, 'm')} above the platform and midway between the wheels.`, [
+    text('State what is meant by the centre of mass of the bus.', 1, 'The point through which the whole weight of the bus may be considered to act ✓'),
+    text('Explain why the bus topples if the platform is tilted too far.', 2, M('The line of action of the weight passes outside the base (beyond the lower wheels)', 'so the weight has a resultant moment about the lower wheels that turns the bus over')),
+    calc('Calculate the angle of tilt at which the empty bus is about to topple.', 2, th, '°', M(E(`tan θ = (${N(w)} / 2) / ${N(h)}`), E(`θ = tan<sup>−1</sup>(${I(w / 2)} / ${N(h)}) = ${AD(th)}`))),
+    calc(`With passengers on the upper deck the centre of mass is ${V(h2, 'm')} above the platform. Calculate the new angle at which the bus is about to topple.`, 1, th2, '°', M(E(`θ = tan<sup>−1</sup>(${I(w / 2)} / ${N(h2)}) = ${AD(th2)}`))),
+    choose(R, 'Which change makes a vehicle more stable?', 1, 'a lower centre of mass', ['a higher centre of mass', 'a narrower wheel base', 'a smaller mass'], 'A lower centre of mass (or a wider wheel base) ✓')
+  ]);
+};
+T.MO10 = R => {
+  const v = find(() => ({ Wc: R.pick([80, 100, 120, 150]), dc: R.pick([10, 12, 15]), dL: R.pick([30, 40, 50]), W2: R.pick([50, 60, 75]) }), o => o.Wc * o.dc / o.dL < o.W2 - 5 && o.Wc * o.dc / o.W2 >= 14), { Wc, dc, dL, W2 } = v, WL = Wc * dc / dL, d2 = Wc * dc / W2;
+  const b = beamFig('A tower crane with a counterweight and a load', dc + dL + 4, { from: 0, to: dc + dL + 4 }), s = b.s, xt = b.X(dc + 2); s.rect(xt - 10, b.bot, 20, 120, { fill: '#fff', tag: 'tower' }); hatchH(s, xt - 70, xt + 70, b.bot + 120);
+  s.label(xt + 18, b.bot + 96, 'tower', { anchor: 'start' }); b.down(2, LB(Wc, 'kN')); b.down(dc + 2 + dL, '*W*'); b.dim(2, dc + 2, LB(dc, 'm')); b.dim(dc + 2, dc + 2 + dL, LB(dL, 'm'));
+  return { sf: 2, scenes: [s], data: { Wc, dc, dL, W2 }, stem: `<b>Figure 1</b> shows a tower crane. A counterweight of weight ${V(Wc, 'kN')} is ${V(dc, 'm')} from the centre of the tower. A load of weight <i>W</i> hangs ${V(dL, 'm')} from the centre of the tower on the other side. The moments of the load and the counterweight about the top of the tower are equal. The weight of the horizontal arm can be ignored.`, parts: [
+    calc('Calculate the moment of the counterweight about the top of the tower.', 1, Wc * dc, 'kN m', M(E(`${N(Wc)} × ${N(dc)} = ${AV(Wc * dc, 'kN m')}`))),
+    calc('Calculate <i>W</i>.', 1, WL, 'kN', M(E(`<i>W</i> = ${I(Wc * dc)} / ${N(dL)} = ${AV(WL, 'kN')}`))),
+    calc(`A load of weight ${V(W2, 'kN')} is lifted instead. Calculate the distance from the centre of the tower at which this load gives the same moment.`, 1, d2, 'm', M(E(`${I(Wc * dc)} / ${N(W2)} = ${AV(d2, 'm')}`))),
+    text('Explain why a crane like this has a counterweight.', 2, M('The moment of the load about the tower is balanced by the moment of the counterweight', 'so there is little or no resultant moment tending to topple (or bend) the tower')),
+    choose(R, 'Which is a correct unit for the moment of a force?', 1, 'N m', ['N m<sup>−1</sup>', 'N s', 'kg m s<sup>−1</sup>'], 'N m ✓')
+  ] };
+};
+/* ===== Motion along a straight line ===== */
+const pwl = pts => ({ pts, from: pts[0][0], to: pts[pts.length - 1][0], f: x => { for (let i = 0; i + 1 < pts.length; i++){ const a = pts[i], b = pts[i + 1]; if (b[0] > a[0] && x >= a[0] - 1e-12 && x <= b[0] + 1e-12) return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return pts[pts.length - 1][1]; } });
+const VT = 'velocity / m s^{−1}', TS = 'time / s';
+T.SL1 = R => {
+  const u = R.pick([0, 5.0, 8.0, 10, 12]), a = R.pick([1.5, 2.0, 2.5, 3.0]), t = R.pick([4.0, 5.0, 6.0, 8.0]), d = R.pick([4.0, 5.0, 6.0, 8.0]), v = u + a * t, s = u * t + .5 * a * t * t, sb2 = v * v / (2 * d);
+  return NOFIG(2, { u, a, t, d }, `A car ${u ? `travelling at ${V(u, MS1)}` : 'starts from rest and'} accelerates uniformly at ${V(a, MS2)} for ${V(t, 's')} along a straight road.`, [
+    calc('Calculate the velocity of the car at the end of this time.', 1, v, MS1, M(E(`<i>v</i> = <i>u</i> + <i>at</i> = ${N(u)} + ${N(a)} × ${N(t)} = ${AV(v, MS1)}`))),
+    calc('Calculate the distance travelled during the acceleration.', 2, s, 'm', M(E(`<i>s</i> = <i>ut</i> + ½<i>at</i><sup>2</sup> = ${N(u)} × ${N(t)} + ½ × ${N(a)} × ${N(t)}<sup>2</sup>`), E(`= ${AV(s, 'm')}`))),
+    calc('Calculate the average velocity during the acceleration.', 1, s / t, MS1, M(E(`${I(s)} / ${N(t)} = ${AV(s / t, MS1)}`) + ` (or ${E('(<i>u</i> + <i>v</i>) / 2')})`)),
+    calc(`The car then brakes with a uniform deceleration of ${V(d, MS2)} until it stops. Calculate the distance travelled while braking.`, 2, sb2, 'm', M(E(`<i>v</i><sup>2</sup> = <i>u</i><sup>2</sup> + 2<i>as</i> with final velocity 0: 0 = ${I(v)}<sup>2</sup> − 2 × ${N(d)} × <i>s</i>`), E(`<i>s</i> = ${I(v)}<sup>2</sup> / (2 × ${N(d)}) = ${AV(sb2, 'm')}`)))
+  ]);
+};
+T.SL2 = R => {
+  const v = R.pick([13, 20, 25, 30]), tr = R.pick([0.60, 0.70, 0.80]), d = R.pick([5.0, 6.0, 6.5, 7.5, 8.0]), th = v * tr, bd = v * v / (2 * d), bt = v / d;
+  return NOFIG(2, { v, tr, d }, `A driver travelling at ${V(v, MS1)} sees a hazard. The driver’s reaction time is ${V(tr, 's')}. When the brakes are applied the car has a uniform deceleration of ${V(d, MS2)}.`, [
+    calc('Calculate the distance travelled during the driver’s reaction time.', 1, th, 'm', M(E(`${N(v)} × ${N(tr)} = ${AV(th, 'm')}`))),
+    calc('Calculate the distance travelled while the brakes are applied.', 2, bd, 'm', M(E(`0 = ${N(v)}<sup>2</sup> − 2 × ${N(d)} × <i>s</i>`), E(`<i>s</i> = ${N(v)}<sup>2</sup> / (2 × ${N(d)}) = ${AV(bd, 'm')}`))),
+    calc('Calculate the total stopping distance.', 1, th + bd, 'm', M(E(`${I(th)} + ${I(bd)} = ${AV(th + bd, 'm')}`))),
+    calc('Calculate the time for which the brakes are applied.', 1, bt, 's', M(E(`<i>t</i> = ${N(v)} / ${N(d)} = ${AV(bt, 's')}`))),
+    choose(R, 'The initial speed is doubled and the deceleration is unchanged. What happens to the distance travelled while braking?', 1, 'it becomes four times as large', ['it doubles', 'it becomes eight times as large', 'it stays the same'], 'Four times as large (braking distance ∝ <i>u</i><sup>2</sup>) ✓')
+  ]);
+};
+T.SL3 = R => {
+  const vm = R.pick([8, 10, 12, 16, 20, 24, 30]), t1 = R.pick([4, 6, 8, 10]), t2 = t1 + R.pick([10, 12, 16, 20]), t3 = t2 + R.pick([4, 6, 8, 10].filter(x => x !== t1)), xa = axisFor(t3), ya = axisFor(vm * 1.1), c = pwl([[0, 0], [t1, vm], [t2, vm], [t3, 0]]);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: TS, yl: VT, curves: [c], reads: [[t1, vm], [t2, vm], [t3, 0]] });
+  const a1 = vm / t1, a3 = vm / (t3 - t2), dist = .5 * t1 * vm + (t2 - t1) * vm + .5 * (t3 - t2) * vm;
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { vm, t1, t2, t3 }, stem: `<b>Figure 1</b> shows how the velocity of a train varies with time as it travels between two stations.`, parts: [
+    calc('Determine the acceleration of the train during the first stage of the journey.', 2, a1, MS2, M(E(`acceleration = gradient = ${vm} / ${t1}`), E(`= ${AV(a1, MS2)}`)), { tol: .05, noSkill: true }),
+    calc('Determine the magnitude of the deceleration during the final stage.', 1, a3, MS2, M(E(`${vm} / (${t3} − ${t2}) = ${AV(a3, MS2)}`)), { tol: .05, noSkill: true }),
+    calc('Determine the distance between the two stations.', 3, dist, 'm', M('distance = area under the graph', E(`½ × ${t1} × ${vm} + (${t2} − ${t1}) × ${vm} + ½ × (${t3} − ${t2}) × ${vm}`), E(`= ${AV(dist, 'm')}`)), { tol: .04, noSkill: true }),
+    calc('Calculate the average speed for the whole journey.', 1, dist / t3, MS1, M(E(`${I(dist)} / ${t3} = ${AV(dist / t3, MS1)}`)), { tol: .04 }),
+    choose(R, 'During which stage is the resultant force on the train zero?', 1, 'the middle stage', ['the first stage', 'the final stage', 'none of the stages'], 'The middle stage: the velocity is constant ✓')
+  ] };
+};
+T.SL4 = R => {
+  const s1 = R.pick([20, 40, 60, 80, 120]), t1 = R.pick([4, 6, 8, 10]), t2 = t1 + R.pick([4, 6, 10]), t3 = t2 + R.pick([4, 6, 8, 10, 12].filter(x => x !== t1)), xa = axisFor(t3), ya = axisFor(s1 * 1.1), c = pwl([[0, 0], [t1, s1], [t2, s1], [t3, 0]]);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: TS, yl: 'displacement / m', curves: [c], reads: [[t1, s1], [t2, s1], [t3, 0]] });
+  const v1 = s1 / t1, v3 = s1 / (t3 - t2), who = R.pick(['cyclist', 'runner', 'robot']);
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { s1, t1, t2, t3 }, stem: `<b>Figure 1</b> shows how the displacement of a ${who} from a starting point varies with time. The ${who} moves along a straight line.`, parts: [
+    calc(`Determine the velocity of the ${who} during the first stage.`, 2, v1, MS1, M(E(`velocity = gradient = ${s1} / ${t1}`), E(`= ${AV(v1, MS1)}`)), { tol: .05, noSkill: true }),
+    choose(R, `Describe the motion of the ${who} during the middle stage.`, 1, 'stationary', ['moving at constant velocity', 'accelerating', 'decelerating'], 'Stationary (the displacement is not changing) ✓'),
+    calc(`Determine the speed of the ${who} during the final stage.`, 1, v3, MS1, M(E(`${s1} / (${t3} − ${t2}) = ${AV(v3, MS1)}`)), { tol: .05, noSkill: true }),
+    choose(R, `In which direction is the ${who} moving during the final stage?`, 1, 'back towards the starting point', ['away from the starting point', 'it is not moving'], 'Back towards the starting point (the gradient is negative) ✓'),
+    calc('Calculate the average speed for the whole journey.', 1, 2 * s1 / t3, MS1, M(E(`total distance / time = 2 × ${s1} / ${t3} = ${AV(2 * s1 / t3, MS1)}`)), { tol: .04 }),
+    text('State the average velocity for the whole journey. Give a reason.', 1, 'Zero, because the final displacement is zero ✓')
+  ] };
+};
+T.SL5 = R => {
+  const u = R.pick([8.0, 10, 12, 15, 18, 20]), h = u * u / (2 * g), t = u / g;
+  return NOFIG(2, { u }, `A ball is thrown vertically upwards with an initial velocity of ${V(u, MS1)}. Air resistance is negligible.`, [
+    calc('Calculate the maximum height that the ball reaches above its point of release.', 2, h, 'm', M(E(`0 = ${N(u)}<sup>2</sup> − 2 × ${GS} × <i>s</i>`), E(`<i>s</i> = ${N(u)}<sup>2</sup> / (2 × ${GS}) = ${AV(h, 'm')}`))),
+    calc('Calculate the time taken to reach the maximum height.', 1, t, 's', M(E(`<i>t</i> = <i>u</i> / <i>g</i> = ${N(u)} / ${GS} = ${AV(t, 's')}`))),
+    calc('Calculate the total time before the ball returns to its point of release.', 1, 2 * t, 's', M(E(`2 × ${I(t)} = ${AV(2 * t, 's')}`))),
+    choose(R, 'Which describes the velocity of the ball when it returns to its point of release?', 1, 'the same speed as at release, in the opposite direction', ['the same velocity as at release', 'a greater speed than at release', 'zero'], 'Same speed, opposite direction ✓'),
+    text('State the magnitude and direction of the acceleration of the ball at its maximum height.', 1, '9.81 m s<sup>−2</sup> downwards ✓')
+  ]);
+};
+T.SL6 = R => {
+  const u = R.pick([5.0, 8.0, 10, 12]), h = R.pick([20, 30, 40, 45, 60]), v = Math.sqrt(u * u + 2 * g * h), t = (v + u) / g, hm = h + u * u / (2 * g);
+  return NOFIG(2, { u, h }, `A stone is thrown vertically upwards at ${V(u, MS1)} from the edge of a cliff. The stone is released ${V(h, 'm')} above the sea and later falls into the sea. Air resistance is negligible.`, [
+    calc('Calculate the speed of the stone as it reaches the sea.', 2, v, MS1, M(E(`<i>v</i><sup>2</sup> = <i>u</i><sup>2</sup> + 2<i>as</i> = ${N(u)}<sup>2</sup> + 2 × ${GS} × ${N(h)}`) + ' (taking downwards as positive, <i>u</i> is negative but <i>u</i><sup>2</sup> is positive)', E(`<i>v</i> = √(${N(u)}<sup>2</sup> + 2 × ${GS} × ${N(h)}) = ${AV(v, MS1)}`))),
+    calc('Calculate the time between the stone being released and reaching the sea.', 2, t, 's', M(E(`<i>v</i> = <i>u</i> + <i>at</i> with <i>u</i> = −${N(u)} m s<sup>−1</sup> (downwards positive)`), E(`<i>t</i> = (${I(v)} + ${N(u)}) / ${GS} = ${AV(t, 's')}`))),
+    calc('Calculate the maximum height of the stone above the sea.', 2, hm, 'm', M(E(`height gained = ${N(u)}<sup>2</sup> / (2 × ${GS}) = ${I(u * u / (2 * g))} m`), E(`${N(h)} + ${I(u * u / (2 * g))} = ${AV(hm, 'm')}`)))
+  ]);
+};
+T.SL7 = R => {
+  const ge = R.pick([9.4, 9.6, 9.7, 9.9, 10.1, 10.2]), k = ge / 2, hs = [0.20, 0.40, 0.60, 0.80, 1.00, 1.20], cr = hs.map(h => [h / k * (1 + (R() - .5) * .05), h]), xr = 0.20, pd = Math.abs(ge - g) / g * 100;
+  const fig = graph({ x: [0, .3, .05], y: [0, 1.5, .5], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 't^{2} / s^{2}', yl: 'h / m', curves: [{ f: x => k * x, from: 0, to: Math.min(.3, 1.45 / k) }], crosses: cr, reads: [[xr, k * xr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { ge }, stem: `A student measures the time <i>t</i> taken for a steel ball to fall from rest through different heights <i>h</i>. <b>Figure 1</b> shows the student’s graph of <i>h</i> against <i>t</i><sup>2</sup> with a line of best fit.`, parts: [
+    text('Explain why a graph of <i>h</i> against <i>t</i><sup>2</sup> is expected to be a straight line through the origin.', 2, M(E('<i>h</i> = ½<i>gt</i><sup>2</sup>') + ' (from <i>s</i> = <i>ut</i> + ½<i>at</i><sup>2</sup> with <i>u</i> = 0)', 'so <i>h</i> is directly proportional to <i>t</i><sup>2</sup> (gradient = ½<i>g</i>)')),
+    calc('Determine the gradient of the line of best fit.', 2, k, MS2, M(`uses a large triangle, for example from (0, 0) to (${fx(xr, 2)}, ${fx(k * xr, 2)})`, E(`gradient = ${fx(k * xr, 2)} / ${fx(xr, 2)} = ${AV(k, MS2)}`)), { tol: .05, noSkill: true }),
+    calc('Determine the value of <i>g</i> given by the graph.', 1, ge, MS2, M(E(`<i>g</i> = 2 × gradient = 2 × ${I(k)} = ${AV(ge, MS2)}`)), { tol: .05, noSkill: true }),
+    calc('Calculate the percentage difference between this value and the accepted value of 9.81 m s<sup>−2</sup>.', 1, pd, '%', M(E(`|${N(ge, 3)} − 9.81| / 9.81 × 100 = ${A(pd)}%`)), { tol: .08, noSkill: true }),
+    text('Suggest one way to measure the time of fall accurately.', 1, 'Use an electronic timer that starts when the ball is released (for example by an electromagnet) and stops when it hits a trapdoor or passes a light gate ✓')
+  ] };
+};
+T.SL8 = R => {
+  const a1 = R.pick([2.0, 3.0, 4.0]), a2 = R.pick([0.5, 1.0, 1.5]), t1 = R.pick([4, 6, 8]), t2 = t1 + R.pick([4, 6, 8]), u = R.pick([0, 2.0, 5.0]), xa = axisFor(t2), c = pwl([[0, a1], [t1, a1], [t1 + 1e-9, a2], [t2, a2]]);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, 5, 1], xdiv: 5, ydiv: 5, h: 260, w: 440, xl: TS, yl: 'acceleration / m s^{−2}', curves: [c], reads: [[t1 / 2, a1], [t2, a2]] });
+  const dv1 = a1 * t1, v2 = u + dv1 + a2 * (t2 - t1), s1 = u * t1 + .5 * a1 * t1 * t1;
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { a1, a2, t1, t2, u }, stem: `<b>Figure 1</b> shows how the acceleration of a motorcycle varies with time. At time <i>t</i> = 0 the velocity of the motorcycle is ${u ? V(u, MS1) : 'zero'}.`, parts: [
+    choose(R, 'What does the area under an acceleration–time graph represent?', 1, 'change in velocity', ['distance travelled', 'displacement', 'resultant force'], 'Change in velocity ✓'),
+    calc(`Determine the change in velocity during the first ${t1} s.`, 1, dv1, MS1, M(E(`${N(a1)} × ${t1} = ${AV(dv1, MS1)}`)), { tol: .04, noSkill: true }),
+    calc(`Determine the velocity of the motorcycle at <i>t</i> = ${t2} s.`, 2, v2, MS1, M(E(`change in velocity in the second stage = ${N(a2)} × (${t2} − ${t1}) = ${I(a2 * (t2 - t1))} m s<sup>−1</sup>`), E(`<i>v</i> = ${N(u)} + ${I(dv1)} + ${I(a2 * (t2 - t1))} = ${AV(v2, MS1)}`)), { tol: .04, noSkill: true }),
+    calc(`Calculate the distance travelled during the first ${t1} s.`, 2, s1, 'm', M(E(`<i>s</i> = <i>ut</i> + ½<i>at</i><sup>2</sup> = ${N(u)} × ${t1} + ½ × ${N(a1)} × ${t1}<sup>2</sup>`), E(`= ${AV(s1, 'm')}`)), { tol: .04 })
+  ] };
+};
+T.SL9 = R => {
+  const vt = R.pick([20, 30, 40, 50]), m = R.pick([0.050, 0.10, 0.20, 0.50]), tau = vt / g, xa = axisFor(5 * tau), ya = axisFor(vt * 1.15), f = t => vt * (1 - Math.exp(-t / tau));
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: TS, yl: VT, curves: [{ f, from: 0, to: xa[0] }], reads: [[xa[0], f(xa[0])]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { vt, m }, stem: `<b>Figure 1</b> shows how the velocity of a ball of mass ${V(m, 'kg')} varies with time after it is dropped from rest from a tall tower.`, parts: [
+    calc('Determine the terminal speed of the ball.', 1, vt, MS1, M(`${vt} m s<sup>−1</sup> (the speed at which the graph levels off)`), { tol: .05, noSkill: true }),
+    text('State the gradient of the graph at <i>t</i> = 0. Give a reason.', 2, M('9.81 m s<sup>−2</sup>', 'because at the start there is no air resistance (drag), so the only force is the weight')),
+    choose(R, 'What happens to the acceleration of the ball as it falls?', 1, 'it decreases to zero', ['it stays at 9.81 m s<sup>−2</sup>', 'it increases', 'it decreases to a constant value that is not zero'], 'It decreases to zero (the gradient decreases to zero) ✓'),
+    text('Explain, in terms of forces, why the ball reaches a terminal speed.', 3, M('Air resistance (drag) increases as the speed increases', 'so the resultant force (weight − drag) and the acceleration decrease', 'until the drag equals the weight, when the resultant force is zero and the velocity is constant')),
+    calc('Calculate the air resistance on the ball when it falls at its terminal speed.', 1, m * g, 'N', M(E(`drag = weight = ${N(m)} × ${GS} = ${AV(m * g, 'N')}`)))
+  ] };
+};
+T.SL10 = R => {
+  const v = find(() => ({ L: R.pick([0.050, 0.080, 0.10]), t1: R.pick([0.20, 0.25, 0.40]), t2: R.pick([0.050, 0.080, 0.10]), d: R.pick([0.40, 0.50, 0.60, 0.80]) }), o => o.L / o.t2 > 1.8 * o.L / o.t1);
+  const { L, t1, t2, d } = v, v1 = L / t1, v2 = L / t2, a = (v2 * v2 - v1 * v1) / (2 * d);
+  return NOFIG(2, { L, t1, t2, d }, `A trolley carries a card of length ${V(L, 'm')}. The trolley accelerates uniformly down a ramp and the card passes through two light gates that are ${V(d, 'm')} apart. The card takes ${V(t1, 's')} to pass through the first light gate and ${V(t2, 's')} to pass through the second.`, [
+    calc('Calculate the speed of the trolley at the first light gate.', 1, v1, MS1, M(E(`${N(L)} / ${N(t1)} = ${AV(v1, MS1)}`))),
+    calc('Calculate the speed of the trolley at the second light gate.', 1, v2, MS1, M(E(`${N(L)} / ${N(t2)} = ${AV(v2, MS1)}`))),
+    calc('Calculate the acceleration of the trolley.', 2, a, MS2, M(E(`<i>v</i><sup>2</sup> = <i>u</i><sup>2</sup> + 2<i>as</i>: <i>a</i> = (${I(v2)}<sup>2</sup> − ${I(v1)}<sup>2</sup>) / (2 × ${N(d)})`), E(`= ${AV(a, MS2)}`))),
+    text('Explain why a short card gives a better value for the speed at a light gate.', 1, 'The measurement gives an average speed over the time the card passes; a shorter card gives a value closer to the instantaneous speed ✓'),
+    choose(R, 'The ramp is made steeper. What happens to the acceleration of the trolley?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases (the component of the weight along the ramp is larger) ✓')
+  ]);
+};
+T.SL11 = R => {
+  const u = R.pick([10, 15, 20, 25, 30]), te = 2 * u / g, xa = axisFor(te), ya = axisFor(u * 1.1), f = t => u - g * t, h = u * u / (2 * g);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [-ya[0], ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 320, w: 440, xl: TS, yl: VT, curves: [{ f, from: 0, to: te }], reads: [[0, u], [u / g, 0], [te, -u]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { u }, stem: `A ball is thrown vertically upwards and caught at the same height. <b>Figure 1</b> shows how the velocity of the ball varies with time. Upwards is taken as positive.`, parts: [
+    calc('State the initial speed of the ball.', 1, u, MS1, M(`${u} m s<sup>−1</sup>`), { abs: ya[1] / 5, noSkill: true }),
+    calc('Determine the time at which the ball is at its maximum height.', 1, u / g, 's', M(`${A(u / g)} s (when the velocity is zero)`), { abs: xa[1] / 5, noSkill: true }),
+    calc('Determine the magnitude of the acceleration of the ball.', 2, g, MS2, M(E(`gradient = change in velocity / time = (${u} − (−${u})) / ${A(te)}`), E(`= ${AV(g, MS2)}`)), { tol: .06, noSkill: true }),
+    calc('Determine the maximum height reached by the ball.', 2, h, 'm', M('height = area between the line and the time axis up to the time when <i>v</i> = 0', E(`½ × ${u} × ${A(u / g)} = ${AV(h, 'm')}`)), { tol: .08, noSkill: true }),
+    text('Explain how the graph shows that the acceleration is constant.', 1, 'It is a straight line (constant gradient) ✓'),
+    choose(R, 'What is the displacement of the ball when it is caught?', 1, 'zero', ['twice the maximum height', 'equal to the maximum height'], 'Zero (the areas above and below the time axis are equal) ✓')
+  ] };
+};
+
+/* ===== Projectile motion ===== */
+const dashed = (s, pts, tag) => s.poly(pts, { dash: '7 5', w: 1.4, tag: tag || 'path' });
+T.PR1 = R => {
+  const h = R.pick([20, 30, 45, 60, 80]), u = R.pick([8.0, 10, 12, 15, 20]), t = Math.sqrt(2 * h / g), x = u * t, vy = g * t, v = Math.hypot(u, vy), th = deg(Math.atan(vy / u));
+  const s = new Scene('A ball thrown horizontally from the top of a cliff'), H = 180, Rp = 240; s.rect(-120, -H, 120, H, { fill: '#e6e9ec', tag: 'cliff' }); s.label(-60, -H / 2 + 5, 'cliff', { inside: true }); s.line(0, 0, Rp + 70, 0, { tag: 'sea' }); s.label(Rp + 66, 20, 'sea', { anchor: 'end' });
+  const pts = []; for (let i = 0; i <= 30; i++){ const q = i / 30; pts.push([8 + Rp * q, -H - 8 + (H + 8) * q * q]); } dashed(s, pts); blob(s, 8, -H - 8, 5);
+  force(s, 8, -H - 8, 74, 0, LB(u, 'm s^{−1}')); s.dim(-140, -H, -140, 0, LB(h, 'm'), { left: true });
+  return { sf: 2, scenes: [s], data: { h, u }, stem: `<b>Figure 1</b> shows a ball thrown horizontally at ${V(u, MS1)} from the top of a cliff. The ball is released ${V(h, 'm')} above the sea. Air resistance is negligible.`, parts: [
+    calc('Calculate the time taken for the ball to reach the sea.', 2, t, 's', M(E(`<i>s</i> = ½<i>gt</i><sup>2</sup> (vertically, <i>u</i> = 0), so <i>t</i> = √(2 × ${N(h)} / ${GS})`), E(`= ${AV(t, 's')}`))),
+    calc('Calculate the horizontal distance from the base of the cliff to the point where the ball enters the sea.', 1, x, 'm', M(E(`${N(u)} × ${I(t)} = ${AV(x, 'm')}`))),
+    calc('Calculate the vertical component of the velocity of the ball as it reaches the sea.', 1, vy, MS1, M(E(`<i>v</i> = <i>gt</i> = ${GS} × ${I(t)} = ${AV(vy, MS1)}`))),
+    calc('Calculate the speed of the ball as it reaches the sea.', 2, v, MS1, M(E(`<i>v</i><sup>2</sup> = ${N(u)}<sup>2</sup> + ${I(vy)}<sup>2</sup>`), E(`<i>v</i> = √(${N(u)}<sup>2</sup> + ${I(vy)}<sup>2</sup>) = ${AV(v, MS1)}`))),
+    calc('Calculate the angle between the velocity of the ball and the horizontal as it reaches the sea.', 1, th, '°', M(E(`θ = tan<sup>−1</sup>(${I(vy)} / ${N(u)}) = ${AD(th)}`)))
+  ] };
+};
+// launch arrow with its angle to the horizontal marked
+const launch = (s, x, y, th, lab, o = {}) => { const l = o.l || 92; force(s, x, y, l * cs(th), -l * sn(th), lab, { at: [-12, -6], anchor: 'end' }); if (o.base) s.line(x, y, x + 120, y, { dash: '5 4', w: 1, tag: 'horizontal' }); s.arc(x, y, 50, 0, th, { w: 1.1, tag: 'angle arc' }); s.label(x + 60, y - 4.5, DG(th), { anchor: 'start' }); };
+T.PR2 = R => {
+  const u = R.pick([15, 20, 25, 30, 40]), th = R.pick([25, 30, 35, 40, 50, 60]), uh = u * cs(th), uv = u * sn(th), t = uv / g, h = uv * uv / (2 * g), x = uh * 2 * t;
+  const s = new Scene('A projectile launched at an angle from level ground'), Rp = 380; hatchH(s, -40, Rp + 40, 0);
+  const pts = []; for (let i = 0; i <= 40; i++){ const q = i / 40; pts.push([Rp * q, -Rp * tn(th) * q * (1 - q)]); } dashed(s, pts); launch(s, 0, 0, th, LB(u, 'm s^{−1}'));
+  return { sf: 2, scenes: [s], data: { u, th }, stem: `<b>Figure 1</b> shows the path of a ball that is kicked from level ground at ${V(u, MS1)} at an angle of ${DG(th)} to the horizontal. Air resistance is negligible.`, parts: [
+    calc('Calculate the horizontal component of the initial velocity.', 1, uh, MS1, M(E(`${N(u)} × cos ${N(th)}° = ${AV(uh, MS1)}`))),
+    calc('Calculate the vertical component of the initial velocity.', 1, uv, MS1, M(E(`${N(u)} × sin ${N(th)}° = ${AV(uv, MS1)}`))),
+    calc('Calculate the time taken to reach the maximum height.', 1, t, 's', M(E(`<i>t</i> = ${I(uv)} / ${GS} = ${AV(t, 's')}`))),
+    calc('Calculate the maximum height reached.', 2, h, 'm', M(E(`0 = ${I(uv)}<sup>2</sup> − 2 × ${GS} × <i>s</i>`), E(`<i>s</i> = ${I(uv)}<sup>2</sup> / (2 × ${GS}) = ${AV(h, 'm')}`))),
+    calc('Calculate the horizontal distance travelled before the ball lands.', 2, x, 'm', M(E(`time of flight = 2 × ${I(t)} = ${I(2 * t)} s`), E(`${I(uh)} × ${I(2 * t)} = ${AV(x, 'm')}`)))
+  ] };
+};
+T.PR3 = R => {
+  const uh = R.pick([8.8, 12, 15, 18, 20]), th = R.pick([30, 35, 40, 45, 50]), uv = uh * tn(th), t = uv / g, h = uv * uv / (2 * g);
+  return NOFIG(2, { uh, th }, `A golfer hits a ball out of a sandpit. The initial velocity of the ball is at ${DG(th)} to the horizontal and its horizontal component is ${V(uh, MS1)}. Assume that weight is the only force that acts on the ball in the air.`, [
+    calc('Calculate the vertical component of the initial velocity.', 1, uv, MS1, M(E(`${N(uh)} × tan ${N(th)}° = ${AV(uv, MS1)}`))),
+    calc('Calculate the time taken for the ball to reach its maximum height.', 2, t, 's', M('at the maximum height the vertical component of velocity is zero', E(`<i>t</i> = ${I(uv)} / ${GS} = ${AV(t, 's')}`))),
+    calc('Calculate the maximum height of the ball above its initial position.', 2, h, 'm', M(E(`<i>s</i> = ${I(uv)}<sup>2</sup> / (2 × ${GS})`) + ` (or ${E('½(<i>u</i> + <i>v</i>)<i>t</i>')})`, E(`= ${AV(h, 'm')}`))),
+    calc('State the speed of the ball at its maximum height.', 1, uh, MS1, M(`${AV(uh, MS1)} (the horizontal component is unchanged)`), NS),
+    choose(R, 'What is the direction of the acceleration of the ball at its maximum height?', 1, 'vertically downwards', ['horizontal, in the direction of travel', 'vertically upwards', 'there is no acceleration'], 'Vertically downwards ✓')
+  ]);
+};
+T.PR4 = R => {
+  const h0 = R.pick([1.8, 2.0, 2.2]), u = R.pick([10, 11, 12, 13]), th = R.pick([35, 40, 45]), uh = u * cs(th), uv = u * sn(th), hm = h0 + uv * uv / (2 * g), v = Math.sqrt(uv * uv + 2 * g * h0), t = (uv + v) / g, x = uh * t;
+  const s = new Scene('A shot released above the ground at an angle'), k = 360 / x; hatchH(s, -60, 400, 0);
+  const pts = []; for (let i = 0; i <= 40; i++){ const X = x * i / 40; pts.push([k * X, -k * (h0 + X * tn(th) - g * X * X / (2 * uh * uh))]); } dashed(s, pts); blob(s, 0, -k * h0, 5);
+  launch(s, 0, -k * h0, th, LB(u, 'm s^{−1}'), { base: true }); s.dim(-34, -k * h0, -34, 0, LB(h0, 'm'), { left: true });
+  return { sf: 2, scenes: [s], data: { h0, u, th }, stem: `<b>Figure 1</b> shows the path of a shot put by an athlete. The shot is released ${V(h0, 'm')} above level ground at ${V(u, MS1)} at an angle of ${DG(th)} to the horizontal. Air resistance is negligible.`, parts: [
+    calc('Calculate the vertical component of the initial velocity.', 1, uv, MS1, M(E(`${N(u)} × sin ${N(th)}° = ${AV(uv, MS1)}`))),
+    calc('Calculate the maximum height of the shot above the ground.', 2, hm, 'm', M(E(`height gained = ${I(uv)}<sup>2</sup> / (2 × ${GS}) = ${I(uv * uv / (2 * g))} m`), E(`${N(h0)} + ${I(uv * uv / (2 * g))} = ${AV(hm, 'm')}`))),
+    calc('Calculate the vertical component of the velocity of the shot as it reaches the ground.', 2, v, MS1, M(E(`<i>v</i><sup>2</sup> = ${I(uv)}<sup>2</sup> + 2 × ${GS} × ${N(h0)}`), E(`<i>v</i> = √(${I(uv)}<sup>2</sup> + 2 × ${GS} × ${N(h0)}) = ${AV(v, MS1)}`))),
+    calc('Calculate the time for which the shot is in the air.', 2, t, 's', M('the vertical velocity changes from ' + E(`${I(uv)} m s<sup>−1</sup>`) + ' upwards to ' + E(`${I(v)} m s<sup>−1</sup>`) + ' downwards', E(`<i>t</i> = (${I(uv)} + ${I(v)}) / ${GS} = ${AV(t, 's')}`))),
+    calc('Calculate the horizontal distance travelled by the shot.', 2, x, 'm', M(E(`horizontal component = ${N(u)} × cos ${N(th)}° = ${I(uh)} m s<sup>−1</sup>`), E(`${I(uh)} × ${I(t)} = ${AV(x, 'm')}`)))
+  ] };
+};
+T.PR5 = R => {
+  const u = R.pick([12, 15, 18, 20]), d = R.pick([2.4, 3.0, 3.6]), t = d / u, y = .5 * g * t * t, vy = g * t;
+  return NOFIG(2, { u, d }, `A dart is thrown horizontally at ${V(u, MS1)} towards a point <b>P</b> on a vertical board that is ${V(d, 'm')} away. Air resistance is negligible.`, [
+    calc('Calculate the time taken for the dart to reach the board.', 1, t, 's', M(E(`${N(d)} / ${N(u)} = ${AV(t, 's')}`))),
+    calc('Calculate the distance below <b>P</b> at which the dart hits the board.', 2, y, 'm', M(E(`<i>s</i> = ½<i>gt</i><sup>2</sup> = ½ × ${GS} × ${I(t)}<sup>2</sup>`), E(`= ${AV(y, 'm')}`))),
+    calc('Calculate the vertical component of the velocity of the dart as it hits the board.', 1, vy, MS1, M(E(`${GS} × ${I(t)} = ${AV(vy, MS1)}`))),
+    choose(R, 'The dart is thrown horizontally at a greater speed. Where does it hit the board?', 1, 'closer to P', ['further below P', 'at the same point as before', 'above P'], 'Closer to <b>P</b>: the time of flight is shorter so it falls less far ✓'),
+    text('Explain why the horizontal component of the velocity of the dart is constant.', 1, 'There is no horizontal force on the dart (air resistance is negligible) ✓')
+  ]);
+};
+T.PR6 = R => {
+  const v = R.pick([50, 60, 70, 80]), h = R.pick([120, 180, 250, 320, 500]), t = Math.sqrt(2 * h / g), x = v * t, vy = g * t, sp = Math.hypot(v, vy);
+  return NOFIG(2, { v, h }, `An aircraft flies horizontally at a constant ${V(v, MS1)} at a height of ${V(h, 'm')} above level ground. A supply package is released from the aircraft. Air resistance on the package is negligible.`, [
+    calc('Calculate the time taken for the package to reach the ground.', 2, t, 's', M(E(`<i>t</i> = √(2<i>s</i> / <i>g</i>) = √(2 × ${N(h)} / ${GS})`), E(`= ${AV(t, 's')}`))),
+    calc('Calculate the horizontal distance travelled by the package before it reaches the ground.', 1, x, 'm', M(E(`${N(v)} × ${I(t)} = ${AV(x, 'm')}`))),
+    choose(R, 'Where is the aircraft when the package reaches the ground?', 1, 'directly above the package', ['behind the package', 'ahead of the package'], 'Directly above the package ✓'),
+    text('Explain your answer.', 1, 'The package keeps the same horizontal velocity as the aircraft (there is no horizontal force on it) ✓'),
+    calc('Calculate the speed of the package as it reaches the ground.', 2, sp, MS1, M(E(`vertical component = ${GS} × ${I(t)} = ${I(vy)} m s<sup>−1</sup>`), E(`speed = √(${N(v)}<sup>2</sup> + ${I(vy)}<sup>2</sup>) = ${AV(sp, MS1)}`)))
+  ]);
+};
+T.PR7 = R => {
+  const u = R.pick([20, 25, 30]), th = R.pick([30, 45]), uv = u * sn(th), tf = 2 * uv / g, x = u * cs(th) * tf, swap = R.chance(.5), drag = swap ? 'A' : 'B';
+  const s = new Scene('Two possible paths of a ball, with and without air resistance'), Rp = 380, Hh = Rp * tn(th) / 4; hatchH(s, -40, Rp + 40, 0);
+  const p1 = [], p2 = [], xp = .42 * Rp, xl = .72 * Rp, h2 = .8 * Hh; for (let i = 0; i <= 40; i++){ const q = i / 40; p1.push([Rp * q, -4 * Hh * q * (1 - q)]); const X = xl * q; p2.push([X, -h2 * (1 - (X < xp ? ((xp - X) / xp) ** 2 : ((X - xp) / (xl - xp)) ** 2))]); }
+  dashed(s, p1); s.poly(p2, { w: 1.6, tag: 'path' }); s.label(Rp / 2 + 40, -Hh - 9, swap ? 'B' : 'A', { bold: true }); s.label(xp, -h2 + 22, drag, { bold: true });
+  return { sf: 2, scenes: [s], data: { u, th, swap }, stem: `A ball is hit from level ground at ${V(u, MS1)} at ${DG(th)} to the horizontal. <b>Figure 1</b> shows two paths, <b>A</b> and <b>B</b>. One is the path when air resistance is negligible. The other is the path when air resistance is significant.`, parts: [
+    choose(R, 'Which path is followed when air resistance is significant?', 1, drag, [swap ? 'B' : 'A'], `${drag} ✓`),
+    text('State two ways in which air resistance changes the path.', 2, M('The maximum height is lower and the range is shorter', 'the path is not symmetrical: the ball comes down more steeply than it went up')),
+    calc('Calculate the time of flight when air resistance is negligible.', 2, tf, 's', M(E(`vertical component = ${N(u)} × sin ${N(th)}° = ${I(uv)} m s<sup>−1</sup>`), E(`time of flight = 2 × ${I(uv)} / ${GS} = ${AV(tf, 's')}`))),
+    calc('Calculate the range when air resistance is negligible.', 1, x, 'm', M(E(`${N(u)} × cos ${N(th)}° × ${I(tf)} = ${AV(x, 'm')}`))),
+    choose(R, 'What happens to the horizontal component of the velocity during the flight when air resistance is significant?', 1, 'it decreases', ['it stays constant', 'it increases'], 'It decreases, because air resistance has a horizontal component that opposes the motion ✓')
+  ] };
+};
+T.PR8 = R => {
+  const m = R.pick([70, 75, 80, 90]), D = R.pick([300, 400, 500]), W = m * g, a = (W - D) / m, D2 = R.pick([1500, 1800, 2000]), a2 = (D2 - W) / m;
+  return NOFIG(2, { m, D, D2 }, `A skydiver of total mass ${V(m, 'kg')} jumps from an aircraft and falls vertically.`, [
+    calc(`At one instant the air resistance on the skydiver is ${V(D, 'N')}. Calculate the acceleration of the skydiver at this instant.`, 2, a, MS2, M(E(`resultant force = ${N(m)} × ${GS} − ${N(D)} = ${I(W - D)} N`), E(`<i>a</i> = ${I(W - D)} / ${N(m)} = ${AV(a, MS2)}`))),
+    calc('Calculate the air resistance on the skydiver at terminal speed.', 1, W, 'N', M(E(`equal to the weight = ${N(m)} × ${GS} = ${AV(W, 'N')}`))),
+    text('Explain why the skydiver reaches a terminal speed.', 3, M('Air resistance increases as the speed increases', 'so the resultant force and the acceleration decrease', 'until air resistance equals the weight; the resultant force is then zero and the speed is constant')),
+    calc(`The parachute opens and the air resistance immediately becomes ${V(D2, 'N')}. Calculate the magnitude of the deceleration at this instant.`, 2, a2, MS2, M(E(`resultant force = ${N(D2)} − ${I(W)} = ${I(D2 - W)} N (upwards)`), E(`deceleration = ${I(D2 - W)} / ${N(m)} = ${AV(a2, MS2)}`))),
+    choose(R, 'How does the new terminal speed with the parachute open compare with the terminal speed before?', 1, 'it is lower', ['it is higher', 'it is the same'], 'Lower: the larger area gives a drag equal to the weight at a lower speed ✓')
+  ]);
+};
+T.PR9 = R => {
+  const v = find(() => ({ d: R.pick([12, 15, 18, 20, 24]), u: R.pick([18, 20, 22, 25]), th: R.pick([30, 35, 40, 45]) }), o => { const t = o.d / (o.u * cs(o.th)), tt = o.u * sn(o.th) / g, y = o.u * sn(o.th) * t - .5 * g * t * t; return Math.abs(t - tt) > .2 && y > 1.5; });
+  const { d, u, th } = v, uh = u * cs(th), uv = u * sn(th), t = d / uh, y = uv * t - .5 * g * t * t, tt = uv / g, rising = t < tt;
+  const s = new Scene('A ball kicked towards a wall'), k = 300 / d; hatchH(s, -40, 360, 0); s.rect(300, -k * y - 60, 14, k * y + 60, { fill: '#e6e9ec', tag: 'wall' }); s.label(322, -k * y - 40, 'wall', { anchor: 'start' });
+  const pts = []; for (let i = 0; i <= 30; i++){ const X = d * i / 30; pts.push([k * X, -k * (X * tn(th) - g * X * X / (2 * uh * uh))]); } dashed(s, pts); launch(s, 0, 0, th, LB(u, 'm s^{−1}')); s.dim(0, 34, 300, 34, LB(d, 'm'), { below: true });
+  return { sf: 2, scenes: [s], data: { d, u, th }, stem: `<b>Figure 1</b> shows a ball kicked from level ground towards a vertical wall that is ${V(d, 'm')} away. The initial velocity of the ball is ${V(u, MS1)} at ${DG(th)} to the horizontal. Air resistance is negligible.`, parts: [
+    calc('Calculate the horizontal component of the initial velocity.', 1, uh, MS1, M(E(`${N(u)} × cos ${N(th)}° = ${AV(uh, MS1)}`))),
+    calc('Calculate the time taken for the ball to reach the wall.', 1, t, 's', M(E(`${N(d)} / ${I(uh)} = ${AV(t, 's')}`))),
+    calc('Calculate the height at which the ball hits the wall.', 3, y, 'm', M(E(`vertical component = ${N(u)} × sin ${N(th)}° = ${I(uv)} m s<sup>−1</sup>`), E(`<i>s</i> = <i>ut</i> + ½<i>at</i><sup>2</sup> = ${I(uv)} × ${I(t)} − ½ × ${GS} × ${I(t)}<sup>2</sup>`), E(`= ${AV(y, 'm')}`)), { tol: .03 }),
+    calc('Calculate the time at which the ball would reach its maximum height if the wall were not there.', 1, tt, 's', M(E(`${I(uv)} / ${GS} = ${AV(tt, 's')}`))),
+    choose(R, 'Is the ball rising or falling when it hits the wall?', 1, rising ? 'rising' : 'falling', [rising ? 'falling' : 'rising', 'moving horizontally'], `${rising ? 'Rising: it reaches the wall before' : 'Falling: it reaches the wall after'} the time of maximum height ✓`)
+  ] };
+};
+T.PR10 = R => {
+  const h = R.pick([0.80, 0.90, 1.0, 1.2, 1.5]), x = R.pick([0.45, 0.60, 0.75, 0.90]), t = Math.sqrt(2 * h / g), u = x / t;
+  return NOFIG(2, { h, x }, `A student rolls a ball down a ramp fixed to a bench. The ball leaves the end of the ramp horizontally, ${V(h, 'm')} above the floor, and lands on the floor a horizontal distance of ${V(x, 'm')} from the end of the ramp.`, [
+    calc('Calculate the time taken for the ball to fall to the floor.', 2, t, 's', M(E(`<i>t</i> = √(2<i>s</i> / <i>g</i>) = √(2 × ${N(h)} / ${GS})`), E(`= ${AV(t, 's')}`))),
+    calc('Calculate the speed at which the ball leaves the ramp.', 1, u, MS1, M(E(`${N(x)} / ${I(t)} = ${AV(u, MS1)}`))),
+    choose(R, 'The ball is released from higher up the ramp so that it leaves the ramp at twice the speed. What happens to the time taken to fall to the floor?', 1, 'it stays the same', ['it halves', 'it doubles'], 'It stays the same: the vertical motion is independent of the horizontal motion ✓'),
+    choose(R, 'What happens to the horizontal distance travelled?', 1, 'it doubles', ['it stays the same', 'it becomes four times as large', 'it halves'], 'It doubles ✓'),
+    text('Describe how the student could find the landing position accurately.', 1, 'Let the ball land on carbon paper (or a sand tray) to mark the position, repeat several times and take the mean distance ✓')
+  ]);
+};
+/* ===== Newton's laws of motion ===== */
+const N2 = 'The resultant force on an object is proportional to its rate of change of momentum (<i>F</i> = <i>ma</i> when the mass is constant) ✓';
+const wheel = (s, x, y, r = 7) => s.circle(x, y, r, { fill: '#fff', tag: 'wheel' });
+// a wheeled box standing on a surface at y = 0
+const cart = (s, x, w, h, lab) => { box(s, x, -h - 14, w, h, lab); wheel(s, x + w * .22, -7); wheel(s, x + w * .78, -7); };
+T.NL1 = R => {
+  const m = R.pick([800, 1000, 1200, 1500]), F = R.pick([2400, 3000, 3600, 4500]), D = R.pick([400, 600, 900]), v = R.pick([15, 20, 25]), Fr = F - D, a = Fr / m, t = v / a, s = v * v / (2 * a);
+  return NOFIG(2, { m, F, D, v }, `A car of mass ${V(m, 'kg')} starts from rest on a straight, level road. The driving force is ${V(F, 'N')} and the total resistive force is ${V(D, 'N')}. Assume that both forces are constant.`, [
+    text('State Newton’s second law of motion.', 1, N2),
+    calc('Calculate the resultant force on the car.', 1, Fr, 'N', M(E(`${N(F)} − ${N(D)} = ${AV(Fr, 'N')}`))),
+    calc('Calculate the acceleration of the car.', 1, a, MS2, M(E(`<i>a</i> = <i>F</i> / <i>m</i> = ${I(Fr)} / ${N(m)} = ${AV(a, MS2)}`))),
+    calc(`Calculate the time taken to reach a speed of ${V(v, MS1)}.`, 1, t, 's', M(E(`<i>t</i> = <i>v</i> / <i>a</i> = ${N(v)} / ${I(a)} = ${AV(t, 's')}`))),
+    calc('Calculate the distance travelled in this time.', 2, s, 'm', M(E(`<i>s</i> = <i>v</i><sup>2</sup> / (2<i>a</i>) = ${N(v)}<sup>2</sup> / (2 × ${I(a)})`) + ` (or ${E('½<i>vt</i>')})`, E(`= ${AV(s, 'm')}`)))
+  ]);
+};
+T.NL2 = R => {
+  const m = R.pick([50, 60, 70, 80]), a = R.pick([0.50, 1.0, 1.5, 2.0]), a2 = R.pick([0.80, 1.2, 1.8, 2.5]), W = m * g, up = m * (g + a), dn = m * (g - a2);
+  return NOFIG(2, { m, a, a2 }, `A person of mass ${V(m, 'kg')} stands on a set of scales in a lift. The scales show the normal contact force on the person, in newtons.`, [
+    calc('Calculate the reading on the scales when the lift moves upwards at constant velocity.', 1, W, 'N', M(E(`resultant force is zero, so reading = weight = ${N(m)} × ${GS} = ${AV(W, 'N')}`))),
+    calc(`Calculate the reading when the lift accelerates upwards at ${V(a, MS2)}.`, 2, up, 'N', M(E('<i>R</i> − <i>mg</i> = <i>ma</i>'), E(`<i>R</i> = ${N(m)} × (${GS} + ${N(a)}) = ${AV(up, 'N')}`))),
+    calc(`Calculate the reading when the lift accelerates downwards at ${V(a2, MS2)}.`, 2, dn, 'N', M(E('<i>mg</i> − <i>R</i> = <i>ma</i>'), E(`<i>R</i> = ${N(m)} × (${GS} − ${N(a2)}) = ${AV(dn, 'N')}`))),
+    choose(R, 'The lift is moving upwards and slowing down. How does the reading compare with the weight of the person?', 1, 'it is less than the weight', ['it is greater than the weight', 'it is equal to the weight'], 'Less than the weight: the acceleration is downwards so the resultant force is downwards ✓'),
+    text('State the reading if the lift cable breaks and the lift falls freely.', 1, 'Zero (the person and the scales both accelerate at <i>g</i>) ✓')
+  ]);
+};
+T.NL3 = R => {
+  const Mm = R.pick([2.0e4, 5.0e4, 3.0e5, 4.0e5]), k = R.pick([13, 15, 18]), Th = Mm * k, W = Mm * g, a = (Th - W) / Mm;
+  return NOFIG(2, { Mm, Th }, `A rocket of total mass ${V(Mm, 'kg')} is launched vertically. Its engines produce a constant thrust of ${V(Th, 'N')}.`, [
+    calc('Calculate the weight of the rocket at launch.', 1, W, 'N', M(E(`${N(Mm)} × ${GS} = ${AV(W, 'N')}`))),
+    calc('Calculate the initial acceleration of the rocket.', 2, a, MS2, M(E(`resultant force = ${N(Th)} − ${I(W)} = ${I(Th - W)} N`), E(`<i>a</i> = ${I(Th - W)} / ${N(Mm)} = ${AV(a, MS2)}`))),
+    text('Explain why the acceleration of the rocket increases as fuel is burned, even though the thrust is constant.', 2, M('The mass (and so the weight) of the rocket decreases, so the resultant force increases', 'and the same or larger resultant force acts on a smaller mass (<i>a</i> = <i>F</i> / <i>m</i>)')),
+    text('Use Newton’s third law to explain how the engines produce thrust.', 2, M('The rocket exerts a force on the exhaust gases, pushing them downwards (backwards)', 'so the gases exert an equal and opposite (upward) force on the rocket'))
+  ]);
+};
+T.NL4 = R => {
+  const Mt = R.pick([0.80, 1.0, 1.2, 1.5, 2.0]), m = R.pick([0.10, 0.20, 0.25, 0.30, 0.50]), d = R.pick([0.60, 0.80, 1.0]), a = m * g / (Mt + m), Tn = Mt * a, t = Math.sqrt(2 * d / a);
+  const s = new Scene('A trolley on a bench pulled by a falling mass'); hatchH(s, -30, 300, 0); s.line(300, 0, 300, 150, { tag: 'bench' }); cart(s, 50, 100, 40, 'trolley');
+  s.circle(314, -22, 12, { fill: '#fff', tag: 'pulley' }); s.line(300, 0, 314, -22, { tag: 'pulley support' }); s.line(150, -34, 314, -34, { tag: 'string' }); s.line(326, -22, 326, 70, { tag: 'string' }); box(s, 306, 70, 40, 34, ''); s.label(354, 92, 'falling mass', { anchor: 'start' }); s.label(322, -44, 'pulley', { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { Mt, m, d }, stem: `<b>Figure 1</b> shows a trolley of mass ${V(Mt, 'kg')} on a horizontal bench. A string joins the trolley to a mass of ${V(m, 'kg')} that hangs over a pulley. The system is released from rest. Friction and the masses of the string and pulley are negligible.`, parts: [
+    calc('Calculate the acceleration of the trolley.', 3, a, MS2, M(E(`resultant force on the whole system = weight of the falling mass = ${N(m)} × ${GS} = ${I(m * g)} N`), E(`total mass accelerated = ${N(Mt)} + ${N(m)} = ${I(Mt + m)} kg`), E(`<i>a</i> = ${I(m * g)} / ${I(Mt + m)} = ${AV(a, MS2)}`))),
+    calc('Calculate the tension in the string.', 1, Tn, 'N', M(E(`<i>T</i> = (mass of trolley) × <i>a</i> = ${N(Mt)} × ${I(a)} = ${AV(Tn, 'N')}`))),
+    text('Explain why the tension is less than the weight of the falling mass.', 1, 'The falling mass accelerates downwards, so there is a resultant downward force on it: its weight is greater than the tension ✓'),
+    calc(`Calculate the time taken for the trolley to travel ${V(d, 'm')} from rest.`, 2, t, 's', M(E(`<i>s</i> = ½<i>at</i><sup>2</sup>, so <i>t</i> = √(2 × ${N(d)} / ${I(a)})`), E(`= ${AV(t, 's')}`)))
+  ] };
+};
+T.NL5 = R => {
+  const v = find(() => ({ m: R.pick([2.0, 4.0, 5.0]), th: R.pick([25, 30, 35, 40]), Fr: R.pick([3.0, 5.0, 6.0, 8.0]), d: R.pick([1.5, 2.0, 2.5, 3.0]) }), o => o.Fr < .6 * o.m * g * sn(o.th));
+  const { m, th, Fr, d } = v, par = m * g * sn(th), res = par - Fr, a = res / m, sp = Math.sqrt(2 * a * d), f = slopeFig('A block sliding down a rough slope', th), s = f.s;
+  force(s, f.c(f.bw / 2, f.bh / 2)[0], f.c(f.bw / 2, f.bh / 2)[1], 78 * f.u[0], 78 * f.u[1], LB(Fr, 'N'), { at: [f.n[0] * 20, f.n[1] * 20 + 5] });
+  return { sf: 2, scenes: [s], data: { m, th, Fr, d }, stem: `<b>Figure 1</b> shows a block of mass ${V(m, 'kg')} sliding down a slope that is at ${DG(th)} to the horizontal. A constant frictional force of ${V(Fr, 'N')} acts on the block.`, parts: [
+    calc('Calculate the component of the weight of the block that acts down the slope.', 1, par, 'N', M(E(`${N(m)} × ${GS} × sin ${N(th)}° = ${AV(par, 'N')}`))),
+    calc('Calculate the resultant force on the block.', 1, res, 'N', M(E(`${I(par)} − ${N(Fr)} = ${AV(res, 'N')}`))),
+    calc('Calculate the acceleration of the block.', 1, a, MS2, M(E(`${I(res)} / ${N(m)} = ${AV(a, MS2)}`))),
+    calc(`The block starts from rest. Calculate its speed after it has moved ${V(d, 'm')} down the slope.`, 2, sp, MS1, M('uses ' + E('<i>v</i><sup>2</sup> = <i>u</i><sup>2</sup> + 2<i>as</i>') + ' with <i>u</i> = 0', E(`<i>v</i> = √(2 × ${I(a)} × ${N(d)}) = ${AV(sp, MS1)}`))),
+    choose(R, 'The slope is made steeper and the frictional force is unchanged. What happens to the acceleration?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases ✓')
+  ] };
+};
+T.NL6 = R => {
+  const Mc = R.pick([1200, 1500, 1800]), m = R.pick([400, 500, 600, 750]), F = R.pick([2400, 3000, 3600, 4000]), D = R.pick([300, 400, 500]), d = R.pick([150, 200, 250]), a = (F - D - d) / (Mc + m), Tn = m * a + d;
+  const s = new Scene('A car towing a trailer'); hatchH(s, -30, 420, 0); cart(s, 0, 100, 36, 'trailer'); cart(s, 160, 140, 44, 'car'); s.line(100, -30, 160, -30, { w: 2.4, tag: 'tow bar' }); s.label(130, -40, 'tow bar');
+  force(s, 300, -36, 80, 0, LB(F, 'N'));
+  return { sf: 2, scenes: [s], data: { Mc, m, F, D, d }, stem: `<b>Figure 1</b> shows a car of mass ${V(Mc, 'kg')} towing a trailer of mass ${V(m, 'kg')} along a level road. The driving force on the car is ${V(F, 'N')}. The resistive force on the car is ${V(D, 'N')} and the resistive force on the trailer is ${V(d, 'N')}.`, parts: [
+    calc('Calculate the acceleration of the car and trailer.', 2, a, MS2, M(E(`resultant force = ${N(F)} − ${N(D)} − ${N(d)} = ${I(F - D - d)} N`), E(`<i>a</i> = ${I(F - D - d)} / (${N(Mc)} + ${N(m)}) = ${AV(a, MS2)}`))),
+    calc('Calculate the tension in the tow bar.', 2, Tn, 'N', M(E(`for the trailer: <i>T</i> − ${N(d)} = ${N(m)} × ${I(a)}`), E(`<i>T</i> = ${N(m)} × ${I(a)} + ${N(d)} = ${AV(Tn, 'N')}`))),
+    text('The tow bar pulls the trailer forwards. State the Newton’s third law pair of this force.', 1, 'The trailer pulls backwards on the tow bar (car) with a force of the same magnitude ✓'),
+    calc('The car and trailer later travel at constant velocity. State the tension in the tow bar.', 1, d, 'N', M(`${AV(d, 'N')} (equal to the resistive force on the trailer)`), NS)
+  ] };
+};
+T.NL7 = R => {
+  const m = R.pick([0.40, 0.60, 0.80, 1.2, 1.5]), W = m * g;
+  return NOFIG(2, { m }, `A book of mass ${V(m, 'kg')} rests on a horizontal table.`, [
+    calc('Calculate the normal contact force that the table exerts on the book.', 1, W, 'N', M(E(`equal to the weight = ${N(m)} × ${GS} = ${AV(W, 'N')}`))),
+    choose(R, 'Which force is the Newton’s third law pair of the weight of the book?', 1, 'the gravitational pull of the book on the Earth', ['the normal contact force of the table on the book', 'the force of the book on the table', 'the force of the table on the floor'], 'The gravitational pull of the book on the Earth ✓'),
+    choose(R, 'Which force is the Newton’s third law pair of the normal contact force of the table on the book?', 1, 'the contact force of the book on the table', ['the weight of the book', 'the gravitational pull of the book on the Earth', 'the weight of the table'], 'The contact force of the book on the table ✓'),
+    text('State three features of a pair of forces described by Newton’s third law.', 3, M('Equal in magnitude and opposite in direction', 'they act on two different objects', 'they are the same type of force (and act along the same line)')),
+    text('Explain why the weight of the book and the normal contact force on the book are not a Newton’s third law pair.', 2, M('Both forces act on the same object (the book)', 'and they are different types of force (gravitational and contact)'))
+  ]);
+};
+T.NL8 = R => {
+  const v = find(() => ({ m1: R.pick([0.50, 0.60, 0.80, 1.0]), m2: R.pick([0.20, 0.30, 0.40, 0.45]), h: R.pick([0.80, 1.0, 1.2, 1.5]) }), o => o.m1 - o.m2 >= .1), { m1, m2, h } = v, a = (m1 - m2) * g / (m1 + m2), Tn = m2 * (g + a), t = Math.sqrt(2 * h / a);
+  const s = new Scene('Two masses joined by a string over a pulley'); hatchH(s, -90, 90, -80, false); s.line(0, -80, 0, 0, { tag: 'support' }); s.circle(0, 0, 44, { fill: '#fff', tag: 'pulley' }); blob(s, 0, 0, 3.5);
+  s.line(-44, 0, -44, 130, { tag: 'string' }); s.line(44, 0, 44, 130, { tag: 'string' }); box(s, -80, 130, 72, 40, LB(m1, 'kg')); box(s, 8, 130, 72, 40, LB(m2, 'kg'));
+  return { sf: 2, scenes: [s], data: { m1, m2, h }, stem: `<b>Figure 1</b> shows masses of ${V(m1, 'kg')} and ${V(m2, 'kg')} joined by a light string that passes over a frictionless pulley. The masses are released from rest.`, parts: [
+    calc('Calculate the acceleration of the masses.', 3, a, MS2, M(E(`resultant force = (${N(m1)} − ${N(m2)}) × ${GS} = ${I((m1 - m2) * g)} N`), E(`total mass = ${N(m1)} + ${N(m2)} = ${I(m1 + m2)} kg`), E(`<i>a</i> = ${I((m1 - m2) * g)} / ${I(m1 + m2)} = ${AV(a, MS2)}`))),
+    calc('Calculate the tension in the string.', 2, Tn, 'N', M(E(`for the ${N(m2)} kg mass: <i>T</i> − <i>mg</i> = <i>ma</i>`), E(`<i>T</i> = ${N(m2)} × (${GS} + ${I(a)}) = ${AV(Tn, 'N')}`))),
+    calc(`Calculate the time taken for the ${N(m1)} kg mass to fall ${V(h, 'm')}.`, 2, t, 's', M(E(`<i>s</i> = ½<i>at</i><sup>2</sup>, so <i>t</i> = √(2 × ${N(h)} / ${I(a)})`), E(`= ${AV(t, 's')}`))),
+    choose(R, 'How does the tension compare with the weights of the two masses?', 1, 'it is between the two weights', ['it is greater than both weights', 'it is less than both weights', 'it is equal to the larger weight'], 'Between the two weights ✓')
+  ] };
+};
+T.NL9 = R => {
+  const Mt = R.pick([0.50, 0.80, 1.0, 1.25]), k = 1 / Mt, Fs = [0.2, 0.4, 0.6, 0.8, 1.0], cr = Fs.map(F => [F, k * F * (1 + (R() - .5) * .06)]), ya = axisFor(k * 1.08), xr = 0.8;
+  const fig = graph({ x: [0, 1, .2], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'F / N', yl: 'a / m s^{−2}', curves: [{ f: x => k * x, from: 0, to: 1 }], crosses: cr, reads: [[xr, k * xr]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Mt }, stem: `A student investigates how the acceleration, <i>a</i>, of a trolley depends on the resultant force, <i>F</i>, on it. The force is provided by slotted masses on a hanger attached to the trolley by a string over a pulley. To change <i>F</i>, masses are moved from the trolley to the hanger. <b>Figure 1</b> shows the results with a line of best fit.`, parts: [
+    calc('Determine the gradient of the line of best fit.', 2, k, 'kg<sup>−1</sup>', M(`uses a large triangle, for example from (0, 0) to (${fx(xr, 1)}, ${fx(k * xr, 2)})`, E(`gradient = ${fx(k * xr, 2)} / ${fx(xr, 1)} = ${A(k)} kg<sup>−1</sup>`)), { tol: .05, noSkill: true }),
+    calc('Determine the total mass that is accelerated.', 1, Mt, 'kg', M(E(`mass = 1 / gradient = 1 / ${I(k)} = ${AV(Mt, 'kg')}`)), { tol: .05, noSkill: true }),
+    text('Explain why masses are moved from the trolley to the hanger, instead of adding extra masses to the hanger.', 1, 'To keep the total mass being accelerated constant ✓'),
+    text('Explain how the graph supports Newton’s second law.', 1, 'It is a straight line through the origin, so acceleration is directly proportional to the resultant force (for a constant mass) ✓'),
+    choose(R, 'In another experiment friction acts on the trolley and is not compensated for. How does the line of best fit change?', 1, 'it meets the force axis at a positive value of force', ['it still passes through the origin', 'it meets the acceleration axis at a positive value of acceleration', 'it becomes a curve'], 'It meets the force axis at a positive value: some force is needed before the trolley accelerates ✓')
+  ] };
+};
+T.NL10 = R => {
+  const m = R.pick([900, 1200, 1500]), th = R.pick([3.0, 4.0, 5.0, 6.0]), Rr = R.pick([300, 400, 500]), dF = R.pick([600, 900, 1200]), v = R.pick([15, 20, 25]), par = m * g * sn(th), F = par + Rr, a = dF / m, P = F * v;
+  return NOFIG(2, { m, th, Rr, dF, v }, `A car of mass ${V(m, 'kg')} travels at a constant ${V(v, MS1)} up a straight road that is at ${DG(th)} to the horizontal. The total resistive force on the car is ${V(Rr, 'N')}.`, [
+    calc('Calculate the component of the weight of the car that acts down the slope.', 1, par, 'N', M(E(`${N(m)} × ${GS} × sin ${N(th)}° = ${AV(par, 'N')}`))),
+    calc('Calculate the driving force on the car.', 2, F, 'N', M('constant velocity, so the resultant force is zero', E(`driving force = ${I(par)} + ${N(Rr)} = ${AV(F, 'N')}`))),
+    calc('Calculate the useful output power of the engine.', 1, P, 'W', M(E(`<i>P</i> = <i>Fv</i> = ${I(F)} × ${N(v)} = ${AV(P, 'W')}`))),
+    calc(`The driving force is increased by ${V(dF, 'N')}. Calculate the initial acceleration of the car.`, 1, a, MS2, M(E(`the resultant force is now ${N(dF)} N, so <i>a</i> = ${N(dF)} / ${N(m)} = ${AV(a, MS2)}`)))
+  ]);
+};
+
+/* ===== Momentum ===== */
+const CONS = ['The total momentum of a system is constant (total momentum before = total momentum after) ✓', 'provided no resultant external force acts on the system ✓'];
+const track = (s, x1, x2) => hatchH(s, x1, x2, 0);
+T.MM1 = R => {
+  const mA = R.pick([8.0e3, 1.2e4, 1.5e4, 2.0e4]), mB = R.pick([5.0e3, 1.0e4, 1.6e4]), u = R.pick([2.0, 3.0, 4.0, 5.0, 6.0]), v = mA * u / (mA + mB), k1 = .5 * mA * u * u, k2 = .5 * (mA + mB) * v * v;
+  const s = new Scene('A moving truck approaching a stationary truck'); track(s, -30, 440); cart(s, 20, 130, 44, 'A'); cart(s, 260, 130, 44, 'B'); force(s, 45, -80, 80, 0, LB(u, 'm s^{−1}')); s.label(325, -74, 'at rest');
+  return { sf: 2, scenes: [s], data: { mA, mB, u }, stem: `<b>Figure 1</b> shows a railway truck <b>A</b> of mass ${V(mA, 'kg')} moving at ${V(u, MS1)} towards a stationary truck <b>B</b> of mass ${V(mB, 'kg')}. The trucks join together when they collide.`, parts: [
+    calc('Calculate the momentum of truck <b>A</b> before the collision.', 1, mA * u, KGMS, M(E(`<i>p</i> = <i>mv</i> = ${N(mA)} × ${N(u)} = ${AV(mA * u, KGMS)}`))),
+    calc('Calculate the velocity of the trucks immediately after the collision.', 2, v, MS1, M(E(`${I(mA * u)} = (${N(mA)} + ${N(mB)}) × <i>v</i>`), E(`<i>v</i> = ${I(mA * u)} / ${I(mA + mB)} = ${AV(v, MS1)}`))),
+    calc('Calculate the total kinetic energy before the collision.', 1, k1, 'J', M(E(`½ × ${N(mA)} × ${N(u)}<sup>2</sup> = ${AV(k1, 'J')}`))),
+    calc('Calculate the kinetic energy lost in the collision.', 2, k1 - k2, 'J', M(E(`kinetic energy after = ½ × ${I(mA + mB)} × ${I(v)}<sup>2</sup> = ${I(k2)} J`), E(`loss = ${I(k1)} − ${I(k2)} = ${AV(k1 - k2, 'J')}`)), { tol: .03 }),
+    choose(R, 'Which describes this collision?', 1, 'inelastic', ['elastic', 'explosive'], 'Inelastic: kinetic energy is not conserved ✓')
+  ] };
+};
+T.MM2 = R => {
+  const v = find(() => ({ mA: R.pick([0.40, 0.50, 0.60]), mB: R.pick([0.80, 1.0, 1.2]), uA: R.pick([1.5, 2.0, 2.5, 3.0]), uB: R.pick([0.50, 1.0, 1.5]), vA: R.pick([0.20, 0.40, 0.50, 0.60]) }), o => { const p = o.mA * o.uA - o.mB * o.uB, vB = (p + o.mA * o.vA) / o.mB; return Math.abs(p) > .15 && p > 0 && .5 * o.mA * o.vA ** 2 + .5 * o.mB * vB ** 2 < .9 * (.5 * o.mA * o.uA ** 2 + .5 * o.mB * o.uB ** 2); });
+  const { mA, mB, uA, uB, vA } = v, p = mA * uA - mB * uB, vB = (p + mA * vA) / mB;
+  const s = new Scene('Two trolleys moving towards each other'); track(s, -30, 440); cart(s, 20, 120, 40, 'A'); cart(s, 270, 120, 40, 'B'); force(s, 40, -76, 80, 0, LB(uA, 'm s^{−1}')); force(s, 370, -76, -80, 0, LB(uB, 'm s^{−1}'));
+  return { sf: 2, scenes: [s], data: { mA, mB, uA, uB, vA }, stem: `<b>Figure 1</b> shows two trolleys moving towards each other on a horizontal track. Trolley <b>A</b> has a mass of ${V(mA, 'kg')} and moves to the right at ${V(uA, MS1)}. Trolley <b>B</b> has a mass of ${V(mB, 'kg')} and moves to the left at ${V(uB, MS1)}. After the collision, <b>A</b> moves to the left at ${V(vA, MS1)}.`, parts: [
+    text('State the principle of conservation of momentum.', 2, CONS.join('<br>')),
+    calc('Calculate the total momentum of the trolleys before the collision. Take velocities to the right as positive.', 2, p, KGMS, M(E(`${N(mA)} × ${N(uA)} − ${N(mB)} × ${N(uB)}`), E(`= ${AV(p, KGMS)}`)), { tol: .03 }),
+    calc('Calculate the speed of <b>B</b> after the collision.', 2, vB, MS1, M(E(`${I(p)} = −${N(mA)} × ${N(vA)} + ${N(mB)} × <i>v</i><sub>B</sub>`), E(`<i>v</i><sub>B</sub> = (${I(p)} + ${N(mA)} × ${N(vA)}) / ${N(mB)} = ${AV(vB, MS1)}`)), { tol: .03 }),
+    choose(R, 'In which direction does <b>B</b> move after the collision?', 1, 'to the right', ['to the left', 'it is at rest'], 'To the right (its velocity is positive) ✓')
+  ] };
+};
+T.MM3 = R => {
+  const mA = R.pick([0.50, 0.75, 1.0]), mB = R.pick([1.5, 2.0, 2.5, 3.0]), vA = R.pick([1.2, 1.5, 1.8, 2.4, 3.0]), vB = mA * vA / mB, ke = .5 * mA * vA * vA + .5 * mB * vB * vB;
+  return NOFIG(2, { mA, mB, vA }, `Two trolleys <b>A</b> and <b>B</b> are at rest on a horizontal track with a compressed spring between them. Trolley <b>A</b> has a mass of ${V(mA, 'kg')} and trolley <b>B</b> has a mass of ${V(mB, 'kg')}. When the spring is released, <b>A</b> moves away at ${V(vA, MS1)}.`, [
+    text('State the total momentum of the trolleys after the spring is released. Give a reason.', 2, M('Zero', 'because the total momentum before was zero and momentum is conserved (no external resultant force)')),
+    calc('Calculate the speed of <b>B</b> after the spring is released.', 2, vB, MS1, M(E(`${N(mA)} × ${N(vA)} = ${N(mB)} × <i>v</i><sub>B</sub>`) + ' (equal and opposite momenta)', E(`<i>v</i><sub>B</sub> = ${N(mA)} × ${N(vA)} / ${N(mB)} = ${AV(vB, MS1)}`))),
+    calc('Calculate the total kinetic energy of the trolleys after the spring is released.', 2, ke, 'J', M(E(`½ × ${N(mA)} × ${N(vA)}<sup>2</sup> + ½ × ${N(mB)} × ${I(vB)}<sup>2</sup>`), E(`= ${AV(ke, 'J')}`))),
+    choose(R, 'Which trolley has the greater kinetic energy?', 1, 'A', ['B', 'they have equal kinetic energy'], '<b>A</b>: the momenta are equal in magnitude, and the trolley with the smaller mass has the greater speed and kinetic energy ✓'),
+    text('State where this kinetic energy comes from.', 1, 'Elastic potential energy stored in the compressed spring ✓')
+  ]);
+};
+T.MM4 = R => {
+  const m = R.pick([0.40, 0.42, 0.43, 0.45]), v = R.pick([20, 25, 28, 30]), tm = R.pick([8.0, 10, 12, 15]), p = m * v, F = p / (tm * 1e-3);
+  return NOFIG(2, { m, v, tm }, `A footballer kicks a stationary ball of mass ${V(m, 'kg')}. The ball leaves the boot at ${V(v, MS1)}. The boot is in contact with the ball for ${V(tm, 'ms')}.`, [
+    calc('Calculate the change in momentum of the ball.', 1, p, KGMS, M(E(`${N(m)} × ${N(v)} = ${AV(p, KGMS)}`))),
+    text('State the impulse given to the ball.', 1, `${A(p)} N s (impulse = change in momentum) ✓`),
+    calc('Calculate the average force on the ball during the kick.', 2, F, 'N', M(E(`<i>F</i> = Δ(<i>mv</i>) / Δ<i>t</i> = ${I(p)} / ${N(tm * 1e-3)}`), E(`= ${AV(F, 'N')}`))),
+    text('Explain why "following through" with the kick gives the ball a greater speed.', 2, M('The force acts on the ball for a longer time', 'so the impulse, and therefore the change in momentum, is greater')),
+    choose(R, 'Which is a correct unit for impulse?', 1, 'N s', ['N m', 'N s<sup>−1</sup>', 'kg m s<sup>−2</sup>'], 'N s (equivalent to kg m s<sup>−1</sup>) ✓')
+  ]);
+};
+T.MM5 = R => {
+  const v = find(() => ({ Fm: R.pick([200, 400, 600, 800, 1200]), tb: R.pick([20, 30, 40, 60]), m: R.pick([0.060, 0.16, 0.45]) }), o => { const sp = .5 * o.Fm * o.tb * 1e-3 / o.m; return sp > 8 && sp < 60; });
+  const { Fm, tb, m } = v, xa = axisFor(tb), ya = axisFor(Fm * 1.1), imp = .5 * Fm * tb * 1e-3, sp = imp / m, c = pwl([[0, 0], [tb / 2, Fm], [tb, 0]]);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'time / ms', yl: 'force / N', curves: [c], reads: [[tb / 2, Fm], [tb, 0]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Fm, tb, m }, stem: `<b>Figure 1</b> shows how the force on a ball of mass ${V(m, 'kg')} varies with time when the ball, initially at rest, is struck.`, parts: [
+    choose(R, 'What does the area under a force–time graph represent?', 1, 'impulse (change in momentum)', ['work done', 'acceleration', 'power'], 'Impulse (change in momentum) ✓'),
+    calc('Determine the impulse given to the ball.', 2, imp, 'N s', M(E(`area = ½ × ${tb} × 10<sup>−3</sup> × ${Fm}`), E(`= ${AV(imp, 'N s')}`)), { tol: .05, noSkill: true }),
+    calc('Calculate the speed of the ball immediately after it is struck.', 2, sp, MS1, M('impulse = change in momentum = <i>mv</i>', E(`<i>v</i> = ${I(imp)} / ${N(m)} = ${AV(sp, MS1)}`)), { tol: .05 }),
+    calc('Calculate the mean force on the ball during the impact.', 1, Fm / 2, 'N', M(E(`${I(imp)} / (${tb} × 10<sup>−3</sup>) = ${AV(Fm / 2, 'N')}`)), { tol: .05 }),
+    text('A softer ball of the same mass receives the same impulse. State and explain how the maximum force changes.', 2, M('The contact time is longer', 'so the maximum (and mean) force is smaller for the same area under the graph'))
+  ] };
+};
+T.MM6 = R => {
+  const m2 = R.pick([0.20, 0.30, 0.40]), m1 = +(3 * m2).toFixed(2), u = R.pick([2.0, 4.0, 6.0]), el = R.chance(.5), v1 = el ? u / 2 : +(.6 * u).toFixed(2), v2 = m1 * (u - v1) / m2, k1 = .5 * m1 * u * u, k2 = .5 * m1 * v1 * v1 + .5 * m2 * v2 * v2;
+  return NOFIG(2, { m1, m2, u, v1 }, `A glider <b>X</b> of mass ${V(m1, 'kg')} moves at ${V(u, MS1)} along an air track and collides with a stationary glider <b>Y</b> of mass ${V(m2, 'kg')}. After the collision <b>X</b> continues in the same direction at ${V(v1, MS1)}.`, [
+    calc('Calculate the velocity of <b>Y</b> after the collision.', 2, v2, MS1, M(E(`${N(m1)} × ${N(u)} = ${N(m1)} × ${N(v1)} + ${N(m2)} × <i>v</i>`), E(`<i>v</i> = ${N(m1)} × (${N(u)} − ${N(v1)}) / ${N(m2)} = ${AV(v2, MS1)}`))),
+    calc('Calculate the total kinetic energy before the collision.', 1, k1, 'J', M(E(`½ × ${N(m1)} × ${N(u)}<sup>2</sup> = ${AV(k1, 'J')}`))),
+    calc('Calculate the total kinetic energy after the collision.', 2, k2, 'J', M(E(`½ × ${N(m1)} × ${N(v1)}<sup>2</sup> + ½ × ${N(m2)} × ${I(v2)}<sup>2</sup>`), E(`= ${AV(k2, 'J')}`))),
+    choose(R, 'Which describes the collision?', 1, el ? 'elastic' : 'inelastic', [el ? 'inelastic' : 'elastic'], el ? 'Elastic: the total kinetic energy is unchanged ✓' : 'Inelastic: the total kinetic energy has decreased ✓'),
+    text('State what is meant by an elastic collision.', 1, 'A collision in which (total) kinetic energy is conserved ✓')
+  ]);
+};
+T.MM7 = R => {
+  const Ar = R.pick([2.0e-4, 3.0e-4, 5.0e-4]), v = R.pick([10, 12, 15, 20]), mu = 1000 * Ar * v, F = mu * v;
+  return NOFIG(2, { Ar, v }, `A hose produces a horizontal jet of water with a cross-sectional area of ${V(Ar, 'm<sup>2</sup>')}. The water travels at ${V(v, MS1)} and hits a vertical wall. The water does not rebound from the wall.<br>density of water = 1000 kg m<sup>−3</sup>`, [
+    calc('Calculate the mass of water that hits the wall each second.', 2, mu, 'kg', M(E(`volume per second = ${N(Ar)} × ${N(v)} = ${I(Ar * v)} m<sup>3</sup>`), E(`mass per second = 1000 × ${I(Ar * v)} = ${AV(mu, 'kg')}`))),
+    calc('Calculate the force that the water exerts on the wall.', 2, F, 'N', M('force = rate of change of momentum = mass per second × change in velocity', E(`${I(mu)} × ${N(v)} = ${AV(F, 'N')}`))),
+    text('Explain, using Newton’s laws, why the water exerts a force on the wall.', 3, M('The wall changes the momentum of the water (brings it to rest)', 'so the wall exerts a force on the water equal to its rate of change of momentum (Newton’s second law)', 'and the water exerts an equal and opposite force on the wall (Newton’s third law)')),
+    choose(R, 'The water now rebounds from the wall. How does the force on the wall change?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases: the change in momentum of the water each second is greater ✓')
+  ]);
+};
+T.MM8 = R => {
+  const m = R.pick([1000, 1200, 1500]), v = R.pick([12, 15, 18, 20]), t1 = R.pick([0.080, 0.10, 0.12]), t2 = R.pick([0.020, 0.030, 0.040]), p = m * v;
+  return NOFIG(2, { m, v, t1, t2 }, `In a crash test a car of mass ${V(m, 'kg')} travelling at ${V(v, MS1)} hits a wall and stops. The front of the car is a crumple zone, and the car takes ${V(t1, 's')} to stop.`, [
+    calc('Calculate the momentum of the car before the collision.', 1, p, KGMS, M(E(`${N(m)} × ${N(v)} = ${AV(p, KGMS)}`))),
+    calc('Calculate the average force on the car during the collision.', 2, p / t1, 'N', M(E(`<i>F</i> = Δ(<i>mv</i>) / Δ<i>t</i> = ${I(p)} / ${N(t1)}`), E(`= ${AV(p / t1, 'N')}`))),
+    calc(`A car with a rigid front would stop in ${V(t2, 's')}. Calculate the average force on this car.`, 1, p / t2, 'N', M(E(`${I(p)} / ${N(t2)} = ${AV(p / t2, 'N')}`))),
+    text('Explain how a crumple zone reduces the risk of injury to the passengers.', 3, M('The crumple zone increases the time taken for the car to stop', 'the change in momentum is the same', 'so the force (rate of change of momentum) on the car and its passengers is smaller')),
+    choose(R, 'How does the impulse on the car with the crumple zone compare with the impulse on the rigid car?', 1, 'it is the same', ['it is smaller', 'it is greater'], 'The same: the change in momentum is the same ✓')
+  ]);
+};
+T.MM9 = R => {
+  const m = R.pick([0.024, 0.045, 0.058]), u = R.pick([30, 35, 40]), v = R.pick([20, 25, 28]), tm = R.pick([4.0, 5.0, 8.0]), dp = m * (u + v), F = dp / (tm * 1e-3), kl = .5 * m * (u * u - v * v);
+  return NOFIG(2, { m, u, v, tm }, `A ball of mass ${V(m, 'kg')} hits a wall at right angles at ${V(u, MS1)} and rebounds along the same line at ${V(v, MS1)}. The ball is in contact with the wall for ${V(tm, 'ms')}.`, [
+    calc('Calculate the magnitude of the change in momentum of the ball.', 2, dp, KGMS, M('the direction reverses, so the change in velocity is the sum of the two speeds', E(`${N(m)} × (${N(u)} + ${N(v)}) = ${AV(dp, KGMS)}`))),
+    calc('Calculate the average force that the wall exerts on the ball.', 1, F, 'N', M(E(`${I(dp)} / ${N(tm * 1e-3)} = ${AV(F, 'N')}`))),
+    choose(R, 'Which describes the force that the ball exerts on the wall?', 1, 'the same magnitude, directed into the wall', ['the same magnitude, directed away from the wall', 'a smaller magnitude, directed into the wall', 'zero'], 'Same magnitude, opposite direction to the force on the ball (Newton’s third law) ✓'),
+    calc('Calculate the kinetic energy lost by the ball in the collision.', 2, kl, 'J', M(E(`½ × ${N(m)} × ${N(u)}<sup>2</sup> − ½ × ${N(m)} × ${N(v)}<sup>2</sup>`), E(`= ${AV(kl, 'J')}`))),
+    text('State what happens to this energy.', 1, 'It is transferred to thermal (internal) energy of the ball and wall (and sound) ✓')
+  ]);
+};
+T.MM10 = R => {
+  const mA = R.pick([0.200, 0.250, 0.300]), mB = R.pick([0.200, 0.250, 0.300]), t1 = R.pick([0.200, 0.250, 0.400]), L = 0.100, vA = L / t1, t2 = +(L / (mA * vA / (mA + mB) * R.pick([.95, .96, .97]))).toPrecision(3), v2 = L / t2, p1 = mA * vA, p2 = (mA + mB) * v2, pd = (p1 - p2) / p1 * 100;
+  return NOFIG(3, { mA, mB, t1, t2 }, `A student tests conservation of momentum with two gliders on an air track. Glider <b>A</b> has a mass of ${V(mA, 'kg', 3)} and carries a card of length ${V(L, 'm', 3)}. The card takes ${V(t1, 's', 3)} to pass through a light gate. Glider <b>A</b> then collides with and sticks to a stationary glider <b>B</b> of mass ${V(mB, 'kg', 3)}. The card then takes ${V(t2, 's', 3)} to pass through a second light gate.`, [
+    calc('Calculate the velocity of <b>A</b> before the collision.', 1, vA, MS1, M(E(`${N(L, 3)} / ${N(t1, 3)} = ${AV(vA, MS1)}`))),
+    calc('Calculate the total momentum before the collision.', 1, p1, KGMS, M(E(`${N(mA, 3)} × ${I3(vA)} = ${AV(p1, KGMS)}`))),
+    calc('Calculate the total momentum after the collision.', 2, p2, KGMS, M(E(`velocity after = ${N(L, 3)} / ${N(t2, 3)} = ${I3(v2)} m s<sup>−1</sup>`), E(`(${N(mA, 3)} + ${N(mB, 3)}) × ${I3(v2)} = ${AV(p2, KGMS)}`))),
+    calc('Calculate the percentage of the initial momentum that is lost.', 1, pd, '%', M(E(`(momentum before − momentum after) / momentum before × 100 = ${A(pd)}%`) + ' (using unrounded values)'), { abs: .6, noSkill: true }),
+    text('Suggest why the total momentum after the collision is slightly less than before.', 1, 'A small external force acts (air resistance or friction, or the track is not perfectly level), so momentum is not exactly conserved for the gliders ✓'),
+    text('Explain why an air track is used.', 1, 'To reduce friction, so that the resultant external force on the gliders is (almost) zero ✓')
+  ]);
+};
+/* ===== Work, energy and power ===== */
+T.WE1 = R => {
+  const F = R.pick([40, 50, 60, 80]), th = R.pick([25, 30, 40, 50]), d = R.pick([20, 50, 80, 150]), t = R.pick([25, 40, 60, 100]), W = F * d * cs(th), P = W / t;
+  return NOFIG(2, { F, th, d, t }, `A traveller pulls a suitcase at constant velocity along a horizontal floor. The handle is at ${DG(th)} to the horizontal and the traveller pulls along the handle with a force of ${V(F, 'N')}. The suitcase moves ${V(d, 'm')} in ${V(t, 's')}.`, [
+    calc('Calculate the work done by the traveller on the suitcase.', 2, W, 'J', M(E(`<i>W</i> = <i>Fs</i> cos θ = ${N(F)} × ${N(d)} × cos ${N(th)}°`), E(`= ${AV(W, 'J')}`))),
+    calc('Calculate the average power developed by the traveller.', 1, P, 'W', M(E(`<i>P</i> = ${I(W)} / ${N(t)} = ${AV(P, 'W')}`))),
+    calc('State the work done against the resistive forces on the suitcase.', 1, W, 'J', M(`${AV(W, 'J')} (the velocity is constant, so all the work done by the traveller is done against resistive forces)`), NS),
+    text('Explain why the weight of the suitcase does no work.', 1, 'The weight acts at right angles to the direction of motion (there is no displacement in the direction of the weight) ✓'),
+    choose(R, 'Which is equivalent to one joule?', 1, '1 N m', ['1 N s', '1 W s<sup>−1</sup>', '1 N m<sup>−1</sup>'], '1 N m ✓')
+  ]);
+};
+T.WE2 = R => {
+  const Pk = R.pick([30, 40, 45, 60]), v = R.pick([25, 30, 36, 40]), m = R.pick([1000, 1200, 1500]), th = R.pick([3.0, 4.0, 5.0]), Fr = Pk * 1e3 / v, par = m * g * sn(th), v2 = Pk * 1e3 / (Fr + par);
+  return NOFIG(2, { Pk, v, m, th }, `A car of mass ${V(m, 'kg')} travels along a level road at a constant ${V(v, MS1)}. The useful output power of the engine is ${V(Pk, 'kW')}.`, [
+    calc('Calculate the total resistive force on the car.', 2, Fr, 'N', M(E(`<i>P</i> = <i>Fv</i>, so driving force = ${N(Pk * 1e3)} / ${N(v)} = ${I(Fr)} N`), `resistive force = driving force (constant velocity) = ${AV(Fr, 'N')}`)),
+    calc(`The car then climbs a hill that is at ${DG(th)} to the horizontal. Calculate the component of the weight of the car that acts down the slope.`, 1, par, 'N', M(E(`${N(m)} × ${GS} × sin ${N(th)}° = ${AV(par, 'N')}`))),
+    calc('Calculate the maximum constant speed of the car up the hill with the same output power. Assume the resistive force is unchanged.', 2, v2, MS1, M(E(`total force to overcome = ${I(Fr)} + ${I(par)} = ${I(Fr + par)} N`), E(`<i>v</i> = ${N(Pk * 1e3)} / ${I(Fr + par)} = ${AV(v2, MS1)}`))),
+    text('Explain why the resistive force would actually be smaller on the hill.', 1, 'The car is travelling more slowly, and air resistance decreases as speed decreases ✓')
+  ]);
+};
+T.WE3 = R => {
+  const v = find(() => ({ m: R.pick([20, 50, 80, 120]), h: R.pick([3.0, 5.0, 8.0, 12]), t: R.pick([4.0, 5.0, 8.0, 10]), Pin: R.pick([200, 400, 500, 800, 1200, 1500, 2000, 2500]) }), o => { const e = o.m * g * o.h / o.t / o.Pin; return e > .35 && e < .85; });
+  const { m, h, t, Pin } = v, Eu = m * g * h, Pu = Eu / t, ef = Pu / Pin * 100, Ew = Pin * t - Eu;
+  return NOFIG(2, { m, h, t, Pin }, `An electric motor lifts a load of mass ${V(m, 'kg')} through a height of ${V(h, 'm')} at constant speed in ${V(t, 's')}. The input power to the motor is ${V(Pin, 'W')}.`, [
+    calc('Calculate the gain in gravitational potential energy of the load.', 1, Eu, 'J', M(E(`Δ<i>E</i><sub>p</sub> = <i>mg</i>Δ<i>h</i> = ${N(m)} × ${GS} × ${N(h)} = ${AV(Eu, 'J')}`))),
+    calc('Calculate the useful output power of the motor.', 1, Pu, 'W', M(E(`${I(Eu)} / ${N(t)} = ${AV(Pu, 'W')}`))),
+    calc('Calculate the efficiency of the motor as a percentage.', 1, ef, '%', M(E(`${I(Pu)} / ${N(Pin)} × 100 = ${A(ef)}%`)), NS),
+    calc('Calculate the energy wasted during the lift.', 2, Ew, 'J', M(E(`energy input = ${N(Pin)} × ${N(t)} = ${I(Pin * t)} J`), E(`wasted = ${I(Pin * t)} − ${I(Eu)} = ${AV(Ew, 'J')}`)), { tol: .03 }),
+    text('State what happens to the wasted energy.', 1, 'It is transferred to the surroundings as thermal energy (heating of the motor, due to friction and the resistance of its coils) ✓')
+  ]);
+};
+T.WE4 = R => {
+  const Fm = R.pick([20, 40, 60, 80, 100]), s1 = R.pick([2, 4]), s2 = s1 + R.pick([2, 4, 6]), m = R.pick([2.0, 5.0, 8.0, 10]), xa = axisFor(s2), ya = axisFor(Fm * 1.1), W = .5 * Fm * s1 + Fm * (s2 - s1), sp = Math.sqrt(2 * W / m), c = pwl([[0, 0], [s1, Fm], [s2, Fm]]);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'distance / m', yl: 'force / N', curves: [c], reads: [[s1, Fm], [s2, Fm]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Fm, s1, s2, m }, stem: `<b>Figure 1</b> shows how the resultant force on a trolley of mass ${V(m, 'kg')} varies with the distance it has moved. The trolley starts from rest and the force acts in the direction of motion.`, parts: [
+    choose(R, 'What does the area under a force–distance graph represent?', 1, 'work done', ['impulse', 'power', 'momentum'], 'Work done (energy transferred) ✓'),
+    calc(`Determine the work done on the trolley in the first ${s2} m.`, 3, W, 'J', M(E(`first section: ½ × ${s1} × ${Fm} = ${I(.5 * Fm * s1)} J`), E(`second section: (${s2} − ${s1}) × ${Fm} = ${I(Fm * (s2 - s1))} J`), E(`total = ${I(.5 * Fm * s1)} + ${I(Fm * (s2 - s1))} = ${AV(W, 'J')}`)), { tol: .04, noSkill: true }),
+    calc(`Calculate the speed of the trolley after it has moved ${s2} m.`, 2, sp, MS1, M('work done = gain in kinetic energy = ½<i>mv</i><sup>2</sup>', E(`<i>v</i> = √(2 × ${I(W)} / ${N(m)}) = ${AV(sp, MS1)}`)), { tol: .03 }),
+    calc(`State the acceleration of the trolley when it has moved ${s2} m.`, 1, Fm / m, MS2, M(E(`${Fm} / ${N(m)} = ${AV(Fm / m, MS2)}`)), { tol: .04, noSkill: true })
+  ] };
+};
+T.WE5 = R => {
+  const Vm = R.pick([0.30, 0.60, 0.90, 1.2, 1.5]), h = R.pick([8.0, 12, 15, 20, 25]), ef = R.pick([60, 70, 75, 80]), mu = 1000 * Vm / 60, Pu = mu * g * h, Pin = Pu / (ef / 100), Eh = Pin * 3600;
+  return NOFIG(2, { Vm, h, ef }, `A pump raises ${V(Vm, 'm<sup>3</sup>')} of water each minute from a well to a tank ${V(h, 'm')} above the water level in the well.<br>density of water = 1000 kg m<sup>−3</sup>`, [
+    calc('Calculate the mass of water raised each second.', 1, mu, 'kg', M(E(`1000 × ${N(Vm)} / 60 = ${AV(mu, 'kg')}`))),
+    calc('Calculate the useful output power of the pump.', 2, Pu, 'W', M('power = gain in gravitational potential energy each second', E(`${I(mu)} × ${GS} × ${N(h)} = ${AV(Pu, 'W')}`))),
+    calc(`The efficiency of the pump is ${V(ef, '%').replace(' %', '%')}. Calculate the input power.`, 1, Pin, 'W', M(E(`${I(Pu)} / ${N(ef / 100)} = ${AV(Pin, 'W')}`))),
+    calc('Calculate the energy supplied to the pump in one hour.', 1, Eh, 'J', M(E(`${I(Pin)} × 3600 = ${AV(Eh, 'J')}`)))
+  ]);
+};
+T.WE6 = R => {
+  const m = R.pick([55, 60, 65, 70]), n = R.pick([20, 24, 30]), hs = R.pick([0.17, 0.18, 0.20]), t = R.pick([4.0, 5.0, 6.0, 8.0]), h = n * hs, Ep = m * g * h, P = Ep / t;
+  return NOFIG(2, { m, n, hs, t }, `A student of mass ${V(m, 'kg')} measures her power by running up a flight of ${n} steps. Each step is ${V(hs, 'm')} high. She takes ${V(t, 's')} to climb the steps.`, [
+    calc('Calculate the vertical height climbed.', 1, h, 'm', M(E(`${n} × ${N(hs)} = ${AV(h, 'm')}`)), NS),
+    calc('Calculate the gain in gravitational potential energy of the student.', 1, Ep, 'J', M(E(`${N(m)} × ${GS} × ${I(h)} = ${AV(Ep, 'J')}`))),
+    calc('Calculate the useful power developed by the student.', 1, P, 'W', M(E(`${I(Ep)} / ${N(t)} = ${AV(P, 'W')}`))),
+    text('State the measurements needed and the instrument used for each.', 2, M('Mass using scales (a balance), and the height of a step using a ruler (multiplied by the number of steps)', 'time to climb using a stopwatch')),
+    text('Explain why the total power developed by the student’s muscles is greater than the value calculated.', 1, 'The body is not 100% efficient: energy is also transferred as thermal energy (and as kinetic energy of the moving limbs) ✓')
+  ]);
+};
+T.WE7 = R => {
+  const r = R.pick([20, 30, 40, 50]), v = R.pick([8.0, 10, 12, 15]), ef = R.pick([30, 35, 40]), Ar = Math.PI * r * r, mu = 1.2 * Ar * v, Pk = .5 * mu * v * v, Pe = Pk * ef / 100;
+  return NOFIG(2, { r, v, ef }, `The blades of a wind turbine are ${V(r, 'm')} long. Wind of speed ${V(v, MS1)} blows at right angles to the circle swept out by the blades.<br>density of air = 1.2 kg m<sup>−3</sup>`, [
+    calc('Calculate the area swept out by the blades.', 1, Ar, 'm<sup>2</sup>', M(E(`π × ${N(r)}<sup>2</sup> = ${AV(Ar, 'm<sup>2</sup>')}`))),
+    calc('Calculate the mass of air that passes through this area each second.', 2, mu, 'kg', M(E(`volume per second = ${I(Ar)} × ${N(v)} = ${I(Ar * v)} m<sup>3</sup>`), E(`mass per second = 1.2 × ${I(Ar * v)} = ${AV(mu, 'kg')}`))),
+    calc('Calculate the kinetic energy of the air that passes through this area each second.', 1, Pk, 'J', M(E(`½ × ${I(mu)} × ${N(v)}<sup>2</sup> = ${AV(Pk, 'J')}`))),
+    calc(`The turbine transfers ${V(ef, '%').replace(' %', '%')} of this kinetic energy to electrical energy. Calculate the electrical output power.`, 1, Pe, 'W', M(E(`${N(ef / 100)} × ${I(Pk)} = ${AV(Pe, 'W')}`))),
+    choose(R, 'The wind speed doubles. By what factor does the kinetic energy of the air passing through each second change?', 1, '8', ['2', '4', '16'], '8: the mass per second doubles and <i>v</i><sup>2</sup> is four times as large ✓')
+  ]);
+};
+T.WE8 = R => {
+  const Em = R.pick([0.80, 1.2, 1.5, 2.0]), dk = R.pick([10, 15, 20, 24]), v = R.pick([1.5, 2.0, 2.5]), t = dk * 1e3 / v, P = Em * 1e6 / t, F = Em * 1e6 / (dk * 1e3);
+  return NOFIG(2, { Em, dk, v }, `The battery of an electric wheelchair stores ${V(Em, 'MJ')} of energy when fully charged. On level ground the wheelchair can travel ${V(dk, 'km')} at a constant ${V(v, MS1)} before the battery is discharged. Assume that all the stored energy is used to move the wheelchair.`, [
+    calc('Calculate the time taken for the journey.', 1, t, 's', M(E(`${N(dk * 1e3)} / ${N(v)} = ${AV(t, 's')}`))),
+    calc('Calculate the average output power of the battery.', 2, P, 'W', M(E(`<i>P</i> = <i>E</i> / <i>t</i> = ${N(Em * 1e6)} / ${I(t)}`), E(`= ${AV(P, 'W')}`))),
+    calc('Calculate the mean resistive force on the wheelchair.', 2, F, 'N', M('work done against the resistive force = energy from the battery', E(`<i>F</i> = ${N(Em * 1e6)} / ${N(dk * 1e3)} = ${AV(F, 'N')}`))),
+    choose(R, 'A heavier user travels at the same speed. What happens to the maximum distance?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases ✓'),
+    text('Explain your answer.', 1, 'The frictional (resistive) forces are larger for a greater weight, so the same energy does work over a shorter distance ✓')
+  ]);
+};
+T.WE9 = R => {
+  const P = R.pick([100, 150, 200]), v = R.pick([6.0, 8.0, 10]), k = 1.5, F = P / v, F2 = F * k * k, P2 = F2 * v * k;
+  return NOFIG(2, { P, v, k }, `A cyclist travels along a level road at a constant ${V(v, MS1)} with a useful power output of ${V(P, 'W')}. The resistive force on the cyclist is proportional to the square of the speed.`, [
+    calc('Calculate the resistive force on the cyclist.', 1, F, 'N', M(E(`<i>F</i> = <i>P</i> / <i>v</i> = ${N(P)} / ${N(v)} = ${AV(F, 'N')}`))),
+    calc(`Calculate the resistive force when the speed is ${V(v * k, MS1)}.`, 2, F2, 'N', M(E(`the speed is ${N(k)} times as large, so the force is ${N(k)}<sup>2</sup> = ${I(k * k)} times as large`), E(`${I(k * k)} × ${I(F)} = ${AV(F2, 'N')}`))),
+    calc('Calculate the useful power output needed to maintain this speed.', 1, P2, 'W', M(E(`<i>P</i> = <i>Fv</i> = ${I(F2)} × ${N(v * k)} = ${AV(P2, 'W')}`))),
+    text('Describe the energy transfer taking place when the cyclist travels at constant speed on a level road.', 1, 'Work done by the cyclist is transferred to thermal energy of the surroundings (by the resistive forces); the kinetic energy stays constant ✓')
+  ]);
+};
+
+/* ===== Conservation of energy ===== */
+T.CE1 = R => {
+  const v = find(() => ({ h: R.pick([8.0, 12, 15, 20, 30]), fr: R.pick([.25, .4, .5, .6]) }), o => isNice(o.h * o.fr, 2)), h = v.h, h2 = +(v.h * v.fr).toPrecision(2), vB = Math.sqrt(2 * g * h), vC = Math.sqrt(2 * g * (h - h2));
+  const s = new Scene('A track with a high point A, a low point B and a lower hill C'), H = 180, H2 = H * h2 / h, pts = [[-40, -H]];
+  for (let i = 0; i <= 30; i++){ const x = 170 * i / 30; pts.push([x, -H * (1 + Math.cos(Math.PI * x / 170)) / 2]); } for (let i = 1; i <= 30; i++){ const x = 160 * i / 30; pts.push([170 + x, -H2 * (1 - Math.cos(Math.PI * x / 160)) / 2]); } pts.push([370, -H2]);
+  s.poly(pts, { w: 2.2, tag: 'track' }); s.line(-70, 0, 400, 0, { dash: '6 4', w: 1, tag: 'level of B' }); s.label(-20, -H - 10, 'A', { bold: true }); s.label(170, 22, 'B', { bold: true }); s.label(350, -H2 - 10, 'C', { bold: true });
+  s.dim(-60, -H, -60, 0, LB(h, 'm'), { left: true }); s.dim(390, -H2, 390, 0, LB(h2, 'm'));
+  return { sf: 2, scenes: [s], data: { h, h2 }, stem: `<b>Figure 1</b> shows part of a roller-coaster track. A car starts from rest at <b>A</b>, which is ${V(h, 'm')} above the lowest point <b>B</b>. It then rises to <b>C</b>, which is ${V(h2, 'm')} above <b>B</b>. Friction and air resistance are negligible.`, parts: [
+    calc('Calculate the speed of the car at <b>B</b>.', 2, vB, MS1, M(E('loss of gravitational potential energy = gain in kinetic energy: <i>mg</i>Δ<i>h</i> = ½<i>mv</i><sup>2</sup>'), E(`<i>v</i> = √(2 × ${GS} × ${N(h)}) = ${AV(vB, MS1)}`))),
+    calc('Calculate the speed of the car at <b>C</b>.', 2, vC, MS1, M(E(`the car is ${N(h)} − ${N(h2)} = ${I(h - h2)} m below <b>A</b>`), E(`<i>v</i> = √(2 × ${GS} × ${I(h - h2)}) = ${AV(vC, MS1)}`))),
+    text('Explain why the mass of the car is not needed.', 1, 'Mass appears on both sides of the energy equation and cancels ✓'),
+    choose(R, 'A different track has the same vertical drop from <b>A</b> to <b>B</b> but a longer, gentler slope. How does the speed at <b>B</b> compare?', 1, 'it is the same', ['it is smaller', 'it is greater'], 'The same: the loss of gravitational potential energy is the same ✓')
+  ] };
+};
+T.CE2 = R => {
+  const v = find(() => ({ m: R.pick([20, 25, 30, 35]), h: R.pick([2.0, 2.5, 3.0, 4.0]), L: R.pick([4.0, 5.0, 6.0, 8.0]), sp: R.pick([3.0, 4.0, 5.0]) }), o => o.L > 1.4 * o.h && o.sp < .8 * Math.sqrt(2 * g * o.h));
+  const { m, h, L, sp } = v, Ep = m * g * h, Ek = .5 * m * sp * sp, Wf = Ep - Ek, F = Wf / L;
+  return NOFIG(2, { m, h, L, sp }, `A child of mass ${V(m, 'kg')} starts from rest at the top of a slide and reaches the bottom at ${V(sp, MS1)}. The slide is ${V(L, 'm')} long and the top is ${V(h, 'm')} vertically above the bottom.`, [
+    calc('Calculate the loss of gravitational potential energy of the child.', 1, Ep, 'J', M(E(`${N(m)} × ${GS} × ${N(h)} = ${AV(Ep, 'J')}`))),
+    calc('Calculate the kinetic energy of the child at the bottom of the slide.', 1, Ek, 'J', M(E(`½ × ${N(m)} × ${N(sp)}<sup>2</sup> = ${AV(Ek, 'J')}`))),
+    calc('Calculate the work done against friction.', 1, Wf, 'J', M(E(`${I(Ep)} − ${I(Ek)} = ${AV(Wf, 'J')}`)), { tol: .03 }),
+    calc('Calculate the mean frictional force on the child.', 2, F, 'N', M('work done against friction = force × distance moved along the slide', E(`<i>F</i> = ${I(Wf)} / ${N(L)} = ${AV(F, 'N')}`)), { tol: .03 }),
+    text('State what happens to the energy transferred by the work done against friction.', 1, 'It becomes thermal (internal) energy of the slide, the child’s clothing and the surroundings ✓')
+  ]);
+};
+T.CE3 = R => {
+  const L = R.pick([0.80, 1.0, 1.2, 1.5, 2.0]), th = R.pick([30, 40, 50, 60]), m = R.pick([0.050, 0.10, 0.20]), h = L * (1 - cs(th)), sp = Math.sqrt(2 * g * h), Ek = m * g * h;
+  const s = new Scene('A pendulum pulled to one side and its lowest position'), l = 230, bx = -l * sn(th), by = l * cs(th); hatchH(s, -110, 110, 0, false);
+  s.line(0, 0, bx, by, { tag: 'string' }); s.line(0, 0, 0, l, { dash: '5 4', w: 1, tag: 'vertical' }); s.circle(bx, by, 11, { fill: '#d9dde1', tag: 'bob' }); s.circle(0, l, 11, { dash: '4 3', w: 1.1, tag: 'lowest position' });
+  const rl = th <= 25 ? 132 : th <= 30 ? 112 : 88; s.arc(0, 0, rl - 26, 270 - th, 270, { w: 1.1, tag: 'angle arc' }); s.label(-rl * sn(th / 2), rl * cs(th / 2) + 2, DG(th));
+  s.line(bx + 11, by, 70, by, { dash: '3 3', w: .9, tag: 'level' }); s.line(11, l, 70, l, { dash: '3 3', w: .9, tag: 'level' }); s.dim(58, by, 58, l, '*h*');
+  return { sf: 2, scenes: [s], data: { L, th, m }, stem: `<b>Figure 1</b> shows a pendulum made from a bob of mass ${V(m, 'kg')} on a string of length ${V(L, 'm')}. The bob is pulled to one side so that the string is at ${DG(th)} to the vertical and is released from rest. The bob is a height <i>h</i> above its lowest position. Air resistance is negligible.`, parts: [
+    calc('Calculate <i>h</i>.', 2, h, 'm', M(E(`<i>h</i> = <i>L</i> − <i>L</i> cos θ = ${N(L)} × (1 − cos ${N(th)}°)`), E(`= ${AV(h, 'm')}`))),
+    calc('Calculate the speed of the bob at its lowest position.', 2, sp, MS1, M(E('<i>mgh</i> = ½<i>mv</i><sup>2</sup>'), E(`<i>v</i> = √(2 × ${GS} × ${I(h)}) = ${AV(sp, MS1)}`))),
+    calc('Calculate the kinetic energy of the bob at its lowest position.', 1, Ek, 'J', M(E(`equal to the loss of gravitational potential energy = ${N(m)} × ${GS} × ${I(h)} = ${AV(Ek, 'J')}`))),
+    text('Explain why the tension in the string does no work on the bob.', 1, 'The tension is always at right angles to the direction of motion of the bob ✓'),
+    choose(R, 'Where is the bob when its kinetic energy is half of its maximum value?', 1, 'at a height of h/2 above the lowest position', ['at the lowest position', 'at the release position', 'at a height of h/4 above the lowest position'], 'At a height of <i>h</i>/2: half of the gravitational potential energy has been transferred ✓')
+  ] };
+};
+T.CE4 = R => {
+  const m = R.pick([0.15, 0.20, 0.25, 0.50]), u = R.pick([8.0, 10, 12, 14]), Ek = .5 * m * u * u, h = u * u / (2 * g), vh = u / Math.SQRT2, Hr = +(0.85 * h).toPrecision(2), Wa = Ek - m * g * Hr;
+  return NOFIG(2, { m, u, Hr }, `A ball of mass ${V(m, 'kg')} is thrown vertically upwards at ${V(u, MS1)}.`, [
+    calc('Calculate the initial kinetic energy of the ball.', 1, Ek, 'J', M(E(`½ × ${N(m)} × ${N(u)}<sup>2</sup> = ${AV(Ek, 'J')}`))),
+    calc('Calculate the maximum height the ball would reach if air resistance were negligible.', 2, h, 'm', M(E('<i>mg</i>Δ<i>h</i> = initial kinetic energy'), E(`Δ<i>h</i> = ${I(Ek)} / (${N(m)} × ${GS}) = ${AV(h, 'm')}`))),
+    calc('Calculate the speed of the ball at half of this height, if air resistance were negligible.', 2, vh, MS1, M('half of the kinetic energy remains, so ' + E(`½<i>mv</i><sup>2</sup> = ${I(Ek / 2)} J`), E(`<i>v</i> = √(2 × ${I(Ek / 2)} / ${N(m)}) = ${AV(vh, MS1)}`))),
+    calc(`In practice the ball reaches a maximum height of only ${V(Hr, 'm')}. Calculate the work done against air resistance on the way up.`, 2, Wa, 'J', M(E(`gain in gravitational potential energy = ${N(m)} × ${GS} × ${N(Hr)} = ${I(m * g * Hr)} J`), E(`work done = ${I(Ek)} − ${I(m * g * Hr)} = ${AV(Wa, 'J')}`)), { tol: .06 })
+  ]);
+};
+T.CE5 = R => {
+  const v = find(() => ({ h1: R.pick([1.0, 1.2, 1.5, 2.0]), fr: R.pick([.5, .6, .64, .75, .8]), m: R.pick([0.050, 0.058, 0.060]) }), o => isNice(o.h1 * o.fr, 2)), h1 = v.h1, m = v.m, h2 = +(h1 * v.fr).toPrecision(2), v1 = Math.sqrt(2 * g * h1), v2 = Math.sqrt(2 * g * h2), pc = (1 - h2 / h1) * 100, El = m * g * (h1 - h2);
+  return NOFIG(2, { h1, h2, m }, `A ball of mass ${V(m, 'kg')} is dropped from rest from a height of ${V(h1, 'm')} on to a hard floor. It rebounds to a height of ${V(h2, 'm')}. Air resistance is negligible.`, [
+    calc('Calculate the speed of the ball just before it hits the floor.', 2, v1, MS1, M(E('<i>mg</i>Δ<i>h</i> = ½<i>mv</i><sup>2</sup>'), E(`<i>v</i> = √(2 × ${GS} × ${N(h1)}) = ${AV(v1, MS1)}`))),
+    calc('Calculate the speed of the ball just after it leaves the floor.', 1, v2, MS1, M(E(`<i>v</i> = √(2 × ${GS} × ${N(h2)}) = ${AV(v2, MS1)}`))),
+    calc('Calculate the percentage of the kinetic energy of the ball that is lost in the bounce.', 2, pc, '%', M(E(`fraction remaining = ${N(h2)} / ${N(h1)} = ${I(h2 / h1)}`), E(`percentage lost = (1 − ${I(h2 / h1)}) × 100 = ${A(pc)}%`)), NS),
+    calc('Calculate the energy lost in the bounce.', 1, El, 'J', M(E(`${N(m)} × ${GS} × (${N(h1)} − ${N(h2)}) = ${AV(El, 'J')}`)), { tol: .03 }),
+    text('State what happens to this energy.', 1, 'It is transferred to thermal (internal) energy of the ball and floor (and sound) ✓')
+  ]);
+};
+T.CE6 = R => {
+  const v = find(() => ({ m: R.pick([60, 70, 75, 80]), u: R.pick([2.0, 4.0, 5.0]), h: R.pick([20, 30, 40, 50]), Wk: R.pick([4.0, 6.0, 8.0, 10, 12, 15]), L: R.pick([150, 200, 250, 300]) }), o => o.Wk * 1e3 < .7 * o.m * g * o.h && o.Wk * 1e3 > .25 * o.m * g * o.h);
+  const { m, u, h, Wk, L } = v, Ek0 = .5 * m * u * u, Ep = m * g * h, Ek = Ek0 + Ep - Wk * 1e3, sp = Math.sqrt(2 * Ek / m), F = Wk * 1e3 / L;
+  return NOFIG(2, { m, u, h, Wk, L }, `A skier of total mass ${V(m, 'kg')} passes the top of a slope at ${V(u, MS1)} and descends through a vertical height of ${V(h, 'm')}. The skier travels ${V(L, 'm')} along the slope and does ${V(Wk, 'kJ')} of work against resistive forces.`, [
+    calc('Calculate the kinetic energy of the skier at the top of the slope.', 1, Ek0, 'J', M(E(`½ × ${N(m)} × ${N(u)}<sup>2</sup> = ${AV(Ek0, 'J')}`))),
+    calc('Calculate the loss of gravitational potential energy of the skier.', 1, Ep, 'J', M(E(`${N(m)} × ${GS} × ${N(h)} = ${AV(Ep, 'J')}`))),
+    calc('Calculate the kinetic energy of the skier at the bottom of the slope.', 1, Ek, 'J', M(E(`${I(Ek0)} + ${I(Ep)} − ${N(Wk * 1e3)} = ${AV(Ek, 'J')}`)), { tol: .03 }),
+    calc('Calculate the speed of the skier at the bottom of the slope.', 1, sp, MS1, M(E(`<i>v</i> = √(2 × ${I(Ek)} / ${N(m)}) = ${AV(sp, MS1)}`)), { tol: .03 }),
+    calc('Calculate the mean resistive force on the skier.', 1, F, 'N', M(E(`${N(Wk * 1e3)} / ${N(L)} = ${AV(F, 'N')}`)))
+  ]);
+};
+T.CE7 = R => {
+  const m = R.pick([900, 1200, 1500]), v = R.pick([15, 20, 25, 30]), Fb = R.pick([4500, 6000, 7500, 9000]), Ek = .5 * m * v * v, d = Ek / Fb;
+  return NOFIG(2, { m, v, Fb }, `A car of mass ${V(m, 'kg')} is travelling at ${V(v, MS1)} on a level road when the brakes are applied. The brakes provide a constant total braking force of ${V(Fb, 'N')}. Other resistive forces are negligible.`, [
+    calc('Calculate the kinetic energy of the car before the brakes are applied.', 1, Ek, 'J', M(E(`½ × ${N(m)} × ${N(v)}<sup>2</sup> = ${AV(Ek, 'J')}`))),
+    calc('Calculate the distance the car travels before it stops.', 2, d, 'm', M('work done by the braking force = loss of kinetic energy', E(`<i>s</i> = ${I(Ek)} / ${N(Fb)} = ${AV(d, 'm')}`))),
+    choose(R, 'The car is travelling at twice the speed when the same braking force is applied. How does the braking distance change?', 1, 'it becomes four times as large', ['it doubles', 'it stays the same', 'it becomes eight times as large'], 'Four times as large: the kinetic energy is four times as large ✓'),
+    text('State what happens to the kinetic energy of the car.', 1, 'It is transferred to thermal (internal) energy of the brakes (and surroundings) ✓'),
+    text('The car now brakes while travelling down a hill. Explain why the braking distance is greater.', 1, 'The car also loses gravitational potential energy, so the brakes must do more work (or: a component of the weight acts down the slope, so the resultant decelerating force is smaller) ✓')
+  ]);
+};
+T.CE8 = R => {
+  const m = R.pick([300, 400, 500, 800]), h = R.pick([2.0, 3.0, 4.0, 5.0]), d = R.pick([0.10, 0.15, 0.20, 0.25]), sp = Math.sqrt(2 * g * h), Ek = m * g * h, F = Ek / d;
+  return NOFIG(2, { m, h, d }, `A pile driver drops a hammer of mass ${V(m, 'kg')} from rest through a height of ${V(h, 'm')} on to a steel pile. Each impact drives the pile ${V(d, 'm')} into the ground.`, [
+    calc('Calculate the speed of the hammer just before it hits the pile.', 2, sp, MS1, M(E('<i>mg</i>Δ<i>h</i> = ½<i>mv</i><sup>2</sup>'), E(`<i>v</i> = √(2 × ${GS} × ${N(h)}) = ${AV(sp, MS1)}`))),
+    calc('Calculate the kinetic energy of the hammer just before it hits the pile.', 1, Ek, 'J', M(E(`equal to the loss of gravitational potential energy = ${N(m)} × ${GS} × ${N(h)} = ${AV(Ek, 'J')}`))),
+    calc('Estimate the mean resistive force from the ground on the pile. Assume all of the kinetic energy of the hammer is used to do work against this force.', 2, F, 'N', M('work done against the resistive force = force × distance', E(`<i>F</i> = ${I(Ek)} / ${N(d)} = ${AV(F, 'N')}`))),
+    text('Give one reason why the assumption is not exactly true.', 1, 'Some energy is transferred as sound and thermal energy in the collision (or: the hammer and pile also lose gravitational potential energy as the pile moves down) ✓')
+  ]);
+};
+T.CE9 = R => {
+  const v = find(() => { const m = R.pick([400, 500, 610, 800]), h = R.pick([40, 49, 60, 80]), dK = R.pick([1.0e5, 1.5e5, 2.2e5]), g0 = R.pick([3.7, 8.9, 1.4]); return { m, h, dK, Ed: +(dK + m * g0 * h).toPrecision(2) }; }, o => o.Ed - o.dK > .3 * o.Ed);
+  const { m, h, dK, Ed } = v, Ep = Ed - dK, gp = Ep / (m * h);
+  return NOFIG(2, { m, h, dK, Ed }, `A spacecraft of mass ${V(m, 'kg')} descends by parachute through the atmosphere of a planet. While it falls through a vertical distance of ${V(h, 'm')} it loses ${V(dK, 'J')} of kinetic energy. During this time ${V(Ed, 'J')} of energy is transferred from the spacecraft to the atmosphere.`, [
+    text('Explain why the kinetic energy of the spacecraft decreases even though it is falling.', 1, 'The drag force is greater than the weight, so more work is done against drag than the gravitational potential energy lost (the resultant force is upwards) ✓'),
+    calc('Calculate the loss of gravitational potential energy of the spacecraft.', 2, Ep, 'J', M('energy transferred to the atmosphere = loss of kinetic energy + loss of gravitational potential energy', E(`${N(Ed)} − ${N(dK)} = ${AV(Ep, 'J')}`)), { tol: .03 }),
+    calc('Calculate the acceleration due to gravity on the planet.', 2, gp, MS2, M(E('Δ<i>E</i><sub>p</sub> = <i>mg</i>Δ<i>h</i>'), E(`<i>g</i> = ${I(Ep)} / (${N(m)} × ${N(h)}) = ${AV(gp, MS2)}`)), { tol: .03 }),
+    choose(R, 'The atmosphere becomes denser. The spacecraft is moving at the same speed. What happens to its deceleration?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases: the drag force is larger, so the resultant upward force is larger ✓')
+  ]);
+};
+T.CE10 = R => {
+  const u = R.pick([3.0, 4.0, 5.0, 6.0]), th = R.pick([10, 15, 20, 25]), m = R.pick([0.50, 0.80, 1.0, 2.0]), Fr = R.pick([0.50, 1.0, 1.5, 2.0]), Ek = .5 * m * u * u, par = m * g * sn(th), d = Ek / (par + Fr), hh = d * sn(th), d0 = Ek / par;
+  const f = slopeFig('A trolley moving up a slope', th, { f: .3 }), s = f.s, p = f.c(f.bw / 2 + 6, f.bh / 2); force(s, p[0], p[1], 84 * f.u[0], 84 * f.u[1], LB(u, 'm s^{−1}'), { at: [f.n[0] * 20, f.n[1] * 20 + 5] });
+  return { sf: 2, scenes: [s], data: { u, th, m, Fr }, stem: `<b>Figure 1</b> shows a trolley of mass ${V(m, 'kg')} that is given an initial speed of ${V(u, MS1)} up a slope. The slope is at ${DG(th)} to the horizontal. A constant frictional force of ${V(Fr, 'N')} acts on the trolley.`, parts: [
+    calc('Calculate the initial kinetic energy of the trolley.', 1, Ek, 'J', M(E(`½ × ${N(m)} × ${N(u)}<sup>2</sup> = ${AV(Ek, 'J')}`))),
+    calc('Calculate the distance the trolley travels up the slope before it stops.', 3, d, 'm', M('initial kinetic energy = gain in gravitational potential energy + work done against friction', E(`component of weight down the slope = ${N(m)} × ${GS} × sin ${N(th)}° = ${I(par)} N`), E(`distance = ${I(Ek)} / (${I(par)} + ${N(Fr)}) = ${AV(d, 'm')}`))),
+    calc('Calculate the vertical height gained by the trolley.', 1, hh, 'm', M(E(`${I(d)} × sin ${N(th)}° = ${AV(hh, 'm')}`))),
+    calc('Calculate the distance the trolley would travel up the slope if there were no friction.', 1, d0, 'm', M(E(`${I(Ek)} / ${I(par)} = ${AV(d0, 'm')}`))),
+    choose(R, 'The trolley rolls back down the slope. How does its speed at the starting point compare with its initial speed?', 1, 'it is smaller', ['it is the same', 'it is greater'], 'Smaller: work is done against friction on the way up and on the way down ✓')
+  ] };
+};
+// working carried from earlier parts, set by hand where the automatic detection depends on the numbers
+const ECF = { SV1: { d: 'b' }, SV2: { e: 'b' }, SV3: { c: 'b' }, SV6: { d: 'c' }, MO3: { c: 'b' }, MO4: { c: 'b' }, MO6: { b: 'a', c: 'b' }, MO8: { c: 'b', d: '' }, SL1: { d: 'a' }, SL2: { c: 'ab' }, SL4: { c: '', e: '' }, SL8: { c: 'b' }, SL10: { c: 'ab' },
+  PR2: { d: 'b' }, PR3: { b: 'a', c: 'a' }, PR4: { e: 'd' }, PR9: { c: 'b', d: '' }, NL1: { c: 'b' }, NL4: { b: 'a', d: 'a' }, NL9: { b: 'a' }, MM1: { b: 'a', d: 'bc' }, MM2: { c: 'b' }, MM3: { c: 'b' }, MM4: { c: 'a' }, MM6: { c: 'a' }, MM7: { b: 'a' }, MM10: { b: 'a' },
+  WE2: { c: 'ab' }, WE5: { b: 'a' }, WE6: { b: 'a' }, WE9: { b: 'a' }, CE4: { b: 'a', d: 'a' }, CE6: { c: 'ab' }, CE9: { c: 'b' }, CE10: { b: 'a', d: 'a' } };
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number(a.toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number(a.toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  const E0 = typeof ECF !== 'undefined' && ECF[q.id], ECFX = E0 ? (typeof E0 === 'function' ? E0(q.data) : E0) : {};   // ecf links set by hand where numbers alone mislead
+  const ecfNote = l => 'Allow ecf from their answer' + (l.length > 1 ? 's' : '') + ' to ' + (l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0]) + '.';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(p.ans < 0 ? lo : Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    const fixed = ECFX[L[i]];
+    if (fixed !== undefined){ if (fixed && !g.some(x => /ecf/.test(x))) g.push(ecfNote([...fixed].map(c => '(' + c + ')'))); }
+    else if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      const findNum = (m, a) => { for (let k = m.indexOf(a); k >= 0; k = m.indexOf(a, k + 1)){ const b = m[k - 1] || '', b2 = m[k - 2] || '', c = m[k + a.length] || '';
+          if (/[\d.^]/.test(b) || (b === '−' && b2 === '^')) continue;                       // inside another number or an exponent
+          if (c === '^' && a === '10') continue;                                              // a power of ten, not a value
+          if (a.includes('×')){ if (/\d/.test(c)) continue; return [k, a.length]; }          // a different power of ten
+          const full = m.slice(k).match(/^\d*\.?\d+/)[0].replace(/\.$/, ''), dp = a.includes('.') ? a.split('.')[1].length : 0;
+          if (full === a || Number(full).toFixed(dp) === a) return [k, full.length];          // the same value, perhaps shown to more figures
+        } return null; };
+      const hasNum = (m, a) => !!findNum(m, a);
+      let own = plain(p.ms);                                                                  // the part's own result is not a carried value
+      for (const a of [plain(I(Math.abs(p.ans))), plain(A(Math.abs(p.ans)))]) for (let f = findNum(own, a); f; f = findNum(own, a)) own = own.slice(0, f[0]) + '#' + own.slice(f[0] + f[1]);
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0 || pj.int) continue; const a = plain(A(Math.abs(pj.ans))), a4 = plain(I(Math.abs(pj.ans))), m = own; if ((hasNum(m, a) || hasNum(m, a4)) && !hasNum(given, a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length && !g.some(x => /ecf/.test(x))) g.push(ecfNote(ecf));
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], ''], ['Bq', ['bq', 'becquerel', 'becquerels', 's-1'], 'Accept s<sup>−1</sup>.'], ['s<sup>−1</sup>', ['s-1', '/s', 'persecond'], ''], ['T', ['t', 'tesla'], ''], ['N kg<sup>−1</sup>', ['nkg-1', 'n/kg', 'ms-2', 'm/s2'], 'Accept m s<sup>−2</sup>.'], ['J kg<sup>−1</sup>', ['jkg-1', 'j/kg'], ''], ['N m<sup>2</sup> kg<sup>−2</sup>', ['nm2kg-2', 'nm^2kg^-2'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  ASF = 2; ASF = T[tpl](makeRand(seedFor(tpl, seed))).sf || 2;      // a first pass finds the significant figures of the data
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : p.s3 ? N(p.ans, 3) : A(p.ans); });      // s3: shown to 3 sf, like the table it completes
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+// a drop-down option can only hold plain text, so superscripts and subscripts are written with Unicode characters
+const SUPC = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '−': '⁻', '-': '⁻', '+': '⁺' }, SUBC = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', e: 'ₑ' };
+const uni = (s, map, mark) => [...s].every(c => map[c]) ? [...s].map(c => map[c]).join('') : mark + '(' + s + ')';
+const optText = h => String(h).replace(/<sup>(.*?)<\/sup>/g, (m, s) => uni(s, SUPC, '^')).replace(/<sub>(.*?)<\/sub>/g, (m, s) => uni(s, SUBC, '_')).replace(/<[^>]+>/g, '');
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${optText(o)}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like SL3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>
