@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-level Materials Question Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a slim control bench above one exam-paper sheet; figures always sit on white paper. */
+:root{
+  --bench:#e9edf1; --paper:#ffffff; --ink:#17212b; --muted:#566371; --rule:#d3dae1;
+  --accent:#0b6b62; --accent-ink:#ffffff; --good:#17754a; --bad:#b0362c; --tint:#eef6f4;
+  --display:"Source Serif 4",Georgia,serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bench:#11161b; --paper:#1a2128; --ink:#e7ecf1; --muted:#9daab6; --rule:#2f3a45; --accent:#58b8ab; --accent-ink:#08201d; --good:#5cc08d; --bad:#ef8a80; --tint:#1f2c2c; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bench);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.bench{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.chip{border:1.5px solid var(--rule);background:transparent;color:var(--muted);border-radius:999px;padding:5px 14px;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 20px;font-weight:700;font-size:1.02rem}
+.ghost{background:transparent;border:1.5px solid var(--rule);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.92rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#status{min-height:1.2em;color:var(--bad);font-size:.95rem;margin:0}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:26px clamp(16px,4vw,40px) 30px;display:flex;flex-direction:column;gap:18px}
+.q-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.q-head h2{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.tag{font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.q-marks{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.stem{max-width:70ch}
+table.data{border-collapse:collapse;margin:12px 0 0;font-variant-numeric:tabular-nums;display:block;max-width:100%;overflow-x:auto}
+table.data th,table.data td{border:1px solid var(--muted);padding:5px 14px;text-align:center}
+table.data th{font-weight:600}
+.figs{display:flex;flex-wrap:wrap;gap:18px 26px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:100%}
+figcaption{font-weight:700}
+.fig{background:#fff;border-radius:6px;padding:10px;max-width:100%;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+ol.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+.part-head{display:grid;grid-template-columns:2.2em 1fr auto;gap:0 8px;align-items:start}
+.letter{font-weight:700}
+.part-q{max-width:62ch}
+.marks{font-weight:700;white-space:nowrap;font-size:.95rem}
+.answer,.written,.ms{margin:8px 0 0 calc(2.2em + 8px)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.answer label{color:var(--muted);font-size:.95rem}
+.answer input,.answer select{background:var(--paper);border:1.5px solid var(--muted);border-radius:6px;padding:5px 8px;max-width:100%}
+.answer input{width:9em;font-variant-numeric:tabular-nums}
+.unit{font-weight:600;min-width:1.6em}
+.check{background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 12px;font-weight:700}
+.fb{font-weight:600;font-size:.95rem;color:var(--muted)}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.written{color:var(--muted);font-size:.95rem}
+.ms{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px}
+.ms-tag{display:block;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.ms-ans{margin-top:6px}
+.ms-sf{color:var(--muted);font-size:.9rem}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+.unit-in{width:4.5em!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ms-guide{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);font-size:.95rem}
+.ms-guide ul{margin:2px 0 0;padding-left:1.2em}
+.ms-guide li{margin:2px 0}
+.eq{white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:16px}
+.code-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.95rem;color:var(--muted)}
+.q-code{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sheets,.panel{display:flex;flex-direction:column;gap:22px}
+.panel[hidden]{display:none}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font-weight:700;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions label{color:var(--muted);font-size:.95rem}
+#size{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px}
+#summary{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+#code{width:8.5em;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:6px 8px}
+@media (max-width:480px){ .part-head{grid-template-columns:2em 1fr} .marks{grid-column:2;justify-self:end} .answer,.written,.ms{margin-left:0} .eq{white-space:normal} }
+.nuc{display:inline-flex;flex-direction:column;vertical-align:-0.42em;font-size:.68em;line-height:1.02;text-align:right;margin-right:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A-level Materials Question Generator</h1>
+    <p>AQA-style practice on section 3.4.2 (Materials): density, Hooke’s law and springs, elastic strain energy, stress and strain, the Young modulus and the behaviour of materials. 55 question types and many thousands of different questions with mark schemes, including heating and cooling curves, gas-law graphs, apparatus diagrams and practical questions.</p>
+  </header>
+  <section class="bench" aria-label="Topics">
+    <div class="chips" id="topics" role="group" aria-label="Topics to include"></div>
+    <label class="switch" for="skills"><input type="checkbox" id="skills" checked> A-level significant-figure and unit marks</label>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" role="tab" id="tab-single" aria-controls="panel-single" aria-selected="true">Single question</button>
+    <button type="button" class="tab" role="tab" id="tab-sets" aria-controls="panel-sets" aria-selected="false">Question sets</button>
+  </div>
+  <p id="status" role="status"></p>
+  <div id="panel-single" role="tabpanel" aria-labelledby="tab-single" class="panel">
+    <div class="actions"><button type="button" class="primary" id="new-one">New question</button>
+      <form id="load-form" class="code-box"><label for="code">Open a question code</label><input id="code" type="text" autocomplete="off" placeholder="PE3-48213"><button type="submit" class="ghost">Open</button></form></div>
+    <main id="single" class="sheets"></main>
+  </div>
+  <div id="panel-sets" role="tabpanel" aria-labelledby="tab-sets" class="panel" hidden>
+    <div class="actions"><label for="size">Questions in set</label><select id="size"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <button type="button" class="primary" id="new-set">New set</button><button type="button" class="ghost" id="toggle-all" aria-pressed="false">Show all mark schemes</button><span id="summary"></span></div>
+    <div id="set" class="sheets"></div>
+  </div>
+</div>
+<script>
+'use strict';
+'use strict';
+
+/* ---------- helpers ---------- */
+function makeRand(seed){
+  let a = seed >>> 0;
+  const r = function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.chance = p => r() < p;
+  return r;
+}
+function sig(x, n = 2){
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-12) return '0';
+  x = Number((x * (1 + 1e-9)).toPrecision(n));      // tiny nudge: an exact half always rounds up
+  const e = Math.floor(Math.log10(Math.abs(x)) + 1e-9);
+  const d = n - 1 - e;
+  const s = d >= 0 ? x.toFixed(d) : String(Math.round(x));
+  return s.replace('-', '−');
+}
+function isNice(x, n = 3){ return Math.abs(x - Number(x.toPrecision(n))) <= 1e-9 * Math.abs(x); }
+function ansStr(x){ return isNice(x, 2) ? sig(x, 2) : sig(x, 3); }
+const STATS = { fallback: 0 };
+function find(gen, test){ let v; for (let i = 0; i < 2000; i++){ v = gen(); if (test(v)) return v; } STATS.fallback++; v.fallback = true; return v; }
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+/* ---------- number formatting ---------- */
+const n2 = x => Math.round(x * 100) / 100;
+function N(x, n = 2){                       // n significant figures, standard form outside 0.01 .. 10 000
+  if (!isFinite(x)) return 'NaN';
+  if (Math.abs(x) < 1e-300) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e4 || a < 1e-2){
+    const r = Number((x * (1 + 1e-9)).toPrecision(n));      // round the value itself first, with a tiny nudge so that an exact half (2.25, 9.375) always rounds up
+    let e = Math.floor(Math.log10(Math.abs(r)) + 1e-12), m = r / Math.pow(10, e);
+    if (Math.abs(m) >= 10){ m /= 10; e += 1; }
+    return (m.toFixed(n - 1) + ' × 10<sup>' + e + '</sup>').replace(/-/g, '−');
+  }
+  return sig(x, n);
+}
+const INEXACT = [];
+const V = (x, unit, n = 2) => { if (!isNice(x, n)) INEXACT.push(x + ' ' + unit); return N(x, n) + ' ' + unit; };      // quantities given in a question must be exact at the figures shown
+let ASF = 2;                                          // significant figures of the data in the question being built
+const A = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : N(x, 3);      // answers: 3 sf (2 sf when exact and the data are given to 2 sf)
+const AV = (x, unit) => A(x) + ' ' + unit;
+const I3 = x => isNice(x, 3) ? N(x, 3) : N(x, 4);      // a working value from data given to 3 sf
+const plain = h => String(h).replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '');
+const eq = s => `<span class="eq">${s}</span>`;
+const sb = (a, b) => `<i>${a}</i><sub>${b}</sub>`;
+const MS1 = 'm s<sup>−1</sup>', KGM = 'kg m<sup>−1</sup>', MS2 = 'm s<sup>−2</sup>', NM1 = 'N m<sup>−1</sup>', KGM3 = 'kg m<sup>−3</sup>', OHMM = 'Ω m', CM3 = 'cm<sup>3</sup>';
+const fx = (x, d) => (Math.abs(x) < .5 * Math.pow(10, -d) ? 0 : x * (1 + 1e-9)).toFixed(d).replace('-', '−');      // fixed decimal places, as an instrument records
+const U = x => { const n = isNice(x, 1) ? 1 : 2; return x >= 1e-4 && x < 1e5 ? sig(x, n) : N(x, n); };       // an uncertainty: 1 significant figure when exact, otherwise 2
+const tight = u => u === '°' || u === '%';
+const GRAV = 9.81, C0 = 3.00e8;
+
+/* ---------- diagram drawing ---------- */
+class Scene {
+  constructor(aria){ this.aria = aria || 'Diagram'; this.body = []; this.labels = []; this.segs = []; this.fields = []; this.keep = []; this.meta = {}; this.bb = [1e9, 1e9, -1e9, -1e9]; }
+  ext(x, y){ const b = this.bb; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  at(o){ let a = ''; if (o.dash) a += ` stroke-dasharray="${o.dash}"`; if (o.w) a += ` stroke-width="${o.w}"`; if (o.fill) a += ` fill="${o.fill}"`; if (o.stroke) a += ` stroke="${o.stroke}"`; return a; }
+  seg(x1, y1, x2, y2, tag){ this.segs.push([x1, y1, x2, y2, tag || '']); }
+  line(x1, y1, x2, y2, o = {}){ this.body.push(`<line x1="${n2(x1)}" y1="${n2(y1)}" x2="${n2(x2)}" y2="${n2(y2)}"${this.at(o)}/>`); this.ext(x1, y1); this.ext(x2, y2); if (!o.free) this.seg(x1, y1, x2, y2, o.tag); return this; }
+  poly(pts, o = {}){
+    this.body.push(`<${o.close ? 'polygon' : 'polyline'} points="${pts.map(p => n2(p[0]) + ',' + n2(p[1])).join(' ')}"${this.at(o)}/>`);
+    pts.forEach(p => this.ext(p[0], p[1]));
+    if (!o.free){ for (let i = 0; i + 1 < pts.length; i++) this.seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.tag); if (o.close) this.seg(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1], o.tag); }
+    return this;
+  }
+  rect(x, y, w, h, o = {}){ return this.poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], Object.assign({ close: true }, o)); }
+  circle(cx, cy, r, o = {}){
+    this.body.push(`<circle cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(r)}"${this.at(o)}/>`); this.ext(cx - r, cy - r); this.ext(cx + r, cy + r);
+    if (!o.free) for (let i = 0; i < 24; i++){ const a = i * Math.PI / 12, b = (i + 1) * Math.PI / 12; this.seg(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + r * Math.cos(b), cy + r * Math.sin(b), o.tag); }
+    return this;
+  }
+  arcPts(cx, cy, r, a0, a1){ const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 4)), pts = []; for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]); } return pts; }
+  arc(cx, cy, r, a0, a1, o = {}){ return this.poly(this.arcPts(cx, cy, r, a0, a1), o); }     // angles in degrees, anticlockwise from "to the right"
+  head(x, y, dx, dy, s = 9){ const l = Math.hypot(dx, dy), c = dx / l, d = dy / l, bx = x - s * c, by = y - s * d, w = s * 0.4;
+    this.body.push(`<polygon points="${n2(x)},${n2(y)} ${n2(bx - w * d)},${n2(by + w * c)} ${n2(bx + w * d)},${n2(by - w * c)}" fill="#000" stroke-width="1"/>`); return this; }
+  arrow(x1, y1, x2, y2, o = {}){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l, s = o.s || 9;
+    this.line(o.both ? x1 + (s - 1) * c : x1, o.both ? y1 + (s - 1) * d : y1, x2 - (s - 1) * c, y2 - (s - 1) * d, o); this.head(x2, y2, c, d, s); if (o.both) this.head(x1, y1, -c, -d, s);
+    this.ext(x1, y1); this.ext(x2, y2); return this; }
+  mid(x1, y1, x2, y2, f = .5, s = 9){ const l = Math.hypot(x2 - x1, y2 - y1), c = (x2 - x1) / l, d = (y2 - y1) / l; return this.head(x1 + (x2 - x1) * f + c * s / 2, y1 + (y2 - y1) * f + d * s / 2, c, d, s); }
+  // text: *x* italic, _{..} subscript, ^{..} superscript
+  label(x, y, str, o = {}){
+    const size = o.size || 15, anchor = o.anchor || 'middle';
+    let w = 0, html = ''; const cw = (str, k) => { let t = 0; for (const ch of str) t += /[A-Z]/.test(ch) ? (/[MW]/.test(ch) ? 1 : .75) : /[mw]/.test(ch) ? .86 : /[ijl.,:;' ()\-]/.test(ch) ? .34 : /[frt]/.test(ch) ? .4 : .6; return t * k * (o.bold ? 1.06 : 1); };
+    String(str).split(/(\*[^*]+\*|_\{[^}]*\}|\^\{[^}]*\})/).forEach(t => {
+      if (!t) return;
+      if (t[0] === '*'){ const s = t.slice(1, -1); w += cw(s, size + 3) * .92; html += `<tspan font-style="italic" font-family="'Times New Roman',Times,serif" font-size="${size + 3}">${esc(s)}</tspan>`; }
+      else if (t[0] === '_' || t[0] === '^'){ const s = t.slice(2, -1), dy = t[0] === '_' ? 4 : -6; w += cw(s, size - 4); html += `<tspan dy="${dy}" font-size="${size - 4}">${esc(s)}</tspan><tspan dy="${-dy}">​</tspan>`; }
+      else { w += cw(t, size); html += esc(t); }
+    });
+    const lx = anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x : x - w, box = [lx, y - size * 0.82, lx + w, y + size * 0.28];
+    this.labels.push({ x, y, anchor, html, box, str, size, bold: !!o.bold, inside: !!o.inside, halo: !!o.halo });
+    this.ext(box[0], box[1]); this.ext(box[2], box[3]); return this;
+  }
+  field(x, y, w, h, dir, o = {}){ this.fields.push({ x, y, w, h, dir, step: o.step || 36, border: o.border }); if (o.border) this.rect(x, y, w, h, { dash: '6 4', w: 1.1, free: true }); this.ext(x, y); this.ext(x + w, y + h); return this; }
+  clear(x0, y0, x1, y1){ this.keep.push([x0, y0, x1, y1]); return this; }
+  // dimension line with arrowheads at both ends
+  dim(x1, y1, x2, y2, str, o = {}){ this.arrow(x1, y1, x2, y2, { both: true, w: 1.1, s: 7 }); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (Math.abs(y1 - y2) < 1) this.label(mx, my + (o.below ? 19 : -7), str); else this.label(mx + (o.left ? -8 : 8), my + 5, str, { anchor: o.left ? 'end' : 'start' }); return this; }
+  markers(){
+    const out = [], near = (px, py) => {
+      for (const b of this.keep) if (px > b[0] && px < b[2] && py > b[1] && py < b[3]) return true;
+      for (const l of this.labels){ const b = l.box; if (px > b[0] - 9 && px < b[2] + 9 && py > b[1] - 9 && py < b[3] + 9) return true; }
+      for (const s of this.segs){ const dx = s[2] - s[0], dy = s[3] - s[1], L2 = dx * dx + dy * dy; let t = L2 ? ((px - s[0]) * dx + (py - s[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); if (Math.hypot(px - s[0] - t * dx, py - s[1] - t * dy) < 11) return true; }
+      return false; };
+    this.fields.forEach(f => { f.count = 0;
+      const nx = Math.max(1, Math.round(f.w / f.step)), ny = Math.max(1, Math.round(f.h / f.step)), sx = f.w / nx, sy = f.h / ny;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){ const px = f.x + (i + .5) * sx, py = f.y + (j + .5) * sy; if (near(px, py)) continue; f.count++; out.push([px, py, f.dir]); } });
+    return out;
+  }
+  check(){
+    const errors = [], mk = this.markers();
+    const hit = (s, b) => {                      // segment against box
+      const inside = (x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+      if (inside(s[0], s[1]) || inside(s[2], s[3])) return true;
+      const cross = (ax, ay, bx, by, cx, cy, dx, dy) => { const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx); if (Math.abs(d) < 1e-12) return false; const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d, u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1; };
+      return cross(s[0], s[1], s[2], s[3], b[0], b[1], b[2], b[1]) || cross(s[0], s[1], s[2], s[3], b[2], b[1], b[2], b[3]) || cross(s[0], s[1], s[2], s[3], b[2], b[3], b[0], b[3]) || cross(s[0], s[1], s[2], s[3], b[0], b[3], b[0], b[1]);
+    };
+    this.labels.forEach((l, i) => { const b = [l.box[0] + 1, l.box[1] + 1, l.box[2] - 1, l.box[3] - 1];
+      this.segs.forEach(s => { if (hit(s, b)) errors.push(`label "${l.str}" overlaps a line${s[4] ? ' (' + s[4] + ')' : ''}`); });
+      for (let j = i + 1; j < this.labels.length; j++){ const c = this.labels[j].box; if (b[0] < c[2] && b[2] > c[0] && b[1] < c[3] && b[3] > c[1]) errors.push(`labels overlap: "${l.str}" / "${this.labels[j].str}"`); }
+      mk.forEach(m => { if (m[0] > b[0] - 5 && m[0] < b[2] + 5 && m[1] > b[1] - 5 && m[1] < b[3] + 5) errors.push(`field marker under label "${l.str}"`); }); });
+    this.fields.forEach(f => { if (f.count < 6) errors.push('too few field markers drawn (' + f.count + ')'); });
+    this.segs.forEach(s => { if (![s[0], s[1], s[2], s[3]].every(isFinite)) errors.push('line with a missing coordinate'); });
+    return errors;
+  }
+  svg(){
+    const mk = this.markers(); let m = '';
+    mk.forEach(([x, y, d]) => { m += d === 'in' ? `<path d="M${n2(x - 4.5)} ${n2(y - 4.5)}L${n2(x + 4.5)} ${n2(y + 4.5)}M${n2(x - 4.5)} ${n2(y + 4.5)}L${n2(x + 4.5)} ${n2(y - 4.5)}" stroke-width="1.3"/>` : `<circle cx="${n2(x)}" cy="${n2(y)}" r="2.7" fill="#000" stroke="none"/>`; });
+    const t = this.labels.map(l => `<text x="${n2(l.x)}" y="${n2(l.y)}" text-anchor="${l.anchor}" font-size="${l.size}"${l.bold ? ' font-weight="700"' : ''}${l.halo ? ' stroke="#fff" stroke-width="4" paint-order="stroke"' : ''}>${l.html}</text>`).join('');
+    const p = 14, b = this.bb, vx = b[0] - p, vy = b[1] - p, vw = b[2] - b[0] + 2 * p, vh = b[3] - b[1] + 2 * p;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="scene" viewBox="${n2(vx)} ${n2(vy)} ${n2(vw)} ${n2(vh)}" width="${Math.round(vw)}" height="${Math.round(vh)}" font-family="Arial,Helvetica,sans-serif" font-size="15" role="img" aria-label="${esc(this.aria)}">` +
+      `<rect x="${n2(vx)}" y="${n2(vy)}" width="${n2(vw)}" height="${n2(vh)}" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="butt" stroke-linejoin="miter">${m}${this.body.join('')}</g><g fill="#000">${t}</g></svg>`;
+  }
+}
+
+/* ---------- shared pieces of apparatus ---------- */
+function meter(s, cx, cy, letter){ s.circle(cx, cy, 15, { fill: '#fff' }); s.label(cx, cy + 5.5, letter, { bold: true, size: 16, inside: true }); }
+function boxed(s, x, y, w, h, text){ s.rect(x, y, w, h, { fill: '#fff' }); const lines = text.split('\n'); lines.forEach((t, i) => s.label(x + w / 2, y + h / 2 + 5 + (i - (lines.length - 1) / 2) * 16, t, { size: 13, inside: true })); }
+
+/* ---------- oscilloscope screen: 10 x 8 divisions ---------- */
+function scope(f, o = {}){
+  const d = 30, W = 10 * d, H = 8 * d, x0 = 12, y0 = 12; let grid = '', ticks = '';
+  for (let i = 0; i <= 10; i++) grid += `<line x1="${x0 + i * d}" y1="${y0}" x2="${x0 + i * d}" y2="${y0 + H}"/>`;
+  for (let j = 0; j <= 8; j++) grid += `<line x1="${x0}" y1="${y0 + j * d}" x2="${x0 + W}" y2="${y0 + j * d}"/>`;
+  for (let i = 0; i <= 50; i++) ticks += `<line x1="${x0 + i * d / 5}" y1="${y0 + H / 2 - 3}" x2="${x0 + i * d / 5}" y2="${y0 + H / 2 + 3}"/>`;
+  for (let j = 0; j <= 40; j++) ticks += `<line x1="${x0 + W / 2 - 3}" y1="${y0 + j * d / 5}" x2="${x0 + W / 2 + 3}" y2="${y0 + j * d / 5}"/>`;
+  const pts = [], n = o.square ? 2000 : 500; let bad = false;
+  for (let i = 0; i <= n; i++){ const t = 10 * i / n, y = f(t); if (Math.abs(y) > 4 + 1e-9) bad = true; pts.push(n2(x0 + t * d) + ',' + n2(y0 + H / 2 - y * d)); }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="scope" viewBox="0 0 ${W + 24} ${H + 24}" width="${W + 24}" height="${H + 24}" role="img" aria-label="Oscilloscope screen showing ${o.square ? 'a square wave' : 'a sinusoidal trace'}">` +
+    `<rect width="${W + 24}" height="${H + 24}" fill="#fff"/><g stroke="#9aa1a8" stroke-width="0.8">${grid}</g><g stroke="#555" stroke-width="0.8">${ticks}</g>` +
+    `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="none" stroke="#000" stroke-width="1.8"/><polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+  return { svg, bad };
+}
+
+/* ---------- graph paper ---------- */
+function axisFor(max){
+  for (const m of [.01, .02, .05, .1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]){ const n = Math.ceil(max / m - 1e-9); if (n <= 6) return [n * m, m]; }
+  return [max, max / 5];
+}
+const LAST = {}, GLOG = [];
+// axis label: ^{..} superscript, _{..} subscript
+const axl = s => esc(s).replace(/\^\{([^}]*)\}/g, '<tspan dy="-6" font-size="10">$1</tspan><tspan dy="6">\u200b</tspan>').replace(/_\{([^}]*)\}/g, '<tspan dy="4" font-size="10">$1</tspan><tspan dy="-4">\u200b</tspan>');
+const axp = s => String(s).replace(/[\^_]\{([^}]*)\}/g, '$1');
+function graph(g){
+  LAST.g = g; GLOG.push(g);
+  const W = g.w || 400, H = g.h || 300, ml = 70, mb = g.top ? 16 : 52, mt = g.top ? 52 : 16, mr = 22;      // top: the r axis is at the top (all values negative)
+  const [xa, xb, xM] = g.x, [ya, yb, yM] = g.y, div = g.div || 5;
+  const X = x => ml + (x - xa) / (xb - xa) * W, Y = y => mt + H - (y - ya) / (yb - ya) * H;
+  const dec = m => Math.max(0, -Math.floor(Math.log10(Math.abs(m)) + 1e-9));      // y may run downwards (magnitude scales): then yM is negative
+  const fmt = (v, m) => (Math.abs(v) < 1e-9 ? '0' : v.toFixed(dec(m))).replace('-', '−');
+  let minor = '', major = '', lab = '';
+  const xd = g.xdiv || div, yd = g.ydiv || div, nx = Math.round((xb - xa) / xM * xd), ny = Math.round((yb - ya) / yM * yd);
+  for (let i = 0; i <= nx; i++){ const x = X(xa + i * xM / xd), s = `<line x1="${n2(x)}" y1="${mt}" x2="${n2(x)}" y2="${mt + H}"/>`; if (i % xd) minor += s; else { major += s; lab += `<text x="${n2(x)}" y="${g.top ? mt - 10 : mt + H + 22}" text-anchor="middle">${fmt(xa + i * xM / xd, xM)}</text>`; } }
+  for (let i = 0; i <= ny; i++){ const y = Y(ya + i * yM / yd), s = `<line x1="${ml}" y1="${n2(y)}" x2="${ml + W}" y2="${n2(y)}"/>`; if (i % yd) minor += s; else { major += s; lab += `<text x="${ml - 8}" y="${n2(y + 5)}" text-anchor="end">${fmt(ya + i * yM / yd, yM)}</text>`; } }
+  const ax0 = X(xa <= 0 && xb >= 0 ? 0 : xa), ay0 = Y(ya <= 0 && yb >= 0 ? 0 : ya);
+  let marks = '';
+  (g.shade || []).forEach(c => { const pts = []; for (let i = 0; i <= 120; i++){ const x = c.from + (c.to - c.from) * i / 120; pts.push(n2(X(x)) + ',' + n2(Y(Math.min(c.f(x), yb)))); } pts.push(n2(X(c.to)) + ',' + n2(Y(Math.max(ya, 0))), n2(X(c.from)) + ',' + n2(Y(Math.max(ya, 0)))); marks += `<polygon points="${pts.join(' ')}" fill="#c9cfd4" fill-opacity="0.65" stroke="none"/>`; });
+  (g.curves || []).forEach(c => {
+    const pts = []; const n = 240;
+    if (c.pts) c.pts.forEach(p => pts.push(n2(X(p[0])) + ',' + n2(Y(p[1]))));      // straight-line sections: exact corners
+    else for (let i = 0; i <= n; i++){ const x = c.from + (c.to - c.from) * i / n, y = c.f(x); if (y >= Math.min(ya, yb) - 1e-9 && y <= Math.max(ya, yb) + 1e-9) pts.push(n2(X(x)) + ',' + n2(Y(y))); }
+    marks += `<polyline points="${pts.join(' ')}" fill="none" stroke="#000" stroke-width="${c.w || 1.9}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ''} stroke-linejoin="round"/>`;
+    if (c.name) marks += `<text x="${n2(X(c.at[0]))}" y="${n2(Y(c.at[1]))}" font-weight="700" font-size="16" text-anchor="middle" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(c.name)}</text>`;
+  });
+  (g.dots || []).forEach(d => { marks += `<circle cx="${n2(X(d.x))}" cy="${n2(Y(d.y))}" r="4.2" fill="#000"/><text x="${n2(X(d.x) + (d.dx || 9))}" y="${n2(Y(d.y) + (d.dy || 5))}" font-weight="700" font-size="15" stroke="#fff" stroke-width="4" paint-order="stroke">${esc(d.t)}</text>`; });
+  (g.ebars || []).forEach(([x, y, d]) => { const x0 = n2(X(x)), y1 = n2(Y(y - d)), y2 = n2(Y(y + d)); marks += `<path d="M${x0} ${y1}V${y2}M${n2(x0 - 5)} ${y1}h10M${n2(x0 - 5)} ${y2}h10" stroke="#000" stroke-width="1.3" fill="none"/>`; });
+  (g.crosses || []).forEach(p => { const x = X(p[0]), y = Y(p[1]), s = 4.5; marks += `<path d="M${n2(x - s)} ${n2(y - s)}L${n2(x + s)} ${n2(y + s)}M${n2(x - s)} ${n2(y + s)}L${n2(x + s)} ${n2(y - s)}" stroke="#000" stroke-width="1.5" fill="none"/>`; });
+  const tw = ml + W + mr, th = mt + H + mb;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="graph" viewBox="0 0 ${tw} ${th}" width="${tw}" height="${th}" font-family="Arial,Helvetica,sans-serif" font-size="14" role="img" aria-label="Graph of ${esc(axp(g.yl))} against ${esc(axp(g.xl))}">` +
+    `<rect width="${tw}" height="${th}" fill="#fff"/><g stroke="#c4c8cc" stroke-width="0.7">${minor}</g><g stroke="#7d848b" stroke-width="1">${major}</g>` +
+    `<g stroke="#000" stroke-width="1.7"><line x1="${n2(ax0)}" y1="${mt}" x2="${n2(ax0)}" y2="${mt + H}"/><line x1="${ml}" y1="${n2(ay0)}" x2="${ml + W}" y2="${n2(ay0)}"/></g>` +
+    marks + `<g fill="#000">${lab}<text x="${ml + W / 2}" y="${g.top ? 20 : th - 8}" text-anchor="middle">${axl(g.xl)}</text>` +
+    `<text transform="translate(18,${mt + H / 2}) rotate(-90)" text-anchor="middle">${axl(g.yl)}</text></g></svg>`;
+}
+
+
+// graph checks: everything plotted lies within the axes, and every value the mark scheme reads lies on a drawn line
+function graphErrors(g){
+  const e = [], [xa, xb] = g.x, [y1, y2] = g.y, ya = Math.min(y1, y2), yb = Math.max(y1, y2), inX = x => x >= xa - 1e-9 && x <= xb + 1e-9, inY = y => y >= ya - 1e-9 && y <= yb + 1e-9;
+  (g.crosses || []).forEach(p => { if (!inX(p[0]) || !inY(p[1])) e.push('plotted point outside the axes'); });
+  (g.dots || []).forEach(p => { if (!inX(p.x) || !inY(p.y)) e.push('marked nuclide outside the axes'); });
+  (g.ebars || []).forEach(p => { if (!inX(p[0]) || !inY(p[1] - p[2]) || !inY(p[1] + p[2])) e.push('error bar outside the axes'); });
+  (g.curves || []).forEach(c => { for (let i = 0; i <= 80; i++){ const x = c.from + (c.to - c.from) * i / 80, y = c.f(x); if (!isFinite(y) || !inX(x) || !inY(y)){ e.push('a drawn line leaves the axes'); break; } } });
+  (g.reads || []).forEach(([x, y]) => { if (!inX(x) || !inY(y)) e.push('a value read is outside the axes');
+    if (!(g.curves || []).some(c => x >= Math.min(c.from, c.to) - 1e-9 && x <= Math.max(c.from, c.to) + 1e-9 && Math.abs(c.f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y)))) e.push('a value read is not on a drawn line (' + x + ', ' + y + ')'); });
+  return e;
+}
+
+/* ---------- materials: shared helpers ---------- */
+const TOPICS = { DE: 'Density', HK: 'Hooke’s law and springs', SE: 'Elastic strain energy', ST: 'Stress and strain', YM: 'The Young modulus', MB: 'Behaviour of materials' };
+const T = {};
+const calc = (q, marks, ans, unit, ms, x) => Object.assign({ q, marks, ans, unit, ms }, x || {});
+const opt = (q, marks, options, correct, ms) => ({ q, marks, options, correct, ms });
+const text = (q, marks, ms) => ({ q, marks, ms });
+const NOFIG = (sf, data, stem, parts) => ({ sf, scenes: [], data, stem, parts });
+const NS = { noSkill: true };
+const I = x => isNice(x, 2) && ASF < 3 ? N(x, 2) : isNice(x, 3) ? N(x, 3) : N(x, 4);
+const shuffleR = (R, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (R, a, n) => shuffleR(R, a).slice(0, n);
+function choose(R, q, marks, correct, wrong, ms){ const o = shuffleR(R, [correct].concat(wrong)); return opt(q, marks, o, o.indexOf(correct), ms); }
+const tableH = (cap, head, rows) => `<b>${cap}</b><table class="data"><tr>${head.map(h => `<th>${h}</th>`).join(' ')}</tr> ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join(' ')}</tr>`).join(' ')}</table>`;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const rad = d => d * Math.PI / 180, sn = d => Math.sin(rad(d)), cs = d => Math.cos(rad(d)), tn = d => Math.tan(rad(d)), deg = x => x * 180 / Math.PI;
+const g = GRAV, GS = '9.81';
+const BR = x => x.replace(/\/ (\d[\d.]* × 10<sup>[−\d]+<\/sup>)(?!\))/g, '/ ($1)');
+const M = (...a) => a.map(x => BR(x) + ' ✓').join('<br>');      // one marking point per line
+const E = eq;
+const DG = x => N(x) + '°';
+const AD = x => A(x) + '°';
+const LB = (x, u, sf = 2) => N(x, sf).replace(/<sup>(.*?)<\/sup>/g, '^{$1}') + (u ? (u === '°' ? '°' : ' ' + u) : '');      // a value as a diagram label
+const KG = 'kg', NU = 'N', JU = 'J', WU = 'W', SU = 's', MU = 'm', NMU = 'N m', NSU = 'N s', KGMS = 'kg m s<sup>−1</sup>';
+const VECS = ['velocity', 'displacement', 'acceleration', 'force', 'momentum', 'weight'], SCALS = ['speed', 'distance', 'mass', 'kinetic energy', 'time', 'power', 'work done', 'temperature'];
+const PRINC = ['For a body in equilibrium ✓', 'the sum of the clockwise moments about any point equals the sum of the anticlockwise moments about that point ✓'];
+const COUPLE = ['A pair of equal and opposite (parallel) forces ✓', 'that do not act along the same line ✓'];
+/* ---------- drawing helpers ---------- */
+const hatchH = (s, x1, x2, y, below = true) => { s.line(x1, y, x2, y, { tag: 'surface' }); const d = below ? 8 : -8; for (let x = x1 + 10; x <= x2; x += 12) s.line(x, y, x - 8, y + d, { w: 1, free: true }); s.ext(x1, y + d); };
+const hatchV = (s, x, y1, y2, left = true) => { s.line(x, y1, x, y2, { tag: 'wall' }); const d = left ? -8 : 8; for (let y = y1 + 10; y <= y2; y += 12) s.line(x, y, x + d, y - 8, { w: 1, free: true }); s.ext(x + d, y1); };
+// a force (or velocity) arrow with its label just beyond the tip
+function force(s, x, y, dx, dy, lab, o = {}){
+  s.arrow(x, y, x + dx, y + dy, { w: 2.2, tag: 'arrow' }); if (!lab) return s;
+  const l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, tx = x + dx, ty = y + dy;
+  if (o.at) return s.label(tx + o.at[0], ty + o.at[1], lab, { anchor: o.anchor || 'middle' });
+  if (Math.abs(ux) > .75) s.label(tx + ux * 8, ty + 5, lab, { anchor: ux > 0 ? 'start' : 'end' }); else s.label(tx + ux * 10, ty + (uy > 0 ? 19 : -8), lab);
+  return s;
+}
+const blob = (s, x, y, r = 4) => { s.body.push(`<circle cx="${n2(x)}" cy="${n2(y)}" r="${r}" fill="#000" stroke="none"/>`); s.ext(x - r, y - r); s.ext(x + r, y + r); };
+// a horizontal beam; positions are given in metres and mapped on to the drawing
+function beamFig(aria, L, o = {}){
+  const s = new Scene(aria), x0 = 0, W = o.W || 440, y = 0, th = 14, X = p => x0 + p / L * W;
+  s.rect(X(o.from || 0), y - th / 2, X(o.to === undefined ? L : o.to) - X(o.from || 0), th, { fill: '#d9dde1', tag: 'beam' });
+  return { s, X, y, top: y - th / 2, bot: y + th / 2,
+    pivot: (p, lab) => { const x = X(p); s.poly([[x, y + th / 2], [x - 13, y + th / 2 + 24], [x + 13, y + th / 2 + 24]], { close: true, fill: '#fff', tag: 'pivot' }); if (lab) s.label(x, y + th / 2 + 43, lab, { bold: true }); },
+    down: (p, lab, len = 62, o2) => force(s, X(p), y + th / 2, 0, len, lab, o2),
+    up: (p, lab, len = 62, o2) => force(s, X(p), y - th / 2, 0, -len, lab, o2),
+    dim: (a, b, lab, lev = 1, below = false) => { const yy = below ? y + th / 2 + 22 + lev * 30 : y - th / 2 - 4 - lev * 30; [a, b].forEach(p => s.line(X(p), below ? y + th / 2 + 3 : y - th / 2 - 3, X(p), yy + (below ? 6 : -6), { w: .9, dash: '3 3', free: true })); s.dim(X(a), yy, X(b), yy, lab, { below }); } };
+}
+// a slope rising to the right at th degrees with a block on it
+function slopeFig(aria, th, o = {}){
+  const s = new Scene(aria), L = o.L || 380, a = rad(th), x1 = L * Math.cos(a), y1 = -L * Math.sin(a), u = [Math.cos(a), -Math.sin(a)], n = [-Math.sin(a), -Math.cos(a)];
+  s.poly([[0, 0], [x1, 0], [x1, y1]], { close: true, tag: 'slope' });
+  s.arc(0, 0, 58, 0, th, { w: 1.1, tag: 'angle arc' }); s.label(th < 14 ? 122 : th < 18 ? 84 : 70, -4.5, o.lab || DG(th), { anchor: 'start' });
+  const f = o.f === undefined ? .6 : o.f, bw = o.bw || 58, bh = o.bh || 34, P = [L * f * u[0], L * f * u[1]], c = (du, dn) => [P[0] + du * u[0] + dn * n[0], P[1] + du * u[1] + dn * n[1]];
+  if (!o.noBlock) s.poly([c(-bw / 2, 0), c(bw / 2, 0), c(bw / 2, bh), c(-bw / 2, bh)], { close: true, fill: '#d9dde1', tag: 'block' });
+  return { s, a, u, n, P, C: c(0, bh / 2), c, x1, y1, bw, bh };
+}
+const box = (s, x, y, w, h, lab) => { s.rect(x, y, w, h, { fill: '#d9dde1', tag: 'block' }); if (lab) s.label(x + w / 2, y + h / 2 + 5, lab, { inside: true }); };
+const pwl = pts => ({ pts, from: pts[0][0], to: pts[pts.length - 1][0], f: x => { for (let i = 0; i + 1 < pts.length; i++){ const a = pts[i], b = pts[i + 1]; if (b[0] > a[0] && x >= a[0] - 1e-12 && x <= b[0] + 1e-12) return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return pts[pts.length - 1][1]; } });
+const RN = x => isNice(x, 2) ? N(x, 2) : N(x, 3);      // a radius is half of a given diameter, so it may need a third figure
+const RHO = 'kg m<sup>−3</sup>', M3 = 'm<sup>3</sup>', M2 = 'm<sup>2</sup>', NM = 'N m<sup>−1</sup>', PA = 'Pa';
+const DENS = [['aluminium', 2700], ['zinc', 7100], ['iron', 7900], ['copper', 8900], ['lead', 11300]];
+const HOOKE = ['The extension (of a spring or wire) is directly proportional to the force applied ✓', 'provided the limit of proportionality is not exceeded ✓'];
+const DENSTAB = () => tableH('Table 1', ['Metal', 'Density / kg m<sup>−3</sup>'], DENS.map(d => [d[0], d[1]]));
+// a vertical spring drawn as a zig-zag from (x, y0) down to (x, y1)
+function spring(s, x, y0, y1, n = 9, w = 11){ const lead = 10, pts = [[x, y0], [x, y0 + lead]], h = (y1 - y0 - 2 * lead) / n; for (let i = 0; i < n; i++){ pts.push([x + (i % 2 ? -w : w), y0 + lead + h * (i + .5)]); } pts.push([x, y1 - lead], [x, y1]); s.poly(pts, { w: 1.8, tag: 'spring' }); }
+/* ===== Density ===== */
+T.DE1 = R => {
+  const mt = R.pick(DENS), a = R.pick([2.00, 3.00, 4.00, 5.00]), b = R.pick([2.00, 2.50, 4.00]), c = R.pick([1.00, 1.50, 2.00]), Vc = a * b * c, mg = +(mt[1] / 1000 * Vc).toPrecision(3), Vm = Vc * 1e-6, rho = mg / 1000 / Vm;
+  const near = DENS.slice().sort((p, q) => Math.abs(p[1] - rho) - Math.abs(q[1] - rho))[0][0];
+  return NOFIG(3, { a, b, c, mg }, `A rectangular metal block measures ${V(a, 'cm', 3)} × ${V(b, 'cm', 3)} × ${V(c, 'cm', 3)}. The mass of the block is ${V(mg, 'g', 3)}.<br>` + DENSTAB(), [
+    calc('Calculate the volume of the block in m<sup>3</sup>.', 2, Vm, M3, M(E(`volume = ${N(a, 3)} × ${N(b, 3)} × ${N(c, 3)} = ${I3(Vc)} cm<sup>3</sup>`), E(`= ${AV(Vm, M3)}`) + ' (1 cm<sup>3</sup> = 10<sup>−6</sup> m<sup>3</sup>)')),
+    calc('Calculate the density of the metal.', 2, rho, RHO, M(E('ρ = <i>m</i> / <i>V</i>') + ` with the mass in kg`, E(`= ${N(mg / 1000, 3)} / ${I3(Vm)} = ${AV(rho, RHO)}`))),
+    choose(R, 'Use <b>Table 1</b> to identify the metal.', 1, near, DENS.map(d => d[0]).filter(x => x !== near), `${cap(near)} ✓`),
+    choose(R, 'Which instrument is most suitable for measuring the dimensions of the block?', 1, 'vernier calipers', ['a metre rule', 'a measuring cylinder', 'a top-pan balance'], 'Vernier calipers (resolution 0.1 mm or better) ✓')
+  ]);
+};
+T.DE2 = R => {
+  const dmm = R.pick([0.50, 0.80, 1.2, 2.0, 4.0]), L = R.pick([2.0, 5.0, 12, 25]), mt = R.pick([['copper', 8900], ['steel', 7800], ['aluminium', 2700]]), r = dmm / 2 * 1e-3, Ar = Math.PI * r * r, Vv = Ar * L, m = mt[1] * Vv;
+  return NOFIG(2, { dmm, L, rho: mt[1] }, `${mt[0] === 'aluminium' ? 'An' : 'A'} ${mt[0]} wire has a diameter of ${V(dmm, 'mm')} and a length of ${V(L, 'm')}.<br>density of ${mt[0]} = ${mt[1]} kg m<sup>−3</sup>`, [
+    calc('Calculate the cross-sectional area of the wire.', 2, Ar, M2, M(E(`radius = ${RN(dmm / 2)} mm = ${RN(r)} m`), E(`<i>A</i> = π<i>r</i><sup>2</sup> = π × (${RN(r)})<sup>2</sup> = ${AV(Ar, M2)}`))),
+    calc('Calculate the volume of the wire.', 1, Vv, M3, M(E(`<i>V</i> = <i>AL</i> = ${I(Ar)} × ${N(L)} = ${AV(Vv, M3)}`))),
+    calc('Calculate the mass of the wire.', 2, m, 'kg', M(E('<i>m</i> = ρ<i>V</i>'), E(`= ${mt[1]} × ${I(Vv)} = ${AV(m, 'kg')}`))),
+    choose(R, 'A second wire of the same material and length has twice the diameter. How does its mass compare?', 1, 'it is four times as large', ['it is twice as large', 'it is eight times as large', 'it is the same'], 'Four times as large: the area, and so the volume, depends on the diameter squared ✓')
+  ]);
+};
+T.DE3 = R => {
+  const rmm = R.pick([2.0, 3.0, 4.0, 5.0, 6.0]), mt = R.pick([['steel', 7800], ['lead', 11300], ['aluminium', 2700]]), r = rmm * 1e-3, Vv = 4 / 3 * Math.PI * r ** 3, m = mt[1] * Vv;
+  return NOFIG(2, { rmm, rho: mt[1] }, `A solid ${mt[0]} ball has a radius of ${V(rmm, 'mm')}.<br>density of ${mt[0]} = ${mt[1]} kg m<sup>−3</sup>`, [
+    calc('Calculate the volume of the ball.', 2, Vv, M3, M(E(`<i>V</i> = (4/3)π<i>r</i><sup>3</sup>`) + ` with <i>r</i> = ${RN(r)} m`, E(`= 4 / 3 × π × (${RN(r)})<sup>3</sup> = ${AV(Vv, M3)}`))),
+    calc('Calculate the mass of the ball.', 2, m, 'kg', M(E('<i>m</i> = ρ<i>V</i>'), E(`= ${mt[1]} × ${I(Vv)} = ${AV(m, 'kg')}`))),
+    calc('Calculate the weight of the ball.', 1, m * g, 'N', M(E(`<i>W</i> = <i>mg</i> = ${I(m)} × ${GS} = ${AV(m * g, 'N')}`))),
+    choose(R, 'Which instrument is most suitable for measuring the diameter of the ball?', 1, 'a micrometer screw gauge', ['a metre rule', 'a 30 cm ruler', 'a measuring cylinder'], 'A micrometer screw gauge (resolution 0.01 mm) ✓'),
+    choose(R, 'A ball of the same material has twice the radius. How does its mass compare?', 1, 'it is eight times as large', ['it is twice as large', 'it is four times as large', 'it is sixteen times as large'], 'Eight times as large: volume ∝ <i>r</i><sup>3</sup> ✓')
+  ]);
+};
+T.DE4 = R => {
+  const Vc = R.pick([6.0, 7.0, 8.0]), Vz = 10 - Vc, mc = 8.9 * Vc, mz = 7.1 * Vz, rho = (mc + mz) / 10 * 1000;
+  return NOFIG(2, { Vc, Vz }, `Brass is an alloy of copper and zinc. A sample of brass is made by melting together ${V(Vc, CM3)} of copper and ${V(Vz, CM3)} of zinc.<br>density of copper = 8.9 g cm<sup>−3</sup><br>density of zinc = 7.1 g cm<sup>−3</sup>`, [
+    calc('Calculate the mass of copper in the sample.', 1, mc, 'g', M(E(`<i>m</i> = ρ<i>V</i> = 8.9 × ${N(Vc)} = ${AV(mc, 'g')}`))),
+    calc('Calculate the total mass of the sample.', 2, mc + mz, 'g', M(E(`mass of zinc = 7.1 × ${N(Vz)} = ${I(mz)} g`), E(`total mass = ${I(mc)} + ${I(mz)} = ${AV(mc + mz, 'g')}`))),
+    calc('Calculate the density of the brass in kg m<sup>−3</sup>.', 2, rho, RHO, M(E(`ρ = ${I(mc + mz)} / 10 = ${I((mc + mz) / 10)} g cm<sup>−3</sup>`) + ' (the total volume is 10 cm<sup>3</sup>)', E(`= ${AV(rho, RHO)}`) + ' (1 g cm<sup>−3</sup> = 1000 kg m<sup>−3</sup>)')),
+    text('State the assumption made about the volume of the alloy.', 1, 'The volume of the alloy is equal to the sum of the volumes of the copper and the zinc ✓')
+  ]);
+};
+T.DE5 = R => {
+  const Vi = R.pick([4.0e-6, 8.0e-6, 2.7e-5, 6.4e-5]), m = 920 * Vi, Vw = m / 1000;
+  return NOFIG(2, { Vi }, `An ice cube of volume ${V(Vi, M3)} floats in a beaker of water. The weight of water displaced by the ice cube is equal to the weight of the ice cube.<br>density of ice = 920 kg m<sup>−3</sup><br>density of water = 1000 kg m<sup>−3</sup>`, [
+    calc('Calculate the weight of the ice cube.', 2, m * g, 'N', M(E(`<i>m</i> = ρ<i>V</i> = 920 × ${N(Vi)} = ${I(m)} kg`), E(`<i>W</i> = <i>mg</i> = ${I(m)} × ${GS} = ${AV(m * g, 'N')}`))),
+    calc('Calculate the volume of water displaced by the ice cube.', 1, Vw, M3, M(E(`mass of water displaced = ${I(m)} kg, so <i>V</i> = ${I(m)} / 1000 = ${AV(Vw, M3)}`))),
+    calc('Calculate the fraction of the volume of the ice cube that is below the water surface.', 1, 0.92, '', M(E(`${I(Vw)} / ${N(Vi)} = 0.92`)), NS),
+    choose(R, 'The ice cube melts. What happens to the water level in the beaker?', 1, 'it stays the same', ['it rises', 'it falls'], 'It stays the same: the melted ice has the same mass, and so the same volume, as the water that the ice displaced ✓')
+  ]);
+};
+T.DE6 = R => {
+  const v0 = find(() => ({ V1: R.pick([20, 30, 40]), dV: R.pick([8.0, 10, 12, 16, 20, 25]), mg: R.pick([42, 54, 65, 89, 96, 130]) }), o => { const d = o.mg / o.dV; return d > 2.2 && d < 11; }), { V1, dV, mg } = v0, V2 = V1 + dV, rho = mg / dV * 1000, pu = 1 / dV * 100;
+  return NOFIG(2, { V1, V2, mg }, `A student finds the density of an irregularly shaped stone. The stone has a mass of ${V(mg, 'g')}. A measuring cylinder contains water to the ${V(V1, CM3)} mark. When the stone is lowered into the water, the water level rises to the ${V(V2, CM3)} mark.`, [
+    calc('Calculate the volume of the stone in cm<sup>3</sup>.', 1, dV, CM3, M(E(`${N(V2)} − ${N(V1)} = ${AV(dV, CM3)}`)), NS),
+    calc('Calculate the density of the stone in kg m<sup>−3</sup>.', 2, rho, RHO, M(E(`ρ = <i>m</i> / <i>V</i> = ${N(mg)} / ${N(dV)} = ${I(mg / dV)} g cm<sup>−3</sup>`), E(`= ${AV(rho, RHO)}`))),
+    calc('Each reading of the measuring cylinder has an uncertainty of ±0.5 cm<sup>3</sup>. Calculate the percentage uncertainty in the volume of the stone.', 2, pu, '%', M('absolute uncertainty in the volume = 0.5 + 0.5 = 1.0 cm<sup>3</sup>', E(`1.0 / ${N(dV)} × 100 = ${A(pu)}%`)), NS),
+    choose(R, 'Which change would reduce the percentage uncertainty in the density?', 1, 'using a larger stone of the same material', ['using a wider measuring cylinder', 'using less water', 'using a smaller stone of the same material'], 'Using a larger stone: the volume and mass are larger, so the same absolute uncertainties are a smaller percentage ✓')
+  ]);
+};
+const LIQ = [['ethanol', 790], ['olive oil', 920], ['water', 1000], ['sea water', 1030], ['glycerol', 1260]];
+T.DE7 = R => {
+  const lq = R.pick(LIQ.filter(l => l[0] !== 'sea water')), rg = lq[1] / 1000, m0 = R.pick([40, 50, 60]), m100 = m0 + 100 * rg, ya = axisFor(m100 * 1.05), cr = [20, 40, 60, 80].map(x => [x, (m0 + rg * x) * (1 + (R() - .5) * .012)]);
+  const fig = graph({ x: [0, 100, 20], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'volume of liquid / cm^{3}', yl: 'total mass / g', curves: [{ f: x => m0 + rg * x, from: 0, to: 100 }], crosses: cr, reads: [[0, m0], [100, m100]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { m0, rg }, stem: `A student pours a liquid into a measuring cylinder that stands on a balance. <b>Figure 1</b> shows how the total mass of the cylinder and liquid varies with the volume of liquid, with a line of best fit.<br>` + tableH('Table 1', ['Liquid', 'Density / kg m<sup>−3</sup>'], LIQ.map(d => [d[0], d[1]])), parts: [
+    calc('State the mass of the empty measuring cylinder.', 1, m0, 'g', M(`${N(m0)} g (the intercept on the mass axis)`), { tol: .03, noSkill: true }),
+    calc('Determine the gradient of the line of best fit.', 2, rg, 'g cm<sup>−3</sup>', M(`uses a large triangle, for example from (0, ${N(m0)}) to (100, ${I3(m100)})`, E(`gradient = (${I3(m100)} − ${N(m0)}) / 100 = ${A(rg)} g cm<sup>−3</sup>`)), { tol: .05, noSkill: true }),
+    calc('State the density of the liquid in kg m<sup>−3</sup>.', 1, lq[1], RHO, M(`gradient = density = ${AV(lq[1], RHO)}`), { tol: .05, noSkill: true }),
+    choose(R, 'Use <b>Table 1</b> to identify the liquid.', 1, lq[0], LIQ.map(d => d[0]).filter(x => x !== lq[0] && !(lq[0] === 'water' && x === 'sea water')).slice(0, 3), `${cap(lq[0])} ✓`),
+    text('Explain why the line does not pass through the origin.', 1, 'The total mass includes the mass of the empty measuring cylinder ✓')
+  ] };
+};
+T.DE8 = R => {
+  const rm = [R.pick([4.0, 5.0, 6.0]), R.pick([3.0, 4.0]), R.pick([2.5, 3.0])], Va = rm[0] * rm[1] * rm[2], ma = 1.2 * Va, v0 = find(() => ({ mg: R.pick([29, 38, 48, 58, 77]), Vr: R.pick([2.0, 2.5, 3.0, 4.0]) }), o => { const d = o.mg / o.Vr; return d > 11 && d < 19.8 && (d > 19.0 || d < 18.2); }), rr = v0.mg / v0.Vr * 1000, pure = rr > 19000;
+  return NOFIG(2, { rm, mg: v0.mg, Vr: v0.Vr }, `This question is about density.`, [
+    text('State what is meant by the density of a material.', 1, 'Its mass per unit volume ✓'),
+    calc(`A room measures ${V(rm[0], 'm')} × ${V(rm[1], 'm')} × ${V(rm[2], 'm')}. The density of air is 1.2 kg m<sup>−3</sup>. Calculate the mass of air in the room.`, 2, ma, 'kg', M(E(`volume = ${N(rm[0])} × ${N(rm[1])} × ${N(rm[2])} = ${I(Va)} m<sup>3</sup>`), E(`<i>m</i> = ρ<i>V</i> = 1.2 × ${I(Va)} = ${AV(ma, 'kg')}`))),
+    calc(`A ring has a mass of ${V(v0.mg, 'g')} and a volume of ${V(v0.Vr, CM3)}. Calculate the density of the ring in kg m<sup>−3</sup>.`, 2, rr, RHO, M(E(`ρ = ${N(v0.mg)} / ${N(v0.Vr)} = ${I(v0.mg / v0.Vr)} g cm<sup>−3</sup>`), E(`= ${AV(rr, RHO)}`))),
+    choose(R, 'The density of pure gold is 19 300 kg m<sup>−3</sup>. What does the density of the ring suggest?', 1, pure ? 'the ring could be pure gold' : 'the ring is not pure gold', [pure ? 'the ring is not pure gold' : 'the ring could be pure gold', 'the ring is denser than pure gold'], pure ? 'It could be pure gold: its density is close to that of gold ✓' : 'It is not pure gold: its density is much less than that of gold ✓')
+  ]);
+};
+/* ===== Hooke's law and springs ===== */
+function hangFig(aria, cols, o = {}){      // one or more columns of springs hanging from a support, each column a list of spring lengths
+  const s = new Scene(aria), W = 60 * cols.length + 80; hatchH(s, -W / 2, W / 2, 0, false); return s;
+}
+T.HK1 = R => {
+  const v0 = find(() => ({ k: R.pick([20, 25, 40, 50]), W: R.pick([1.0, 2.0, 3.0, 4.0]), L0: R.pick([8.0, 10, 12, 15]), W2: R.pick([5.0, 6.0, 8.0]) }), o => isNice(o.L0 + o.W / o.k * 100, 2)), { k, W, L0, W2 } = v0, e = W / k * 100, L1 = L0 + e, L2 = L0 + W2 / k * 100;
+  const s = new Scene('A spring hanging from a support with a load on its lower end'); hatchH(s, -70, 70, 0, false); spring(s, 0, 0, 130); s.rect(-22, 130, 44, 34, { fill: '#d9dde1', tag: 'load' }); s.label(34, 152, 'load', { anchor: 'start' }); s.label(22, 70, 'spring', { anchor: 'start' });
+  return { sf: 2, scenes: [s], data: { W, L0, L1, W2 }, stem: `<b>Figure 1</b> shows a spring hanging from a support. The unstretched length of the spring is ${V(L0, 'cm')}. When a load of weight ${V(W, 'N')} hangs from the spring, its length is ${V(L1, 'cm')}. The spring obeys Hooke’s law.`, parts: [
+    calc('Calculate the extension of the spring in metres.', 1, e / 100, 'm', M(E(`${N(L1)} − ${N(L0)} = ${I(e)} cm = ${AV(e / 100, 'm')}`))),
+    calc('Calculate the spring constant of the spring.', 2, k, NM, M(E('<i>k</i> = <i>F</i> / Δ<i>L</i>'), E(`= ${N(W)} / ${I(e / 100)} = ${AV(k, NM)}`))),
+    calc(`Calculate the length of the spring, in cm, when the load is ${V(W2, 'N')}.`, 2, L2, 'cm', M(E(`extension = ${N(W2)} / ${I(k)} = ${I(W2 / k)} m = ${I(W2 / k * 100)} cm`), E(`length = ${N(L0)} + ${I(W2 / k * 100)} = ${AV(L2, 'cm')}`))),
+    text('State what is meant by the spring constant.', 1, 'The force needed per unit extension (of the spring) ✓'),
+    choose(R, 'A much larger load is added and the spring is stretched beyond its elastic limit. What happens when the load is removed?', 1, 'the spring does not return to its original length', ['the spring returns to its original length', 'the spring becomes shorter than its original length'], 'It does not return to its original length (it is permanently extended) ✓')
+  ] };
+};
+T.HK2 = R => {
+  const kk = R.pick([0.2, 0.4, 0.5, 0.8, 1.0]), eP = R.pick([20, 25, 30]), FP = kk * eP, Fm = FP * 1.3, f = x => x <= eP ? kk * x : FP + (Fm - FP) * (1 - Math.exp(-kk * (x - eP) / (Fm - FP))), ya = axisFor(f(50) * 1.05), eq2 = R.pick([10, 15]), Fq = kk * eq2;
+  const fig = graph({ x: [0, 50, 10], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'extension / mm', yl: 'force / N', curves: [{ f, from: 0, to: 50 }], dots: [{ x: eP, y: FP, t: 'P', dx: 8, dy: 18 }], reads: [[eP, FP]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { eq2 }, stem: `<b>Figure 1</b> shows how the extension of a spring varies with the force applied to it. <b>P</b> is the limit of proportionality.`, parts: [
+    calc('State the force at the limit of proportionality.', 1, FP, 'N', M(`${AV(FP, 'N')} (the force at <b>P</b>, where the line stops being straight)`), { tol: .04, noSkill: true }),
+    calc('Determine the spring constant of the spring in N m<sup>−1</sup>.', 3, kk * 1000, NM, M(`uses the straight section, for example from (0, 0) to (${eP}, ${A(FP)})`, E(`extension = ${eP} mm = ${N(eP / 1000)} m`), E(`<i>k</i> = ${A(FP)} / ${N(eP / 1000)} = ${AV(kk * 1000, NM)}`)), { tol: .05, noSkill: true }),
+    calc(`Calculate the force needed to extend the spring by ${V(eq2, 'mm')}.`, 1, Fq, 'N', M(E(`<i>F</i> = <i>k</i>Δ<i>L</i> = ${I(kk * 1000)} × ${N(eq2 / 1000)} = ${AV(Fq, 'N')}`)), { tol: .05, noSkill: true }),
+    choose(R, 'How does the spring behave for forces greater than the force at <b>P</b>?', 1, 'the extension is no longer proportional to the force', ['the spring obeys Hooke’s law', 'the spring constant increases', 'the extension stays constant'], 'The extension is no longer proportional to the force (the spring extends more for each extra newton) ✓'),
+    text('State Hooke’s law.', 2, HOOKE.join('<br>'))
+  ] };
+};
+T.HK3 = R => {
+  const k = R.pick([20, 25, 40, 50]), L0 = R.pick([5.0, 6.5, 8.0, 12.0]), per = 100 / k, Ws = [0, 1, 2, 3, 4], Wq = R.pick([2.5, 3.5, 6.0]), Lq = L0 + Wq * per;
+  return NOFIG(3, { L0, per, Wq }, `A student hangs different loads from a spring and measures its length each time. The spring obeys Hooke’s law for all the loads used.<br>` + tableH('Table 1', ['Load / N', 'Length of spring / cm'], Ws.map(w => [fx(w, 1), fx(L0 + w * per, 1)])), [
+    calc('Determine the extension of the spring, in cm, for a load of 4.0 N.', 1, 4 * per, 'cm', M(E(`${fx(L0 + 4 * per, 1)} − ${fx(L0, 1)} = ${A(4 * per)} cm`)), NS),
+    calc('Calculate the spring constant of the spring in N m<sup>−1</sup>.', 2, k, NM, M(E(`<i>k</i> = <i>F</i> / Δ<i>L</i> with the extension in metres`), E(`= 4.0 / ${N(4 * per / 100, 3)} = ${AV(k, NM)}`)), NS),
+    calc(`Calculate the length of the spring, in cm, for a load of ${N(Wq)} N.`, 2, Lq, 'cm', M(E(`extension = ${N(Wq)} / ${k} = ${I3(Wq / k)} m = ${I3(Wq * per)} cm`), E(`length = ${fx(L0, 1)} + ${I3(Wq * per)} = ${A(Lq)} cm`)), NS),
+    text('Describe how the student should measure the extension of the spring accurately.', 2, M('Measure the length with a ruler clamped vertically close to the spring, reading at eye level (or using a pointer / set square) to avoid parallax error', 'subtract the unstretched length from each loaded length')),
+    choose(R, 'Which graph of these results is a straight line through the origin?', 1, 'load against extension', ['load against length', 'length against extension', 'load against 1/extension'], 'Load against extension ✓')
+  ]);
+};
+function springsFig(series){
+  const s = new Scene(series ? 'Two springs joined end to end with a load' : 'Two springs side by side supporting a load');
+  if (series){ hatchH(s, -70, 70, 0, false); spring(s, 0, 0, 95); spring(s, 0, 95, 190); s.rect(-22, 190, 44, 34, { fill: '#d9dde1', tag: 'load' }); s.label(22, 50, 'A', { bold: true, anchor: 'start' }); s.label(22, 145, 'B', { bold: true, anchor: 'start' }); s.label(34, 212, 'load', { anchor: 'start' }); }
+  else { hatchH(s, -90, 90, 0, false); spring(s, -40, 0, 120); spring(s, 40, 0, 120); s.rect(-60, 120, 120, 9, { fill: '#fff', tag: 'bar' }); s.line(0, 129, 0, 150, { tag: 'thread' }); s.rect(-22, 150, 44, 34, { fill: '#d9dde1', tag: 'load' }); s.label(34, 172, 'load', { anchor: 'start' }); s.label(74, 128, 'light rod', { anchor: 'start' }); }
+  return s;
+}
+T.HK4 = R => {
+  const v0 = find(() => ({ k1: R.pick([20, 25, 40, 50, 100]), k2: R.pick([20, 25, 40, 50, 100]), W: R.pick([2.0, 4.0, 5.0, 10]) }), o => o.k1 !== o.k2), { k1, k2, W } = v0, e1 = W / k1, e2 = W / k2, kt = W / (e1 + e2);
+  return { sf: 2, scenes: [springsFig(true)], data: { k1, k2, W }, stem: `<b>Figure 1</b> shows two light springs <b>A</b> and <b>B</b> joined end to end (in series). A load of weight ${V(W, 'N')} hangs from the lower spring. Spring <b>A</b> has a spring constant of ${V(k1, NM)} and spring <b>B</b> has a spring constant of ${V(k2, NM)}.`, parts: [
+    choose(R, 'How does the tension in spring <b>A</b> compare with the tension in spring <b>B</b>?', 1, 'they are equal', ['it is greater in A', 'it is greater in B'], `They are equal (each is ${N(W)} N) ✓`),
+    calc('Calculate the extension of spring <b>A</b>.', 1, e1, 'm', M(E(`Δ<i>L</i> = <i>F</i> / <i>k</i> = ${N(W)} / ${N(k1)} = ${AV(e1, 'm')}`))),
+    calc('Calculate the total extension of the two springs.', 2, e1 + e2, 'm', M(E(`extension of B = ${N(W)} / ${N(k2)} = ${I(e2)} m`), E(`total = ${I(e1)} + ${I(e2)} = ${AV(e1 + e2, 'm')}`))),
+    calc('Calculate the spring constant of the combination.', 2, kt, NM, M(E('<i>k</i> = load / total extension'), E(`= ${N(W)} / ${I(e1 + e2)} = ${AV(kt, NM)}`))),
+    choose(R, 'How does the spring constant of the combination compare with the spring constants of the two springs?', 1, 'it is smaller than both', ['it is larger than both', 'it is between the two', 'it is equal to their sum'], 'It is smaller than both: the combination extends more than either spring alone ✓')
+  ] };
+};
+T.HK5 = R => {
+  const k = R.pick([20, 25, 40, 50, 100]), W = R.pick([2.0, 4.0, 6.0, 10]), e = W / 2 / k;
+  return { sf: 2, scenes: [springsFig(false)], data: { k, W }, stem: `<b>Figure 1</b> shows two identical light springs side by side (in parallel). A load of weight ${V(W, 'N')} hangs from the centre of a light rod joined to the springs. Each spring has a spring constant of ${V(k, NM)}.`, parts: [
+    calc('Calculate the tension in each spring.', 1, W / 2, 'N', M(E(`${N(W)} / 2 = ${AV(W / 2, 'N')}`) + ' (the load is shared equally)')),
+    calc('Calculate the extension of each spring.', 2, e, 'm', M(E('Δ<i>L</i> = <i>F</i> / <i>k</i>'), E(`= ${I(W / 2)} / ${N(k)} = ${AV(e, 'm')}`))),
+    calc('Calculate the spring constant of the combination.', 1, 2 * k, NM, M(E(`<i>k</i> = load / extension = ${N(W)} / ${I(e)} = ${AV(2 * k, NM)}`))),
+    calc('Calculate the total elastic strain energy stored in the two springs.', 2, .5 * W * e, 'J', M(E('energy = ½<i>F</i>Δ<i>L</i> with the total load'), E(`= ½ × ${N(W)} × ${I(e)} = ${AV(.5 * W * e, 'J')}`))),
+    choose(R, 'One spring is removed and the load hangs from the other spring alone. How does the extension change?', 1, 'it doubles', ['it halves', 'it stays the same', 'it becomes four times as large'], 'It doubles: the single spring carries the whole load ✓')
+  ] };
+};
+T.HK6 = R => {
+  const k = R.pick([150, 200, 400, 500, 800]), xc = R.pick([2.0, 3.0, 4.0, 5.0]), F = k * xc / 100, m = R.pick([0.50, 1.0, 2.0]), xm = m * g / k;
+  return NOFIG(2, { k, xc, m }, `A spring has a spring constant of ${V(k, NM)} and obeys Hooke’s law.`, [
+    text('State Hooke’s law.', 2, HOOKE.join('<br>')),
+    text('State what is meant by the elastic limit.', 1, 'The point beyond which the spring is permanently deformed (it does not return to its original length when the force is removed) ✓'),
+    calc(`Calculate the force needed to compress the spring by ${V(xc, 'cm')}.`, 2, F, 'N', M(E(`<i>F</i> = <i>k</i>Δ<i>L</i> with Δ<i>L</i> = ${N(xc / 100)} m`), E(`= ${N(k)} × ${N(xc / 100)} = ${AV(F, 'N')}`))),
+    calc(`The spring is hung vertically and a mass of ${V(m, 'kg')} is attached. Calculate the extension of the spring.`, 2, xm, 'm', M(E(`weight = ${N(m)} × ${GS} = ${I(m * g)} N`), E(`Δ<i>L</i> = ${I(m * g)} / ${N(k)} = ${AV(xm, 'm')}`)))
+  ]);
+};
+T.HK7 = R => {
+  const Fm = R.pick([5.0, 10, 20]), Lc = R.pick([5.0, 8.0, 10]), k = Fm / (Lc / 100), m = R.pick([0.20, 0.30, 0.40]), W = m * g, e = W / k;
+  return NOFIG(2, { Fm, Lc, m }, `A newton-meter contains a spring. The scale of the newton-meter runs from 0 to ${V(Fm, 'N')} and is ${V(Lc, 'cm')} long.`, [
+    calc('Calculate the spring constant of the spring.', 2, k, NM, M(E(`the spring extends ${N(Lc / 100)} m for a force of ${N(Fm)} N`), E(`<i>k</i> = ${N(Fm)} / ${N(Lc / 100)} = ${AV(k, NM)}`))),
+    calc(`An object of mass ${V(m, 'kg')} hangs from the newton-meter. Calculate the reading on the newton-meter.`, 1, W, 'N', M(E(`<i>W</i> = <i>mg</i> = ${N(m)} × ${GS} = ${AV(W, 'N')}`))),
+    calc('Calculate the extension of the spring for this object.', 1, e, 'm', M(E(`Δ<i>L</i> = ${I(W)} / ${I(k)} = ${AV(e, 'm')}`))),
+    text('Explain why the scale of the newton-meter is linear (evenly spaced).', 1, 'The spring obeys Hooke’s law, so equal increases in force give equal increases in extension ✓'),
+    choose(R, 'A newton-meter with a stiffer spring and a scale of the same length is used instead. How do its range and sensitivity compare?', 1, 'larger range, less sensitive', ['larger range, more sensitive', 'smaller range, more sensitive', 'smaller range, less sensitive'], 'Larger range but less sensitive (a smaller extension for each newton) ✓')
+  ]);
+};
+T.HK8 = R => {
+  const k = R.pick([2.0e4, 2.5e4, 4.0e4, 5.0e4]), mp = R.pick([240, 280, 320, 400]), W = mp * g, x = W / 4 / k;
+  return NOFIG(2, { k, mp }, `The body of a car is supported by four identical springs, one at each wheel. Each spring has a spring constant of ${V(k, NM)}. Four people with a total mass of ${V(mp, 'kg')} get into the car, and their weight is shared equally between the four springs.`, [
+    calc('Calculate the extra force on each spring.', 2, W / 4, 'N', M(E(`total weight = ${N(mp)} × ${GS} = ${I(W)} N`), E(`force on each spring = ${I(W)} / 4 = ${AV(W / 4, 'N')}`))),
+    calc('Calculate the distance that the body of the car moves down.', 2, x, 'm', M(E('Δ<i>L</i> = <i>F</i> / <i>k</i>'), E(`= ${I(W / 4)} / ${N(k)} = ${AV(x, 'm')}`))),
+    calc('Calculate the spring constant of the four springs acting together.', 1, 4 * k, NM, M(E(`4 × ${N(k)} = ${AV(4 * k, NM)}`) + ' (springs in parallel)')),
+    choose(R, 'Stiffer springs are fitted to the car. How does the distance moved by the body change for the same passengers?', 1, 'it decreases', ['it increases', 'it stays the same'], 'It decreases: a greater spring constant gives a smaller compression for the same force ✓')
+  ]);
+};
+T.HK9 = R => {
+  const F = R.pick([4.0, 5.0, 8.0]), emm = R.pick([40, 50, 80]), du = R.pick([1, 2]), k = F / (emm / 1000), pF = .1 / F * 100, pe = du / emm * 100, pk = pF + pe;
+  return NOFIG(2, { F, emm, du }, `A student determines the spring constant of a spring. A force of (${N(F)} ± 0.1) N produces an extension of (${emm} ± ${du}) mm.`, [
+    calc('Calculate the spring constant of the spring.', 2, k, NM, M(E(`<i>k</i> = <i>F</i> / Δ<i>L</i> with Δ<i>L</i> = ${N(emm / 1000)} m`), E(`= ${N(F)} / ${N(emm / 1000)} = ${AV(k, NM)}`))),
+    calc('Calculate the percentage uncertainty in the force.', 1, pF, '%', M(E(`0.1 / ${N(F)} × 100 = ${A(pF)}%`)), NS),
+    calc('Calculate the percentage uncertainty in the extension.', 1, pe, '%', M(E(`${du} / ${emm} × 100 = ${A(pe)}%`)), NS),
+    calc('Calculate the percentage uncertainty in the spring constant.', 1, pk, '%', M(E(`${A(pF)} + ${A(pe)} = ${A(pk)}%`) + ' (percentage uncertainties add when quantities are divided)'), NS),
+    calc('Calculate the absolute uncertainty in the spring constant.', 1, pk / 100 * k, NM, M(E(`${I(pk / 100)} × ${I(k)} = ${AV(pk / 100 * k, NM)}`)), NS),
+    text('Suggest how the student could obtain a more reliable value for the spring constant.', 1, 'Measure the extension for several different forces and find the spring constant from the gradient of a force–extension graph ✓')
+  ]);
+};
+T.HK10 = R => {
+  const v0 = find(() => ({ ka: R.pick([0.5, 1.0, 2.0, 2.5]), kb: R.pick([0.5, 1.0, 2.0, 2.5]) }), o => o.ka !== o.kb), sw = R.chance(.5), ka = v0.ka, kb = v0.kb, Fmx = Math.max(ka, kb) * 8, ya = axisFor(Fmx * 1.05), stiff = ka > kb ? 'A' : 'B', Fq = Math.min(ka, kb) * 4;
+  const xa = Math.min(10, ya[0] / ka), xb = Math.min(10, ya[0] / kb);
+  const lab = (k, xe, hi) => hi ? [xe * .75 - .55, k * xe * .75 + ya[0] * .05] : [xe * .75 + .45, k * xe * .75 - ya[0] * .075];
+  const fig = graph({ x: [0, 10, 2], y: [0, ya[0], ya[1]], xdiv: 4, ydiv: 5, h: 300, w: 440, xl: 'extension / cm', yl: 'force / N', curves: [{ f: x => ka * x, from: 0, to: xa, name: 'A', at: lab(ka, xa, ka > kb) }, { f: x => kb * x, from: 0, to: xb, name: 'B', at: lab(kb, xb, kb > ka) }], reads: [[4, ka * 4], [4, kb * 4]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Fq }, stem: `<b>Figure 1</b> shows force–extension graphs for two springs, <b>A</b> and <b>B</b>.`, parts: [
+    choose(R, 'Which spring is stiffer?', 1, stiff, [stiff === 'A' ? 'B' : 'A'], `${stiff}: its line has the greater gradient (a greater force is needed for each centimetre of extension) ✓`),
+    calc('Determine the spring constant of spring <b>A</b> in N m<sup>−1</sup>.', 2, ka * 100, NM, M(`reads a point on line <b>A</b>, for example (4.0 cm, ${A(ka * 4)} N)`, E(`<i>k</i> = ${A(ka * 4)} / 0.040 = ${AV(ka * 100, NM)}`)), { tol: .05, noSkill: true }),
+    calc('Determine the spring constant of spring <b>B</b> in N m<sup>−1</sup>.', 2, kb * 100, NM, M(`reads a point on line <b>B</b>, for example (4.0 cm, ${A(kb * 4)} N)`, E(`<i>k</i> = ${A(kb * 4)} / 0.040 = ${AV(kb * 100, NM)}`)), { tol: .05, noSkill: true }),
+    calc(`The same force of ${V(Fq, 'N')} is applied to each spring. Calculate the ratio extension of <b>A</b> / extension of <b>B</b>.`, 1, kb / ka, '', M(E(`for the same force, extension ∝ 1/<i>k</i>: ratio = ${I(kb * 100)} / ${I(ka * 100)} = ${A(kb / ka)}`)), { tol: .08, noSkill: true })
+  ] };
+};
+/* ===== Elastic strain energy ===== */
+T.SE1 = R => {
+  const F = R.pick([4.0, 6.0, 8.0, 12, 20]), ecm = R.pick([2.0, 4.0, 5.0, 8.0]), e = ecm / 100, En = .5 * F * e, k = F / e;
+  return NOFIG(2, { F, ecm }, `A spring that obeys Hooke’s law is stretched by a force that increases steadily from zero to ${V(F, 'N')}. The final extension of the spring is ${V(ecm, 'cm')}.`, [
+    calc('Calculate the elastic strain energy stored in the spring.', 2, En, 'J', M(E('energy stored = ½<i>F</i>Δ<i>L</i>') + ` with Δ<i>L</i> = ${N(e)} m`, E(`= ½ × ${N(F)} × ${N(e)} = ${AV(En, 'J')}`))),
+    calc('Calculate the spring constant of the spring.', 1, k, NM, M(E(`<i>k</i> = <i>F</i> / Δ<i>L</i> = ${N(F)} / ${N(e)} = ${AV(k, NM)}`))),
+    text('Explain why the energy stored is ½<i>F</i>Δ<i>L</i> and not <i>F</i>Δ<i>L</i>.', 2, M('The force is not constant: it increases in proportion to the extension from zero to <i>F</i>', 'so the work done is the average force (½<i>F</i>) × the extension (or the area under the force–extension graph, which is a triangle)')),
+    choose(R, 'The spring is stretched to twice this extension and still obeys Hooke’s law. How does the energy stored change?', 1, 'it becomes four times as large', ['it doubles', 'it stays the same', 'it becomes eight times as large'], 'Four times as large: energy ∝ (extension)<sup>2</sup> ✓')
+  ]);
+};
+T.SE2 = R => {
+  const k = R.pick([50, 80, 200, 400, 500]), xc = R.pick([2.0, 3.0, 5.0, 6.0]), x = xc / 100, En = .5 * k * x * x, E2 = R.pick([0.25, 0.50, 1.0]), x2 = Math.sqrt(2 * E2 / k);
+  return NOFIG(2, { k, xc, E2 }, `A spring has a spring constant of ${V(k, NM)} and obeys Hooke’s law.`, [
+    calc(`Calculate the elastic strain energy stored in the spring when it is compressed by ${V(xc, 'cm')}.`, 2, En, 'J', M(E('energy stored = ½<i>k</i>(Δ<i>L</i>)<sup>2</sup>') + ` with Δ<i>L</i> = ${N(x)} m`, E(`= ½ × ${N(k)} × ${N(x)}<sup>2</sup> = ${AV(En, 'J')}`))),
+    calc(`Calculate the compression of the spring when it stores ${V(E2, 'J')} of elastic strain energy.`, 2, x2, 'm', M(E('Δ<i>L</i> = √(2 × energy / <i>k</i>)'), E(`= √(2 × ${N(E2)} / ${N(k)}) = ${AV(x2, 'm')}`))),
+    text('Show that ½<i>F</i>Δ<i>L</i> and ½<i>k</i>(Δ<i>L</i>)<sup>2</sup> are equivalent for a spring that obeys Hooke’s law.', 1, 'Substituting <i>F</i> = <i>k</i>Δ<i>L</i> into ½<i>F</i>Δ<i>L</i> gives ½(<i>k</i>Δ<i>L</i>)Δ<i>L</i> = ½<i>k</i>(Δ<i>L</i>)<sup>2</sup> ✓'),
+    choose(R, 'Two springs are stretched by the same force. Spring X has twice the spring constant of spring Y. Which stores more energy?', 1, 'spring Y', ['spring X', 'they store the same energy'], 'Spring Y: for the same force the less stiff spring extends twice as far, and energy = ½<i>F</i>Δ<i>L</i> ✓')
+  ]);
+};
+T.SE3 = R => {
+  const k = R.pick([200, 400, 500, 800]), xc = R.pick([3.0, 4.0, 5.0]), mg = R.pick([10, 20, 25, 50]), x = xc / 100, m = mg / 1000, En = .5 * k * x * x, v = Math.sqrt(2 * En / m), h = En / (m * g);
+  return NOFIG(2, { k, xc, mg }, `A toy uses a spring to fire a small ball vertically upwards. The spring has a spring constant of ${V(k, NM)} and is compressed by ${V(xc, 'cm')}. The ball has a mass of ${V(mg, 'g')}.`, [
+    calc('Calculate the elastic strain energy stored in the compressed spring.', 2, En, 'J', M(E('energy stored = ½<i>k</i>(Δ<i>L</i>)<sup>2</sup>'), E(`= ½ × ${N(k)} × ${N(x)}<sup>2</sup> = ${AV(En, 'J')}`))),
+    calc('Calculate the speed of the ball as it leaves the spring. Assume that all of the stored energy is transferred to kinetic energy of the ball.', 2, v, MS1, M(E('½<i>mv</i><sup>2</sup> = energy stored'), E(`<i>v</i> = √(2 × ${I(En)} / ${N(m)}) = ${AV(v, MS1)}`))),
+    calc('Calculate the maximum height gained by the ball. Ignore air resistance.', 2, h, 'm', M(E('<i>mgh</i> = energy stored'), E(`<i>h</i> = ${I(En)} / (${N(m)} × ${GS}) = ${AV(h, 'm')}`))),
+    text('Give one reason why the actual height reached is smaller.', 1, 'Some energy is transferred to kinetic energy of the spring (or to internal energy because of friction and air resistance) ✓')
+  ]);
+};
+T.SE4 = R => {
+  const v0 = find(() => ({ kk: R.pick([2, 4, 5, 10]), e1: R.pick([4, 5, 6]), de: R.pick([2, 4, 6]), dF: R.pick([2, 4, 5, 10]) }), o => o.dF <= .4 * o.kk * o.e1), { kk, e1, de, dF } = v0, F1 = kk * e1, e2 = e1 + de, F2 = F1 + dF, a1 = .5 * F1 * e1, a2 = .5 * (F1 + F2) * de, W = (a1 + a2) / 1000;
+  const xa = axisFor(e2), ya = axisFor(F2 * 1.05), c = pwl([[0, 0], [e1, F1], [e2, F2]]);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'extension / mm', yl: 'force / N', curves: [c], reads: [[e1, F1], [e2, F2]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: {}, stem: `<b>Figure 1</b> shows a simplified force–extension graph for a metal wire that is stretched beyond its limit of proportionality.`, parts: [
+    calc('State the extension at the limit of proportionality.', 1, e1, 'mm', M(`${AV(e1, 'mm')} (where the gradient of the line changes)`), { tol: .04, noSkill: true }),
+    calc('Determine the work done in stretching the wire to its limit of proportionality.', 2, a1 / 1000, 'J', M('work done = area under the graph (a triangle)', E(`= ½ × ${N(F1)} × ${N(e1 / 1000)} = ${AV(a1 / 1000, 'J')}`)), { tol: .06, noSkill: true }),
+    calc('Determine the total work done in stretching the wire to its maximum extension.', 3, W, 'J', M(`area of the second section (a trapezium) = ½ × (${N(F1)} + ${N(F2)}) × ${N(de / 1000)}`, E(`= ${I(a2 / 1000)} J`), E(`total = ${I(a1 / 1000)} + ${I(a2 / 1000)} = ${AV(W, 'J')}`)), { tol: .06, noSkill: true }),
+    choose(R, 'What does the area between a force–extension graph and the extension axis represent?', 1, 'the work done in stretching the wire', ['the spring constant of the wire', 'the Young modulus of the wire', 'the power needed to stretch the wire'], 'The work done in stretching the wire ✓')
+  ] };
+};
+T.SE5 = R => {
+  const kk = R.pick([2, 4, 5]), e1 = R.pick([4, 5, 6]), nF = R.pick([1, 2]), de = R.pick([4, 5, 6]), F1 = kk * e1, F2 = F1 + kk * nF, e2 = e1 + de, ep = e2 - F2 / kk, aL = .5 * F1 * e1 + .5 * (F1 + F2) * de, aU = .5 * F2 * (e2 - ep);
+  const xa = axisFor(e2), ya = axisFor(F2 * 1.08), L = pwl([[0, 0], [e1, F1], [e2, F2]]), U = pwl([[ep, 0], [e2, F2]]);
+  const fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'extension / mm', yl: 'force / N', curves: [Object.assign(L, { name: 'loading', at: [e1 * .45 - xa[0] * .09, F1 * .45 + ya[0] * .07] }), Object.assign(U, { dash: '7 4', name: 'unloading', at: [(ep + e2) / 2 + xa[0] * .13, F2 / 2 - ya[0] * .06] })], reads: [[e1, F1], [e2, F2], [ep, 0]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: {}, stem: `<b>Figure 1</b> shows a simplified force–extension graph for a metal wire. The wire is loaded beyond its elastic limit and then unloaded. The unloading line (dashed) is parallel to the first section of the loading line.`, parts: [
+    calc('State the permanent extension of the wire.', 1, ep, 'mm', M(`${AV(ep, 'mm')} (the extension when the force has returned to zero)`), { tol: .06, noSkill: true }),
+    calc('Determine the work done on the wire during loading.', 3, aL / 1000, 'J', M(`area under the loading line = triangle + trapezium = ½ × ${N(F1)} × ${N(e1 / 1000)} + ½ × (${N(F1)} + ${N(F2)}) × ${N(de / 1000)}`, E(`= ${I(.5 * F1 * e1 / 1000)} + ${I(.5 * (F1 + F2) * de / 1000)}`), E(`= ${AV(aL / 1000, 'J')}`)), { tol: .06, noSkill: true }),
+    calc('Determine the energy recovered from the wire during unloading.', 2, aU / 1000, 'J', M('energy recovered = area under the unloading line (a triangle)', E(`= ½ × ${N(F2)} × ${N((e2 - ep) / 1000)} = ${AV(aU / 1000, 'J')}`)), { tol: .06, noSkill: true }),
+    calc('Determine the energy that is not recovered.', 1, (aL - aU) / 1000, 'J', M(E(`${I(aL / 1000)} − ${I(aU / 1000)} = ${AV((aL - aU) / 1000, 'J')}`) + ' (the area between the two lines)'), { tol: .1, noSkill: true }),
+    choose(R, 'What happens to the energy that is not recovered?', 1, 'it increases the internal energy of the wire (the wire warms)', ['it is stored as elastic strain energy', 'it is stored as gravitational potential energy', 'it is destroyed'], 'It increases the internal energy of the wire: work is done in permanently rearranging the atoms (plastic deformation) ✓')
+  ] };
+};
+T.SE6 = R => {
+  const F = R.pick([20, 30, 40, 60]), xc = R.pick([10, 15, 20, 25]), mg = R.pick([20, 30, 50]), x = xc / 100, m = mg / 1000, En = .5 * F * x, v = Math.sqrt(2 * En / m);
+  return NOFIG(2, { F, xc, mg }, `A catapult is used to fire a stone of mass ${V(mg, 'g')}. The rubber cord of the catapult is stretched by ${V(xc, 'cm')}, when the force needed to hold it is ${V(F, 'N')}. Assume that the cord obeys Hooke’s law.`, [
+    calc('Calculate the elastic strain energy stored in the stretched cord.', 2, En, 'J', M(E('energy stored = ½<i>F</i>Δ<i>L</i>'), E(`= ½ × ${N(F)} × ${N(x)} = ${AV(En, 'J')}`))),
+    calc('Calculate the maximum possible speed of the stone as it leaves the catapult.', 2, v, MS1, M(E('½<i>mv</i><sup>2</sup> = energy stored'), E(`<i>v</i> = √(2 × ${I(En)} / ${N(m)}) = ${AV(v, MS1)}`))),
+    text('Give two reasons why the actual speed of the stone is less than this.', 2, M('Some energy is transferred to kinetic energy of the rubber cord', 'some energy is transferred to internal energy of the rubber (rubber does not return all the energy stored in it) and to the surroundings')),
+    choose(R, 'The cord is stretched by twice the distance and still obeys Hooke’s law. How does the maximum possible speed of the stone change?', 1, 'it doubles', ['it increases by a factor of √2', 'it becomes four times as large', 'it stays the same'], 'It doubles: the energy is four times as large and speed ∝ √(energy) ✓')
+  ]);
+};
+T.SE7 = R => {
+  const v0 = find(() => ({ m: R.pick([0.20, 0.50, 1.0]), k: R.pick([200, 400, 500, 1000]), xc: R.pick([5.0, 8.0, 10]) }), o => { const h = .5 * o.k * (o.xc / 100) ** 2 / (o.m * g) - o.xc / 100; return h > .1 && h < 3; }), { m, k, xc } = v0, x = xc / 100, En = .5 * k * x * x, d = En / (m * g), h = d - x;
+  return NOFIG(2, { m, k, xc }, `A block of mass ${V(m, 'kg')} is dropped from rest on to the top of a vertical spring that stands on the floor. The spring has a spring constant of ${V(k, NM)}. The block comes to rest for an instant when the spring is compressed by ${V(xc, 'cm')}.`, [
+    calc('Calculate the elastic strain energy stored in the spring at its maximum compression.', 2, En, 'J', M(E('energy stored = ½<i>k</i>(Δ<i>L</i>)<sup>2</sup>'), E(`= ½ × ${N(k)} × ${N(x)}<sup>2</sup> = ${AV(En, 'J')}`))),
+    calc('Calculate the total distance that the block falls before it stops. Ignore air resistance.', 2, d, 'm', M('loss of gravitational potential energy = elastic strain energy stored', E(`distance = ${I(En)} / (${N(m)} × ${GS}) = ${AV(d, 'm')}`))),
+    calc('Calculate the height of the block above the top of the spring when it was released.', 1, h, 'm', M(E(`${I(d)} − ${N(x)} = ${AV(h, 'm')}`))),
+    calc('Calculate the force exerted by the spring on the block at maximum compression.', 1, k * x, 'N', M(E(`<i>F</i> = <i>k</i>Δ<i>L</i> = ${N(k)} × ${N(x)} = ${AV(k * x, 'N')}`))),
+    choose(R, 'What is the kinetic energy of the block at the instant of maximum compression?', 1, 'zero', ['equal to the elastic strain energy', 'at its maximum value'], 'Zero: the block is at rest for an instant ✓')
+  ]);
+};
+T.SE8 = R => {
+  const m = R.pick([0.50, 1.0, 2.0]), v = R.pick([0.40, 0.60, 1.0, 1.5]), k = R.pick([200, 400, 800, 1000]), Ek = .5 * m * v * v, x = Math.sqrt(2 * Ek / k);
+  return NOFIG(2, { m, v, k }, `A trolley of mass ${V(m, 'kg')} travels at ${V(v, MS1)} along a horizontal track. It hits a spring buffer of spring constant ${V(k, NM)} fixed to the end of the track. Friction is negligible.`, [
+    calc('Calculate the kinetic energy of the trolley before it hits the buffer.', 1, Ek, 'J', M(E(`½<i>mv</i><sup>2</sup> = ½ × ${N(m)} × ${N(v)}<sup>2</sup> = ${AV(Ek, 'J')}`))),
+    calc('Calculate the maximum compression of the spring.', 3, x, 'm', M('all of the kinetic energy is transferred to elastic strain energy', E('½<i>k</i>(Δ<i>L</i>)<sup>2</sup> = kinetic energy, so Δ<i>L</i> = √(2 × kinetic energy / <i>k</i>)'), E(`= √(2 × ${I(Ek)} / ${N(k)}) = ${AV(x, 'm')}`))),
+    calc('Calculate the maximum force that the spring exerts on the trolley.', 1, k * x, 'N', M(E(`<i>F</i> = <i>k</i>Δ<i>L</i> = ${N(k)} × ${I(x)} = ${AV(k * x, 'N')}`))),
+    choose(R, 'The trolley hits the buffer at twice the speed. How does the maximum compression change?', 1, 'it doubles', ['it becomes four times as large', 'it increases by a factor of √2', 'it stays the same'], 'It doubles: the kinetic energy is four times as large and compression ∝ √(energy) ✓')
+  ]);
+};
+T.SE9 = R => {
+  const { L, Amm, F, emm } = find(() => ({ L: R.pick([2.0, 2.5, 4.0]), Amm: R.pick([0.20, 0.50, 0.80]), F: R.pick([40, 50, 80, 100]), emm: R.pick([1.0, 2.0, 2.5]) }), o => { const Y = o.F / (o.Amm * 1e-6) / (o.emm / 1000 / o.L); return Y >= 6e10 && Y <= 2.2e11 && o.F / (o.Amm * 1e-6) <= 3e8; }), Ar = Amm * 1e-6, e = emm / 1000, st = F / Ar, sn = e / L, u = .5 * st * sn, Vol = Ar * L;
+  return NOFIG(2, { L, Amm, F, emm }, `A wire of length ${V(L, 'm')} and cross-sectional area ${V(Amm, 'mm<sup>2</sup>')} is stretched elastically by a force of ${V(F, 'N')}. Its extension is ${V(emm, 'mm')}.`, [
+    calc('Calculate the tensile stress in the wire.', 2, st, PA, M(E(`<i>A</i> = ${N(Amm)} mm<sup>2</sup> = ${N(Ar)} m<sup>2</sup>`), E(`stress = <i>F</i> / <i>A</i> = ${N(F)} / (${N(Ar)}) = ${AV(st, PA)}`))),
+    calc('Calculate the tensile strain in the wire.', 1, sn, '', M(E(`strain = Δ<i>L</i> / <i>L</i> = ${N(e)} / ${N(L)} = ${A(sn)}`)), NS),
+    calc('Calculate the elastic strain energy stored in each cubic metre of the wire.', 2, u, 'J', M(E('energy per unit volume = ½ × stress × strain'), E(`= ½ × ${I(st)} × ${I(sn)} = ${AV(u, 'J')}`))),
+    calc('Calculate the total elastic strain energy stored in the wire.', 2, .5 * F * e, 'J', M(E('energy stored = ½<i>F</i>Δ<i>L</i>'), E(`= ½ × ${N(F)} × ${N(e)} = ${AV(.5 * F * e, 'J')}`)))
+  ]);
+};
+/* ===== Stress and strain ===== */
+const STRESSDEF = 'Tensile stress is the tensile force per unit cross-sectional area ✓', STRAINDEF = 'Tensile strain is the extension per unit original length ✓';
+T.ST1 = R => {
+  const { dmm, F } = find(() => ({ dmm: R.pick([0.40, 0.50, 0.80, 1.0, 2.0]), F: R.pick([20, 50, 80, 120]) }), o => o.F / (Math.PI * (o.dmm / 2000) ** 2) <= 3e8), r = dmm / 2 * 1e-3, Ar = Math.PI * r * r, st = F / Ar;
+  return NOFIG(2, { dmm, F }, `A wire of diameter ${V(dmm, 'mm')} supports a load of ${V(F, 'N')}.`, [
+    calc('Calculate the cross-sectional area of the wire.', 2, Ar, M2, M(E(`radius = ${RN(r)} m`), E(`<i>A</i> = π<i>r</i><sup>2</sup> = π × (${RN(r)})<sup>2</sup> = ${AV(Ar, M2)}`))),
+    calc('Calculate the tensile stress in the wire.', 2, st, PA, M(E('stress = <i>F</i> / <i>A</i>'), E(`= ${N(F)} / (${I(Ar)}) = ${AV(st, PA)}`))),
+    text('State what is meant by tensile stress.', 1, STRESSDEF),
+    choose(R, 'The wire is replaced by one of twice the diameter carrying the same load. How does the stress change?', 1, 'it is one quarter as large', ['it halves', 'it doubles', 'it is four times as large'], 'One quarter as large: the area is four times as large ✓')
+  ]);
+};
+T.ST2 = R => {
+  const { L, emm } = find(() => ({ L: R.pick([1.5, 2.0, 2.5, 4.0]), emm: R.pick([1.0, 2.0, 3.0, 5.0]) }), o => o.emm / 1000 / o.L <= 2e-3), sn = emm / 1000 / L, L2 = R.pick([0.50, 6.0, 10]);
+  return NOFIG(2, { L, emm, L2 }, `A wire of original length ${V(L, 'm')} extends by ${V(emm, 'mm')} when a load is hung from it.`, [
+    text('State what is meant by tensile strain.', 1, STRAINDEF),
+    calc('Calculate the tensile strain in the wire.', 2, sn, '', M(E(`extension = ${N(emm / 1000)} m`), E(`strain = Δ<i>L</i> / <i>L</i> = ${N(emm / 1000)} / ${N(L)} = ${A(sn)}`)), NS),
+    calc('Express this strain as a percentage.', 1, sn * 100, '%', M(E(`${I(sn)} × 100 = ${A(sn * 100)}%`)), NS),
+    calc(`A wire of the same material and diameter has an original length of ${V(L2, 'm')}. Calculate its extension, in mm, under the same load.`, 2, sn * L2 * 1000, 'mm', M('the same stress gives the same strain', E(`Δ<i>L</i> = ${I(sn)} × ${N(L2)} = ${I(sn * L2)} m = ${AV(sn * L2 * 1000, 'mm')}`))),
+    choose(R, 'What is the unit of tensile strain?', 1, 'it has no unit', ['m', 'Pa', 'N m<sup>−1</sup>'], 'It has no unit (it is a ratio of two lengths) ✓')
+  ]);
+};
+T.ST3 = R => {
+  const mt = R.pick([['steel', 4.0e8], ['copper', 2.2e8], ['aluminium', 1.1e8], ['nylon', 7.5e7]]), dmm = R.pick([1.0, 2.0, 4.0, 10]), r = dmm / 2 * 1e-3, Ar = Math.PI * r * r, Fm = mt[1] * Ar;
+  return NOFIG(2, { sb: mt[1], dmm }, `${mt[0] === 'aluminium' ? 'An' : 'A'} ${mt[0]} cable has a diameter of ${V(dmm, 'mm')}. The breaking stress of ${mt[0]} is ${V(mt[1], PA)}.`, [
+    text('State what is meant by breaking stress.', 1, 'The maximum tensile stress that a material can withstand before it breaks ✓'),
+    calc('Calculate the maximum tension that the cable can withstand.', 3, Fm, 'N', M(E(`<i>A</i> = π × (${RN(r)})<sup>2</sup> = ${I(Ar)} m<sup>2</sup>`), E('<i>F</i> = breaking stress × <i>A</i>'), E(`= ${N(mt[1])} × ${I(Ar)} = ${AV(Fm, 'N')}`))),
+    calc('Calculate the greatest mass that the cable could support when hanging vertically at rest.', 1, Fm / g, 'kg', M(E(`<i>m</i> = <i>F</i> / <i>g</i> = ${I(Fm)} / ${GS} = ${AV(Fm / g, 'kg')}`))),
+    choose(R, 'A longer cable of the same material and diameter is used. How does the maximum tension it can withstand compare? Ignore the weight of the cable.', 1, 'it is the same', ['it is smaller', 'it is larger'], 'The same: breaking stress and area are unchanged, so the breaking force does not depend on length ✓')
+  ]);
+};
+T.ST4 = R => {
+  const m = R.pick([800, 1000, 1200, 1500]), a = R.pick([0.50, 1.0, 1.5, 2.0]), Acm = R.pick([1.0, 1.5, 2.0]), Ar = Acm * 1e-4, Tn = m * (g + a), st = Tn / Ar, sb = 4.0e8, sf = sb / st;
+  return NOFIG(2, { m, a, Acm }, `A lift and its passengers have a total mass of ${V(m, 'kg')}. The lift is supported by a steel cable of cross-sectional area ${V(Acm, 'cm<sup>2</sup>')}. The lift accelerates upwards at ${V(a, 'm s<sup>−2</sup>')}.<br>breaking stress of steel = 4.0 × 10<sup>8</sup> Pa`, [
+    calc('Calculate the tension in the cable.', 2, Tn, 'N', M(E('<i>T</i> − <i>mg</i> = <i>ma</i>, so <i>T</i> = <i>m</i>(<i>g</i> + <i>a</i>)'), E(`= ${N(m)} × (${GS} + ${N(a)}) = ${AV(Tn, 'N')}`))),
+    calc('Calculate the tensile stress in the cable.', 2, st, PA, M(E(`<i>A</i> = ${N(Ar)} m<sup>2</sup>`) + ' (1 cm<sup>2</sup> = 10<sup>−4</sup> m<sup>2</sup>)', E(`stress = ${I(Tn)} / (${N(Ar)}) = ${AV(st, PA)}`))),
+    calc('Calculate the ratio breaking stress / stress in the cable.', 1, sf, '', M(E(`4.0 × 10<sup>8</sup> / (${I(st)}) = ${A(sf)}`)), NS),
+    text('Suggest why lift cables are designed so that this ratio is much greater than 1.', 1, 'To give a safety margin, for example for larger loads, sudden jerks (greater accelerations) or weakening of the cable through wear or corrosion ✓')
+  ]);
+};
+T.ST5 = R => {
+  const { Amm, F, L, emm } = find(() => ({ Amm: R.pick([0.50, 1.5, 2.0, 2.5]), F: R.pick([30, 60, 150, 200]), L: R.pick([0.80, 1.2, 2.0]), emm: R.pick([0.40, 0.60, 1.2]) }), o => { const Y = o.F / (o.Amm * 1e-6) / (o.emm / 1000 / o.L); return Y >= 6e10 && Y <= 2.2e11; }), Ar = Amm * 1e-6;
+  return NOFIG(2, { Amm, F, L, emm }, `A metal rod has a cross-sectional area of ${V(Amm, 'mm<sup>2</sup>')} and a length of ${V(L, 'm')}. A tensile force of ${V(F, 'N')} extends the rod by ${V(emm, 'mm')}.`, [
+    text('State what is meant by tensile stress and tensile strain.', 2, STRESSDEF + '<br>' + STRAINDEF),
+    calc('Calculate the cross-sectional area of the rod in m<sup>2</sup>.', 1, Ar, M2, M(E(`${N(Amm)} × 10<sup>−6</sup> = ${AV(Ar, M2)}`) + ' (1 mm<sup>2</sup> = 10<sup>−6</sup> m<sup>2</sup>)')),
+    calc('Calculate the tensile stress in the rod.', 1, F / Ar, PA, M(E(`stress = ${N(F)} / (${N(Ar)}) = ${AV(F / Ar, PA)}`))),
+    calc('Calculate the tensile strain in the rod.', 1, emm / 1000 / L, '', M(E(`strain = ${N(emm / 1000)} / ${N(L)} = ${A(emm / 1000 / L)}`)), NS),
+    choose(R, 'Which of these is a unit of stress?', 1, 'N m<sup>−2</sup>', ['N m<sup>−1</sup>', 'N m', 'J m<sup>−2</sup>'], 'N m<sup>−2</sup> (the pascal) ✓')
+  ]);
+};
+T.ST6 = R => {
+  const v0 = find(() => ({ d1: R.pick([0.50, 1.0, 2.0]), d2: R.pick([0.50, 1.0, 2.0, 4.0]) }), o => o.d1 !== o.d2), { d1, d2 } = v0, F = R.pick([10, 20, 40]), r1 = d1 / 2 * 1e-3, A1 = Math.PI * r1 * r1, s1 = F / A1, ratio = (d2 / d1) ** 2;
+  return NOFIG(2, { d1, d2, F }, `Two wires <b>X</b> and <b>Y</b> are made from the same metal. Wire <b>X</b> has a diameter of ${V(d1, 'mm')} and wire <b>Y</b> has a diameter of ${V(d2, 'mm')}. Each wire supports a load of ${V(F, 'N')}.`, [
+    calc('Calculate the tensile stress in wire <b>X</b>.', 3, s1, PA, M(E(`<i>A</i> = π × (${RN(r1)})<sup>2</sup> = ${I(A1)} m<sup>2</sup>`), E('stress = <i>F</i> / <i>A</i>'), E(`= ${N(F)} / (${I(A1)}) = ${AV(s1, PA)}`))),
+    calc('Calculate the ratio stress in <b>X</b> / stress in <b>Y</b>.', 2, ratio, '', M('for the same force, stress ∝ 1 / <i>d</i><sup>2</sup>', E(`ratio = (${N(d2)} / ${N(d1)})<sup>2</sup> = ${A(ratio)}`)), NS),
+    choose(R, 'The load on each wire is increased steadily. Which wire breaks first?', 1, d1 < d2 ? 'X' : 'Y', [d1 < d2 ? 'Y' : 'X', 'they break at the same load'], `${d1 < d2 ? 'X' : 'Y'}: the thinner wire has the greater stress, so it reaches the breaking stress first ✓`)
+  ]);
+};
+T.ST7 = R => {
+  const side = R.pick([0.20, 0.30, 0.40, 0.50]), mt = R.pick([8.0e3, 1.2e4, 2.0e4, 5.0e4]), Ar = side * side, st = mt * g / Ar, sc = 3.0e7, mmax = sc * Ar / g;
+  return NOFIG(2, { side, mt }, `A concrete column has a square cross-section of side ${V(side, 'm')}. The column supports part of a building of mass ${V(mt, 'kg')}. Concrete is crushed when the compressive stress in it reaches 3.0 × 10<sup>7</sup> Pa.`, [
+    calc('Calculate the compressive stress in the column.', 3, st, PA, M(E(`<i>A</i> = ${N(side)}<sup>2</sup> = ${I(Ar)} m<sup>2</sup>`), E(`<i>F</i> = <i>mg</i> = ${N(mt)} × ${GS} = ${I(mt * g)} N`), E(`stress = ${I(mt * g)} / ${I(Ar)} = ${AV(st, PA)}`))),
+    calc('Calculate the greatest mass that the column could support without being crushed.', 2, mmax, 'kg', M(E(`maximum force = 3.0 × 10<sup>7</sup> × ${I(Ar)} = ${I(sc * Ar)} N`), E(`<i>m</i> = ${I(sc * Ar)} / ${GS} = ${AV(mmax, 'kg')}`))),
+    choose(R, 'A column of the same material with sides twice as long is used. How does the greatest mass it can support compare?', 1, 'it is four times as large', ['it is twice as large', 'it is the same', 'it is eight times as large'], 'Four times as large: the cross-sectional area is four times as large ✓')
+  ]);
+};
+T.ST8 = R => {
+  const dmm = R.pick([0.20, 0.30, 0.40, 0.50]), sb = R.pick([5.0e8, 6.0e8, 8.0e8]), r = dmm / 2 * 1e-3, Ar = Math.PI * r * r, Fm = sb * Ar;
+  return NOFIG(2, { dmm, sb }, `A nylon fishing line has a diameter of ${V(dmm, 'mm')}. The breaking stress of the nylon is ${V(sb, PA)}.`, [
+    calc('Calculate the maximum tension in the line before it breaks.', 3, Fm, 'N', M(E(`<i>A</i> = π × (${RN(r)})<sup>2</sup> = ${I(Ar)} m<sup>2</sup>`), E('<i>F</i> = breaking stress × <i>A</i>'), E(`= ${N(sb)} × ${I(Ar)} = ${AV(Fm, 'N')}`))),
+    calc('Calculate the mass of the heaviest fish that could be lifted slowly out of the water at constant speed.', 1, Fm / g, 'kg', M(E(`<i>m</i> = ${I(Fm)} / ${GS} = ${AV(Fm / g, 'kg')}`))),
+    text('Explain why the line may break when a lighter fish is pulled out of the water with a sudden jerk.', 2, M('The fish accelerates upwards, so the tension is greater than its weight (<i>T</i> = <i>mg</i> + <i>ma</i>)', 'a large acceleration can make the stress in the line exceed the breaking stress')),
+    choose(R, 'A line of twice the diameter made from the same nylon is used. How does the maximum tension compare?', 1, 'it is four times as large', ['it is twice as large', 'it is the same', 'it is half as large'], 'Four times as large ✓')
+  ]);
+};
+T.ST9 = R => {
+  const n = R.pick([4, 5, 8, 10]), dmm = R.pick([1.0, 2.0, 4.0]), W = R.pick([400, 600, 1000, 2000]), r = dmm / 2 * 1e-3, A1 = Math.PI * r * r, st = W / (n * A1), st2 = W / ((n - 1) * A1);
+  return NOFIG(2, { n, dmm, W }, `A rope is made from ${n} identical strands. Each strand has a diameter of ${V(dmm, 'mm')}. The rope supports a load of ${V(W, 'N')}, which is shared equally between the strands.`, [
+    calc('Calculate the cross-sectional area of one strand.', 1, A1, M2, M(E(`<i>A</i> = π × (${RN(r)})<sup>2</sup> = ${AV(A1, M2)}`))),
+    calc('Calculate the tensile stress in each strand.', 2, st, PA, M(E(`force on each strand = ${N(W)} / ${n} = ${I(W / n)} N`), E(`stress = ${I(W / n)} / (${I(A1)}) = ${AV(st, PA)}`))),
+    calc('One strand breaks. Calculate the new stress in each of the remaining strands.', 2, st2, PA, M(E(`force on each strand = ${N(W)} / ${n - 1} = ${I(W / (n - 1))} N`), E(`stress = ${I(W / (n - 1))} / (${I(A1)}) = ${AV(st2, PA)}`))),
+    text('Explain why the failure of one strand makes it more likely that the others will fail.', 1, 'The same load is shared by fewer strands, so the stress in each remaining strand increases (and may reach the breaking stress) ✓')
+  ]);
+};
+T.ST10 = R => {
+  const L = R.pick([2.00, 2.50, 3.00]), Amm = R.pick([0.100, 0.200, 0.250]), Em = R.pick([1.20e11, 2.00e11, 7.00e10]), Ar = Amm * 1e-6, Fs = [10, 20, 30, 40], ex = Fs.map(F => +(F * L / (Ar * Em) * 1000).toFixed(2)), i = R.pick([1, 2, 3]), st = Fs[i] / Ar, sn = ex[i] / 1000 / L;
+  return NOFIG(3, { L, Amm, F: Fs[i], emm: ex[i] }, `A student stretches a wire of original length ${V(L, 'm', 3)} and cross-sectional area ${V(Amm, 'mm<sup>2</sup>', 3)}. <b>Table 1</b> shows the results.<br>` + tableH('Table 1', ['Force / N', 'Extension / mm'], Fs.map((F, j) => [fx(F, 1), fx(ex[j], 2)])), [
+    calc(`Calculate the tensile stress in the wire when the force is ${fx(Fs[i], 1)} N.`, 2, st, PA, M(E(`<i>A</i> = ${N(Amm, 3)} × 10<sup>−6</sup> m<sup>2</sup>`), E(`stress = ${fx(Fs[i], 1)} / (${N(Ar, 3)}) = ${AV(st, PA)}`)), NS),
+    calc('Calculate the tensile strain in the wire for this force.', 2, sn, '', M(E(`extension = ${fx(ex[i], 2)} mm = ${N(ex[i] / 1000, 3)} m`), E(`strain = ${N(ex[i] / 1000, 3)} / ${N(L, 3)} = ${A(sn)}`)), NS),
+    calc('Calculate the ratio stress / strain for this force.', 1, st / sn, PA, M(E(`${I3(st)} / (${I3(sn)}) = ${AV(st / sn, PA)}`)), NS),
+    choose(R, 'What is the name of the ratio stress / strain for a material that obeys Hooke’s law?', 1, 'the Young modulus', ['the spring constant', 'the breaking stress', 'the elastic limit'], 'The Young modulus ✓')
+  ]);
+};
+/* ===== The Young modulus ===== */
+const YMS = [['steel', 2.0e11], ['copper', 1.2e11], ['aluminium', 7.0e10], ['brass', 1.0e11]];
+const YMDEF = 'The Young modulus is tensile stress / tensile strain (for a material within its limit of proportionality) ✓';
+const wireA = dmm => Math.PI * (dmm / 2 * 1e-3) ** 2;
+T.YM1 = R => {
+  const { L, Amm, F, emm } = find(() => ({ L: R.pick([1.5, 2.0, 2.5, 3.0]), Amm: R.pick([0.10, 0.20, 0.50]), F: R.pick([20, 40, 50, 100]), emm: R.pick([0.50, 1.0, 2.0, 4.0]) }), o => { const Y = o.F / (o.Amm * 1e-6) / (o.emm / 1000 / o.L); return Y >= 6e10 && Y <= 2.2e11 && o.F / (o.Amm * 1e-6) <= 3e8; }), Ar = Amm * 1e-6, st = F / Ar, sn = emm / 1000 / L, Em = st / sn;
+  return NOFIG(2, { L, Amm, F, emm }, `A wire has a length of ${V(L, 'm')} and a cross-sectional area of ${V(Amm, 'mm<sup>2</sup>')}. A tensile force of ${V(F, 'N')} extends the wire by ${V(emm, 'mm')}. The wire obeys Hooke’s law.`, [
+    calc('Calculate the tensile stress in the wire.', 2, st, PA, M(E(`<i>A</i> = ${N(Ar)} m<sup>2</sup>`), E(`stress = <i>F</i> / <i>A</i> = ${N(F)} / (${N(Ar)}) = ${AV(st, PA)}`))),
+    calc('Calculate the tensile strain in the wire.', 1, sn, '', M(E(`strain = Δ<i>L</i> / <i>L</i> = ${N(emm / 1000)} / ${N(L)} = ${A(sn)}`)), NS),
+    calc('Calculate the Young modulus of the material of the wire.', 2, Em, PA, M(E('Young modulus = stress / strain'), E(`= ${I(st)} / (${I(sn)}) = ${AV(Em, PA)}`))),
+    text('State what is meant by the Young modulus.', 1, YMDEF),
+    choose(R, 'A thicker wire of the same material is tested. How does the value of the Young modulus compare?', 1, 'it is the same', ['it is larger', 'it is smaller'], 'The same: the Young modulus is a property of the material, not of the dimensions of the wire ✓')
+  ]);
+};
+T.YM2 = R => {
+  const mt = R.pick(YMS), L = R.pick([8.0, 12, 15, 20]), Ar = R.pick([1.0e-5, 1.6e-5, 2.0e-5, 4.0e-5]), F = R.pick([4.0e2, 5.0e2, 8.0e2, 1.2e3]), e = F * L / (Ar * mt[1]), st = F / Ar;
+  return NOFIG(2, { Em: mt[1], L, Ar, F }, `A horizontal ${mt[0]} aerial wire is ${V(L, 'm')} long and has a cross-sectional area of ${V(Ar, M2)}. The tension in the wire is ${V(F, 'N')}.<br>Young modulus of ${mt[0]} = ${N(mt[1])} Pa`, [
+    calc('Calculate the tensile stress in the wire.', 1, st, PA, M(E(`stress = <i>F</i> / <i>A</i> = ${N(F)} / (${N(Ar)}) = ${AV(st, PA)}`))),
+    calc('Calculate the tensile strain in the wire.', 2, st / mt[1], '', M(E('strain = stress / Young modulus'), E(`= ${I(st)} / (${N(mt[1])}) = ${A(st / mt[1])}`)), NS),
+    calc('Calculate the extension of the wire produced by this tension.', 2, e, 'm', M(E('Δ<i>L</i> = strain × <i>L</i>'), E(`= ${I(st / mt[1])} × ${N(L)} = ${AV(e, 'm')}`))),
+    text('High winds make the wire vibrate with a large amplitude. Explain why the wire may sag after the wind stops.', 2, M('The large amplitude increases the tension, so the stress may exceed the elastic limit of the wire', 'the wire is then permanently (plastically) deformed, so it is longer than before'))
+  ]);
+};
+T.YM3 = R => {
+  const { dcm, W } = find(() => ({ dcm: R.pick([1.0, 1.5, 2.0, 2.5]), W: R.pick([8.0e3, 1.2e4, 2.0e4, 5.0e4]) }), o => o.W / (Math.PI * (o.dcm / 200) ** 2) <= 2e8), L = R.pick([8.0, 12, 20, 30]), r = dcm / 2 / 100, Ar = Math.PI * r * r, st = W / Ar, e = st / 2.0e11 * L;
+  return NOFIG(2, { dcm, L, W }, `A crane lifts a beam of weight ${V(W, 'N')} at constant speed using a steel cable. The cable has a circular cross-section of diameter ${V(dcm, 'cm')} and is ${V(L, 'm')} long. The weight of the cable is negligible.<br>Young modulus of steel = 2.0 × 10<sup>11</sup> Pa`, [
+    calc('Calculate the cross-sectional area of the cable.', 1, Ar, M2, M(E(`<i>A</i> = π × (${RN(r)})<sup>2</sup> = ${AV(Ar, M2)}`))),
+    calc('Calculate the tensile stress in the cable.', 1, st, PA, M(E(`stress = ${N(W)} / (${I(Ar)}) = ${AV(st, PA)}`))),
+    calc('Calculate the extension of the cable caused by the weight of the beam.', 2, e, 'm', M(E('Δ<i>L</i> = stress × <i>L</i> / Young modulus'), E(`= ${I(st)} × ${N(L)} / (2.0 × 10<sup>11</sup>) = ${AV(e, 'm')}`))),
+    choose(R, 'The beam is now accelerated upwards. How does the extension of the cable change?', 1, 'it increases', ['it decreases', 'it stays the same'], 'It increases: the tension is greater than the weight of the beam ✓'),
+    choose(R, 'A cable of twice the diameter is used to lift the same beam. How does the extension compare?', 1, 'it is one quarter as large', ['it is half as large', 'it is the same', 'it is twice as large'], 'One quarter as large: the area is four times as large, so the stress and strain are one quarter as large ✓')
+  ]);
+};
+// a stress–strain curve: straight to (eP, sP), then levelling off to (eU, sU), then falling to (eB, sB)
+function ssCurve(eP, sP, eU, sU, eB, sB){ const p = sP / eP * (eU - eP) / (sU - sP); return x => x <= eP ? sP / eP * x : x <= eU ? sP + (sU - sP) * (1 - Math.pow(1 - (x - eP) / (eU - eP), p)) : sU - (sU - sB) * ((x - eU) / (eB - eU)) ** 2; }
+T.YM4 = R => {
+  const eP = R.pick([2.0, 2.5, 4.0]), Eg = R.pick([70, 100, 120, 200]), sP = Eg * eP, sU = sP * 1.25, f = ssCurve(eP, sP, 9, sU, 10, sU), ya = axisFor(sU * 1.06), Amm = R.pick([0.20, 0.50, 1.0]), Fp = sP * 1e6 * Amm * 1e-6;
+  const fig = graph({ x: [0, 10, 2], y: [0, ya[0], ya[1]], xdiv: 4, ydiv: 5, h: 300, w: 440, xl: 'strain / 10^{−3}', yl: 'stress / MPa', curves: [{ f, from: 0, to: 9 }], dots: [{ x: eP, y: sP, t: 'P', dx: 8, dy: 18 }], reads: [[eP, sP]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Amm }, stem: `<b>Figure 1</b> shows part of the stress–strain graph for a metal wire. <b>P</b> is the limit of proportionality. The wire has a cross-sectional area of ${V(Amm, 'mm<sup>2</sup>')}.`, parts: [
+    calc('State the stress at the limit of proportionality in MPa.', 1, sP, 'MPa', M(`${AV(sP, 'MPa')} (the stress at <b>P</b>)`), { tol: .04, noSkill: true }),
+    calc('Determine the Young modulus of the metal.', 3, Eg * 1e9, PA, M(`uses the gradient of the straight section, for example from (0, 0) to (${N(eP)} × 10<sup>−3</sup>, ${A(sP)} MPa)`, E(`Young modulus = ${A(sP)} × 10<sup>6</sup> / (${N(eP)} × 10<sup>−3</sup>)`), E(`= ${AV(Eg * 1e9, PA)}`)), { tol: .06, noSkill: true }),
+    calc('Calculate the tension in the wire at the limit of proportionality.', 2, Fp, 'N', M(E('<i>F</i> = stress × <i>A</i>'), E(`= ${A(sP)} × 10<sup>6</sup> × ${N(Amm * 1e-6)} = ${AV(Fp, 'N')}`)), { tol: .05, noSkill: true }),
+    choose(R, 'How can the Young modulus be found from a stress–strain graph?', 1, 'from the gradient of the straight section', ['from the area under the graph', 'from the maximum stress', 'from the intercept on the strain axis'], 'From the gradient of the straight section ✓')
+  ] };
+};
+T.YM5 = R => {
+  const mt = R.pick(YMS), L = R.pick([2.00, 2.50, 3.00]), dmm = R.pick([0.20, 0.30, 0.40]), Ar = wireA(dmm), kk = mt[1] * Ar / L / 1000, Fm = R.pick([20, 40, 50]), xm = Fm / kk, xa = axisFor(xm * 1.02), cr = [.2, .4, .6, .8, 1].map(t => [t * xm * (1 + (R() - .5) * .03), t * Fm]), xr = xa[0] * .8;
+  const yf = axisFor(Fm), fig = graph({ x: [0, xa[0], xa[1]], y: [0, yf[0], yf[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'extension / mm', yl: 'force / N', curves: [{ f: x => kk * x, from: 0, to: Math.min(xa[0], xm * 1.0) }], crosses: cr, reads: [[xm, Fm]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { L, dmm }, stem: `A student stretches a long thin wire and measures its extension for different forces. The wire has an original length of ${V(L, 'm', 3)} and a diameter of ${V(dmm, 'mm')}. <b>Figure 1</b> shows the results with a line of best fit.`, parts: [
+    calc('Determine the gradient of the line of best fit in N m<sup>−1</sup>.', 2, kk * 1000, NM, M(`uses a large triangle, for example from (0, 0) to (${N(xm, 3)} mm, ${Fm} N)`, E(`gradient = ${Fm} / (${N(xm / 1000, 3)}) = ${AV(kk * 1000, NM)}`)), { tol: .06, noSkill: true }),
+    calc('Calculate the cross-sectional area of the wire.', 2, Ar, M2, M(E(`radius = ${RN(dmm / 2 * 1e-3)} m`), E(`<i>A</i> = π × (${RN(dmm / 2 * 1e-3)})<sup>2</sup> = ${AV(Ar, M2)}`)), NS),
+    calc('Determine the Young modulus of the material of the wire.', 3, mt[1], PA, M(E('Young modulus = <i>FL</i> / (<i>A</i>Δ<i>L</i>) = gradient × <i>L</i> / <i>A</i>'), E(`= ${I3(kk * 1000)} × ${N(L, 3)} / (${I(Ar)})`), E(`= ${AV(mt[1], PA)}`)), { tol: .07, noSkill: true }),
+    text('Explain why a long, thin wire is used.', 2, M('A long, thin wire gives a larger extension for a given force', 'so the percentage uncertainty in the measured extension is smaller')),
+    choose(R, 'Which instrument should be used to measure the diameter of the wire?', 1, 'a micrometer screw gauge', ['a metre rule', 'vernier calipers reading to 0.1 mm', 'a travelling microscope scale reading to 1 mm'], 'A micrometer screw gauge, measuring in several places and taking a mean ✓')
+  ] };
+};
+T.YM6 = R => {
+  const mt = R.pick(YMS), L = R.pick([1.50, 2.00, 2.50]), dmm = R.pick([0.28, 0.32, 0.38, 0.46]), mk = R.pick([2.00, 3.00, 4.00]), Ar = wireA(dmm), F = mk * g, emm = +(F * L / (Ar * mt[1]) * 1000).toFixed(1), Em = F * L / (Ar * emm / 1000);
+  const s = new Scene('A wire clamped at one end, passing over a pulley to a hanging load, with a marker and a metre rule');
+  s.rect(-20, 0, 440, 14, { fill: '#d9dde1', tag: 'bench' }); s.rect(0, -44, 30, 44, { fill: '#fff', tag: 'clamp' }); s.line(30, -30, 420, -30, { w: 1.4, tag: 'wire' }); s.circle(420, -18, 12, { fill: '#fff', tag: 'pulley' }); s.line(432, -18, 432, 60, { w: 1.4, tag: 'wire' }); s.rect(417, 60, 30, 40, { fill: '#d9dde1', tag: 'load' });
+  s.rect(170, -12, 190, 10, { fill: '#fff', tag: 'rule' }); s.poly([[300, -30], [294, -44], [306, -44]], { close: true, fill: '#000', tag: 'marker' });
+  s.label(15, -54, 'clamp'); s.label(110, -40, 'wire'); s.label(300, -54, 'marker'); s.label(265, 34, 'metre rule'); s.label(446, -34, 'pulley', { anchor: 'start' }); s.label(457, 85, 'load', { anchor: 'start' }); s.line(265, 20, 265, 0, { w: .9, free: true });
+  return { sf: 3, scenes: [s], data: { L, dmm, mk, emm }, stem: `<b>Figure 1</b> shows apparatus used to determine the Young modulus of a metal in the form of a wire. The length of the wire from the clamp to the marker is ${V(L, 'm', 3)} and the mean diameter of the wire is ${V(dmm, 'mm')}. When a load of mass ${V(mk, 'kg', 3)} is added, the marker moves ${fx(emm, 1)} mm along the metre rule.`, parts: [
+    calc('Calculate the cross-sectional area of the wire.', 2, Ar, M2, M(E(`radius = ${RN(dmm / 2 * 1e-3)} m`), E(`<i>A</i> = π × (${RN(dmm / 2 * 1e-3)})<sup>2</sup> = ${AV(Ar, M2)}`)), NS),
+    calc('Calculate the tensile stress in the wire.', 2, F / Ar, PA, M(E(`<i>F</i> = <i>mg</i> = ${N(mk, 3)} × ${GS} = ${I3(F)} N`), E(`stress = ${I3(F)} / (${I3(Ar)}) = ${AV(F / Ar, PA)}`)), NS),
+    calc('Calculate the Young modulus of the metal.', 2, Em, PA, M(E(`strain = ${fx(emm / 1000, 4)} / ${N(L, 3)} = ${I3(emm / 1000 / L)}`), E(`Young modulus = ${I3(F / Ar)} / (${I3(emm / 1000 / L)}) = ${AV(Em, PA)}`)), NS),
+    text('Explain why the diameter is measured at several places along the wire.', 1, 'The wire may not be uniform, so a mean value reduces the effect of variations (random error) in the diameter ✓'),
+    choose(R, 'Which measurement is likely to contribute the largest percentage uncertainty?', 1, 'the extension', ['the original length', 'the mass of the load'], 'The extension: it is only a few millimetres, measured with a metre rule ✓'),
+    text('State one safety precaution for this experiment.', 1, 'Wear eye protection in case the wire snaps (or place padding below the load / keep feet clear) ✓')
+  ] };
+};
+T.YM7 = R => {
+  const nL = R.pick([2, 3, 4]), nd = R.pick([2, 0.5]), mt = R.pick(YMS), L = R.pick([1.0, 1.5, 2.0]), dmm = R.pick([0.80, 1.0, 1.2]), F = R.pick([5.0, 10, 15]), Ar = wireA(dmm), eA = F * L / (Ar * mt[1]), ratio = nL / (nd * nd);
+  return NOFIG(2, { nL, nd, Em: mt[1], L, dmm, F }, `Two wires <b>A</b> and <b>B</b> are made from ${mt[0]}. Wire <b>A</b> has a length of ${V(L, 'm')} and a diameter of ${V(dmm, 'mm')}. Wire <b>B</b> is ${{ 2: 'twice', 3: 'three times', 4: 'four times' }[nL]} as long as <b>A</b> and has ${nd === 2 ? 'twice' : 'half'} the diameter of <b>A</b>. The same tensile force of ${V(F, 'N')} is applied to each wire.<br>Young modulus of ${mt[0]} = ${N(mt[1])} Pa`, [
+    calc('Calculate the extension of wire <b>A</b>.', 3, eA, 'm', M(E(`<i>A</i> = π × (${RN(dmm / 2 * 1e-3)})<sup>2</sup> = ${I(Ar)} m<sup>2</sup>`), E('Δ<i>L</i> = <i>FL</i> / (<i>A</i> × Young modulus)'), E(`= ${N(F)} × ${N(L)} / (${I(Ar)} × ${N(mt[1])}) = ${AV(eA, 'm')}`))),
+    calc('Calculate the ratio extension of <b>B</b> / extension of <b>A</b>.', 2, ratio, '', M('Δ<i>L</i> ∝ <i>L</i> / <i>d</i><sup>2</sup> for the same force and material', E(`ratio = ${nL} / ${N(nd)}<sup>2</sup> = ${A(ratio)}`)), NS),
+    calc('Calculate the extension of wire <b>B</b>.', 1, eA * ratio, 'm', M(E(`${A(ratio)} × ${I(eA)} = ${AV(eA * ratio, 'm')}`))),
+    choose(R, 'In which wire is the tensile stress greater?', 1, nd === 2 ? 'A' : 'B', [nd === 2 ? 'B' : 'A', 'the stress is the same in both'], `${nd === 2 ? 'A' : 'B'}: it is the thinner wire, and the force is the same ✓`)
+  ]);
+};
+T.YM8 = R => {
+  const Ls = R.pick([1.0, 1.5, 2.0]), Lc = R.pick([1.0, 1.5, 2.0]), { Amm, F } = find(() => ({ Amm: R.pick([0.20, 0.50, 1.0]), F: R.pick([20, 40, 60, 100]) }), o => o.F / (o.Amm * 1e-6) <= 1.2e8), Ar = Amm * 1e-6, es = F * Ls / (Ar * 2.0e11), ec = F * Lc / (Ar * 1.2e11);
+  return NOFIG(2, { Ls, Lc, Amm, F }, `A steel wire of length ${V(Ls, 'm')} is joined end to end with a copper wire of length ${V(Lc, 'm')}. Both wires have a cross-sectional area of ${V(Amm, 'mm<sup>2</sup>')}. The composite wire is stretched by a force of ${V(F, 'N')}.<br>Young modulus of steel = 2.0 × 10<sup>11</sup> Pa<br>Young modulus of copper = 1.2 × 10<sup>11</sup> Pa`, [
+    choose(R, 'How does the tensile stress in the steel wire compare with the tensile stress in the copper wire?', 1, 'they are equal', ['it is greater in the steel', 'it is greater in the copper'], 'They are equal: the wires carry the same force and have the same cross-sectional area ✓'),
+    calc('Calculate the extension of the steel wire.', 2, es, 'm', M(E('Δ<i>L</i> = <i>FL</i> / (<i>A</i> × Young modulus)'), E(`= ${N(F)} × ${N(Ls)} / (${N(Ar)} × 2.0 × 10<sup>11</sup>) = ${AV(es, 'm')}`))),
+    calc('Calculate the extension of the copper wire.', 1, ec, 'm', M(E(`${N(F)} × ${N(Lc)} / (${N(Ar)} × 1.2 × 10<sup>11</sup>) = ${AV(ec, 'm')}`))),
+    calc('Calculate the total extension of the composite wire.', 1, es + ec, 'm', M(E(`${I(es)} + ${I(ec)} = ${AV(es + ec, 'm')}`))),
+    choose(R, 'In which wire is the tensile strain greater?', 1, 'the copper wire', ['the steel wire', 'the strain is the same in both'], 'The copper wire: for the same stress, the material with the smaller Young modulus has the greater strain ✓')
+  ]);
+};
+T.YM9 = R => {
+  const pF = R.pick([0.5, 1.0, 2.0]), pL = R.pick([0.1, 0.2, 0.5]), { pd, pe } = find(() => ({ pd: R.pick([1.0, 2.0, 3.0]), pe: R.pick([2.5, 4.0, 5.0, 8.0]) }), o => 2 * o.pd !== o.pe), Eg = R.pick([1.1e11, 1.3e11, 2.1e11]), tot = pF + pL + 2 * pd + pe, big = 2 * pd > pe ? 'the diameter' : 'the extension';
+  return NOFIG(2, { pF, pL, pd, pe, Eg }, `A student determines the Young modulus of a metal wire using Young modulus = <i>FL</i> / (<i>A</i>Δ<i>L</i>). The value obtained is ${V(Eg, PA)}. <b>Table 1</b> shows the percentage uncertainty in each measurement.<br>` + tableH('Table 1', ['Measurement', 'Percentage uncertainty / %'], [['force <i>F</i>', fx(pF, 1)], ['original length <i>L</i>', fx(pL, 1)], ['diameter <i>d</i>', fx(pd, 1)], ['extension Δ<i>L</i>', fx(pe, 1)]]), [
+    calc('Calculate the percentage uncertainty in the cross-sectional area of the wire.', 1, 2 * pd, '%', M(E(`<i>A</i> ∝ <i>d</i><sup>2</sup>, so 2 × ${fx(pd, 1)} = ${A(2 * pd)}%`)), NS),
+    calc('Calculate the percentage uncertainty in the Young modulus.', 2, tot, '%', M('adds the percentage uncertainties of all four quantities', E(`${fx(pF, 1)} + ${fx(pL, 1)} + ${A(2 * pd)} + ${fx(pe, 1)} = ${A(tot)}%`)), NS),
+    calc('Calculate the absolute uncertainty in the Young modulus.', 1, tot / 100 * Eg, PA, M(E(`${I(tot / 100)} × ${N(Eg)} = ${AV(tot / 100 * Eg, PA)}`)), NS),
+    choose(R, 'Which measurement contributes most to the uncertainty in the Young modulus?', 1, big, ['the force', 'the original length', big === 'the diameter' ? 'the extension' : 'the diameter'], `${cap(big)}: it contributes ${A(Math.max(2 * pd, pe))}% ✓`),
+    text('Suggest how the uncertainty in the extension could be reduced.', 1, 'Use a longer wire (or larger forces within the elastic limit) to give a larger extension, or measure the extension with a vernier scale or travelling microscope ✓')
+  ]);
+};
+T.YM10 = R => {
+  const L = R.pick([0.60, 0.65, 0.80]), dmm = R.pick([0.25, 0.30, 0.40, 0.50]), emm = R.pick([1.5, 2.0, 2.5, 3.0]), Ar = wireA(dmm), sn = emm / 1000 / L, st = 2.0e11 * sn, Tn = st * Ar, En = .5 * Tn * emm / 1000;
+  return NOFIG(2, { L, dmm, emm }, `A steel guitar string has an unstretched length of ${V(L, 'm')} and a diameter of ${V(dmm, 'mm')}. When the string is tuned it is stretched elastically by ${V(emm, 'mm')}.<br>Young modulus of steel = 2.0 × 10<sup>11</sup> Pa`, [
+    calc('Calculate the tensile strain in the string.', 1, sn, '', M(E(`strain = ${N(emm / 1000)} / ${N(L)} = ${A(sn)}`)), NS),
+    calc('Calculate the tensile stress in the string.', 2, st, PA, M(E('stress = Young modulus × strain'), E(`= 2.0 × 10<sup>11</sup> × ${I(sn)} = ${AV(st, PA)}`))),
+    calc('Calculate the tension in the string.', 2, Tn, 'N', M(E(`<i>A</i> = π × (${RN(dmm / 2 * 1e-3)})<sup>2</sup> = ${I(Ar)} m<sup>2</sup>`), E(`<i>T</i> = stress × <i>A</i> = ${I(st)} × ${I(Ar)} = ${AV(Tn, 'N')}`))),
+    calc('Calculate the elastic strain energy stored in the string.', 2, En, 'J', M(E('energy stored = ½<i>F</i>Δ<i>L</i>'), E(`= ½ × ${I(Tn)} × ${N(emm / 1000)} = ${AV(En, 'J')}`)))
+  ]);
+};
+/* ===== Behaviour of materials ===== */
+const ELASTIC = 'Elastic: the material returns to its original length (shape) when the force is removed ✓', PLASTIC = 'Plastic: the material is permanently deformed and does not return to its original length when the force is removed ✓';
+T.MB1 = R => {
+  const eP = R.pick([2.0, 2.5]), Eg = R.pick([80, 100, 120, 160]), sP = Eg * eP, eU = R.pick([6, 7]), sU = sP * 1.3, eB = eU + 2, sB = sU * .9, f = ssCurve(eP, sP, eU, sU, eB, sB), ya = axisFor(sU * 1.12);
+  const fig = graph({ x: [0, 10, 2], y: [0, ya[0], ya[1]], xdiv: 4, ydiv: 5, h: 300, w: 440, xl: 'strain / 10^{−3}', yl: 'stress / MPa', curves: [{ f, from: 0, to: eB }], dots: [{ x: eP, y: sP, t: 'P', dx: 9, dy: 17 }, { x: eU, y: sU, t: 'U', dx: -5, dy: -10 }, { x: eB, y: sB, t: 'B', dx: 9, dy: 6 }], reads: [[eP, sP], [eU, sU], [eB, sB]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: {}, stem: `<b>Figure 1</b> shows a simplified stress–strain graph for a metal wire that is stretched until it breaks. Three points on the graph are labelled <b>P</b>, <b>U</b> and <b>B</b>.`, parts: [
+    choose(R, 'Which point is the limit of proportionality?', 1, 'P', ['U', 'B'], 'P: the end of the straight section through the origin ✓'),
+    calc('State the ultimate tensile stress of the metal in MPa.', 1, sU, 'MPa', M(`${AV(sU, 'MPa')} (the maximum stress, at <b>U</b>)`), { tol: .04, noSkill: true }),
+    calc('Determine the Young modulus of the metal.', 3, Eg * 1e9, PA, M(`uses the straight section, for example from (0, 0) to <b>P</b> (${N(eP)} × 10<sup>−3</sup>, ${A(sP)} MPa)`, E(`Young modulus = ${A(sP)} × 10<sup>6</sup> / (${N(eP)} × 10<sup>−3</sup>)`), E(`= ${AV(Eg * 1e9, PA)}`)), { tol: .06, noSkill: true }),
+    calc('State the strain at which the wire breaks.', 1, eB * 1e-3, '', M(`${N(eB * 1e-3)} (the strain at <b>B</b>)`), { tol: .04, noSkill: true }),
+    choose(R, 'How does the wire behave between <b>U</b> and <b>B</b>?', 1, 'it deforms plastically and narrows at one point (necking)', ['it obeys Hooke’s law', 'it deforms elastically', 'its Young modulus increases'], 'It deforms plastically and necks, so a smaller force is needed to keep stretching it until it breaks ✓')
+  ] };
+};
+T.MB2 = R => {
+  const v0 = find(() => { const eb = R.pick([2, 3]), Eb = R.pick([100, 150, 200]), Ed = R.pick([50, 75, 100, 150]), sb = Eb * eb, sy = Ed * 2, su = sy * 1.4; return { eb, Eb, Ed, sb, sy, su, fd: ssCurve(2, sy, 9, su, 9.5, su) }; }, o => o.Eb !== o.Ed && Math.abs(o.sb - o.su) > .15 * Math.max(o.sb, o.su) && Math.abs(o.sb - o.fd(o.eb + .6)) > .13 * Math.max(o.sb, o.su)), { eb, Eb, Ed, sb, sy, su, fd } = v0;
+  const sw = R.chance(.5), nb = sw ? 'B' : 'A', ndn = sw ? 'A' : 'B', ya = axisFor(Math.max(sb, su) * 1.08), stiff = Eb > Ed ? nb : ndn, strong = sb > su ? nb : ndn;
+  const cb = { f: x => Eb * x, from: 0, to: eb, name: nb, at: [eb + .55, sb * .97] }, cd = { f: fd, from: 0, to: 9, name: ndn, at: [9.45, su * .97] };
+  const fig = graph({ x: [0, 10, 2], y: [0, ya[0], ya[1]], xdiv: 4, ydiv: 5, h: 300, w: 440, xl: 'strain / 10^{−3}', yl: 'stress / MPa', curves: sw ? [cd, cb] : [cb, cd], reads: [[eb, sb]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { sw }, stem: `<b>Figure 1</b> shows stress–strain graphs for two materials, <b>A</b> and <b>B</b>. Each line ends where the material breaks.`, parts: [
+    choose(R, 'Which material is brittle?', 1, nb, [ndn], `${nb}: it breaks with little or no plastic deformation (its line is straight up to the breaking point) ✓`),
+    choose(R, 'Which material is stiffer?', 1, stiff, [stiff === 'A' ? 'B' : 'A'], `${stiff}: its line has the greater initial gradient (the greater Young modulus) ✓`),
+    choose(R, 'Which material has the greater breaking stress (is stronger)?', 1, strong, [strong === 'A' ? 'B' : 'A'], `${strong}: it reaches the greater stress before it breaks ✓`),
+    calc(`Determine the Young modulus of material <b>${nb}</b>.`, 2, Eb * 1e9, PA, M(`uses the gradient of the line, for example from (0, 0) to (${eb} × 10<sup>−3</sup>, ${A(sb)} MPa)`, E(`Young modulus = ${A(sb)} × 10<sup>6</sup> / (${eb} × 10<sup>−3</sup>) = ${AV(Eb * 1e9, PA)}`)), { tol: .06, noSkill: true }),
+    text(`Describe how the behaviour of material <b>${ndn}</b> differs from that of material <b>${nb}</b> before it breaks.`, 2, M(`${ndn} is ductile: beyond its elastic limit it deforms plastically`, `so it undergoes a large (permanent) strain for a small increase in stress before it breaks, whereas ${nb} breaks suddenly`))
+  ] };
+};
+T.MB3 = R => {
+  const dum = R.pick([8.0, 10, 20, 50]), sb = R.pick([1.5e9, 2.0e9, 3.0e9]), r = dum / 2 * 1e-6, Ar = Math.PI * r * r, Fm = sb * Ar;
+  return NOFIG(2, { dum, sb }, `A glass fibre has a diameter of ${V(dum, 'μm')}. Glass is a brittle material, and the breaking stress of the glass in the fibre is ${V(sb, PA)}.`, [
+    text('State what is meant by a brittle material.', 1, 'A material that breaks (fractures) without any noticeable plastic deformation ✓'),
+    calc('Calculate the cross-sectional area of the fibre.', 2, Ar, M2, M(E(`radius = ${RN(r)} m`), E(`<i>A</i> = π × (${RN(r)})<sup>2</sup> = ${AV(Ar, M2)}`))),
+    calc('Calculate the maximum tension that the fibre can withstand.', 2, Fm, 'N', M(E('<i>F</i> = breaking stress × <i>A</i>'), E(`= ${N(sb)} × ${I(Ar)} = ${AV(Fm, 'N')}`))),
+    choose(R, 'Which of these materials is ductile?', 1, 'copper', ['glass', 'cast iron', 'ceramic'], 'Copper: it can be drawn into wires and deforms plastically before breaking ✓'),
+    choose(R, 'What is the shape of the stress–strain graph for a brittle material up to its breaking point?', 1, 'a straight line through the origin', ['a curve that levels off', 'a horizontal line', 'a line with a large loop'], 'A straight line through the origin (it obeys Hooke’s law until it breaks) ✓')
+  ]);
+};
+T.MB4 = R => {
+  const L0 = R.pick([2.000, 2.500, 3.000]), tot = R.pick([12, 15, 20]), perm = R.pick([4, 5, 8]), L1 = L0 + tot / 1000, L2 = L0 + perm / 1000;
+  return NOFIG(4, { L0, L1, L2 }, `A copper wire has an original length of ${fx(L0, 3)} m. A large load is hung from the wire and its length becomes ${fx(L1, 3)} m. When the load is removed, the length of the wire is ${fx(L2, 3)} m.`, [
+    text('State what is meant by elastic deformation and plastic deformation.', 2, ELASTIC + '<br>' + PLASTIC),
+    calc('Calculate the total extension of the wire, in mm, when it was loaded.', 1, tot, 'mm', M(E(`${fx(L1, 3)} − ${fx(L0, 3)} = ${fx(tot / 1000, 3)} m = ${A(tot)} mm`)), NS),
+    calc('Calculate the permanent extension of the wire in mm.', 1, perm, 'mm', M(E(`${fx(L2, 3)} − ${fx(L0, 3)} = ${fx(perm / 1000, 3)} m = ${A(perm)} mm`)), NS),
+    calc('Calculate the part of the extension, in mm, that was elastic.', 1, tot - perm, 'mm', M(E(`${A(tot)} − ${A(perm)} = ${A(tot - perm)} mm`) + ' (the extension that was recovered)'), NS),
+    calc('Calculate the permanent tensile strain in the wire.', 1, perm / 1000 / L0, '', M(E(`${fx(perm / 1000, 3)} / ${fx(L0, 3)} = ${A(perm / 1000 / L0)}`)), NS),
+    choose(R, 'What does the permanent extension show about the load?', 1, 'the wire was stretched beyond its elastic limit', ['the wire obeyed Hooke’s law throughout', 'the wire reached its breaking stress', 'the wire was brittle'], 'The wire was stretched beyond its elastic limit ✓')
+  ]);
+};
+T.MB5 = R => {
+  const Fm = R.pick([8, 10, 12, 16, 20]), xm = 10, sw = R.chance(.5), fl = x => { const t = x / xm; return Fm * (1.6 * t - .6 * t * t); }, fu = x => Fm * (x / xm) ** 2, ya = axisFor(Fm), sq = ya[1] * .02, nsq = +((Fm * xm * (0.8 - 0.2 - 1 / 3)) / (ya[1] * 2)).toFixed(1), nu = sw ? 'A' : 'B', nl = sw ? 'B' : 'A';
+  const cl = { f: fl, from: 0, to: xm, name: nl, at: [3.2, fl(3.2) + ya[0] * .09] }, cu = { f: fu, from: 0, to: xm, name: nu, at: [6.6, fu(6.6) - ya[0] * .09] };
+  const fig = graph({ x: [0, 10, 2], y: [0, ya[0], ya[1]], xdiv: 4, ydiv: 5, h: 300, w: 440, xl: 'extension / cm', yl: 'force / N', curves: sw ? [cu, cl] : [cl, cu] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { nsq, sw }, stem: `A rubber band is stretched and then released slowly. <b>Figure 1</b> shows the force–extension graphs for loading and for unloading, labelled <b>A</b> and <b>B</b>. The area between the two curves is equal to the area of ${fx(nsq, 1)} of the large squares of the grid.`, parts: [
+    choose(R, 'Which curve shows the unloading of the rubber band?', 1, nu, [nl], `${nu}: for each extension the force is smaller during unloading, so less work is done by the band than was done on it ✓`),
+    choose(R, 'Is the rubber band deformed elastically or plastically?', 1, 'elastically, because it returns to its original length', ['plastically, because the curves are different', 'plastically, because it does not obey Hooke’s law'], 'Elastically: the extension returns to zero when the force is removed ✓'),
+    calc('Calculate the energy represented by one large square of the grid.', 2, sq, 'J', M(E(`one large square is ${ya[1]} N by 2 cm = 0.02 m`), E(`energy = ${ya[1]} × 0.02 = ${AV(sq, 'J')}`)), { tol: .03, noSkill: true }),
+    calc('Calculate the energy represented by the area between the two curves.', 1, nsq * sq, 'J', M(E(`${fx(nsq, 1)} × ${I(sq)} = ${AV(nsq * sq, 'J')}`)), { tol: .03, noSkill: true }),
+    text('State what happens to this energy.', 1, 'It is transferred to internal energy of the rubber (the band becomes warmer) and then to the surroundings ✓')
+  ] };
+};
+T.MB6 = R => {
+  const e1 = R.pick([2, 4]), Eg = R.pick([50, 75, 100]), s1 = Eg * e1, e2 = e1 + R.pick([4, 6, 8]), s2 = s1 + R.pick([20, 40, 50]), u1 = .5 * s1 * e1 * 1e3, u2 = .5 * (s1 + s2) * (e2 - e1) * 1e3, Vcm = R.pick([0.50, 2.0, 5.0]);
+  const xa = axisFor(e2), ya = axisFor(s2 * 1.05), fig = graph({ x: [0, xa[0], xa[1]], y: [0, ya[0], ya[1]], xdiv: 5, ydiv: 5, h: 300, w: 440, xl: 'strain / 10^{−3}', yl: 'stress / MPa', curves: [pwl([[0, 0], [e1, s1], [e2, s2]])], reads: [[e1, s1], [e2, s2]] });
+  return { sf: 2, scenes: [], figs: [fig], readFig: 'Figure 1', data: { Vcm }, stem: `<b>Figure 1</b> shows a simplified stress–strain graph for a metal that is stretched until it breaks. The area under a stress–strain graph represents the work done per unit volume of the material.`, parts: [
+    calc('Determine the Young modulus of the metal.', 2, Eg * 1e9, PA, M(`uses the gradient of the first section, from (0, 0) to (${e1} × 10<sup>−3</sup>, ${A(s1)} MPa)`, E(`Young modulus = ${A(s1)} × 10<sup>6</sup> / (${e1} × 10<sup>−3</sup>) = ${AV(Eg * 1e9, PA)}`)), { tol: .06, noSkill: true }),
+    calc('Determine the work done per unit volume in stretching the metal to the end of the first section.', 2, u1, 'J m<sup>−3</sup>', M('area of the triangle = ½ × stress × strain', E(`= ½ × ${A(s1)} × 10<sup>6</sup> × ${e1} × 10<sup>−3</sup> = ${AV(u1, 'J m<sup>−3</sup>')}`)), { tol: .06, noSkill: true }),
+    calc('Determine the total work done per unit volume in stretching the metal until it breaks.', 3, u1 + u2, 'J m<sup>−3</sup>', M(`area of the second section (a trapezium) = ½ × (${A(s1)} + ${A(s2)}) × 10<sup>6</sup> × ${e2 - e1} × 10<sup>−3</sup>`, E(`= ${I(u2)} J m<sup>−3</sup>`), E(`total = ${I(u1)} + ${I(u2)} = ${AV(u1 + u2, 'J m<sup>−3</sup>')}`)), { tol: .06, noSkill: true }),
+    calc(`Calculate the work done in breaking a sample of the metal of volume ${V(Vcm, CM3)}.`, 2, (u1 + u2) * Vcm * 1e-6, 'J', M(E(`volume = ${N(Vcm * 1e-6)} m<sup>3</sup>`), E(`work done = ${I(u1 + u2)} × ${N(Vcm * 1e-6)} = ${AV((u1 + u2) * Vcm * 1e-6, 'J')}`)), { tol: .06, noSkill: true })
+  ] };
+};
+T.MB7 = R => {
+  const nm = ['W', 'X', 'Y', 'Z'], Es = shuffleR(R, [2.0e11, 1.2e11, 7.0e10, 3.0e9]), Ss = shuffleR(R, [4.0e8, 2.2e8, 1.1e8, 7.5e7]), iS = Es.indexOf(Math.max(...Es)), iB = Ss.indexOf(Math.max(...Ss)), j = R.pick([0, 1, 2, 3]), Amm = R.pick([0.50, 1.0, 2.0]), Fm = Ss[j] * Amm * 1e-6, sn = Ss[j] / Es[j];
+  return NOFIG(2, { Es, Ss, j, Amm }, `<b>Table 1</b> gives data for four materials, <b>W</b>, <b>X</b>, <b>Y</b> and <b>Z</b>, in the form of wires.<br>` + tableH('Table 1', ['Material', 'Young modulus / Pa', 'Breaking stress / Pa'], nm.map((n, i) => [`<b>${n}</b>`, N(Es[i]), N(Ss[i])])), [
+    choose(R, 'Which material is the stiffest?', 1, nm[iS], nm.filter((n, i) => i !== iS), `${nm[iS]}: it has the greatest Young modulus ✓`),
+    choose(R, 'Which material is the strongest?', 1, nm[iB], nm.filter((n, i) => i !== iB), `${nm[iB]}: it has the greatest breaking stress ✓`),
+    calc(`A wire of material <b>${nm[j]}</b> has a cross-sectional area of ${V(Amm, 'mm<sup>2</sup>')}. Calculate the maximum tension that the wire can withstand.`, 2, Fm, 'N', M(E('<i>F</i> = breaking stress × <i>A</i>'), E(`= ${N(Ss[j])} × ${N(Amm * 1e-6)} = ${AV(Fm, 'N')}`))),
+    calc(`Calculate the tensile strain in this wire just before it breaks. Assume that the material obeys Hooke’s law until it breaks.`, 2, sn, '', M(E('strain = stress / Young modulus'), E(`= ${N(Ss[j])} / (${N(Es[j])}) = ${A(sn)}`)), NS),
+    text('Explain the difference between a stiff material and a strong material.', 2, M('A stiff material needs a large stress to produce a given strain (it has a large Young modulus)', 'a strong material needs a large stress to break it (it has a large breaking stress)'))
+  ]);
+};
+T.MB8 = R => {
+  const L0 = R.pick([50, 80, 100]), dmm = R.pick([4.0, 5.0, 8.0]), duct = R.chance(.5), ext = duct ? L0 * R.pick([12, 15, 20, 25]) / 100 : R.pick([0.2, 0.3, 0.4]), el = ext / L0 * 100, L1 = L0 + ext, Fk = R.pick([8.0, 12, 20, 30]), Ar = wireA(dmm), uts = Fk * 1000 / Ar;
+  return NOFIG(2, { L0, L1, dmm, Fk }, `A metal test rod has an original length of ${V(L0, 'mm')} and a diameter of ${V(dmm, 'mm')}. The rod is stretched in a testing machine until it breaks. The maximum force during the test is ${V(Fk, 'kN')}, and the total length of the two broken pieces fitted together is ${fx(L1, 1)} mm.`, [
+    calc('Calculate the original cross-sectional area of the rod.', 1, Ar, M2, M(E(`<i>A</i> = π × (${RN(dmm / 2 * 1e-3)})<sup>2</sup> = ${AV(Ar, M2)}`))),
+    calc('Calculate the ultimate tensile stress of the metal.', 2, uts, PA, M(E(`maximum force = ${N(Fk * 1000)} N`), E(`stress = ${N(Fk * 1000)} / (${I(Ar)}) = ${AV(uts, PA)}`))),
+    calc('Calculate the percentage increase in the length of the rod.', 2, el, '%', M(E(`permanent extension = ${fx(L1, 1)} − ${N(L0)} = ${I(ext)} mm`), E(`${I(ext)} / ${N(L0)} × 100 = ${A(el)}%`)), NS),
+    choose(R, 'What does this result suggest about the metal?', 1, duct ? 'it is ductile' : 'it is brittle', [duct ? 'it is brittle' : 'it is ductile', 'it has no elastic limit'], duct ? 'It is ductile: there is a large permanent (plastic) extension before it breaks ✓' : 'It is brittle: there is very little permanent (plastic) extension before it breaks ✓'),
+    text('State what is meant by the ultimate tensile stress.', 1, 'The maximum tensile stress that the material can withstand ✓')
+  ]);
+};
+const ECF = { DE6: { b: 'a', c: 'a' }, HK1: { c: 'b' }, HK2: { b: 'a' }, HK5: { d: 'b' }, HK9: { b: '', c: '', d: 'bc' }, SE4: { c: 'b' }, SE5: { b: '', c: '', d: 'bc' }, SE8: { b: 'a', c: 'b' }, ST2: { d: 'b' }, YM4: { c: 'a' }, YM7: { c: 'ab' }, YM9: { b: 'a' } };
+
+/* ---------- assembling a question ---------- */
+const TEMPLATES = Object.keys(T).sort((a, b) => a.replace(/\d+/, '') === b.replace(/\d+/, '') ? parseInt(a.replace(/\D+/, '')) - parseInt(b.replace(/\D+/, '')) : Object.keys(TOPICS).indexOf(a.replace(/\d+/, '')) - Object.keys(TOPICS).indexOf(b.replace(/\d+/, '')));
+const seedFor = (tpl, seed) => seed * 7919 + tpl.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+function genOnly(tpl, seed){ return T[tpl](makeRand(seedFor(tpl, seed))); }
+function checkAnswer(part, x){
+  const a = part.ans; if (!isFinite(x)) return false;
+  if (part.range) return x >= part.range[0] * (1 - 1e-9) && x <= part.range[1] * (1 + 1e-9);
+  if ((part.alt || []).some(v => Math.abs(x - v) <= 1e-9 + .005 * Math.abs(v))) return true;
+  if (Math.abs(a) < 1e-300) return Math.abs(x) < 1e-12;
+  if (part.abs !== undefined) return Math.abs(x - a) <= part.abs + 1e-12;
+  if (part.u && Math.abs(x - Number((a * (1 + 1e-9)).toPrecision(1))) <= .002 * Math.abs(a)) return true;     // uncertainties: 1 significant figure is also accepted
+  return Math.abs(x - a) <= (part.tol || .015) * Math.abs(a) || Math.abs(x - Number((a * (1 + 1e-9)).toPrecision(2))) <= .002 * Math.abs(a);   // within tolerance, or the answer correctly rounded to 2 sf
+}
+const disp = A;
+function finishMarkScheme(q){
+  const given = plain(q.stem + ' ' + q.parts.map(p => p.q).join(' ')), L = 'abcdefgh';
+  const E0 = typeof ECF !== 'undefined' && ECF[q.id], ECFX = E0 ? (typeof E0 === 'function' ? E0(q.data) : E0) : {};   // ecf links set by hand where numbers alone mislead
+  const ecfNote = l => 'Allow ecf from their answer' + (l.length > 1 ? 's' : '') + ' to ' + (l.length > 1 ? l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1] : l[0]) + '.';
+  q.parts.forEach((p, i) => {
+    const g = p.guide ? p.guide.slice() : [];
+    const un = p.unit ? (tight(p.unit) ? p.unit : ' ' + p.unit) : '', rf = (lo, hi) => p.fx !== undefined ? fx(lo, p.fx) + ' to ' + fx(hi, p.fx) : N(lo, 3) + ' to ' + N(hi, 3);
+    if (p.ans !== undefined && !p.options && p.range) g.unshift(`Accept any sensible estimate in the range ${N(p.range[0], 2)} to ${N(p.range[1], 2)}${un}.`);
+    else if (p.ans !== undefined && !p.options && (p.tol || (p.abs !== undefined && !(p.fx !== undefined && p.abs < Math.pow(10, -p.fx))))){
+      const lo = p.abs !== undefined ? p.ans - p.abs : p.ans * (1 - p.tol), hi = p.abs !== undefined ? p.ans + p.abs : p.ans * (1 + p.tol);
+      g.unshift(`Allow answers in the range ${rf(p.ans < 0 ? lo : Math.max(lo, 0), hi)}${un}${p.read ? ' (' + p.read + ')' : q.readFig ? ' (values read from ' + q.readFig + ')' : ''}.`);
+    }
+    if (p.u) g.push('Accept answers given to 1 or 2 significant figures.');
+    if (p.alt) g.push(p.altNote || ('Also accept ' + p.alt.map(v => N(v, 2)).join(' or ') + un + '.'));
+    const fixed = ECFX[L[i]];
+    if (fixed !== undefined){ if (fixed && !g.some(x => /ecf/.test(x))) g.push(ecfNote([...fixed].map(c => '(' + c + ')'))); }
+    else if (p.ans !== undefined && !p.options && p.ans !== 0){
+      const ecf = [];
+      const findNum = (m, a) => { for (let k = m.indexOf(a); k >= 0; k = m.indexOf(a, k + 1)){ const b = m[k - 1] || '', b2 = m[k - 2] || '', c = m[k + a.length] || '';
+          if (/[\d.^]/.test(b) || (b === '−' && b2 === '^')) continue;                       // inside another number or an exponent
+          if (c === '^' && a === '10') continue;                                              // a power of ten, not a value
+          if (a.includes('×')){ if (/\d/.test(c)) continue; return [k, a.length]; }          // a different power of ten
+          const full = m.slice(k).match(/^\d*\.?\d+/)[0].replace(/\.$/, ''), dp = a.includes('.') ? a.split('.')[1].length : 0;
+          if (full === a || Number(full).toFixed(dp) === a) return [k, full.length];          // the same value, perhaps shown to more figures
+        } return null; };
+      const hasNum = (m, a) => !!findNum(m, a);
+      let own = plain(p.ms);                                                                  // the part's own result is not a carried value
+      for (const a of [plain(I(Math.abs(p.ans))), plain(A(Math.abs(p.ans)))]) for (let f = findNum(own, a); f; f = findNum(own, a)) own = own.slice(0, f[0]) + '#' + own.slice(f[0] + f[1]);
+      for (let j = 0; j < i; j++){ const pj = q.parts[j]; if (pj.ans === undefined || pj.options || pj.ans === 0 || pj.int) continue; const a = plain(A(Math.abs(pj.ans))), a4 = plain(I(Math.abs(pj.ans))), m = own; if ((hasNum(m, a) || hasNum(m, a4)) && !hasNum(given, a)) ecf.push('(' + L[j] + ')'); }
+      if (ecf.length && !g.some(x => /ecf/.test(x))) g.push(ecfNote(ecf));
+    }
+    p.guide = g;
+  });
+}
+// ---------- A-level skill marks: significant figures and SI units ----------
+function sfRange(str){                      // [fewest, most] significant figures a typed number could have
+  let t = String(str).trim().replace(/−/g, '-').replace(/^[-+]/, '').toLowerCase();
+  const m = t.match(/^([\d.]+)\s*(?:e[-+]?\d+|(?:×|x|\*)\s*10\s*\^?\s*[-−]?\d+)?$/);
+  if (!m) return [0, 0];
+  t = m[1];
+  if (t.includes('.')){ const k = t.replace('.', '').replace(/^0+/, '').length || 1; return [k, k]; }
+  const d = t.replace(/^0+/, '') || '0', lo = d.replace(/0+$/, '').length || 1; return [lo, d.length];   // trailing zeros in an integer are ambiguous
+}
+const SI_UNITS = {};
+[['m', ['m', 'metre', 'metres', 'meter', 'meters'], ''], ['s', ['s', 'sec', 'second', 'seconds'], ''], ['Hz', ['hz', 'hertz', 's-1'], 'Accept s<sup>−1</sup>.'], [MS1, ['ms-1', 'm/s'], ''], [MS2, ['ms-2', 'm/s2', 'm/s/s'], ''], ['N', ['n', 'newton', 'newtons'], ''], ['kg', ['kg', 'kilogram', 'kilograms'], ''], [KGM, ['kgm-1', 'kg/m'], ''],
+ ['J', ['j', 'joule', 'joules'], ''], ['W', ['w', 'watt', 'watts', 'js-1', 'j/s'], 'Accept J s<sup>−1</sup>.'], ['Pa', ['pa', 'pascal', 'pascals', 'nm-2', 'n/m2'], 'Accept N m<sup>−2</sup>.'], ['Ω', ['ω', 'ohm', 'ohms', 'va-1', 'v/a'], 'Accept V A<sup>−1</sup>.'], ['V', ['v', 'volt', 'volts'], ''], ['A', ['a', 'amp', 'amps', 'ampere', 'amperes'], ''], ['C', ['c', 'coulomb', 'coulombs', 'as'], 'Accept A s.'], ['F', ['f', 'farad', 'farads'], ''],
+ [NM1, ['nm-1', 'n/m'], ''], [KGM3, ['kgm-3', 'kg/m3'], ''], [OHMM, ['ωm', 'ohmm', 'ohmmetre', 'ohmmetres', 'ohmmeter'], ''], ['Bq', ['bq', 'becquerel', 'becquerels', 's-1'], 'Accept s<sup>−1</sup>.'], ['s<sup>−1</sup>', ['s-1', '/s', 'persecond'], ''], ['T', ['t', 'tesla'], ''], ['N kg<sup>−1</sup>', ['nkg-1', 'n/kg', 'ms-2', 'm/s2'], 'Accept m s<sup>−2</sup>.'], ['J kg<sup>−1</sup>', ['jkg-1', 'j/kg'], ''], ['N m<sup>2</sup> kg<sup>−2</sup>', ['nm2kg-2', 'nm^2kg^-2'], '']].forEach(([u, accept, alt]) => { SI_UNITS[u] = { show: u, accept, alt }; });
+function normUnit(u){ return String(u).trim().toLowerCase().replace(/Ω|Ω/g, 'ω').replace(/⁻/g, '-').replace(/¹/g, '1').replace(/²/g, '2').replace(/−/g, '-').replace(/\^|\(|\)/g, '').replace(/[\s·.]/g, ''); }
+function unitOk(p, typed){ return !!p.unitMark && p.unitMark.accept.includes(normUnit(typed)); }
+function sfOk(p, typed){ if (!p.sfMark) return true; const [lo, hi] = sfRange(typed); return p.sfMark.accept.some(n => n >= lo && n <= hi); }
+function addSkillMarks(q, rnd){
+  const eligible = p => p.ans !== undefined && !p.options && p.abs === undefined && !p.tol && !p.u && !p.range && !p.alt && p.fx === undefined && p.ans !== 0 && /Calculate/.test(p.q) && !p.noSkill;
+  const cands = q.parts.map((p, i) => ({ p, i })).filter(x => eligible(x.p));
+  if (!cands.length) return;
+  let sfPart = null;
+  const sfC = cands.filter(x => !x.p.noSf);
+  if (rnd() < 0.5 && sfC.length){ sfPart = rnd.pick(sfC); const p = sfPart.p, n = p.sf || q.sf, accept = n === 2 ? [2] : [2, 3], shown = N(p.ans, n);
+    p.q += '<br>Give your answer to an appropriate number of significant figures.';
+    p.marks += 1; p.sfMark = { n, accept, shown };
+    p.ms += `<br>Answer given to ${n} significant figures (${shown}${tight(p.unit) ? p.unit : ' ' + p.unit}) ✓`;
+    p.guide = p.guide.concat([`The data used are given to ${n} significant figures, so accept answers given to ${accept.join(' or ')} significant figures.`, 'The significant-figure mark can be awarded for an incorrect answer that follows some relevant working. An answer to 1 significant figure cannot gain this mark.']); }
+  const uCands = cands.filter(x => (!sfPart || x.i !== sfPart.i) && SI_UNITS[x.p.unit]);
+  if (uCands.length && rnd() < 0.5){ const p = rnd.pick(uCands).p, U = SI_UNITS[p.unit];
+    p.q += '<br>State an appropriate SI unit for your answer.';
+    p.marks += 1; p.unitMark = { si: U.show, accept: U.accept };
+    p.ms += `<br>Unit: ${U.show} ✓`;
+    p.guide = p.guide.concat([(U.alt ? U.alt + ' ' : '') + 'Do not accept strings of base units. The unit mark is independent of the numerical answer.']); }
+}
+function makeQuestion(tpl, seed, opts){
+  opts = opts || {};
+  if (!T[tpl]) throw new Error('Unknown question type ' + tpl);
+  ASF = 2; ASF = T[tpl](makeRand(seedFor(tpl, seed))).sf || 2;      // a first pass finds the significant figures of the data
+  INEXACT.length = 0; GLOG.length = 0; const before = STATS.fallback, q = T[tpl](makeRand(seedFor(tpl, seed)));
+  q.id = tpl; q.seed = seed; q.code = tpl + '-' + seed; q.topic = tpl.replace(/\d+/, ''); q.topicName = TOPICS[q.topic];
+  q.errors = [].concat(...q.scenes.map(s => s.check())); if (q.scopeBad) q.errors.push('oscilloscope trace goes off the screen'); if (STATS.fallback > before) q.errors.push('no suitable numbers found'); if (INEXACT.length) q.errors.push('value shown rounded: ' + INEXACT.join(', '));
+  q.figures = q.scenes.map(s => s.svg()).concat(q.figs || []);
+  GLOG.forEach(g => graphErrors(g).forEach(e => q.errors.push(e))); GLOG.length = 0;
+  q.parts.forEach(p => { if (p.ans !== undefined && !p.options) p.shown = p.fx !== undefined ? fx(p.ans, p.fx) : p.int ? String(p.ans) : p.u ? U(p.ans) : p.s3 ? N(p.ans, 3) : A(p.ans); });      // s3: shown to 3 sf, like the table it completes
+  finishMarkScheme(q);
+  if (opts.skills !== false) addSkillMarks(q, makeRand(seed * 104729 + tpl.length * 977 + 13));
+  q.marks = q.parts.reduce((a, p) => a + p.marks, 0);
+  return q;
+}
+const ENGINE = { STATS, genOnly, disp, N, A, plain, sfRange, unitOk, sfOk, normUnit, SI_UNITS, makeQuestion, checkAnswer, TEMPLATES, TOPICS, sig, Scene, T, graph, scope, LAST, fx, tight };
+if (typeof module !== 'undefined') module.exports = ENGINE;
+
+
+</script>
+<script>
+// a drop-down option can only hold plain text, so superscripts and subscripts are written with Unicode characters
+const SUPC = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '−': '⁻', '-': '⁻', '+': '⁺' }, SUBC = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', e: 'ₑ' };
+const uni = (s, map, mark) => [...s].every(c => map[c]) ? [...s].map(c => map[c]).join('') : mark + '(' + s + ')';
+const optText = h => String(h).replace(/<sup>(.*?)<\/sup>/g, (m, s) => uni(s, SUPC, '^')).replace(/<sub>(.*?)<\/sub>/g, (m, s) => uni(s, SUBC, '_')).replace(/<[^>]+>/g, '');
+(function(){
+  const $ = id => document.getElementById(id);
+  const topics = Object.keys(ENGINE.TOPICS), active = new Set(topics);
+  const sets = { single: [], set: [] }; let allShown = false, lastTpl = null;
+
+  topics.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'topic-' + t; b.textContent = ENGINE.TOPICS[t]; b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', () => {
+      if (active.has(t)){ if (active.size === 1){ say('Keep at least one topic selected.'); return; } active.delete(t); } else active.add(t);
+      b.setAttribute('aria-pressed', active.has(t) ? 'true' : 'false'); say('');
+    });
+    $('topics').appendChild(b);
+  });
+  function say(msg){ $('status').textContent = msg; }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = () => ENGINE.TEMPLATES.filter(t => active.has(t.replace(/\d+/, '')));
+  const seed = () => 10000 + Math.floor(Math.random() * 90000);
+  const opts = () => ({ skills: $('skills').checked });
+
+  function newOne(){
+    const p = pool(); let t; do { t = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && t === lastTpl);
+    lastTpl = t; render('single', [ENGINE.makeQuestion(t, seed(), opts())]);
+  }
+  function newSet(){
+    const p = pool(), n = +$('size').value; let bag = [];
+    while (bag.length < n) bag = bag.concat(shuffle(p.slice()));   // every type appears before any repeats
+    render('set', bag.slice(0, n).map(t => ENGINE.makeQuestion(t, seed(), opts())));
+    allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false');
+    $('summary').textContent = n + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks';
+  }
+  function render(v, qs){
+    sets[v] = qs; say('');
+    $(v).innerHTML = qs.map((q, n) => {
+      const k = v + n, parts = q.parts.map((p, i) => {
+        const id = `${k}-in-${i}`, d = `data-v="${v}" data-q="${n}" data-i="${i}"`, fb = `<span class="fb" id="${k}-fb-${i}" role="status"></span>`, btn = `<button type="button" class="check" ${d}>Check</button>`;
+        let work;
+        if (p.options) work = `<div class="answer"><label for="${id}">Answer</label><select id="${id}"><option value="">Choose…</option>${p.options.map((o, j) => `<option value="${j}">${optText(o)}</option>`).join('')}</select>${btn}${fb}</div>`;
+        else if (p.ans !== undefined) work = `<div class="answer"><label for="${id}">Answer</label><input id="${id}" ${d} type="text" autocomplete="off" size="9">${p.unitMark ? `<label class="sr" for="${k}-unit-${i}">Unit</label><input id="${k}-unit-${i}" ${d} class="unit-in" type="text" autocomplete="off" placeholder="unit" size="5">` : `<span class="unit">${p.unit}</span>`}${btn}${fb}</div>`;
+        else work = `<p class="written">Written answer. Compare it with the mark scheme.</p>`;
+        return `<li><div class="part-head"><span class="letter">(${String.fromCharCode(97 + i)})</span><div class="part-q">${p.q}</div><span class="marks">[${p.marks} mark${p.marks > 1 ? 's' : ''}]</span></div>${work}<div class="ms" hidden><span class="ms-tag">Mark scheme</span>${p.ms}${p.ans !== undefined && !p.options ? `<div class="ms-ans">Answer: <b>${p.sfMark ? p.sfMark.shown : p.shown}${ENGINE.tight(p.unit) ? '' : ' '}${p.unit}</b>${p.sfMark ? ` <span class="ms-sf">(to ${p.sfMark.accept.join(' or ')} significant figures)</span>` : p.range ? ' <span class="ms-sf">(a typical estimate)</span>' : p.u ? ' <span class="ms-sf">(accept 1 or 2 significant figures)</span>' : p.abs === undefined && !p.tol && !p.int && !p.alt && p.fx === undefined ? ' <span class="ms-sf">(accept answers correctly rounded to 2 or more significant figures)</span>' : ''}</div>` : ''}${p.guide && p.guide.length ? `<div class="ms-guide"><span class="ms-tag">Additional guidance</span><ul>${p.guide.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}</div></li>`;
+      }).join('');
+      return `<section class="sheet" id="sheet-${k}"><div class="q-head"><h2>${v === 'set' ? 'Question ' + (n + 1) : 'Question'}</h2><span class="tag">${q.topicName}</span><span class="q-marks">${q.marks} marks</span></div>
+        <div class="stem">${q.stem}</div>
+        ${q.figures.length ? `<div class="figs">${q.figures.map((f, j) => `<figure><figcaption>Figure ${j + 1}</figcaption><div class="fig">${f}</div></figure>`).join('')}</div>` : ''}
+        <ol class="parts">${parts}</ol>
+        <div class="sheet-foot"><button type="button" class="primary toggle-ms" data-k="${k}" aria-expanded="false">Show mark scheme</button>
+          <div class="code-box"><span>Question code <span class="q-code">${q.code}</span></span><button type="button" class="ghost copy" data-code="${q.code}">Copy code</button></div></div></section>`;
+    }).join('');
+  }
+  function showMs(k, on){
+    const s = $('sheet-' + k); s.querySelectorAll('.ms').forEach(m => { m.hidden = !on; });
+    const b = s.querySelector('.toggle-ms'); b.textContent = on ? 'Hide mark scheme' : 'Show mark scheme'; b.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function check(v, n, i){
+    const p = sets[v][n].parts[i], el = $(`${v}${n}-in-${i}`), fb = $(`${v}${n}-fb-${i}`);
+    if (p.options){ if (el.value === ''){ fb.textContent = 'Choose an answer first.'; fb.className = 'fb'; return; } const ok = +el.value === p.correct; fb.textContent = ok ? '✓ Correct' : '✗ Not yet. Check your working and try again.'; fb.className = 'fb ' + (ok ? 'good' : 'bad'); return; }
+    const raw = el.value.trim().replace(',', '.').replace(/\u2212/g, '-'), sm = raw.match(/^(-?[\d.]+)\s*(?:e\s*([-+]?\d+)|(?:×|x|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?)?$/i);
+    const x = sm ? +sm[1] * Math.pow(10, +(sm[2] || sm[3] || 0)) : NaN;
+    if (!isFinite(x)){ fb.textContent = 'Type a number, for example 0.25, 1.9e-4 or 1.9x10^-4'; fb.className = 'fb'; return; }
+    const uel = $(`${v}${n}-unit-${i}`);
+    if (p.unitMark && !uel.value.trim()){ fb.textContent = 'Type a unit as well.'; fb.className = 'fb'; return; }
+    const okV = ENGINE.checkAnswer(p, x), okS = ENGINE.sfOk(p, raw), okU = !p.unitMark || ENGINE.unitOk(p, uel.value);
+    const msgs = [okV ? '✓ value correct' : '✗ value not yet right'];
+    if (p.sfMark) msgs.push(okS ? '✓ significant figures' : '✗ check the number of significant figures');
+    if (p.unitMark) msgs.push(okU ? '✓ unit' : '✗ unit not accepted');
+    const all = okV && okS && okU;
+    fb.textContent = all ? '✓ Correct' + (p.sfMark || p.unitMark ? ' (' + msgs.slice(1).map(m => m.slice(2)).join(', ') + ')' : '') : msgs.join(' · ');
+    fb.className = 'fb ' + (all ? 'good' : 'bad');
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.check'); if (c) return check(c.dataset.v, +c.dataset.q, +c.dataset.i);
+    const t = e.target.closest('.toggle-ms'); if (t) return showMs(t.dataset.k, t.getAttribute('aria-expanded') !== 'true');
+    const k = e.target.closest('.copy');
+    if (k){ const code = k.dataset.code, fail = () => say('Copy did not work here. The code is ' + code + '.');
+      try { navigator.clipboard.writeText(code).then(() => { k.textContent = 'Copied'; setTimeout(() => { k.textContent = 'Copy code'; }, 1500); }, fail); } catch (err){ fail(); } }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.v){ e.preventDefault(); check(e.target.dataset.v, +e.target.dataset.q, +e.target.dataset.i); } });
+  $('skills').addEventListener('change', () => {          // re-make the questions on screen with the same codes
+    ['single', 'set'].forEach(v => { if (sets[v].length) render(v, sets[v].map(q => ENGINE.makeQuestion(q.id, q.seed, opts()))); });
+    if (sets.set.length){ allShown = false; $('toggle-all').textContent = 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', 'false'); $('summary').textContent = sets.set.length + ' questions, ' + sets.set.reduce((a, q) => a + q.marks, 0) + ' marks'; }
+  });
+  $('new-one').addEventListener('click', newOne);
+  $('new-set').addEventListener('click', newSet);
+  $('toggle-all').addEventListener('click', () => {
+    allShown = !allShown; sets.set.forEach((q, n) => showMs('set' + n, allShown));
+    $('toggle-all').textContent = allShown ? 'Hide all mark schemes' : 'Show all mark schemes'; $('toggle-all').setAttribute('aria-pressed', allShown ? 'true' : 'false');
+  });
+  $('load-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = $('code').value.trim().toUpperCase().match(/^([A-Z]+\d{1,2})-(\d{1,6})$/);
+    if (!m || ENGINE.TEMPLATES.indexOf(m[1]) < 0){ say('That code is not recognised. Codes look like YM3-48213.'); return; }
+    render('single', [ENGINE.makeQuestion(m[1], +m[2], opts())]); $('code').value = '';
+  });
+  function tab(name){
+    const setsTab = name === 'sets';
+    $('tab-single').setAttribute('aria-selected', setsTab ? 'false' : 'true'); $('tab-sets').setAttribute('aria-selected', setsTab ? 'true' : 'false');
+    $('panel-single').hidden = setsTab; $('panel-sets').hidden = !setsTab; say('');
+    if (setsTab && !sets.set.length) newSet();
+  }
+  const fromHash = () => tab(location.hash === '#question-sets' ? 'sets' : 'single');
+  $('tab-single').addEventListener('click', () => { tab('single'); try { location.hash = 'single-question'; } catch (e){} });
+  $('tab-sets').addEventListener('click', () => { tab('sets'); try { location.hash = 'question-sets'; } catch (e){} });
+  window.addEventListener('hashchange', fromHash);
+  newOne(); fromHash();
+})();
+
+</script>
+</body>
+</html>
